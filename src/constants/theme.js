@@ -1,22 +1,69 @@
 export const COLORS = {
-  primary: '#1E4080',    // Vistara navy blue (tick + text in logo)
-  accent: '#D44B1A',     // Vistara orange-red (pixel squares + underline in logo)
-  secondary: '#4A7CC7',  // lighter logo blue
-  white: '#FFFFFF',
-  background: '#F5F5F5',
-  text: '#333333',
-  lightGray: '#E0E0E0',
+  // Backgrounds
+  screenBg:  '#F5F6FA',
+  cardBg:    '#FFFFFF',
+
+  // Text
+  textPrimary:   '#1A1A2E',
+  textSecondary: '#8492A6',
+
+  // Brand
+  navy:       '#182350',
+  powderBlue: '#AFD2FA',
+  gold:       '#B9915E',
+
+  // Interactive
+  link: '#3D5AFE',
+
+  // Semantic
+  error:   '#EF4444',
+  success: '#2E7D32',
+
+  // Legacy aliases (keep so existing imports still work)
+  primary:    '#182350',
+  accent:     '#B9915E',
+  secondary:  '#3D5AFE',
+  white:      '#FFFFFF',
+  background: '#F5F6FA',
+  text:       '#1A1A2E',
+  lightGray:  '#E0E6F0',
+};
+
+export const CARD_SHADOW = {
+  shadowColor:  '#B8C4D6',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.20,
+  shadowRadius:  12,
+  elevation:     4,
+};
+
+export const MODULE_ACCENT = {
+  HR:          { bg: '#E8EEFF', icon: '#3D5AFE' },
+  Sales:       { bg: '#FFF8E1', icon: '#F9A825' },
+  PreSales:    { bg: '#E0F7FA', icon: '#0097A7' },
+  Execution:   { bg: '#E8F5E9', icon: '#2E7D32' },
+  Purchase:    { bg: '#FFF3E0', icon: '#E65100' },
+  Land:        { bg: '#F3E5F5', icon: '#7B1FA2' },
+  Reports:     { bg: '#E8F5E9', icon: '#2E7D32' },
+  Settings:    { bg: '#F3E5F5', icon: '#7B1FA2' },
+  Admin:       { bg: '#E8EEFF', icon: '#3D5AFE' },
+  Projects:    { bg: '#E8F5E9', icon: '#2E7D32' },
+  Sites:       { bg: '#E0F7FA', icon: '#0097A7' },
+  Contractors: { bg: '#FFF3E0', icon: '#E65100' },
+  Inventory:   { bg: '#FFF8E1', icon: '#F9A825' },
+  Payments:    { bg: '#E8F5E9', icon: '#2E7D32' },
+  Clients:     { bg: '#E8EEFF', icon: '#3D5AFE' },
 };
 
 export const SIZES = {
-  base: 8,
-  font: 14,
-  radius: 12,
-  padding: 24,
+  base:    8,
+  font:    14,
+  radius:  12,
+  padding: 20,
 };
 
 export const FONTS = {
   regular: 'System',
-  medium: 'System',
-  bold: 'System',
+  medium:  'System',
+  bold:    'System',
 };

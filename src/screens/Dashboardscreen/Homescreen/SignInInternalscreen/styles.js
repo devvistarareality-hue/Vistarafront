@@ -1,80 +1,81 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
+const NAVY = '#182350';
+const TEXT = '#1A1A2E';
+const MUTED = '#8492A6';
+const SUCCESS = '#2E7D32';
+const ERROR = '#EF4444';
+
+const CARD_SHADOW = {
+  shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.18, shadowRadius: 12, elevation: 4,
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F2F5' },
+  container: { flex: 1, backgroundColor: '#F5F6FA' },
 
-  // ── Map ──────────────────────────────────────────────────────────
   mapCard: {
-    margin: 14, borderRadius: 14, overflow: 'hidden',
-    elevation: 4, backgroundColor: '#fff',
+    margin: 16, borderRadius: 18, overflow: 'hidden', ...CARD_SHADOW,
+    backgroundColor: '#FFFFFF',
   },
   map: { width: '100%', height: 220 },
   mapLoader: {
-    height: 220, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: '#f0f2f5',
+    height: 220, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: '#F5F6FA',
   },
   mapStatusBar: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 10, gap: 8, flexWrap: 'wrap',
   },
-  locDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-  mapStatusText: { color: '#fff', fontWeight: '700', fontSize: width * 0.035, flex: 1 },
-  mapCoordsText: { color: 'rgba(255,255,255,0.8)', fontSize: width * 0.027 },
-  locLoadingText: { color: '#555', fontSize: width * 0.035 },
+  locDot:        { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
+  mapStatusText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13, flex: 1 },
+  mapCoordsText: { color: 'rgba(255,255,255,0.8)', fontSize: 11 },
+  locLoadingText:{ color: MUTED, fontSize: 13 },
 
-  statusRow: { flexDirection: 'row', marginHorizontal: 14, marginBottom: 14, gap: 10 },
-  statusBox: {
-    flex: 1, backgroundColor: '#1E4080', borderRadius: 10,
-    padding: 14, alignItems: 'center',
-  },
-  statusBoxRight: { backgroundColor: '#D44B1A' },
-  statusLabel: { color: 'rgba(255,255,255,0.8)', fontSize: width * 0.028, marginBottom: 4 },
-  statusValue: { color: '#fff', fontSize: width * 0.05, fontWeight: 'bold' },
+  statusRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 16, gap: 12 },
+  statusBox: { flex: 1, backgroundColor: NAVY, borderRadius: 14, padding: 14, alignItems: 'center', ...CARD_SHADOW },
+  statusBoxRight: { backgroundColor: ERROR },
+  statusLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, marginBottom: 4, fontWeight: '600' },
+  statusValue: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
 
   card: {
-    backgroundColor: '#fff', marginHorizontal: 14,
-    marginBottom: 14, borderRadius: 12, padding: 16, elevation: 2,
+    backgroundColor: '#FFFFFF', marginHorizontal: 16,
+    marginBottom: 16, borderRadius: 18, padding: 16, ...CARD_SHADOW,
   },
-  timeRow: { flexDirection: 'row', marginBottom: 14 },
+  timeRow: { flexDirection: 'row', marginBottom: 16, gap: 10 },
   timeBox: {
-    flex: 1, backgroundColor: '#E8F5F3', borderRadius: 10,
+    flex: 1, backgroundColor: '#E8F5E9', borderRadius: 12,
     padding: 12, alignItems: 'center',
   },
-  timeLabel: { fontSize: width * 0.03, fontWeight: '700', color: '#555', marginBottom: 4 },
-  timeValue: { fontSize: width * 0.04, fontWeight: 'bold', color: '#1E4080' },
-  timeMuted: { fontSize: width * 0.038, color: '#aaa' },
+  timeLabel: { fontSize: 11, fontWeight: '700', color: MUTED, marginBottom: 4 },
+  timeValue: { fontSize: 16, fontWeight: '800', color: NAVY },
+  timeMuted: { fontSize: 15, color: MUTED },
 
-  fieldLabel: { fontSize: width * 0.033, fontWeight: '600', color: '#555', marginBottom: 6 },
-  dateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  dateText: { fontSize: width * 0.045, color: '#222' },
-  divider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 12 },
+  fieldLabel: { fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 },
+  dateRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+  dateText:   { fontSize: 15, fontWeight: '700', color: TEXT },
+  divider:    { height: 1, backgroundColor: '#F5F6FA', marginVertical: 12 },
 
   remarksInput: {
-    borderBottomWidth: 1, borderBottomColor: '#ddd',
-    paddingVertical: 8, fontSize: width * 0.035,
-    color: '#333', marginBottom: 12, minHeight: 40,
+    borderBottomWidth: 1, borderBottomColor: '#E0E6F0',
+    paddingVertical: 8, fontSize: 14, color: TEXT, marginBottom: 12, minHeight: 40,
   },
 
   expandBtn: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', backgroundColor: '#E8F5F3',
-    borderRadius: 10, padding: 14, marginBottom: 8,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: '#E8EEFF', borderRadius: 12, padding: 14, marginBottom: 8,
   },
-  expandText: { fontSize: width * 0.035, fontWeight: '700', color: '#1E4080' },
-  expandArrow: { fontSize: 18, color: '#1E4080' },
-  moreDetail: { padding: 12, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 8 },
-  moreDetailText: { fontSize: width * 0.033, color: '#555', marginBottom: 4 },
+  expandText:  { fontSize: 13, fontWeight: '700', color: NAVY },
+  expandArrow: { fontSize: 18, color: NAVY },
+  moreDetail:  { padding: 12, backgroundColor: '#F5F6FA', borderRadius: 10, marginBottom: 8 },
+  moreDetailText: { fontSize: 12, color: MUTED, marginBottom: 4 },
 
-  bottomRow: { flexDirection: 'row', marginHorizontal: 14, gap: 10, marginBottom: 14 },
-  bottomBtn: {
-    flex: 1, borderRadius: 10, paddingVertical: 16,
-    alignItems: 'center', elevation: 2,
-  },
-  signOutBtn: { backgroundColor: '#1E4080' },
-  checkInBtn: { backgroundColor: '#D44B1A' },
-  btnDisabled: { opacity: 0.4 },
-  bottomBtnText: { color: '#fff', fontWeight: 'bold', fontSize: width * 0.038 },
+  bottomRow: { flexDirection: 'row', marginHorizontal: 16, gap: 12, marginBottom: 16 },
+  bottomBtn: { flex: 1, borderRadius: 14, paddingVertical: 16, alignItems: 'center', ...CARD_SHADOW },
+  signOutBtn:     { backgroundColor: NAVY },
+  checkInBtn:     { backgroundColor: SUCCESS },
+  btnDisabled:    { opacity: 0.4 },
+  bottomBtnText:  { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 });
 
 export default styles;

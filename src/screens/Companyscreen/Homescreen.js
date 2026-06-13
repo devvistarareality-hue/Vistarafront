@@ -1,43 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, StatusBar,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
 import { verifyCompany } from '../../redux/actions/authActions';
-import { COLORS } from '../../constants/theme';
-import images from '../../constants/images';
-import styles from './styles';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { companyLoading, company, companyError } = useSelector((state) => state.auth);
+  const { companyLoading, company, companyError } = useSelector((s) => s.auth);
 
   const [companyCode, setCompanyCode] = useState('');
 
-  // When company verified successfully, navigate to Login
   useEffect(() => {
-    if (company) {
-      navigation.navigate('Login', { companyCode: company.code });
-    }
+    if (company) navigation.navigate('Login', { companyCode: company.code });
   }, [company]);
 
-  // Show error alert if verification fails
   useEffect(() => {
-    if (companyError) {
-      Alert.alert('Invalid Company', companyError);
-    }
+    if (companyError) Alert.alert('Invalid Company', companyError);
   }, [companyError]);
 
   const handleSubmit = () => {
@@ -48,31 +31,87 @@ const HomeScreen = () => {
     dispatch(verifyCompany(companyCode.trim()));
   };
 
+  const canSubmit = companyCode.trim().length > 0 && !companyLoading;
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={{ flex: 1, backgroundColor: '#182350' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
       >
-        <View style={styles.content}>
-          {/* Logo */}
-          <Image
-            source={images.splashLogo}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+        {/* ── Header Banner ── */}
+        <View style={{
+          backgroundColor: '#182350',
+          alignItems: 'center',
+          paddingTop: 72,
+          paddingBottom: 44,
+          paddingHorizontal: 20,
+        }}>
+          <View style={{
+            width: 64, height: 64, borderRadius: 20,
+            backgroundColor: 'rgba(175,210,250,0.18)',
+            justifyContent: 'center', alignItems: 'center',
+            marginBottom: 18,
+          }}>
+            <Ionicons name="grid" size={30} color="#FFFFFF" />
+          </View>
+          <Text style={{ fontSize: 34, fontWeight: '800', color: '#FFFFFF', marginBottom: 6 }}>
+            Vistara
+          </Text>
+          <Text style={{
+            fontSize: 12, fontWeight: '700', color: '#AFD2FA',
+            letterSpacing: 3, marginBottom: 8, textTransform: 'uppercase',
+          }}>
+            ERP Platform
+          </Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.50)' }}>
+            Real Estate Management
+          </Text>
+        </View>
 
-          {/* Company Code Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Company Code</Text>
+        {/* ── Form Card ── */}
+        <View style={{
+          flex: 1,
+          backgroundColor: '#F5F6FA',
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+          paddingHorizontal: 24,
+          paddingTop: 36,
+          paddingBottom: 48,
+          minHeight: 380,
+        }}>
+          <Text style={{ fontSize: 26, fontWeight: '800', color: '#1A1A2E', marginBottom: 6 }}>
+            Get Started
+          </Text>
+          <Text style={{ fontSize: 13, color: '#8492A6', marginBottom: 32, fontWeight: '500' }}>
+            Enter your workspace company code
+          </Text>
+
+          <Text style={{
+            fontSize: 11, fontWeight: '600', color: '#8492A6',
+            letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10,
+          }}>
+            Company Code
+          </Text>
+          <View style={{
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: '#FFFFFF', borderRadius: 16,
+            paddingHorizontal: 16, height: 54,
+            marginBottom: 28,
+            shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.18, shadowRadius: 10, elevation: 3,
+          }}>
+            <Ionicons name="business-outline" size={20} color="#8492A6" style={{ marginRight: 12 }} />
             <TextInput
-              style={styles.input}
-              placeholder="Enter company code"
-              placeholderTextColor={COLORS.lightGray}
+              style={{ flex: 1, fontSize: 15, color: '#1A1A2E', fontWeight: '500' }}
+              placeholder="e.g. VISTARA01"
+              placeholderTextColor="#C0CAD8"
               value={companyCode}
               onChangeText={setCompanyCode}
               autoCapitalize="characters"
@@ -81,21 +120,23 @@ const HomeScreen = () => {
             />
           </View>
 
-          {/* Submit Button */}
           <TouchableOpacity
-            style={[
-              styles.submitButton,
-              (!companyCode.trim() || companyLoading) && styles.submitButtonDisabled,
-            ]}
+            style={{
+              backgroundColor: canSubmit ? '#182350' : '#B0BAC9',
+              borderRadius: 16, height: 54,
+              justifyContent: 'center', alignItems: 'center',
+              shadowColor: canSubmit ? '#182350' : 'transparent',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.28, shadowRadius: 10, elevation: canSubmit ? 4 : 0,
+            }}
             onPress={handleSubmit}
-            activeOpacity={0.8}
-            disabled={companyLoading}
+            activeOpacity={0.85}
+            disabled={!canSubmit}
           >
-            {companyLoading ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.submitButtonText}>Submit</Text>
-            )}
+            {companyLoading
+              ? <ActivityIndicator color="#FFFFFF" />
+              : <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Continue</Text>
+            }
           </TouchableOpacity>
         </View>
       </ScrollView>

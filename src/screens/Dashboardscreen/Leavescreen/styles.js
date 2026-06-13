@@ -1,98 +1,49 @@
 import { StyleSheet, Dimensions } from 'react-native';
-import { COLORS } from '../../../constants/theme';
 
 const { width } = Dimensions.get('window');
+const NAVY  = '#182350';
+const TEXT  = '#1A1A2E';
+const MUTED = '#8492A6';
+const LINK  = '#3D5AFE';
+
+const CARD_SHADOW = {
+  shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.18, shadowRadius: 12, elevation: 4,
+};
 
 export default StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-  },
+  safeArea: { flex: 1, backgroundColor: '#F5F6FA' },
 
-  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: width * 0.04,
-    paddingVertical: width * 0.035,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F6FA',
+    paddingHorizontal: 20, paddingVertical: 14,
   },
-  backButton: {
-    padding: width * 0.01,
-  },
-  backIconImage: {
-    width: width * 0.06,
-    height: width * 0.06,
-    resizeMode: 'contain',
-    tintColor: COLORS.white,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: width * 0.045,
-    fontWeight: '600',
-    color: COLORS.white,
-    letterSpacing: width * 0.001,
-  },
-  headerRight: {
-    width: width * 0.08,
-  },
+  backButton:    { width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', marginRight: 12, ...CARD_SHADOW },
+  backIconImage: { width: 22, height: 22, resizeMode: 'contain', tintColor: TEXT },
+  headerTitle:   { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: TEXT },
+  headerRight:   { width: 38 },
 
-  // Tab bar
   tabBar: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.primary,
+    flexDirection: 'row', backgroundColor: '#FFFFFF',
+    marginHorizontal: 20, borderRadius: 12, padding: 4, marginBottom: 8,
+    ...CARD_SHADOW,
   },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: width * 0.03,
-  },
-  tabLabel: {
-    fontSize: width * 0.038,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.55)',
-  },
-  tabLabelActive: {
-    color: COLORS.white,
-    fontWeight: '700',
-  },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: width * 0.008,
-    width: '60%',
-    borderRadius: width * 0.004,
-    backgroundColor: COLORS.accent,
+  tabItem:       { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 10 },
+  tabLabel:      { fontSize: 13, fontWeight: '600', color: MUTED },
+  tabLabelActive:{ color: NAVY, fontWeight: '800' },
+  tabIndicator:  {
+    position: 'absolute', bottom: 0, height: 0,
+    width: '60%', borderRadius: 4, backgroundColor: 'transparent',
   },
 
-  // TabView fills remaining space
-  content: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  content: { flex: 1, backgroundColor: '#F5F6FA' },
 
-  // Floating Action Button
   fab: {
-    position: 'absolute',
-    bottom: width * 0.07,
-    right: width * 0.06,
-    width: width * 0.14,
-    height: width * 0.14,
-    borderRadius: width * 0.07,
-    backgroundColor: COLORS.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: width * 0.008 },
-    shadowOpacity: 0.25,
-    shadowRadius: width * 0.01,
+    position: 'absolute', bottom: 24, right: 20,
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
+    shadowColor: NAVY, shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.30, shadowRadius: 10, elevation: 6,
   },
-  fabIcon: {
-    width: width * 0.07,
-    height: width * 0.07,
-    resizeMode: 'contain',
-    tintColor: COLORS.white,
-  },
+  fabIcon: { width: 24, height: 24, resizeMode: 'contain', tintColor: '#FFFFFF' },
 });

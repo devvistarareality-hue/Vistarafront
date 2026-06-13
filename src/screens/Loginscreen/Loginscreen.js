@@ -1,24 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Alert,
-  ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, StatusBar,
+  KeyboardAvoidingView, Platform, ScrollView,
+  TouchableWithoutFeedback, Keyboard, Alert, ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
 import { login } from '../../redux/actions/authActions';
-import { COLORS } from '../../constants/theme';
-import images from '../../constants/images';
 import styles from './styles';
 
 const LoginScreen = () => {
@@ -27,129 +16,125 @@ const LoginScreen = () => {
   const { companyCode } = route.params || {};
 
   const dispatch = useDispatch();
-  const { loginLoading, user, loginError } = useSelector((state) => state.auth);
+  const { loginLoading, user, loginError } = useSelector((s) => s.auth);
 
   const [userCode, setUserCode] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // When login successful, navigate to Dashboard
   useEffect(() => {
-    if (user) {
-      navigation.navigate('Dashboard');
-    }
+    if (user) navigation.navigate('Dashboard');
   }, [user]);
 
-  // Show error alert if login fails
   useEffect(() => {
-    if (loginError) {
-      Alert.alert('Login Failed', loginError);
-    }
+    if (loginError) Alert.alert('Login Failed', loginError);
   }, [loginError]);
 
   const handleLogin = () => {
     if (!userCode.trim() || !password.trim()) {
-      Alert.alert('Required', 'Please enter both user code and password.');
+      Alert.alert('Required', 'Please enter both email and password.');
       return;
     }
     dispatch(login(companyCode, userCode.trim(), password));
   };
+
+  const canLogin = userCode.trim().length > 0 && password.trim().length > 0 && !loginLoading;
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <View style={styles.content}>
-            {/* Logo */}
-            <Image
-              source={images.splashLogo}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-
-            {/* Company Code Display */}
-            <View style={styles.companyCodeBox}>
-              <Text style={styles.companyCodeLabel}>Company Code:</Text>
-              <Text style={styles.companyCodeValue}>{companyCode}</Text>
+          {/* ── Header Banner ── */}
+          <View style={styles.header}>
+            <View style={styles.logoBox}>
+              <Ionicons name="grid" size={30} color="#FFFFFF" />
             </View>
+            <Text style={styles.brandName}>Vistara</Text>
+            <Text style={styles.brandTag}>ERP PLATFORM</Text>
+            <Text style={styles.brandSub}>Real Estate Management</Text>
+          </View>
 
-            {/* User Code Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>User Code</Text>
+          {/* ── Form Card ── */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Welcome back</Text>
+            <Text style={styles.cardSub}>Sign in to your workspace</Text>
+
+            {/* Email / User Code */}
+            <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
+            <View style={styles.inputRow}>
+              <Ionicons name="mail-outline" size={20} color="#8492A6" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter user code"
-                placeholderTextColor={COLORS.lightGray}
+                placeholder="you@vistararealty.com"
+                placeholderTextColor="#C0CAD8"
                 value={userCode}
                 onChangeText={setUserCode}
                 autoCapitalize="none"
                 autoCorrect={false}
+                keyboardType="email-address"
                 editable={!loginLoading}
               />
             </View>
 
-            {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Enter password"
-                  placeholderTextColor={COLORS.lightGray}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loginLoading}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.eyeIconText}>
-                    {showPassword ? '👁️' : '👁️‍🗨️'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            {/* Password */}
+            <Text style={styles.fieldLabel}>PASSWORD</Text>
+            <View style={styles.inputRow}>
+              <Ionicons name="lock-closed-outline" size={20} color="#8492A6" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Enter your password"
+                placeholderTextColor="#C0CAD8"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!loginLoading}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                <Ionicons name={showPassword ? 'eye' : 'eye-outline'} size={20} color="#8492A6" />
+              </TouchableOpacity>
             </View>
 
-            {/* Login Button */}
+            {/* Sign In Button */}
             <TouchableOpacity
-              style={[
-                styles.loginButton,
-                (!userCode.trim() || !password.trim() || loginLoading) && styles.loginButtonDisabled,
-              ]}
+              style={[styles.btn, !canLogin && styles.btnDisabled]}
               onPress={handleLogin}
-              activeOpacity={0.8}
-              disabled={loginLoading}
+              activeOpacity={0.85}
+              disabled={!canLogin}
             >
-              {loginLoading ? (
-                <ActivityIndicator color={COLORS.white} />
-              ) : (
-                <Text style={styles.loginButtonText}>Login</Text>
-              )}
+              {loginLoading
+                ? <ActivityIndicator color="#FFFFFF" />
+                : <Text style={styles.btnText}>Sign In</Text>
+              }
             </TouchableOpacity>
 
-            {/* Back Button */}
+            {/* Back + Register */}
             <TouchableOpacity
-              style={styles.backButton}
+              style={styles.backBtn}
               onPress={() => navigation.goBack()}
               activeOpacity={0.7}
               disabled={loginLoading}
             >
-              <Text style={styles.backButtonText}>← Back to Company Code</Text>
+              <Ionicons name="arrow-back" size={16} color="#8492A6" style={{ marginRight: 6 }} />
+              <Text style={styles.backText}>Back to Company Code</Text>
             </TouchableOpacity>
+
+            <View style={styles.registerRow}>
+              <Text style={styles.registerText}>Don't have an account? </Text>
+              <TouchableOpacity>
+                <Text style={styles.registerLink}>Register</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>

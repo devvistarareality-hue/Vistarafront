@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://192.168.1.9:8000';
+export const BASE_URL = 'http://192.168.1.21:8000';
 
 export const ATTENDANCE_ENDPOINTS = {
   dashboard: `${BASE_URL}/api/attendance/dashboard/`,

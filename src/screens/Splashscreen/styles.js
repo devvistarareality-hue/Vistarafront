@@ -1,10 +1,9 @@
 import { StyleSheet } from 'react-native';
-import { COLORS } from '../../constants/theme';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: '#182350',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -13,8 +12,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 250,
-    height: 250,
+    width: 180,
+    height: 180,
   },
 });
 

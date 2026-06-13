@@ -1,23 +1,6 @@
-import { StyleSheet, Dimensions } from 'react-native';
-import { COLORS } from '../../../constants/theme';
-
-const { width } = Dimensions.get('window');
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F2F5',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  screenTitle: {
-    fontSize: width * 0.07,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-  },
+import { StyleSheet } from 'react-native';
+export default StyleSheet.create({
+  container:   { flex: 1, backgroundColor: '#F5F6FA' },
+  content:     { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  screenTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E' },
 });
-
-export default styles;

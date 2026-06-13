@@ -1,56 +1,57 @@
 import React from 'react';
-import { Text, Dimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/Dashboardscreen/Homescreen/Homescreen';
 import ModulesScreen from '../screens/Modulesscreen/ModulesScreen';
-import { COLORS } from '../constants/theme';
 
-const { width } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
 
 const BottomTabNavigator = () => {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 56 + insets.bottom;
 
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: COLORS.white,
-          borderTopWidth: 1,
-          borderTopColor: '#E0E0E0',
-          height: tabBarHeight,
-          paddingBottom: insets.bottom + 4,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 0,
+          height: 64 + insets.bottom,
+          paddingBottom: insets.bottom + 10,
           paddingTop: 6,
+          shadowColor: '#9DB2CE',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
+          elevation: 16,
         },
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: '#999999',
+        tabBarActiveTintColor: '#3D5AFE',
+        tabBarInactiveTintColor: '#B0BAC9',
         tabBarLabelStyle: {
-          fontSize: width * 0.028,
-          fontWeight: '500',
+          fontSize: 11,
+          fontWeight: '700',
         },
-      }}
+        tabBarIcon: ({ focused, color }) => {
+          let iconName;
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Modules') {
+            iconName = focused ? 'grid' : 'grid-outline';
+          }
+          return <Ionicons name={iconName} size={22} color={color} />;
+        },
+      })}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{
-          tabBarLabel: 'Dashboard',
-          tabBarIcon: () => (
-            <Text style={{ fontSize: width * 0.06 }}>🏠</Text>
-          ),
-        }}
+        options={{ tabBarLabel: 'Dashboard' }}
       />
       <Tab.Screen
         name="Modules"
         component={ModulesScreen}
-        options={{
-          tabBarIcon: () => (
-            <Text style={{ fontSize: width * 0.06 }}>📋</Text>
-          ),
-        }}
+        options={{ tabBarLabel: 'Modules' }}
       />
     </Tab.Navigator>
   );

@@ -1,133 +1,90 @@
 import { StyleSheet, Dimensions } from 'react-native';
-import { COLORS, SIZES } from '../../constants/theme';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  container: { flex: 1, backgroundColor: '#182350' },
+  scroll:    { flexGrow: 1 },
+
+  // ── Header Banner ──
+  header: {
+    backgroundColor: '#182350',
     alignItems: 'center',
-    paddingHorizontal: width * 0.06,
-    paddingVertical: height * 0.03,
+    paddingTop: 64,
+    paddingBottom: 44,
+    paddingHorizontal: 20,
   },
-  logo: {
-    width: width * 0.5,
-    height: width * 0.5,
-    // marginBottom: height * 0.02,
+  logoBox: {
+    width: 64, height: 64, borderRadius: 20,
+    backgroundColor: 'rgba(175,210,250,0.18)',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 18,
   },
-  
-  companyCodeBox: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.background,
-    paddingVertical: height * 0.01,
-    paddingHorizontal: width * 0.05,
-    borderRadius: SIZES.radius,
-    marginBottom: height * 0.04,
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
+  brandName: { fontSize: 34, fontWeight: '800', color: '#FFFFFF', marginBottom: 6 },
+  brandTag:  {
+    fontSize: 12, fontWeight: '700', color: '#AFD2FA',
+    letterSpacing: 3, marginBottom: 8, textTransform: 'uppercase',
   },
-  companyCodeLabel: {
-    fontSize: width * 0.037,
-    color: COLORS.text,
-    marginRight: width * 0.02,
+  brandSub: { fontSize: 13, color: 'rgba(255,255,255,0.50)' },
+
+  // ── Form Card ──
+  card: {
+    flex: 1,
+    backgroundColor: '#F5F6FA',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 36,
+    paddingBottom: 48,
+    minHeight: height * 0.58,
   },
-  companyCodeValue: {
-    fontSize: width * 0.037,
-    fontWeight: 'bold',
-    color: COLORS.primary,
+  cardTitle: { fontSize: 26, fontWeight: '800', color: '#1A1A2E', marginBottom: 6 },
+  cardSub:   { fontSize: 13, color: '#8492A6', fontWeight: '500', marginBottom: 32 },
+
+  // ── Fields ──
+  fieldLabel: {
+    fontSize: 11, fontWeight: '600', color: '#8492A6',
+    letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10,
   },
-  inputContainer: {
-    width: '100%',
-    marginBottom: height * 0.02,
+  inputRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#FFFFFF', borderRadius: 16,
+    paddingHorizontal: 16, height: 54, marginBottom: 22,
+    shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18, shadowRadius: 10, elevation: 3,
   },
-  label: {
-    fontSize: width * 0.037,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: height * 0.01,
-    marginLeft: width * 0.01,
-  },
+  inputIcon: { marginRight: 12 },
   input: {
-    width: '100%',
-    height: height * 0.06,
-    backgroundColor: COLORS.background,
-    borderRadius: SIZES.radius,
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-    paddingHorizontal: width * 0.04,
-    fontSize: width * 0.042,
-    color: COLORS.text,
+    flex: 1, fontSize: 15, color: '#1A1A2E', fontWeight: '500',
   },
-  passwordContainer: {
-    position: 'relative',
-    width: '100%',
-    alignItems:'center',
-    justifyContent:'center'
+  eyeBtn: { padding: 6 },
+
+  // ── Button ──
+  btn: {
+    backgroundColor: '#182350',
+    borderRadius: 16, height: 54,
+    justifyContent: 'center', alignItems: 'center',
+    marginTop: 4,
+    shadowColor: '#182350', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28, shadowRadius: 10, elevation: 4,
   },
-  passwordInput: {
-    width: '100%',
-    height: height * 0.06,
-    backgroundColor: COLORS.background,
-    borderRadius: SIZES.radius,
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-    paddingHorizontal: width * 0.04,
-    paddingRight: width * 0.13,
-    fontSize: width * 0.042,
-    color: COLORS.text,
+  btnDisabled: {
+    backgroundColor: '#B0BAC9',
+    shadowOpacity: 0, elevation: 0,
   },
-  eyeIcon: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    height: height * 0.06,
-    width: width * 0.10,
-    justifyContent: 'center',
-    alignItems: 'center',
+  btnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+
+  // ── Back ──
+  backBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', marginTop: 20, paddingVertical: 8,
   },
-  eyeIconText: {
-    fontSize: width * 0.063,
-  },
-  loginButton: {
-    width: '100%',
-    height: height * 0.05,
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.radius,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: height * 0.015,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: height * 0.0025 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  loginButtonDisabled: {
-    backgroundColor: COLORS.lightGray,
-    elevation: 0,
-  },
-  loginButtonText: {
-    color: COLORS.white,
-    fontSize: width * 0.047,
-    fontWeight: 'bold',
-  },
-  backButton: {
-    marginTop: height * 0.025,
-    paddingVertical: height * 0.015,
-  },
-  backButtonText: {
-    color: COLORS.primary,
-    fontSize: width * 0.042,
-    fontWeight: '600',
-  },
+  backText: { fontSize: 13, color: '#8492A6', fontWeight: '500' },
+
+  // ── Register ──
+  registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 12 },
+  registerText: { fontSize: 13, color: '#8492A6' },
+  registerLink: { fontSize: 13, fontWeight: '700', color: '#3D5AFE' },
 });
 
 export default styles;

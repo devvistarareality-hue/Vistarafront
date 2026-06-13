@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  Alert,
-  ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity,
+  StatusBar, Alert, ActivityIndicator, Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { fetchDashboard, fetchMonthlyAttendance } from '../../../redux/actions/dashboardActions';
-import styles from './styles';
+
+const { width } = Dimensions.get('window');
 
 const MONTH_NAMES = [
   'January','February','March','April','May','June',
@@ -20,6 +18,24 @@ const MONTH_NAMES = [
 ];
 const DAY_HEADERS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const BG    = '#F5F6FA';
+const NAVY  = '#182350';
+const TEXT  = '#1A1A2E';
+const MUTED = '#8492A6';
+const LINK  = '#3D5AFE';
+
+const CARD = {
+  backgroundColor: '#FFFFFF',
+  borderRadius: 18,
+  shadowColor: '#B8C4D6',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.20,
+  shadowRadius: 12,
+  elevation: 4,
+};
+
+const CAL_CELL = Math.floor((width - 40 - 32) / 7);
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -48,7 +64,7 @@ const HomeScreen = () => {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled  = await LocalAuthentication.isEnrolledAsync();
       if (!hasHardware || !isEnrolled) {
-        Alert.alert('Biometrics Unavailable', 'Please set up fingerprint or face unlock in your device settings.');
+        Alert.alert('Biometrics Unavailable', 'Please set up fingerprint or face unlock in device settings.');
         return;
       }
       const result = await LocalAuthentication.authenticateAsync({
@@ -68,35 +84,22 @@ const HomeScreen = () => {
 
   if (loading && !user) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#1E4080" />
+      <View style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={NAVY} />
       </View>
     );
   }
 
-  const attendance = weeklyAttendance.length > 0
+  const initials = user?.name
+    ? user.name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
+  const todayStr    = `${String(today.getDate()).padStart(2,'0')} ${MONTHS_SHORT[today.getMonth()]}`;
+  const todayRecord = weeklyAttendance.find(a => a.date === todayStr) || null;
+  const attendance  = weeklyAttendance.length > 0
     ? weeklyAttendance
     : Array(6).fill({ date: '--', day: '--', in_time: '--:--', out_time: '--:--', total: '--:--' });
 
-  // Find today's record from weekly attendance
-  const todayStr   = `${String(today.getDate()).padStart(2, '0')} ${MONTHS_SHORT[today.getMonth()]}`;
-  const todayRecord = weeklyAttendance.find(a => a.date === todayStr) || null;
-
-  const statCards = [
-    { label: 'Work Today',  value: stats?.work_today        ?? '--:--', icon: '⏱', color: '#27AE60' },
-    { label: 'This Week',   value: stats?.worked_this_week  ?? '--:--', icon: '📊', color: '#2980B9' },
-    { label: 'Leaves Left', value: stats?.leaves_available  ?? '0',     icon: '🏖', color: '#F39C12' },
-    { label: 'Leaves Used', value: stats?.leaves_utilised   ?? '0',     icon: '📋', color: '#E74C3C' },
-  ];
-
-  const userDetails = [
-    { icon: '🔑', label: 'Employee Code', value: user?.user_code },
-    { icon: '🏢', label: 'Organisation',  value: user?.organisation },
-    { icon: '🗂',  label: 'Department',    value: user?.department },
-    { icon: '💼', label: 'Designation',   value: user?.designation },
-  ];
-
-  // ── Calendar helpers ──────────────────────────────────────────────
   const prevMonth = () => {
     if (calMonth === 1) { setCalYear(y => y - 1); setCalMonth(12); }
     else setCalMonth(m => m - 1);
@@ -107,284 +110,368 @@ const HomeScreen = () => {
   };
 
   const buildCalendarCells = () => {
-    const firstDay     = new Date(calYear, calMonth - 1, 1).getDay(); // 0=Sun
-    const leadingBlanks = (firstDay + 6) % 7; // convert to Mon-start
-    const daysInMonth  = new Date(calYear, calMonth, 0).getDate();
+    const firstDay      = new Date(calYear, calMonth - 1, 1).getDay();
+    const leadingBlanks = (firstDay + 6) % 7;
+    const daysInMonth   = new Date(calYear, calMonth, 0).getDate();
     const cells = [];
     for (let i = 0; i < leadingBlanks; i++) cells.push(null);
     for (let d = 1; d <= daysInMonth; d++) cells.push(d);
     return cells;
   };
 
-  const calCells  = buildCalendarCells();
-  const recordMap = {};
+  const calCells     = buildCalendarCells();
+  const recordMap    = {};
   (monthlyAttendance?.records || []).forEach(r => { recordMap[r.day] = r; });
   const selectedRecord = selectedDay ? recordMap[selectedDay] : null;
 
+  const statCards = [
+    { label: 'Work Today',  value: stats?.work_today       ?? '--:--', icon: 'time-outline',      iconBg: '#E8EEFF', iconColor: '#3D5AFE' },
+    { label: 'This Week',   value: stats?.worked_this_week ?? '--:--', icon: 'bar-chart-outline',  iconBg: '#E0F7FA', iconColor: '#0097A7' },
+    { label: 'Leaves Left', value: stats?.leaves_available ?? '0',     icon: 'calendar-outline',   iconBg: '#FFF8E1', iconColor: '#F9A825' },
+    { label: 'Leaves Used', value: stats?.leaves_utilised  ?? '0',     icon: 'clipboard-outline',  iconBg: '#FFF3E0', iconColor: '#E65100' },
+  ];
+
+  const userDetails = [
+    { icon: 'id-card-outline',    label: 'Employee Code', value: user?.user_code },
+    { icon: 'business-outline',   label: 'Organisation',  value: user?.organisation },
+    { icon: 'folder-outline',     label: 'Department',    value: user?.department },
+    { icon: 'briefcase-outline',  label: 'Designation',   value: user?.designation },
+  ];
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2A44" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }}>
 
-      {/* ── Hero Header ── */}
-      <View style={styles.header}>
-        <View style={styles.avatarRing}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
-            </Text>
+        {/* ── Top Bar ── */}
+        <View style={{
+          flexDirection: 'row', alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 20, paddingTop: 14, paddingBottom: 22,
+        }}>
+          <View>
+            <Text style={{ fontSize: 12, color: MUTED, fontWeight: '500' }}>Welcome back 👋</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{user?.name || '—'}</Text>
           </View>
-        </View>
-        <Text style={styles.userName}>{user?.name || '—'}</Text>
-        <Text style={styles.userRole}>{user?.designation || '—'}</Text>
-        <View style={styles.orgBadge}>
-          <View style={styles.orgDot} />
-          <Text style={styles.orgText}>{user?.organisation || 'Organisation'}</Text>
-        </View>
-        <View style={styles.headerCurve} />
-      </View>
-
-      {/* ── Stat Cards ── */}
-      <View style={styles.statsGrid}>
-        {statCards.map((s, i) => (
-          <View key={i} style={styles.statCard}>
-            <View style={[styles.statIconBox, { backgroundColor: s.color + '20' }]}>
-              <Text style={styles.statIcon}>{s.icon}</Text>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <TouchableOpacity style={{
+              width: 40, height: 40, borderRadius: 20,
+              backgroundColor: '#FFFFFF',
+              justifyContent: 'center', alignItems: 'center',
+              shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.18, shadowRadius: 10, elevation: 3,
+            }}>
+              <Ionicons name="notifications-outline" size={20} color={TEXT} />
+              <View style={{
+                position: 'absolute', top: 8, right: 8,
+                width: 8, height: 8, borderRadius: 4,
+                backgroundColor: '#EF4444',
+              }} />
+            </TouchableOpacity>
+            <View style={{
+              width: 40, height: 40, borderRadius: 20,
+              backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#AFD2FA' }}>{initials}</Text>
             </View>
-            <Text style={styles.statValue}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
           </View>
-        ))}
-      </View>
+        </View>
 
-      {/* ── Action Buttons ── */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#27AE60' }]} onPress={authenticateAndNavigate} activeOpacity={0.85}>
-          <Text style={styles.actionIcon}>↩</Text>
-          <Text style={styles.actionText}>Sign In</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#E74C3C' }]} onPress={authenticateAndNavigate} activeOpacity={0.85}>
-          <Text style={styles.actionIcon}>↪</Text>
-          <Text style={styles.actionText}>Sign Out</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#2980B9' }]} onPress={() => navigation.navigate('Leave')} activeOpacity={0.85}>
-          <Text style={styles.actionIcon}>📅</Text>
-          <Text style={styles.actionText}>Apply Leave</Text>
-        </TouchableOpacity>
-      </View>
+        {/* ── Stat Cards ── */}
+        <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
+          {statCards.map((s, i) => (
+            <View key={i} style={{ width: '47%', ...CARD, padding: 16 }}>
+              <View style={{
+                width: 44, height: 44, borderRadius: 14,
+                backgroundColor: s.iconBg,
+                justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+              }}>
+                <Ionicons name={s.icon} size={22} color={s.iconColor} />
+              </View>
+              <Text style={{ fontSize: 22, fontWeight: '800', color: TEXT, marginBottom: 2 }}>{s.value}</Text>
+              <Text style={{ fontSize: 12, color: MUTED, fontWeight: '500' }}>{s.label}</Text>
+            </View>
+          ))}
+        </View>
 
-      {/* ── Attendance Section ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Attendance</Text>
-
-        {/* Tab Switcher */}
-        <View style={styles.tabRow}>
-          {['today', 'week', 'month'].map(tab => (
+        {/* ── Action Buttons ── */}
+        <View style={{ paddingHorizontal: 20, flexDirection: 'row', gap: 12, marginBottom: 28 }}>
+          {[
+            { label: 'Sign In',     icon: 'log-in-outline',   color: '#2E7D32', action: authenticateAndNavigate },
+            { label: 'Sign Out',    icon: 'log-out-outline',  color: '#EF4444', action: authenticateAndNavigate },
+            { label: 'Apply Leave', icon: 'calendar-outline', color: '#3D5AFE', action: () => navigation.navigate('Leave') },
+          ].map((a, i) => (
             <TouchableOpacity
-              key={tab}
-              style={[styles.tab, attendanceTab === tab && styles.tabActive]}
-              onPress={() => setAttendanceTab(tab)}
-              activeOpacity={0.8}
+              key={i}
+              style={{
+                flex: 1, backgroundColor: a.color, borderRadius: 14,
+                paddingVertical: 14, alignItems: 'center',
+                shadowColor: a.color, shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.30, shadowRadius: 8, elevation: 4,
+              }}
+              onPress={a.action} activeOpacity={0.85}
             >
-              <Text style={[styles.tabText, attendanceTab === tab && styles.tabTextActive]}>
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Text>
+              <Ionicons name={a.icon} size={20} color="#FFFFFF" style={{ marginBottom: 4 }} />
+              <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700', textAlign: 'center' }}>{a.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* ── Today View ── */}
-        {attendanceTab === 'today' && (
-          <View style={styles.todayCard}>
-            <Text style={styles.todayDate}>
-              {today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </Text>
-            {todayRecord ? (
-              <View style={styles.todayRow}>
-                <View style={styles.todayItem}>
-                  <Text style={styles.todayItemIcon}>🕐</Text>
-                  <Text style={styles.todayItemLabel}>In Time</Text>
-                  <Text style={styles.todayItemValue}>{todayRecord.in_time}</Text>
-                </View>
-                <View style={styles.todayDivider} />
-                <View style={styles.todayItem}>
-                  <Text style={styles.todayItemIcon}>🕔</Text>
-                  <Text style={styles.todayItemLabel}>Out Time</Text>
-                  <Text style={styles.todayItemValue}>{todayRecord.out_time}</Text>
-                </View>
-                <View style={styles.todayDivider} />
-                <View style={styles.todayItem}>
-                  <Text style={styles.todayItemIcon}>⏱</Text>
-                  <Text style={styles.todayItemLabel}>Total</Text>
-                  <Text style={[styles.todayItemValue, { color: '#27AE60' }]}>{todayRecord.total}</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.absentBox}>
-                <Text style={styles.absentIcon}>🏠</Text>
-                <Text style={styles.absentText}>No attendance recorded today</Text>
-              </View>
-            )}
+        {/* ── Attendance Section ── */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 28 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Attendance</Text>
           </View>
-        )}
 
-        {/* ── Week View ── */}
-        {attendanceTab === 'week' && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {attendance.map((a, i) => {
-              const parts    = a.date?.split(' ') || [];
-              const datePart = parts[0] || '--';
-              const monPart  = parts[1] || '';
-              return (
-                <View key={i} style={styles.dayCard}>
-                  <Text style={styles.dayName}>{(a.day || '--').slice(0, 3).toUpperCase()}</Text>
-                  <Text style={styles.dayDate}>{datePart} {monPart}</Text>
-                  <View style={styles.dayDivider} />
-                  <View style={styles.timeRow}>
-                    <Text style={styles.timeLabel}>In</Text>
-                    <Text style={styles.timeValue}>{a.in_time || '--'}</Text>
-                  </View>
-                  <View style={styles.timeRow}>
-                    <Text style={styles.timeLabel}>Out</Text>
-                    <Text style={styles.timeValue}>{a.out_time || '--'}</Text>
-                  </View>
-                  <View style={[styles.timeRow, styles.totalRowCard]}>
-                    <Text style={styles.totalLabelCard}>Total</Text>
-                    <Text style={styles.totalValueCard}>{a.total || '--'}</Text>
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
-        )}
-
-        {/* ── Month View ── */}
-        {attendanceTab === 'month' && (
-          <View style={styles.calendarCard}>
-            {/* Month Navigator */}
-            <View style={styles.calNav}>
-              <TouchableOpacity onPress={prevMonth} style={styles.calNavBtn} activeOpacity={0.7}>
-                <Text style={styles.calNavArrow}>‹</Text>
-              </TouchableOpacity>
-              <Text style={styles.calNavTitle}>{MONTH_NAMES[calMonth - 1]} {calYear}</Text>
-              <TouchableOpacity onPress={nextMonth} style={styles.calNavBtn} activeOpacity={0.7}>
-                <Text style={styles.calNavArrow}>›</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Day Headers */}
-            <View style={styles.calDayHeaders}>
-              {DAY_HEADERS.map(d => (
-                <Text key={d} style={styles.calDayHeader}>{d}</Text>
-              ))}
-            </View>
-
-            {/* Calendar Grid */}
-            {monthlyLoading ? (
-              <ActivityIndicator size="small" color="#1E4080" style={{ marginVertical: 24 }} />
-            ) : (
-              <View style={styles.calGrid}>
-                {calCells.map((day, idx) => {
-                  if (!day) return <View key={`b-${idx}`} style={styles.calCell} />;
-                  const rec       = recordMap[day];
-                  const isToday   = day === today.getDate() && calMonth === today.getMonth() + 1 && calYear === today.getFullYear();
-                  const isSelected = selectedDay === day;
-                  return (
-                    <TouchableOpacity
-                      key={day}
-                      style={[
-                        styles.calCell,
-                        isToday    && styles.calCellToday,
-                        isSelected && styles.calCellSelected,
-                      ]}
-                      onPress={() => setSelectedDay(isSelected ? null : day)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[
-                        styles.calDayNum,
-                        isToday    && styles.calDayNumToday,
-                        isSelected && styles.calDayNumSelected,
-                      ]}>
-                        {day}
-                      </Text>
-                      <Text style={[
-                        styles.calHours,
-                        rec?.total && rec.total !== '00:00' ? styles.calHoursPresent : styles.calHoursAbsent,
-                        isSelected && styles.calHoursSelected,
-                      ]}>
-                        {rec?.total ?? '00:00'}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-
-            {/* Legend */}
-            <View style={styles.calLegend}>
-              <View style={styles.legendItem}>
-                <Text style={[styles.legendSample, { color: '#27AE60' }]}>08:30</Text>
-                <Text style={styles.legendText}>= Hours worked</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <Text style={[styles.legendSample, { color: '#CCC' }]}>00:00</Text>
-                <Text style={styles.legendText}>= Absent</Text>
-              </View>
-            </View>
-
-            {/* Selected Day Detail Panel */}
-            {selectedDay && (
-              <View style={styles.calDetail}>
-                <Text style={styles.calDetailDate}>
-                  {new Date(calYear, calMonth - 1, selectedDay)
-                    .toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {/* Tab Switcher */}
+          <View style={{
+            flexDirection: 'row', backgroundColor: '#EAECF2',
+            borderRadius: 12, padding: 4, marginBottom: 16,
+          }}>
+            {['today', 'week', 'month'].map(tab => (
+              <TouchableOpacity
+                key={tab}
+                style={{
+                  flex: 1, paddingVertical: 8, borderRadius: 10,
+                  alignItems: 'center',
+                  backgroundColor: attendanceTab === tab ? '#FFFFFF' : 'transparent',
+                  shadowColor: attendanceTab === tab ? '#B8C4D6' : 'transparent',
+                  shadowOpacity: attendanceTab === tab ? 0.10 : 0,
+                  shadowRadius: 4, elevation: attendanceTab === tab ? 2 : 0,
+                }}
+                onPress={() => setAttendanceTab(tab)} activeOpacity={0.8}
+              >
+                <Text style={{
+                  fontSize: 13, fontWeight: '700',
+                  color: attendanceTab === tab ? NAVY : MUTED,
+                }}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </Text>
-                {selectedRecord?.present ? (
-                  <View style={styles.calDetailRow}>
-                    <View style={styles.calDetailItem}>
-                      <Text style={styles.calDetailLabel}>In Time</Text>
-                      <Text style={styles.calDetailValue}>{selectedRecord.in_time || '--'}</Text>
-                    </View>
-                    <View style={styles.calDetailSep} />
-                    <View style={styles.calDetailItem}>
-                      <Text style={styles.calDetailLabel}>Out Time</Text>
-                      <Text style={styles.calDetailValue}>{selectedRecord.out_time || '--'}</Text>
-                    </View>
-                    <View style={styles.calDetailSep} />
-                    <View style={styles.calDetailItem}>
-                      <Text style={styles.calDetailLabel}>Total</Text>
-                      <Text style={[styles.calDetailValue, { color: '#27AE60' }]}>{selectedRecord.total || '--'}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Today View */}
+          {attendanceTab === 'today' && (
+            <View style={{ ...CARD, padding: 20 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 20, textAlign: 'center' }}>
+                {today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </Text>
+              {todayRecord ? (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {[
+                    { icon: 'time-outline',  label: 'In Time',  value: todayRecord.in_time,  color: '#2E7D32' },
+                    { icon: 'time-outline',  label: 'Out Time', value: todayRecord.out_time, color: '#E65100' },
+                    { icon: 'timer-outline', label: 'Total',    value: todayRecord.total,    color: '#3D5AFE' },
+                  ].map((item, i) => (
+                    <React.Fragment key={i}>
+                      <View style={{ flex: 1, alignItems: 'center' }}>
+                        <View style={{
+                          width: 40, height: 40, borderRadius: 12,
+                          backgroundColor: item.color + '18',
+                          justifyContent: 'center', alignItems: 'center', marginBottom: 8,
+                        }}>
+                          <Ionicons name={item.icon} size={20} color={item.color} />
+                        </View>
+                        <Text style={{ fontSize: 11, color: MUTED, fontWeight: '600', marginBottom: 4 }}>{item.label}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: item.color }}>{item.value}</Text>
+                      </View>
+                      {i < 2 && <View style={{ width: 1, height: 60, backgroundColor: '#F0F0F0' }} />}
+                    </React.Fragment>
+                  ))}
+                </View>
+              ) : (
+                <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                  <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: '#E8EEFF', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                    <Ionicons name="home-outline" size={28} color="#3D5AFE" />
+                  </View>
+                  <Text style={{ fontSize: 14, color: MUTED, fontWeight: '500' }}>No attendance recorded today</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Week View */}
+          {attendanceTab === 'week' && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {attendance.map((a, i) => {
+                const parts = a.date?.split(' ') || [];
+                return (
+                  <View key={i} style={{ ...CARD, padding: 12, marginRight: 10, width: 92, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: NAVY, letterSpacing: 0.5 }}>
+                      {(a.day || '--').slice(0, 3).toUpperCase()}
+                    </Text>
+                    <Text style={{ fontSize: 10, color: MUTED, marginBottom: 8, marginTop: 2 }}>
+                      {parts[0] || '--'} {parts[1] || ''}
+                    </Text>
+                    <View style={{ height: 1, backgroundColor: '#F0F0F0', width: '100%', marginBottom: 8 }} />
+                    {[{ label: 'In', value: a.in_time }, { label: 'Out', value: a.out_time }].map((t, ti) => (
+                      <View key={ti} style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 3 }}>
+                        <Text style={{ fontSize: 10, color: MUTED, fontWeight: '600' }}>{t.label}</Text>
+                        <Text style={{ fontSize: 10, color: TEXT, fontWeight: '600' }}>{t.value || '--'}</Text>
+                      </View>
+                    ))}
+                    <View style={{ height: 1, backgroundColor: '#F0F0F0', width: '100%', marginVertical: 4 }} />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+                      <Text style={{ fontSize: 10, color: LINK, fontWeight: '700' }}>Total</Text>
+                      <Text style={{ fontSize: 10, color: LINK, fontWeight: '700' }}>{a.total || '--'}</Text>
                     </View>
                   </View>
-                ) : (
-                  <Text style={styles.calDetailAbsent}>No attendance recorded</Text>
-                )}
-              </View>
-            )}
-          </View>
-        )}
-      </View>
+                );
+              })}
+            </ScrollView>
+          )}
 
-      {/* ── User Details ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>User Details</Text>
-        <View style={styles.detailCard}>
-          {userDetails.map((item, i, arr) => (
-            <View key={i}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailIcon}>{item.icon}</Text>
-                <View style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{item.label}</Text>
-                  <Text style={styles.detailValue}>{item.value || '—'}</Text>
+          {/* Month Calendar View */}
+          {attendanceTab === 'month' && (
+            <View style={{ ...CARD, padding: 16 }}>
+              {/* Month Navigator */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <TouchableOpacity
+                  onPress={prevMonth}
+                  style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F0F4F8', justifyContent: 'center', alignItems: 'center' }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chevron-back" size={18} color={NAVY} />
+                </TouchableOpacity>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: NAVY }}>
+                  {MONTH_NAMES[calMonth - 1]} {calYear}
+                </Text>
+                <TouchableOpacity
+                  onPress={nextMonth}
+                  style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F0F4F8', justifyContent: 'center', alignItems: 'center' }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chevron-forward" size={18} color={NAVY} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Day Headers */}
+              <View style={{ flexDirection: 'row', marginBottom: 6 }}>
+                {DAY_HEADERS.map(d => (
+                  <Text key={d} style={{ width: CAL_CELL, textAlign: 'center', fontSize: 11, fontWeight: '700', color: MUTED }}>
+                    {d}
+                  </Text>
+                ))}
+              </View>
+
+              {/* Calendar Grid */}
+              {monthlyLoading ? (
+                <ActivityIndicator size="small" color={NAVY} style={{ marginVertical: 24 }} />
+              ) : (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                  {calCells.map((day, idx) => {
+                    if (!day) return <View key={`b-${idx}`} style={{ width: CAL_CELL, height: CAL_CELL + 14 }} />;
+                    const rec        = recordMap[day];
+                    const isToday    = day === today.getDate() && calMonth === today.getMonth() + 1 && calYear === today.getFullYear();
+                    const isSelected = selectedDay === day;
+                    return (
+                      <TouchableOpacity
+                        key={day}
+                        style={{
+                          width: CAL_CELL, height: CAL_CELL + 14,
+                          alignItems: 'center', justifyContent: 'center', marginBottom: 2,
+                          borderRadius: 10,
+                          backgroundColor: isSelected ? NAVY : isToday ? '#EEF4FF' : 'transparent',
+                        }}
+                        onPress={() => setSelectedDay(isSelected ? null : day)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={{
+                          fontSize: 13, fontWeight: isToday || isSelected ? '800' : '600',
+                          color: isSelected ? '#FFFFFF' : isToday ? NAVY : TEXT,
+                        }}>
+                          {day}
+                        </Text>
+                        <Text style={{
+                          fontSize: 9, fontWeight: '700', marginTop: 2,
+                          color: isSelected
+                            ? 'rgba(255,255,255,0.80)'
+                            : rec?.total && rec.total !== '00:00' ? '#2E7D32' : '#D0D5DD',
+                        }}>
+                          {rec?.total ?? '00:00'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Legend */}
+              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F0F0F0' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#2E7D32' }}>08:30</Text>
+                  <Text style={{ fontSize: 12, color: MUTED }}>= Present</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#D0D5DD' }}>00:00</Text>
+                  <Text style={{ fontSize: 12, color: MUTED }}>= Absent</Text>
                 </View>
               </View>
-              {i < arr.length - 1 && <View style={styles.detailDivider} />}
-            </View>
-          ))}
-        </View>
-      </View>
 
-      <View style={{ height: 28 }} />
-    </ScrollView>
+              {/* Selected Day Detail */}
+              {selectedDay && (
+                <View style={{ marginTop: 14, backgroundColor: '#F8FAFF', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#E4EAF2' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 14, textAlign: 'center' }}>
+                    {new Date(calYear, calMonth - 1, selectedDay)
+                      .toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </Text>
+                  {selectedRecord?.present ? (
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {[
+                        { label: 'In Time',  value: selectedRecord.in_time },
+                        { label: 'Out Time', value: selectedRecord.out_time },
+                        { label: 'Total',    value: selectedRecord.total, accent: true },
+                      ].map((item, i) => (
+                        <React.Fragment key={i}>
+                          <View style={{ flex: 1, alignItems: 'center' }}>
+                            <Text style={{ fontSize: 11, color: MUTED, fontWeight: '600', marginBottom: 4 }}>{item.label}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: item.accent ? '#2E7D32' : TEXT }}>{item.value || '--'}</Text>
+                          </View>
+                          {i < 2 && <View style={{ width: 1, height: 36, backgroundColor: '#E0E8F0' }} />}
+                        </React.Fragment>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 13, color: MUTED, textAlign: 'center', paddingVertical: 6 }}>
+                      No attendance recorded
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* ── User Details ── */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>User Details</Text>
+          </View>
+          <View style={{ ...CARD, paddingVertical: 4 }}>
+            {userDetails.map((item, i, arr) => (
+              <View key={i}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#E8EEFF', justifyContent: 'center', alignItems: 'center', marginRight: 14 }}>
+                    <Ionicons name={item.icon} size={20} color="#3D5AFE" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: MUTED, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>
+                      {item.label}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: TEXT, fontWeight: '600' }}>
+                      {item.value || '—'}
+                    </Text>
+                  </View>
+                </View>
+                {i < arr.length - 1 && <View style={{ height: 1, backgroundColor: '#F5F6FA', marginHorizontal: 16 }} />}
+              </View>
+            ))}
+          </View>
+        </View>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
