@@ -5,25 +5,26 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import MapView, { Circle, Marker } from 'react-native-maps';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ATTENDANCE_ENDPOINTS } from '../../../../constants/api';
 import styles from './styles';
 
 // ── Office location & geofence ──────────────────────────────────
 const OFFICE = {
-  latitude: 23.1318,
+  latitude:  23.1318,
   longitude: 72.5691,
-  radius: 500,         // 500 metres — must be within this range to sign in
+  radius:    500,
 };
 
-// ── Helpers ─────────────────────────────────────────────────────
 const getDistance = (lat1, lng1, lat2, lng2) => {
-  const R = 6371000;
+  const R    = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
@@ -33,7 +34,14 @@ const formatTime = (d) =>
 const formatDate = (d) =>
   `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
 
-// ── Screen ───────────────────────────────────────────────────────
+const parseTimeStr = (str) => {
+  if (!str) return null;
+  const [h, m, s] = str.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, s || 0, 0);
+  return d;
+};
+
 const SignInInternalScreen = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [locLoading, setLocLoading]     = useState(true);
@@ -44,24 +52,57 @@ const SignInInternalScreen = () => {
   const [workSeconds, setWorkSeconds]   = useState(0);
   const [remarks, setRemarks]           = useState('');
   const [moreDetail, setMoreDetail]     = useState(false);
+  const [submitting, setSubmitting]     = useState(false);
 
   const watchIdRef = useRef(null);
   const timerRef   = useRef(null);
+  const mapRef     = useRef(null);
   const today      = new Date();
 
   useEffect(() => {
     startLocation();
+    loadTodayRecord();
     return () => {
       if (watchIdRef.current) watchIdRef.current.remove();
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current)   clearInterval(timerRef.current);
     };
   }, []);
+
+  // Restore today's sign-in state from backend
+  const loadTodayRecord = async () => {
+    try {
+      const token    = await AsyncStorage.getItem('access_token');
+      const response = await fetch(ATTENDANCE_ENDPOINTS.today, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.in_time) {
+        const inDate = parseTimeStr(data.in_time);
+        setInTime(inDate);
+        if (data.signed_in) {
+          setSignedIn(true);
+          const elapsed = Math.floor((Date.now() - inDate.getTime()) / 1000);
+          setWorkSeconds(elapsed > 0 ? elapsed : 0);
+          timerRef.current = setInterval(() => setWorkSeconds(s => s + 1), 1000);
+        } else if (data.out_time) {
+          setOutTime(parseTimeStr(data.out_time));
+        }
+      }
+    } catch {
+      // non-fatal — screen still works without restoring state
+    }
+  };
 
   const onPosition = ({ coords }) => {
     const { latitude, longitude } = coords;
     setUserLocation({ latitude, longitude });
     setInGeofence(getDistance(latitude, longitude, OFFICE.latitude, OFFICE.longitude) <= OFFICE.radius);
     setLocLoading(false);
+    mapRef.current?.animateToRegion(
+      { latitude, longitude, latitudeDelta: 0.012, longitudeDelta: 0.012 },
+      600,
+    );
   };
 
   const startLocation = async () => {
@@ -74,25 +115,61 @@ const SignInInternalScreen = () => {
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
     onPosition(pos);
     watchIdRef.current = await Location.watchPositionAsync(
-      { accuracy: Location.Accuracy.High, distanceInterval: 5, timeInterval: 5000 },
+      { accuracy: Location.Accuracy.High, distanceInterval: 3, timeInterval: 2000 },
       onPosition,
     );
   };
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     if (!inGeofence) {
       Alert.alert('Outside Office Zone', 'You must be within the office area to sign in.');
       return;
     }
-    setInTime(new Date());
-    setSignedIn(true);
-    timerRef.current = setInterval(() => setWorkSeconds((s) => s + 1), 1000);
+    setSubmitting(true);
+    try {
+      const token    = await AsyncStorage.getItem('access_token');
+      const response = await fetch(ATTENDANCE_ENDPOINTS.signIn, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const inDate = parseTimeStr(data.in_time);
+        setInTime(inDate);
+        setSignedIn(true);
+        setWorkSeconds(0);
+        timerRef.current = setInterval(() => setWorkSeconds(s => s + 1), 1000);
+      } else {
+        Alert.alert('Sign In Failed', data.detail || 'Could not sign in.');
+      }
+    } catch {
+      Alert.alert('Error', 'Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSignOut = () => {
-    setOutTime(new Date());
-    setSignedIn(false);
-    if (timerRef.current) clearInterval(timerRef.current);
+  const handleSignOut = async () => {
+    setSubmitting(true);
+    try {
+      const token    = await AsyncStorage.getItem('access_token');
+      const response = await fetch(ATTENDANCE_ENDPOINTS.signOut, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setOutTime(parseTimeStr(data.out_time));
+        setSignedIn(false);
+        if (timerRef.current) clearInterval(timerRef.current);
+      } else {
+        Alert.alert('Sign Out Failed', data.detail || 'Could not sign out.');
+      }
+    } catch {
+      Alert.alert('Error', 'Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const workHours = () => {
@@ -113,24 +190,17 @@ const SignInInternalScreen = () => {
           </View>
         ) : (
           <MapView
+            ref={mapRef}
             style={styles.map}
-            showsUserLocation={true}
-            followsUserLocation={true}
+            showsUserLocation
             showsMyLocationButton={false}
             initialRegion={{
-              latitude: userLocation ? userLocation.latitude : OFFICE.latitude,
-              longitude: userLocation ? userLocation.longitude : OFFICE.longitude,
-              latitudeDelta: 0.012,
+              latitude:      userLocation?.latitude  ?? OFFICE.latitude,
+              longitude:     userLocation?.longitude ?? OFFICE.longitude,
+              latitudeDelta:  0.012,
               longitudeDelta: 0.012,
             }}
-            region={userLocation ? {
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
-              latitudeDelta: 0.012,
-              longitudeDelta: 0.012,
-            } : undefined}
           >
-            {/* Office geofence circle */}
             <Circle
               center={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }}
               radius={OFFICE.radius}
@@ -138,7 +208,6 @@ const SignInInternalScreen = () => {
               strokeWidth={2}
               fillColor={inGeofence ? 'rgba(46,125,50,0.12)' : 'rgba(198,40,40,0.10)'}
             />
-            {/* Office pin */}
             <Marker
               coordinate={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }}
               title="Office"
@@ -147,7 +216,6 @@ const SignInInternalScreen = () => {
           </MapView>
         )}
 
-        {/* Zone status bar at bottom of map */}
         {!locLoading && (
           <View style={[styles.mapStatusBar, { backgroundColor: inGeofence ? '#2E7D32' : '#C62828' }]}>
             <View style={styles.locDot} />
@@ -171,7 +239,7 @@ const SignInInternalScreen = () => {
         </View>
         <View style={[styles.statusBox, styles.statusBoxRight]}>
           <Text style={styles.statusLabel}>STATUS</Text>
-          <Text style={styles.statusValue}>{signedIn ? 'Signed In' : 'Sign In'}</Text>
+          <Text style={styles.statusValue}>{signedIn ? 'Signed In' : outTime ? 'Signed Out' : 'Not Signed In'}</Text>
         </View>
       </View>
 
@@ -195,17 +263,6 @@ const SignInInternalScreen = () => {
         </View>
         <View style={styles.divider} />
 
-        <View style={styles.timeRow}>
-          <View style={[styles.timeBox, { marginRight: 8 }]}>
-            <Text style={styles.timeLabel}>DAILY STATUS</Text>
-            <Text style={styles.timeMuted}>No</Text>
-          </View>
-          <View style={styles.timeBox}>
-            <Text style={styles.timeLabel}>DAILY EXPENSES</Text>
-            <Text style={styles.timeMuted}>0</Text>
-          </View>
-        </View>
-
         <Text style={styles.fieldLabel}>Remarks</Text>
         <TextInput
           style={styles.remarksInput}
@@ -217,19 +274,13 @@ const SignInInternalScreen = () => {
         />
         <View style={styles.divider} />
 
-        <TouchableOpacity style={styles.expandBtn}>
-          <Text style={styles.expandText}>MODIFY ATTENDANCE</Text>
-          <Text style={styles.expandArrow}>›</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.expandBtn} onPress={() => setMoreDetail(!moreDetail)}>
           <Text style={styles.expandText}>MORE DETAIL</Text>
           <Text style={styles.expandArrow}>{moreDetail ? '∧' : '∨'}</Text>
         </TouchableOpacity>
         {moreDetail && (
           <View style={styles.moreDetail}>
-            <Text style={styles.moreDetailText}>Break: 00:00</Text>
-            <Text style={styles.moreDetailText}>Total: 00:00</Text>
+            <Text style={styles.moreDetailText}>Total: {workHours()}</Text>
           </View>
         )}
       </View>
@@ -237,23 +288,31 @@ const SignInInternalScreen = () => {
       {/* Bottom Buttons */}
       <View style={styles.bottomRow}>
         <TouchableOpacity
-          style={[styles.bottomBtn, styles.signOutBtn, !signedIn && styles.btnDisabled]}
+          style={[styles.bottomBtn, styles.signOutBtn, (!signedIn || submitting) && styles.btnDisabled]}
           onPress={handleSignOut}
-          disabled={!signedIn}
+          disabled={!signedIn || submitting}
           activeOpacity={0.8}
         >
-          <Text style={styles.bottomBtnText}>SIGN OUT</Text>
+          {submitting && !signedIn ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.bottomBtnText}>SIGN OUT</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.bottomBtn, styles.checkInBtn, (!inGeofence || signedIn) && styles.btnDisabled]}
+          style={[styles.bottomBtn, styles.checkInBtn, (!inGeofence || signedIn || submitting) && styles.btnDisabled]}
           onPress={handleSignIn}
-          disabled={!inGeofence || signedIn}
+          disabled={!inGeofence || signedIn || submitting}
           activeOpacity={0.8}
         >
-          <Text style={styles.bottomBtnText}>
-            {locLoading ? 'LOCATING...' : inGeofence ? 'CHECK IN' : 'OUT OF ZONE'}
-          </Text>
+          {submitting && signedIn === false ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.bottomBtnText}>
+              {locLoading ? 'LOCATING...' : inGeofence ? 'CHECK IN' : 'OUT OF ZONE'}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
