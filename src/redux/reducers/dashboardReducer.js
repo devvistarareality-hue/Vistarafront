@@ -2,14 +2,19 @@ import {
   DASHBOARD_REQUEST,
   DASHBOARD_SUCCESS,
   DASHBOARD_FAILURE,
+  MONTHLY_ATTENDANCE_REQUEST,
+  MONTHLY_ATTENDANCE_SUCCESS,
+  MONTHLY_ATTENDANCE_FAILURE,
 } from '../types/dashboardTypes';
 
 const initialState = {
-  loading: false,
-  user: null,
-  stats: null,
-  weeklyAttendance: [],
-  error: null,
+  loading:           false,
+  user:              null,
+  stats:             null,
+  weeklyAttendance:  [],
+  monthlyAttendance: null,
+  monthlyLoading:    false,
+  error:             null,
 };
 
 const dashboardReducer = (state = initialState, action) => {
@@ -28,6 +33,15 @@ const dashboardReducer = (state = initialState, action) => {
 
     case DASHBOARD_FAILURE:
       return { ...state, loading: false, error: action.payload };
+
+    case MONTHLY_ATTENDANCE_REQUEST:
+      return { ...state, monthlyLoading: true };
+
+    case MONTHLY_ATTENDANCE_SUCCESS:
+      return { ...state, monthlyLoading: false, monthlyAttendance: action.payload };
+
+    case MONTHLY_ATTENDANCE_FAILURE:
+      return { ...state, monthlyLoading: false };
 
     default:
       return state;

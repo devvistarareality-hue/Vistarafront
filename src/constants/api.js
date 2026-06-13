@@ -1,5 +1,10 @@
 export const BASE_URL = 'http://192.168.1.9:8000';
 
+export const ATTENDANCE_ENDPOINTS = {
+  dashboard: `${BASE_URL}/api/attendance/dashboard/`,
+  monthly:   (year, month) => `${BASE_URL}/api/attendance/monthly/?year=${year}&month=${month}`,
+};
+
 export const PRESALES_ENDPOINTS = {
   dashboard: `${BASE_URL}/api/presales/dashboard/`,
   team:      `${BASE_URL}/api/presales/team/`,
