@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/Dashboardscreen/Homescreen/Homescreen';
 import ModulesScreen from '../screens/Modulesscreen/ModulesScreen';
+import SettingsScreen from '../screens/Drawerscreen/Settingscreen/Settingscreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -38,6 +39,8 @@ const BottomTabNavigator = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Modules') {
             iconName = focused ? 'grid' : 'grid-outline';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings' : 'settings-outline';
           }
           return <Ionicons name={iconName} size={22} color={color} />;
         },
@@ -52,6 +55,11 @@ const BottomTabNavigator = () => {
         name="Modules"
         component={ModulesScreen}
         options={{ tabBarLabel: 'Modules' }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ tabBarLabel: 'Settings' }}
       />
     </Tab.Navigator>
   );
