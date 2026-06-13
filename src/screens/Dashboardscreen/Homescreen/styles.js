@@ -2,209 +2,260 @@ import { StyleSheet, Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F2F5',
-  },
+const NAVY   = '#1E4080';
+const ORANGE = '#D44B1A';
+const BG     = '#F0F4F8';
 
-  // ── Profile Card ──
-  profileCard: {
-    backgroundColor: '#1E4080',
+const styles = StyleSheet.create({
+  container:       { flex: 1, backgroundColor: BG },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG },
+
+  // ── Header ──
+  header: {
+    backgroundColor: NAVY,
     alignItems: 'center',
-    paddingTop: 28,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 52,
   },
-  avatarWrapper: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#fff',
+  headerCurve: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 36,
+    backgroundColor: BG,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+  },
+  avatarRing: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: ORANGE,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    elevation: 4,
+    marginBottom: 14,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#D0D8E0',
+  avatar: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: '#2D5BA8',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarIcon: {
-    fontSize: 44,
+  avatarText: {
+    color: '#fff',
+    fontSize: 38,
+    fontWeight: '800',
   },
   userName: {
     color: '#fff',
-    fontSize: width * 0.045,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '700',
     marginBottom: 4,
   },
   userRole: {
-    color: '#B0C4DE',
-    fontSize: width * 0.035,
-    marginBottom: 20,
+    color: '#A8C0E0',
+    fontSize: 13,
+    marginBottom: 12,
   },
+  orgBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 14,
+  },
+  orgDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+    marginRight: 8,
+  },
+  orgText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // ── Stats ──
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 12,
-    paddingVertical: 16,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    gap: 10,
   },
-  statItem: {
-    width: '50%',
+  statCard: {
+    width: (width - 44) / 2,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+  },
+  statIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
+    marginBottom: 12,
   },
-  statDivider: {
-    display: 'none', // spacing handled by padding
+  statIcon:  { fontSize: 22 },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1A1A2E',
+    marginBottom: 2,
   },
   statLabel: {
-    color: '#B0C4DE',
-    fontSize: width * 0.03,
-    marginBottom: 4,
-  },
-  statValue: {
-    color: '#fff',
-    fontSize: width * 0.055,
-    fontWeight: 'bold',
+    fontSize: 12,
+    color: '#888',
+    fontWeight: '500',
   },
 
-  // ── Action Buttons ──
+  // ── Actions ──
   actionRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    gap: 10,
   },
   actionBtn: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-  },
-  signInBtn: { backgroundColor: '#D44B1A' },
-  signOutBtn: { backgroundColor: '#D44B1A' },
-  leaveBtn:  { backgroundColor: '#D44B1A' },
-  actionBtnIcon: {
-    fontSize: 18,
-    color: '#fff',
-    marginBottom: 4,
-  },
-  actionBtnText: {
-    color: '#fff',
-    fontSize: width * 0.028,
-    fontWeight: 'bold',
-    letterSpacing: 0.3,
-  },
-
-  // ── Cards ──
-  card: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
   },
-  cardTitle: {
-    fontSize: width * 0.038,
+  actionIcon: { fontSize: 20, color: '#fff', marginBottom: 5 },
+  actionText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+
+  // ── Section ──
+  section: {
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#1E4080',
-    marginBottom: 14,
-    borderLeftWidth: 4,
-    borderLeftColor: '#D44B1A',
-    paddingLeft: 10,
+    color: NAVY,
+    marginBottom: 12,
+    paddingLeft: 2,
   },
 
-  // ── Attendance Table ──
-  table: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  tableRow: {
-    flexDirection: 'row',
+  // ── Attendance Day Cards ──
+  dayCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 12,
+    marginRight: 10,
+    width: 90,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
     alignItems: 'center',
   },
-  rowBg: {
-    backgroundColor: '#F8F9FA',
-  },
-  totalRow: {
-    backgroundColor: '#EEF2FA',
-    borderTopWidth: 2,
-    borderTopColor: '#D44B1A',
-  },
-  tableCell: {
-    paddingVertical: 8,
-    paddingHorizontal: 2,
-    textAlign: 'center',
-    fontSize: width * 0.026,
-    color: '#333',
-  },
-  tableHeader: {
-    fontWeight: '700',
-    color: '#1E4080',
-    fontSize: width * 0.026,
-    textAlign: 'center',
-  },
-  labelCol: {
-    width: width * 0.12,
-    paddingLeft: 6,
-    textAlign: 'left',
-  },
-  dateCol: {
-    flex: 1,
-  },
-  rowLabel: {
-    color: '#555',
-    fontWeight: '600',
-  },
-  timeText: {
-    color: '#444',
-  },
-  totalLabel: {
-    fontWeight: 'bold',
-    color: '#D44B1A',
-  },
-  totalText: {
-    fontWeight: 'bold',
-    color: '#D44B1A',
-  },
-
-  // ── User Info ──
-  infoRow: {
-    paddingVertical: 10,
-  },
-  infoLabel: {
-    fontSize: width * 0.03,
-    fontWeight: '700',
-    color: '#888',
-    marginBottom: 2,
+  dayName: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: NAVY,
     letterSpacing: 0.5,
   },
-  infoValue: {
-    fontSize: width * 0.038,
-    color: '#222',
-    fontWeight: '500',
+  dayDate: {
+    fontSize: 11,
+    color: '#888',
+    marginBottom: 8,
+    marginTop: 2,
   },
-  infoDivider: {
+  dayDivider: {
     height: 1,
     backgroundColor: '#F0F0F0',
+    width: '100%',
+    marginBottom: 8,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 4,
+  },
+  timeLabel: {
+    fontSize: 10,
+    color: '#999',
+    fontWeight: '600',
+  },
+  timeValue: {
+    fontSize: 10,
+    color: '#333',
+    fontWeight: '600',
+  },
+  totalRowCard: {
+    marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  totalLabelCard: { fontSize: 10, color: ORANGE, fontWeight: '700' },
+  totalValueCard: { fontSize: 10, color: ORANGE, fontWeight: '700' },
+
+  // ── Detail Card ──
+  detailCard: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    paddingVertical: 4,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  detailIcon: {
+    fontSize: 22,
+    marginRight: 14,
+    width: 30,
+    textAlign: 'center',
+  },
+  detailText:  { flex: 1 },
+  detailLabel: {
+    fontSize: 11,
+    color: '#999',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 3,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#1A1A2E',
+    fontWeight: '600',
+  },
+  detailDivider: {
+    height: 1,
+    backgroundColor: '#F5F5F5',
+    marginHorizontal: 16,
   },
 });
 
