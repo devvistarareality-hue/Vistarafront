@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '../../constants/api';
+import { getBaseUrl } from '../../constants/api';
 import {
   REQUEST_LEAVE_REQUEST,
   REQUEST_LEAVE_SUCCESS,
@@ -11,7 +11,7 @@ export const requestLeave = (payload) => async (dispatch) => {
   dispatch({ type: REQUEST_LEAVE_REQUEST });
   try {
     const token = await AsyncStorage.getItem('access_token');
-    const response = await fetch(`${BASE_URL}/api/attendance/apply-leave/`, {
+    const response = await fetch(`${getBaseUrl()}/api/attendance/apply-leave/`, {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',

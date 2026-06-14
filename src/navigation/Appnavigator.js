@@ -21,6 +21,10 @@ import SettingsScreen from '../screens/Drawerscreen/Settingscreen/Settingscreen'
 import LeaveScreen from '../screens/Dashboardscreen/Leavescreen/LeaveScreen';
 import RequestLeaveScreen from '../screens/Dashboardscreen/Leavescreen/RequestLeave/RequestLeaveScreen';
 
+// User Management screens
+import UserManagementScreen from '../screens/UserManagement/UserManagementScreen';
+import CreateUserScreen     from '../screens/UserManagement/CreateUserScreen';
+
 // Pre-Sales screens
 import PreSalesDashboard  from '../screens/PreSalesscreen/Dashboard/PreSalesDashboard';
 import PreSalesLeads      from '../screens/PreSalesscreen/Leads/LeadsScreen';
@@ -65,6 +69,10 @@ const AppNavigator = () => {
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Leave" component={LeaveScreen} />
             <Stack.Screen name="RequestLeave" component={RequestLeaveScreen} />
+
+            {/* User Management screens */}
+            <Stack.Screen name="UserManagement" component={UserManagementScreen} />
+            <Stack.Screen name="CreateUser"     component={CreateUserScreen} />
 
             {/* Pre-Sales screens */}
             <Stack.Screen name="PreSales"           component={PreSalesDashboard} />

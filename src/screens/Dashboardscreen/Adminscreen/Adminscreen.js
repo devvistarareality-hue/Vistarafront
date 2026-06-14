@@ -63,7 +63,16 @@ const SECTIONS = [
   },
 ];
 
-const AdminScreen = () => {
+const SCREEN_NAV = {
+  'User Management': 'UserManagement',
+};
+
+const AdminScreen = ({ navigation }) => {
+  const handleItem = (item) => {
+    const screen = SCREEN_NAV[item];
+    if (screen) navigation.navigate(screen);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
@@ -89,6 +98,7 @@ const AdminScreen = () => {
                       key={item}
                       style={[styles.button, { backgroundColor: section.lightColor }]}
                       activeOpacity={0.7}
+                      onPress={() => handleItem(item)}
                     >
                       <Text style={styles.buttonText} numberOfLines={2}>
                         {item}

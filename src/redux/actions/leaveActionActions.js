@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '../../constants/api';
+import { getBaseUrl } from '../../constants/api';
 import {
   LEAVE_ACTION_REQUEST,
   LEAVE_ACTION_SUCCESS,
@@ -11,7 +11,7 @@ export const updateLeaveStatus = (id, leaveStatus) => async (dispatch) => {
   dispatch({ type: LEAVE_ACTION_REQUEST });
   try {
     const token = await AsyncStorage.getItem('access_token');
-    const response = await fetch(`${BASE_URL}/api/attendance/leave-action/${id}/`, {
+    const response = await fetch(`${getBaseUrl()}/api/attendance/leave-action/${id}/`, {
       method:  'PATCH',
       headers: {
         'Content-Type':  'application/json',

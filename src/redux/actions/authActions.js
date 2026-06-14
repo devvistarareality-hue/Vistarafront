@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '../../constants/api';
+import { getBaseUrl } from '../../constants/api';
 import {
   COMPANY_VERIFY_REQUEST,
   COMPANY_VERIFY_SUCCESS,
@@ -14,7 +14,7 @@ import {
 export const verifyCompany = (companyCode) => async (dispatch) => {
   dispatch({ type: COMPANY_VERIFY_REQUEST });
   try {
-    const response = await fetch(`${BASE_URL}/api/company/verify/`, {
+    const response = await fetch(`${getBaseUrl()}/api/company/verify/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ company_code: companyCode }),
@@ -34,7 +34,7 @@ export const verifyCompany = (companyCode) => async (dispatch) => {
 export const login = (companyCode, userCode, password) => async (dispatch) => {
   dispatch({ type: LOGIN_REQUEST });
   try {
-    const response = await fetch(`${BASE_URL}/api/auth/login/`, {
+    const response = await fetch(`${getBaseUrl()}/api/auth/login/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

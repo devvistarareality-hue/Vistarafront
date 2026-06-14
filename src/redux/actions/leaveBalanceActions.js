@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '../../constants/api';
+import { getBaseUrl } from '../../constants/api';
 import {
   LEAVE_BALANCE_REQUEST,
   LEAVE_BALANCE_SUCCESS,
@@ -15,7 +15,7 @@ export const fetchLeaveBalance = (page = 1) => async (dispatch) => {
   dispatch({ type: LEAVE_BALANCE_REQUEST, meta: { page } });
   try {
     const token = await AsyncStorage.getItem('access_token');
-    const response = await fetch(`${BASE_URL}/api/attendance/leave-balance/?page=${page}&page_size=${PAGE_SIZE}`, {
+    const response = await fetch(`${getBaseUrl()}/api/attendance/leave-balance/?page=${page}&page_size=${PAGE_SIZE}`, {
       method:  'GET',
       headers: {
         'Content-Type':  'application/json',

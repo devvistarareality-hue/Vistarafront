@@ -31,9 +31,9 @@ const MODULES = [
     linkColor: '#0097A7',
   },
   {
-    name: 'Admin',
+    name: 'User Management',
     sub: 'Users & Permissions',
-    screen: 'Admin',
+    screen: 'UserManagement',
     icon: 'people',
     iconBg: '#E8EEFF',
     iconColor: '#3D5AFE',

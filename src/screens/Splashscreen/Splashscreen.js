@@ -8,12 +8,19 @@ import {
 import { COLORS } from '../../constants/theme';
 import images from '../../constants/images';
 import styles from './styles';
+import { discoverServer } from '../../utils/serverDiscovery';
+import { setBaseUrl, getBaseUrl } from '../../constants/api';
 
 const SplashScreen = ({ onFinish }) => {
   const fadeAnim = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.8);
 
   useEffect(() => {
+    // Auto-discover server IP on the local network
+    discoverServer(getBaseUrl()).then((url) => {
+      if (url) setBaseUrl(url);
+    });
+
     // Start animations
     Animated.parallel([
       Animated.timing(fadeAnim, {
