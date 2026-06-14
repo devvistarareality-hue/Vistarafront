@@ -1,7 +1,7 @@
 // ── Base URL ──────────────────────────────────────────────────────────
 // Set PRODUCTION_URL to your Railway backend URL once deployed.
 // Leave empty to fall back to local network discovery (dev mode).
-const PRODUCTION_URL = '';  // e.g. 'https://vistararealtybackend-production-xxxx.up.railway.app'
+const PRODUCTION_URL = 'https://vistararealtybackend-production.up.railway.app';
 
 export let BASE_URL = PRODUCTION_URL || 'http://192.168.1.7:8000';
 
