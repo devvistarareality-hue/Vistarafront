@@ -1,7 +1,15 @@
-export let BASE_URL = 'http://192.168.1.7:8000';
+// ── Base URL ──────────────────────────────────────────────────────────
+// Set PRODUCTION_URL to your Railway backend URL once deployed.
+// Leave empty to fall back to local network discovery (dev mode).
+const PRODUCTION_URL = '';  // e.g. 'https://vistararealtybackend-production-xxxx.up.railway.app'
+
+export let BASE_URL = PRODUCTION_URL || 'http://192.168.1.7:8000';
 
 export const setBaseUrl = (url) => { BASE_URL = url; };
 export const getBaseUrl = () => BASE_URL;
+
+// If a production URL is set, skip local network discovery
+export const isProductionMode = () => Boolean(PRODUCTION_URL);
 
 export const ATTENDANCE_ENDPOINTS = {
   get dashboard() { return `${BASE_URL}/api/attendance/dashboard/`; },
@@ -12,22 +20,22 @@ export const ATTENDANCE_ENDPOINTS = {
 };
 
 export const USER_ENDPOINTS = {
-  get list()        { return `${BASE_URL}/api/auth/users/`; },
-  get detail()      { return (id) => `${BASE_URL}/api/auth/users/${id}/`; },
+  get list()   { return `${BASE_URL}/api/auth/users/`; },
+  get detail() { return (id) => `${BASE_URL}/api/auth/users/${id}/`; },
 };
 
 export const PRESALES_ENDPOINTS = {
-  get dashboard()           { return `${BASE_URL}/api/presales/dashboard/`; },
-  get team()                { return `${BASE_URL}/api/presales/team/`; },
+  get dashboard()          { return `${BASE_URL}/api/presales/dashboard/`; },
+  get team()               { return `${BASE_URL}/api/presales/team/`; },
 
-  get projects()            { return `${BASE_URL}/api/presales/projects/`; },
-  get projectDetail()       { return (id) => `${BASE_URL}/api/presales/projects/${id}/`; },
+  get projects()           { return `${BASE_URL}/api/presales/projects/`; },
+  get projectDetail()      { return (id) => `${BASE_URL}/api/presales/projects/${id}/`; },
 
-  get leads()               { return `${BASE_URL}/api/presales/leads/`; },
-  get leadDetail()          { return (id) => `${BASE_URL}/api/presales/leads/${id}/`; },
-  get leadStatus()          { return (id) => `${BASE_URL}/api/presales/leads/${id}/status/`; },
-  get leadTransfer()        { return (id) => `${BASE_URL}/api/presales/leads/${id}/transfer/`; },
-  get leadFollowup()        { return (id) => `${BASE_URL}/api/presales/leads/${id}/followup/`; },
-  get leadBulkUpload()      { return `${BASE_URL}/api/presales/leads/bulk-upload/`; },
-  get leadUploadTemplate()  { return `${BASE_URL}/api/presales/leads/upload-template/`; },
+  get leads()              { return `${BASE_URL}/api/presales/leads/`; },
+  get leadDetail()         { return (id) => `${BASE_URL}/api/presales/leads/${id}/`; },
+  get leadStatus()         { return (id) => `${BASE_URL}/api/presales/leads/${id}/status/`; },
+  get leadTransfer()       { return (id) => `${BASE_URL}/api/presales/leads/${id}/transfer/`; },
+  get leadFollowup()       { return (id) => `${BASE_URL}/api/presales/leads/${id}/followup/`; },
+  get leadBulkUpload()     { return `${BASE_URL}/api/presales/leads/bulk-upload/`; },
+  get leadUploadTemplate() { return `${BASE_URL}/api/presales/leads/upload-template/`; },
 };

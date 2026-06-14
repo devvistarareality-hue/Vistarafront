@@ -9,17 +9,19 @@ import { COLORS } from '../../constants/theme';
 import images from '../../constants/images';
 import styles from './styles';
 import { discoverServer } from '../../utils/serverDiscovery';
-import { setBaseUrl, getBaseUrl } from '../../constants/api';
+import { setBaseUrl, getBaseUrl, isProductionMode } from '../../constants/api';
 
 const SplashScreen = ({ onFinish }) => {
   const fadeAnim = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.8);
 
   useEffect(() => {
-    // Auto-discover server IP on the local network
-    discoverServer(getBaseUrl()).then((url) => {
-      if (url) setBaseUrl(url);
-    });
+    // Skip subnet scan in production — BASE_URL is already the fixed Railway URL
+    if (!isProductionMode()) {
+      discoverServer(getBaseUrl()).then((url) => {
+        if (url) setBaseUrl(url);
+      });
+    }
 
     // Start animations
     Animated.parallel([
