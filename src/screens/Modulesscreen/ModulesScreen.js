@@ -2,13 +2,13 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 
 const BG    = '#F5F6FA';
 const NAVY  = '#182350';
 const TEXT  = '#1A1A2E';
 const MUTED = '#8492A6';
-const LINK  = '#3D5AFE';
 
 const CARD = {
   backgroundColor: '#FFFFFF',
@@ -20,110 +20,80 @@ const CARD = {
   elevation: 4,
 };
 
-const MODULES = [
-  {
-    name: 'Pre Sales',
-    sub: 'Leads & Follow-ups',
-    screen: 'PreSales',
-    icon: 'funnel',
-    iconBg: '#E0F7FA',
-    iconColor: '#0097A7',
-    linkColor: '#0097A7',
-  },
-  {
-    name: 'User Management',
-    sub: 'Users & Permissions',
-    screen: 'UserManagement',
-    icon: 'people',
-    iconBg: '#E8EEFF',
-    iconColor: '#3D5AFE',
-    linkColor: '#3D5AFE',
-  },
-  {
-    name: 'Projects',
-    sub: 'Tasks & Progress',
-    screen: 'Projects',
-    icon: 'construct',
-    iconBg: '#E8F5E9',
-    iconColor: '#2E7D32',
-    linkColor: '#2E7D32',
-  },
-  {
-    name: 'Sites',
-    sub: 'Locations & Maps',
-    screen: 'Sites',
-    icon: 'location',
-    iconBg: '#E0F7FA',
-    iconColor: '#0097A7',
-    linkColor: '#0097A7',
-  },
-  {
-    name: 'Contractors',
-    sub: 'Vendors & Teams',
-    screen: 'Contractors',
-    icon: 'hammer',
-    iconBg: '#FFF3E0',
-    iconColor: '#E65100',
-    linkColor: '#E65100',
-  },
-  {
-    name: 'Purchase',
-    sub: 'Vendors & Orders',
-    screen: 'Purchase',
-    icon: 'cart',
-    iconBg: '#FFF3E0',
-    iconColor: '#E65100',
-    linkColor: '#E65100',
-  },
-  {
-    name: 'Inventory',
-    sub: 'Stock & Materials',
-    screen: 'Inventory',
-    icon: 'cube',
-    iconBg: '#FFF8E1',
+// Maps module names (from backend user.modules array) to display config
+const MODULE_CONFIG = {
+  Sales: {
+    label:     'Sales',
+    sub:       'Leads & Pipeline',
+    icon:      'pencil',
+    iconBg:    '#FFF8E1',
     iconColor: '#F9A825',
     linkColor: '#F9A825',
+    screen:    'Placeholder',
+    getParams: () => ({ title: 'Sales' }),
   },
-  {
-    name: 'Payments',
-    sub: 'Invoices & Finance',
-    screen: 'Payments',
-    icon: 'card',
-    iconBg: '#E8F5E9',
-    iconColor: '#2E7D32',
-    linkColor: '#2E7D32',
+  'Pre-Sales': {
+    label:     'Pre-Sales',
+    sub:       'Leads & Follow-ups',
+    icon:      'funnel',
+    iconBg:    '#E0F7FA',
+    iconColor: '#0097A7',
+    linkColor: '#0097A7',
+    screen:    'Placeholder',
+    getParams: () => ({ title: 'Pre-Sales' }),
   },
-  {
-    name: 'Reports',
-    sub: 'Analytics & Insights',
-    screen: 'Reports',
-    icon: 'bar-chart',
-    iconBg: '#E8F5E9',
-    iconColor: '#2E7D32',
-    linkColor: '#2E7D32',
-  },
-  {
-    name: 'Clients',
-    sub: 'CRM & Contacts',
-    screen: 'Clients',
-    icon: 'people-circle',
-    iconBg: '#E8EEFF',
+  HR: {
+    label:     'HR',
+    sub:       'People & Attendance',
+    icon:      'people',
+    iconBg:    '#E8EEFF',
     iconColor: '#3D5AFE',
     linkColor: '#3D5AFE',
+    screen:    'Placeholder',
+    getParams: (user) => ({
+      title: user?.manager_modules?.includes('HR') ? 'HR Manager' : 'HR Employee',
+    }),
   },
-  {
-    name: 'Settings',
-    sub: 'Config & Preferences',
-    screen: 'Settings',
-    icon: 'settings',
-    iconBg: '#F3E5F5',
-    iconColor: '#7B1FA2',
-    linkColor: '#7B1FA2',
+  Execution: {
+    label:     'Execution',
+    sub:       'Tasks & Progress',
+    icon:      'construct',
+    iconBg:    '#E8F5E9',
+    iconColor: '#2E7D32',
+    linkColor: '#2E7D32',
+    screen:    'Placeholder',
+    getParams: () => ({ title: 'Execution' }),
   },
-];
+  Purchase: {
+    label:     'Purchase',
+    sub:       'Vendors & Orders',
+    icon:      'cart',
+    iconBg:    '#FFF3E0',
+    iconColor: '#E65100',
+    linkColor: '#E65100',
+    screen:    'Placeholder',
+    getParams: () => ({ title: 'Purchase' }),
+  },
+  Land: {
+    label:     'Land',
+    sub:       'Properties & Sites',
+    icon:      'map',
+    iconBg:    '#F3E5F5',
+    iconColor: '#6A1B9A',
+    linkColor: '#6A1B9A',
+    screen:    'Placeholder',
+    getParams: () => ({ title: 'Land' }),
+  },
+};
 
 const ModulesScreen = () => {
   const navigation = useNavigation();
+  const user       = useSelector((s) => s.auth.user);
+
+  // Build module list from user.modules (filtered by MODULE_CONFIG)
+  const userModules = (user?.modules || [])
+    .filter((m) => MODULE_CONFIG[m])
+    .map((m) => MODULE_CONFIG[m]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -133,7 +103,7 @@ const ModulesScreen = () => {
         {/* ── Top Bar ── */}
         <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Modules</Text>
-          <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>Access all ERP features</Text>
+          <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>Your assigned ERP modules</Text>
         </View>
 
         {/* ── Module Manager Banner ── */}
@@ -174,38 +144,49 @@ const ModulesScreen = () => {
           flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
           paddingHorizontal: 20, marginBottom: 14,
         }}>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>All Modules</Text>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: LINK }}>{MODULES.length} total</Text>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>My Modules</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#3D5AFE' }}>
+            {userModules.length} {userModules.length === 1 ? 'module' : 'modules'}
+          </Text>
         </View>
 
         {/* ── Modules Grid ── */}
-        <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {MODULES.map((mod) => (
-            <TouchableOpacity
-              key={mod.screen}
-              style={{ width: '47%', ...CARD, padding: 16 }}
-              activeOpacity={0.85}
-              onPress={() => navigation.navigate(mod.screen)}
-            >
-              <View style={{
-                width: 48, height: 48, borderRadius: 14,
-                backgroundColor: mod.iconBg,
-                justifyContent: 'center', alignItems: 'center', marginBottom: 12,
-              }}>
-                <Ionicons name={mod.icon} size={24} color={mod.iconColor} />
-              </View>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 3 }}>
-                {mod.name}
-              </Text>
-              <Text style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>
-                {mod.sub}
-              </Text>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: mod.linkColor }}>
-                Configure →
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {userModules.length === 0 ? (
+          <View style={{ alignItems: 'center', marginTop: 40, paddingHorizontal: 40 }}>
+            <Ionicons name="cube-outline" size={48} color="#DDE3F0" />
+            <Text style={{ fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>
+              No modules assigned yet. Contact your administrator.
+            </Text>
+          </View>
+        ) : (
+          <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {userModules.map((mod) => (
+              <TouchableOpacity
+                key={mod.label}
+                style={{ width: '47%', ...CARD, padding: 16 }}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}
+              >
+                <View style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  backgroundColor: mod.iconBg,
+                  justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+                }}>
+                  <Ionicons name={mod.icon} size={24} color={mod.iconColor} />
+                </View>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 3 }}>
+                  {mod.label}
+                </Text>
+                <Text style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>
+                  {mod.sub}
+                </Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: mod.linkColor }}>
+                  Open →
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
       </ScrollView>
     </SafeAreaView>

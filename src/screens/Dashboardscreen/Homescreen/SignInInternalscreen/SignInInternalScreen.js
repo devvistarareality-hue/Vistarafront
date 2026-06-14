@@ -42,7 +42,7 @@ const parseTimeStr = (str) => {
   return d;
 };
 
-const SignInInternalScreen = () => {
+const SignInInternalScreen = ({ navigation }) => {
   const [userLocation, setUserLocation] = useState(null);
   const [locLoading, setLocLoading]     = useState(true);
   const [inGeofence, setInGeofence]     = useState(false);
@@ -162,6 +162,7 @@ const SignInInternalScreen = () => {
         setOutTime(parseTimeStr(data.out_time));
         setSignedIn(false);
         if (timerRef.current) clearInterval(timerRef.current);
+        navigation.navigate('PostSignOut');
       } else {
         Alert.alert('Sign Out Failed', data.detail || 'Could not sign out.');
       }
