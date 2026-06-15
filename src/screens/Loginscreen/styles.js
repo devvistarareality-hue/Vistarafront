@@ -15,10 +15,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   logoBox: {
-    width: 64, height: 64, borderRadius: 20,
-    backgroundColor: 'rgba(175,210,250,0.18)',
+    width: 80, height: 80, borderRadius: 24,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 18,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15, shadowRadius: 10, elevation: 6,
+  },
+  logoImg: {
+    width: 56, height: 56, borderRadius: 14,
   },
   brandName: { fontSize: 34, fontWeight: '800', color: '#FFFFFF', marginBottom: 6 },
   brandTag:  {

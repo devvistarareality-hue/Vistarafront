@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StatusBar,
   KeyboardAvoidingView, Platform, ScrollView,
-  TouchableWithoutFeedback, Keyboard, Alert, ActivityIndicator,
+  TouchableWithoutFeedback, Keyboard, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -56,7 +56,11 @@ const LoginScreen = () => {
           {/* ── Header Banner ── */}
           <View style={styles.header}>
             <View style={styles.logoBox}>
-              <Ionicons name="grid" size={30} color="#FFFFFF" />
+              <Image
+                source={require('../../../assets/icon.png')}
+                style={styles.logoImg}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.brandName}>Vistara</Text>
             <Text style={styles.brandTag}>ERP PLATFORM</Text>

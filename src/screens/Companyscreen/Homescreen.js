@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StatusBar,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -54,12 +54,18 @@ const HomeScreen = () => {
           paddingHorizontal: 20,
         }}>
           <View style={{
-            width: 64, height: 64, borderRadius: 20,
-            backgroundColor: 'rgba(175,210,250,0.18)',
+            width: 80, height: 80, borderRadius: 24,
+            backgroundColor: '#FFFFFF',
             justifyContent: 'center', alignItems: 'center',
             marginBottom: 18,
+            shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15, shadowRadius: 10, elevation: 6,
           }}>
-            <Ionicons name="grid" size={30} color="#FFFFFF" />
+            <Image
+              source={require('../../../assets/icon.png')}
+              style={{ width: 56, height: 56, borderRadius: 14 }}
+              resizeMode="contain"
+            />
           </View>
           <Text style={{ fontSize: 34, fontWeight: '800', color: '#FFFFFF', marginBottom: 6 }}>
             Vistara
