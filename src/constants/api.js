@@ -24,6 +24,11 @@ export const USER_ENDPOINTS = {
   get detail() { return (id) => `${BASE_URL}/api/auth/users/${id}/`; },
 };
 
+export const COMPANY_ENDPOINTS = {
+  get list()   { return `${BASE_URL}/api/company/all/`; },
+  get detail() { return (id) => `${BASE_URL}/api/company/${id}/`; },
+};
+
 export const PRESALES_ENDPOINTS = {
   get dashboard()          { return `${BASE_URL}/api/presales/dashboard/`; },
   get team()               { return `${BASE_URL}/api/presales/team/`; },

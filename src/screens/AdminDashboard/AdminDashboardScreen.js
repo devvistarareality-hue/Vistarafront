@@ -52,6 +52,26 @@ export default function AdminDashboardScreen({ navigation }) {
 
       {/* ── Module grid ── */}
       <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+        {user?.is_staff && (
+          <>
+            <Text style={s.sectionTitle}>PLATFORM</Text>
+            <View style={s.grid}>
+              <TouchableOpacity
+                style={s.card}
+                onPress={() => navigation.navigate('CompanyManagement')}
+                activeOpacity={0.8}
+              >
+                <View style={[s.iconBg, { backgroundColor: '#E0F7FA' }]}>
+                  <MaterialCommunityIcons name="domain" size={26} color="#0097A7" />
+                </View>
+                <Text style={s.cardName} numberOfLines={2}>Company Management</Text>
+                <Text style={[s.cardArrow, { color: '#0097A7' }]}>Open →</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ height: 8 }} />
+          </>
+        )}
+
         <Text style={s.sectionTitle}>ALL MODULES</Text>
         <View style={s.grid}>
           {ADMIN_MODULES.map((mod) => (

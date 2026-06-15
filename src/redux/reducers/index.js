@@ -7,6 +7,7 @@ import leaveHistoryReducer  from './leaveHistoryReducer';
 import leaveActionReducer   from './leaveActionReducer';
 import presalesReducer      from './presalesReducer';
 import userManagementReducer from './userManagementReducer';
+import companiesReducer      from './companiesReducer';
 
 const rootReducer = combineReducers({
   auth:         authReducer,
@@ -17,6 +18,7 @@ const rootReducer = combineReducers({
   leaveAction:  leaveActionReducer,
   presales:       presalesReducer,
   userManagement: userManagementReducer,
+  companies:      companiesReducer,
 });
 
 export default rootReducer;

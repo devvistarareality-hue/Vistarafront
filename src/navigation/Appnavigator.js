@@ -16,9 +16,10 @@ import LeaveScreen         from '../screens/Dashboardscreen/Leavescreen/LeaveScr
 import RequestLeaveScreen  from '../screens/Dashboardscreen/Leavescreen/RequestLeave/RequestLeaveScreen';
 
 // Admin-only screens
-import AdminDashboardScreen from '../screens/AdminDashboard/AdminDashboardScreen';
-import UserManagementScreen from '../screens/UserManagement/UserManagementScreen';
-import CreateUserScreen     from '../screens/UserManagement/CreateUserScreen';
+import AdminDashboardScreen     from '../screens/AdminDashboard/AdminDashboardScreen';
+import UserManagementScreen     from '../screens/UserManagement/UserManagementScreen';
+import CreateUserScreen         from '../screens/UserManagement/CreateUserScreen';
+import CompanyManagementScreen  from '../screens/AdminDashboard/CompanyManagementScreen';
 
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
@@ -44,10 +45,11 @@ const AppNavigator = () => {
         ) : isAdmin ? (
           // ── Admin — no bottom nav, full module access ────────────
           <>
-            <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
-            <Stack.Screen name="UserManagement" component={UserManagementScreen} />
-            <Stack.Screen name="CreateUser"     component={CreateUserScreen} />
-            <Stack.Screen name="Placeholder"    component={PlaceholderScreen} />
+            <Stack.Screen name="AdminDashboard"     component={AdminDashboardScreen} />
+            <Stack.Screen name="UserManagement"     component={UserManagementScreen} />
+            <Stack.Screen name="CreateUser"         component={CreateUserScreen} />
+            <Stack.Screen name="CompanyManagement"  component={CompanyManagementScreen} />
+            <Stack.Screen name="Placeholder"        component={PlaceholderScreen} />
           </>
 
         ) : (
