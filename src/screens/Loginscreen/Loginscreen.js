@@ -32,7 +32,7 @@ const LoginScreen = () => {
 
   const handleLogin = () => {
     if (!userCode.trim() || !password.trim()) {
-      Alert.alert('Required', 'Please enter both email and password.');
+      Alert.alert('Required', 'Please enter both user ID and password.');
       return;
     }
     dispatch(login(companyCode, userCode.trim(), password));
@@ -68,19 +68,19 @@ const LoginScreen = () => {
             <Text style={styles.cardTitle}>Welcome back</Text>
             <Text style={styles.cardSub}>Sign in to your workspace</Text>
 
-            {/* Email / User Code */}
-            <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
+            {/* User ID */}
+            <Text style={styles.fieldLabel}>USER ID</Text>
             <View style={styles.inputRow}>
-              <Ionicons name="mail-outline" size={20} color="#8492A6" style={styles.inputIcon} />
+              <Ionicons name="person-outline" size={20} color="#8492A6" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="you@vistararealty.com"
+                placeholder="Enter your user ID"
                 placeholderTextColor="#C0CAD8"
                 value={userCode}
                 onChangeText={setUserCode}
                 autoCapitalize="none"
                 autoCorrect={false}
-                keyboardType="email-address"
+                keyboardType="default"
                 editable={!loginLoading}
               />
             </View>

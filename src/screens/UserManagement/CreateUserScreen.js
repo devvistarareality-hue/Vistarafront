@@ -13,6 +13,25 @@ import {
 import { COLORS } from '../../constants/theme';
 import styles from './createStyles';
 
+const VOWELS = new Set(['a', 'e', 'i', 'o', 'u']);
+
+function firstConsonantFrom(str, startIdx) {
+  for (let i = startIdx; i < str.length; i++) {
+    if (!VOWELS.has(str[i])) return str[i];
+  }
+  return str[startIdx] || 'X';
+}
+
+function generateUserCodePrefix(companyCode) {
+  const code = (companyCode || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (code.length < 3) return (code + 'XXX').slice(0, 3).toUpperCase();
+  const n = code.length;
+  const c1 = firstConsonantFrom(code, 0);
+  const c2 = firstConsonantFrom(code, Math.floor(n * 0.4));
+  const c3 = firstConsonantFrom(code, Math.floor(n * 0.8));
+  return (c1 + c2 + c3).toUpperCase();
+}
+
 const ROLES   = ['Admin', 'Sales', 'Pre-Sales', 'HR', 'Exec'];
 const MODULES = ['Sales', 'Pre-Sales', 'HR', 'Execution', 'Purchase', 'Land'];
 
@@ -42,6 +61,8 @@ export default function CreateUserScreen({ navigation, route }) {
     creating, createError, createSuccess,
     updating, updateError, updateSuccess,
   } = useSelector((s) => s.userManagement);
+  const loggedInUser   = useSelector((s) => s.auth.user);
+  const userCodePrefix = generateUserCodePrefix(loggedInUser?.company_code);
 
   const busy    = isEdit ? updating  : creating;
   const err     = isEdit ? updateError : createError;
@@ -98,7 +119,7 @@ export default function CreateUserScreen({ navigation, route }) {
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
-      dispatch(createUser({ name, email, password, role, modules, manager_modules: managerModules }));
+      dispatch(createUser({ name, email, password, role, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix }));
     }
   };
 
@@ -152,7 +173,21 @@ export default function CreateUserScreen({ navigation, route }) {
           />
         </View>
 
-        {/* User Code — editable in edit mode, auto-generated on create */}
+        {/* User Code — prefix preview on create, editable on edit */}
+        {!isEdit && (
+          <>
+            <Text style={styles.label}>USER CODE PREFIX</Text>
+            <View style={[styles.inputWrap, { backgroundColor: '#F5F6FA' }]}>
+              <Ionicons name="id-card-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <Text style={[styles.input, { color: COLORS.textPrimary, paddingVertical: 12 }]}>{userCodePrefix}</Text>
+              <Text style={{ fontSize: 12, color: COLORS.textSecondary, paddingRight: 8 }}>auto</Text>
+            </View>
+            <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginBottom: 12, marginLeft: 2 }}>
+              Full code will be assigned by system (e.g. {userCodePrefix}001)
+            </Text>
+          </>
+        )}
+
         {isEdit && (
           <>
             <Text style={styles.label}>USER CODE</Text>
