@@ -28,19 +28,3 @@ export const COMPANY_ENDPOINTS = {
   get list()   { return `${BASE_URL}/api/company/all/`; },
   get detail() { return (id) => `${BASE_URL}/api/company/${id}/`; },
 };
-
-export const PRESALES_ENDPOINTS = {
-  get dashboard()          { return `${BASE_URL}/api/presales/dashboard/`; },
-  get team()               { return `${BASE_URL}/api/presales/team/`; },
-
-  get projects()           { return `${BASE_URL}/api/presales/projects/`; },
-  get projectDetail()      { return (id) => `${BASE_URL}/api/presales/projects/${id}/`; },
-
-  get leads()              { return `${BASE_URL}/api/presales/leads/`; },
-  get leadDetail()         { return (id) => `${BASE_URL}/api/presales/leads/${id}/`; },
-  get leadStatus()         { return (id) => `${BASE_URL}/api/presales/leads/${id}/status/`; },
-  get leadTransfer()       { return (id) => `${BASE_URL}/api/presales/leads/${id}/transfer/`; },
-  get leadFollowup()       { return (id) => `${BASE_URL}/api/presales/leads/${id}/followup/`; },
-  get leadBulkUpload()     { return `${BASE_URL}/api/presales/leads/bulk-upload/`; },
-  get leadUploadTemplate() { return `${BASE_URL}/api/presales/leads/upload-template/`; },
-};

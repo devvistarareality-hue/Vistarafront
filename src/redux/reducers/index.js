@@ -5,18 +5,16 @@ import requestLeaveReducer  from './requestLeaveReducer';
 import leaveBalanceReducer  from './leaveBalanceReducer';
 import leaveHistoryReducer  from './leaveHistoryReducer';
 import leaveActionReducer   from './leaveActionReducer';
-import presalesReducer      from './presalesReducer';
 import userManagementReducer from './userManagementReducer';
 import companiesReducer      from './companiesReducer';
 
 const rootReducer = combineReducers({
-  auth:         authReducer,
-  dashboard:    dashboardReducer,
-  requestLeave: requestLeaveReducer,
-  leaveBalance: leaveBalanceReducer,
-  leaveHistory: leaveHistoryReducer,
-  leaveAction:  leaveActionReducer,
-  presales:       presalesReducer,
+  auth:           authReducer,
+  dashboard:      dashboardReducer,
+  requestLeave:   requestLeaveReducer,
+  leaveBalance:   leaveBalanceReducer,
+  leaveHistory:   leaveHistoryReducer,
+  leaveAction:    leaveActionReducer,
   userManagement: userManagementReducer,
   companies:      companiesReducer,
 });
