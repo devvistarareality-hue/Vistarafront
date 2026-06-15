@@ -20,6 +20,7 @@ import AdminDashboardScreen     from '../screens/AdminDashboard/AdminDashboardSc
 import UserManagementScreen     from '../screens/UserManagement/UserManagementScreen';
 import CreateUserScreen         from '../screens/UserManagement/CreateUserScreen';
 import CompanyManagementScreen  from '../screens/AdminDashboard/CompanyManagementScreen';
+import EditCompanyScreen        from '../screens/AdminDashboard/EditCompanyScreen';
 
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
@@ -49,6 +50,7 @@ const AppNavigator = () => {
             <Stack.Screen name="UserManagement"     component={UserManagementScreen} />
             <Stack.Screen name="CreateUser"         component={CreateUserScreen} />
             <Stack.Screen name="CompanyManagement"  component={CompanyManagementScreen} />
+            <Stack.Screen name="EditCompany"        component={EditCompanyScreen} />
             <Stack.Screen name="Placeholder"        component={PlaceholderScreen} />
           </>
 

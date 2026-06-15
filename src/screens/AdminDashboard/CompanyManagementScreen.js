@@ -1,234 +1,191 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, Modal,
-  TextInput, ActivityIndicator, Alert, StyleSheet, StatusBar,
+  View, Text, FlatList, TouchableOpacity, TextInput,
+  StatusBar, ActivityIndicator, ScrollView, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchCompanies, updateCompany, resetUpdateCompany } from '../../redux/actions/companiesActions';
+import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { COLORS } from '../../constants/theme';
+
+const STATUS_FILTERS = ['All', 'Active', 'Inactive'];
+
+const AVATAR_COLORS = ['#182350', '#0097A7', '#3D5AFE', '#2E7D32', '#E65100', '#6A1B9A', '#F9A825'];
+
+function avatarColor(name = '') {
+  const idx = name.charCodeAt(0) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[idx] || '#182350';
+}
+
+function CompanyCard({ company, onEdit }) {
+  const initial = company.name ? company.name[0].toUpperCase() : '?';
+  const bg      = avatarColor(company.name);
+
+  return (
+    <TouchableOpacity style={s.card} activeOpacity={0.85} onPress={onEdit}>
+      <View style={[s.avatar, { backgroundColor: bg }]}>
+        <Text style={s.avatarText}>{initial}</Text>
+      </View>
+
+      <View style={s.cardBody}>
+        <Text style={s.companyName} numberOfLines={1}>{company.name}</Text>
+        <View style={s.tagRow}>
+          <View style={s.codeBadge}>
+            <Text style={s.codeText}>{company.code}</Text>
+          </View>
+          <View style={[s.statusBadge, { backgroundColor: company.is_active ? '#E8F5E9' : '#F5F6FA' }]}>
+            <Text style={[s.statusText, { color: company.is_active ? COLORS.success : COLORS.textSecondary }]}>
+              {company.is_active ? 'Active' : 'Inactive'}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={s.editBtn}
+        onPress={onEdit}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+      >
+        <Ionicons name="pencil-outline" size={16} color={COLORS.secondary} />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+}
 
 export default function CompanyManagementScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { companies, loading, error, updating, updateError, updateSuccess } =
-    useSelector((s) => s.companies);
+  const { companies, loading, error } = useSelector((s) => s.companies);
+  const [search,       setSearch]       = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
 
-  const [editTarget, setEditTarget] = useState(null);
-  const [newCode,    setNewCode]    = useState('');
-  const [newName,    setNewName]    = useState('');
+  useEffect(() => { dispatch(fetchCompanies()); }, []);
 
-  useEffect(() => {
-    dispatch(fetchCompanies());
-  }, []);
-
-  useEffect(() => {
-    if (updateSuccess) {
-      dispatch(resetUpdateCompany());
-      setEditTarget(null);
-    }
-  }, [updateSuccess]);
-
-  useEffect(() => {
-    if (updateError) {
-      Alert.alert('Error', updateError);
-      dispatch(resetUpdateCompany());
-    }
-  }, [updateError]);
-
-  const openEdit = (company) => {
-    setNewCode(company.code);
-    setNewName(company.name);
-    setEditTarget(company);
-  };
-
-  const handleSave = () => {
-    const code = newCode.trim().toUpperCase();
-    const name = newName.trim();
-    if (!code) return Alert.alert('Validation', 'Company code cannot be empty.');
-    if (!name) return Alert.alert('Validation', 'Company name cannot be empty.');
-    if (code === editTarget.code && name === editTarget.name) {
-      setEditTarget(null);
-      return;
-    }
-    dispatch(updateCompany(editTarget.id, { code, name }));
-  };
-
-  const renderItem = ({ item }) => (
-    <View style={s.row}>
-      <View style={[s.codeBadge, { backgroundColor: item.is_active ? '#E8EEFF' : '#F5F6FA' }]}>
-        <Text style={[s.codeText, { color: item.is_active ? COLORS.primary : COLORS.textSecondary }]}>
-          {item.code}
-        </Text>
-      </View>
-      <View style={s.rowInfo}>
-        <Text style={s.companyName} numberOfLines={1}>{item.name}</Text>
-        <Text style={[s.statusLabel, { color: item.is_active ? COLORS.success : COLORS.textSecondary }]}>
-          {item.is_active ? 'Active' : 'Inactive'}
-        </Text>
-      </View>
-      <TouchableOpacity style={s.editBtn} onPress={() => openEdit(item)} activeOpacity={0.7}>
-        <Ionicons name="pencil-outline" size={17} color={COLORS.secondary} />
-      </TouchableOpacity>
-    </View>
-  );
+  const filtered = companies.filter((c) => {
+    const matchStatus =
+      activeFilter === 'All' ||
+      (activeFilter === 'Active' && c.is_active) ||
+      (activeFilter === 'Inactive' && !c.is_active);
+    const matchSearch =
+      !search ||
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.code.toLowerCase().includes(search.toLowerCase());
+    return matchStatus && matchSearch;
+  });
 
   return (
-    <SafeAreaView style={s.container} edges={['top']}>
+    <SafeAreaView style={s.screen} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
+      {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
+        <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={s.headerTitle}>Company Management</Text>
-        <View style={{ width: 36 }} />
+        <TouchableOpacity
+          style={s.iconBtn}
+          onPress={() => dispatch(fetchCompanies())}
+        >
+          <Ionicons name="refresh-outline" size={20} color={COLORS.textPrimary} />
+        </TouchableOpacity>
       </View>
 
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 48 }} color={COLORS.primary} size="large" />
-      ) : error ? (
-        <View style={s.center}>
-          <Ionicons name="alert-circle-outline" size={40} color={COLORS.error} />
-          <Text style={s.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => dispatch(fetchCompanies())} style={s.retryBtn}>
-            <Text style={s.retryText}>Retry</Text>
+      {/* Search */}
+      <View style={s.searchRow}>
+        <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} />
+        <TextInput
+          style={s.searchInput}
+          placeholder="Search by name or code..."
+          placeholderTextColor={COLORS.textSecondary}
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={16} color={COLORS.textSecondary} />
           </TouchableOpacity>
-        </View>
+        )}
+      </View>
+
+      {/* Filter tabs */}
+      <View style={s.tabsWrapper}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabsRow}>
+          {STATUS_FILTERS.map((f) => (
+            <TouchableOpacity
+              key={f}
+              style={[s.tab, activeFilter === f && s.tabActive]}
+              onPress={() => setActiveFilter(f)}
+            >
+              <Text style={[s.tabText, activeFilter === f && s.tabTextActive]}>{f}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Count */}
+      <Text style={s.countLabel}>
+        {loading ? '' : `${filtered.length} ${filtered.length === 1 ? 'company' : 'companies'}`}
+      </Text>
+
+      {/* Content */}
+      {loading ? (
+        <ActivityIndicator size="large" color={COLORS.secondary} style={{ marginTop: 40 }} />
+      ) : error ? (
+        <Text style={s.errorText}>{error}</Text>
+      ) : filtered.length === 0 ? (
+        <Text style={s.emptyText}>No companies found.</Text>
       ) : (
         <FlatList
-          data={companies}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderItem}
-          contentContainerStyle={s.list}
-          ItemSeparatorComponent={() => <View style={s.separator} />}
-          ListEmptyComponent={
-            <View style={s.center}>
-              <Ionicons name="business-outline" size={40} color={COLORS.textSecondary} />
-              <Text style={s.emptyText}>No companies found</Text>
-            </View>
-          }
+          data={filtered}
+          keyExtractor={(c) => String(c.id)}
+          renderItem={({ item }) => (
+            <CompanyCard
+              company={item}
+              onEdit={() => navigation.navigate('EditCompany', { company: item })}
+            />
+          )}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 }}
+          showsVerticalScrollIndicator={false}
         />
       )}
-
-      {/* Edit Modal */}
-      <Modal
-        visible={!!editTarget}
-        transparent
-        animationType="fade"
-        onRequestClose={() => !updating && setEditTarget(null)}
-      >
-        <View style={s.overlay}>
-          <View style={s.modal}>
-            <View style={s.modalHeader}>
-              <Ionicons name="business-outline" size={20} color={COLORS.primary} />
-              <Text style={s.modalTitle}>Edit Company</Text>
-            </View>
-
-            <Text style={s.fieldLabel}>COMPANY CODE</Text>
-            <TextInput
-              style={s.modalInput}
-              value={newCode}
-              onChangeText={(v) => setNewCode(v.toUpperCase())}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={20}
-              placeholder="e.g. VISR"
-              placeholderTextColor="#C0CAD8"
-              editable={!updating}
-            />
-
-            <Text style={s.fieldLabel}>COMPANY NAME</Text>
-            <TextInput
-              style={s.modalInput}
-              value={newName}
-              onChangeText={setNewName}
-              autoCapitalize="words"
-              autoCorrect={false}
-              maxLength={200}
-              placeholder="Company name"
-              placeholderTextColor="#C0CAD8"
-              editable={!updating}
-            />
-
-            <Text style={s.warningText}>
-              Changing the code updates login credentials for all users of this company.
-            </Text>
-
-            <View style={s.modalBtns}>
-              <TouchableOpacity
-                style={s.cancelBtn}
-                onPress={() => setEditTarget(null)}
-                disabled={updating}
-              >
-                <Text style={s.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={updating}>
-                {updating
-                  ? <ActivityIndicator color="#fff" size="small" />
-                  : <Text style={s.saveText}>Save</Text>
-                }
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F6FA' },
+  screen:      { flex: 1, backgroundColor: '#F5F6FA' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: '#E0E6F0',
-  },
-  backBtn:     { width: 36, height: 36, justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#EEF1F7' },
+  iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
-  list:      { padding: 16, paddingBottom: 40 },
-  separator: { height: 10 },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 6 },
+  searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
-  row: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
-    borderRadius: 14, padding: 14,
-    shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 6, elevation: 2,
-  },
-  codeBadge:   { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 12 },
-  codeText:    { fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
-  rowInfo:     { flex: 1 },
-  companyName: { fontSize: 15, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 2 },
-  statusLabel: { fontSize: 12, fontWeight: '500' },
-  editBtn:     { padding: 8, borderRadius: 8, backgroundColor: '#E8EEFF' },
+  tabsWrapper: { height: 44, marginTop: 14 },
+  tabsRow:     { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
+  tab:         { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#DDE3F0' },
+  tabActive:   { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
+  tabText:     { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
+  tabTextActive: { color: '#fff', fontWeight: '700' },
 
-  center:    { alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
-  errorText: { fontSize: 14, color: COLORS.error, marginTop: 12, textAlign: 'center' },
-  emptyText: { fontSize: 14, color: COLORS.textSecondary, marginTop: 12 },
-  retryBtn:  { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: 10 },
-  retryText: { color: '#fff', fontWeight: '700' },
+  countLabel: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', paddingHorizontal: 24 },
-  modal:   { backgroundColor: '#fff', borderRadius: 20, padding: 24 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
-  modalTitle:  { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  avatar:     { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  avatarText: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  cardBody:   { flex: 1 },
+  companyName:{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 6 },
 
-  fieldLabel:  { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 6, marginTop: 4 },
-  modalInput: {
-    borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 11, fontSize: 15,
-    color: COLORS.textPrimary, marginBottom: 12, backgroundColor: '#F8FAFC',
-  },
-  warningText: {
-    fontSize: 12, color: '#E65100', backgroundColor: '#FFF3E0',
-    padding: 10, borderRadius: 8, marginBottom: 20, lineHeight: 17,
-  },
+  tagRow:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  codeBadge:  { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, backgroundColor: '#E8EEFF' },
+  codeText:   { fontSize: 11, fontWeight: '700', color: COLORS.primary, letterSpacing: 0.5 },
+  statusBadge:{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  statusText: { fontSize: 11, fontWeight: '600' },
 
-  modalBtns:  { flexDirection: 'row', gap: 10 },
-  cancelBtn:  { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, borderColor: '#E0E6F0', alignItems: 'center' },
-  cancelText: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
-  saveBtn:    { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.primary, alignItems: 'center' },
-  saveText:   { fontSize: 15, fontWeight: '700', color: '#fff' },
+  editBtn:    { padding: 6, borderRadius: 8, backgroundColor: '#EEF1FF' },
+
+  errorText:  { textAlign: 'center', marginTop: 40, color: COLORS.error, fontSize: 14 },
+  emptyText:  { textAlign: 'center', marginTop: 40, color: COLORS.textSecondary, fontSize: 14 },
 });
