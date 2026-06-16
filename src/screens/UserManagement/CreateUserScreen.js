@@ -304,7 +304,21 @@ export default function CreateUserScreen({ navigation, route }) {
           ))}
         </ScrollView>
 
-        {/* Designation */}
+        {/* Module Access */}
+        <Text style={styles.label}>MODULE ACCESS</Text>
+        <View style={styles.pillGrid}>
+          {MODULES.map((mod) => {
+            const sel = modules.includes(mod);
+            return (
+              <TouchableOpacity key={mod} style={[styles.modulePill, sel && styles.modulePillActive]} onPress={() => toggleModule(mod)}>
+                <MaterialCommunityIcons name={MODULE_ICONS[mod] || 'circle'} size={13} color={sel ? '#fff' : COLORS.textSecondary} />
+                <Text style={[styles.modulePillText, sel && styles.modulePillTextActive]}>{mod}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Designation — shown after module selection */}
         <Text style={styles.label}>DESIGNATION</Text>
         {availableDesignations.length === 0 ? (
           <View style={[styles.inputWrap, { backgroundColor: '#F5F6FA' }]}>
@@ -339,20 +353,6 @@ export default function CreateUserScreen({ navigation, route }) {
             Selected: {designation}
           </Text>
         ) : null}
-
-        {/* Module Access */}
-        <Text style={styles.label}>MODULE ACCESS</Text>
-        <View style={styles.pillGrid}>
-          {MODULES.map((mod) => {
-            const sel = modules.includes(mod);
-            return (
-              <TouchableOpacity key={mod} style={[styles.modulePill, sel && styles.modulePillActive]} onPress={() => toggleModule(mod)}>
-                <MaterialCommunityIcons name={MODULE_ICONS[mod] || 'circle'} size={13} color={sel ? '#fff' : COLORS.textSecondary} />
-                <Text style={[styles.modulePillText, sel && styles.modulePillTextActive]}>{mod}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
 
         {/* Manager Access */}
         {modules.length > 0 && (
