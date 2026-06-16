@@ -11,6 +11,7 @@ import {
   createUser, resetCreateUser,
   updateUser, resetUpdateUser,
 } from '../../redux/actions/userManagementActions';
+import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { BASE_URL } from '../../constants/api';
 import { COLORS } from '../../constants/theme';
 import styles from './createStyles';
@@ -61,8 +62,9 @@ export default function CreateUserScreen({ navigation, route }) {
     creating, createError, createSuccess,
     updating, updateError, updateSuccess,
   } = useSelector((s) => s.userManagement);
-  const loggedInUser   = useSelector((s) => s.auth.user);
-  const userCodePrefix = generateUserCodePrefix(loggedInUser?.company_code);
+  const loggedInUser = useSelector((s) => s.auth.user);
+  const { companies } = useSelector((s) => s.companies);
+  const isVRLAdmin   = loggedInUser?.role === 'Admin' && loggedInUser?.company_code === 'VRL';
 
   const busy    = isEdit ? updating  : creating;
   const err     = isEdit ? updateError : createError;
@@ -80,6 +82,11 @@ export default function CreateUserScreen({ navigation, route }) {
   const [modules,         setModules]         = useState(editUser?.modules         ?? []);
   const [managerModules,  setManagerModules]  = useState(editUser?.manager_modules ?? []);
   const [allDesignations, setAllDesignations] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+
+  const userCodePrefix = generateUserCodePrefix(
+    isVRLAdmin && selectedCompany ? selectedCompany.code : loggedInUser?.company_code
+  );
 
   useEffect(() => {
     (async () => {
@@ -91,6 +98,7 @@ export default function CreateUserScreen({ navigation, route }) {
         if (res.ok) setAllDesignations(await res.json());
       } catch { /* ignore */ }
     })();
+    if (isVRLAdmin && !isEdit) dispatch(fetchCompanies());
   }, []);
 
   // Available designations based on selected modules
@@ -143,7 +151,10 @@ export default function CreateUserScreen({ navigation, route }) {
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
-      dispatch(createUser({ name, email, password, role, designation, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix }));
+      if (isVRLAdmin && !selectedCompany) return Alert.alert('Validation', 'Please select a company.');
+      const payload = { name, email, password, role, designation, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix };
+      if (isVRLAdmin && selectedCompany) payload.company_id = selectedCompany.id;
+      dispatch(createUser(payload));
     }
   };
 
@@ -183,6 +194,31 @@ export default function CreateUserScreen({ navigation, route }) {
             </View>
           )}
         </View>
+
+        {/* Company selector — VRL admin only, create mode only */}
+        {isVRLAdmin && !isEdit && (
+          <>
+            <Text style={styles.label}>COMPANY</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
+              {companies.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={[styles.pill, selectedCompany?.id === c.id && styles.pillActive]}
+                  onPress={() => setSelectedCompany(c)}
+                >
+                  <Text style={[styles.pillText, selectedCompany?.id === c.id && styles.pillTextActive]}>
+                    {c.code} — {c.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            {selectedCompany && (
+              <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginBottom: 12, marginLeft: 2 }}>
+                Creating user for: {selectedCompany.name}
+              </Text>
+            )}
+          </>
+        )}
 
         {/* Full Name */}
         <Text style={styles.label}>FULL NAME</Text>

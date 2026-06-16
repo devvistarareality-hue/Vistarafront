@@ -4,6 +4,7 @@ import {
   StatusBar, ActivityIndicator, ScrollView, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchCompanies } from '../../redux/actions/companiesActions';
@@ -59,7 +60,7 @@ export default function CompanyManagementScreen({ navigation }) {
   const [search,       setSearch]       = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
-  useEffect(() => { dispatch(fetchCompanies()); }, []);
+  useFocusEffect(useCallback(() => { dispatch(fetchCompanies()); }, [dispatch]));
 
   const filtered = companies.filter((c) => {
     const matchStatus =

@@ -30,8 +30,8 @@ import PostSignOutScreen  from '../screens/PostSignOut/PostSignOutScreen';
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
-  const user    = useSelector((state) => state.auth.user);
-  const isAdmin = user?.role === 'Admin';
+  const user        = useSelector((state) => state.auth.user);
+  const isVRLAdmin  = user?.role === 'Admin' && user?.company_code === 'VRL';
 
   return (
     <NavigationContainer>
@@ -44,8 +44,8 @@ const AppNavigator = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
           </>
 
-        ) : isAdmin ? (
-          // ── Admin — no bottom nav, full module access ────────────
+        ) : isVRLAdmin ? (
+          // ── VRL Admin — platform super admin, full module access ─
           <>
             <Stack.Screen name="AdminDashboard"     component={AdminDashboardScreen} />
             <Stack.Screen name="UserManagement"     component={UserManagementScreen} />
