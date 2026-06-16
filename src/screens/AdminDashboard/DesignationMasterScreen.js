@@ -51,7 +51,8 @@ export default function DesignationMasterScreen({ navigation }) {
         body:    JSON.stringify({ module: selectedModule, name: name.trim() }),
       });
       if (res.ok) {
-        setDesignations((prev) => [...prev, await res.json()]);
+        const newDesig = await res.json();
+        setDesignations((prev) => [...prev, newDesig]);
         setName('');
       } else {
         const data = await res.json();
