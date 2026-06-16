@@ -3,6 +3,7 @@ import { COMPANY_ENDPOINTS } from '../../constants/api';
 import {
   COMPANIES_FETCH_REQUEST, COMPANIES_FETCH_SUCCESS, COMPANIES_FETCH_FAILURE,
   COMPANY_UPDATE_REQUEST, COMPANY_UPDATE_SUCCESS, COMPANY_UPDATE_FAILURE, COMPANY_UPDATE_RESET,
+  COMPANY_CREATE_REQUEST, COMPANY_CREATE_SUCCESS, COMPANY_CREATE_FAILURE, COMPANY_CREATE_RESET,
 } from '../types/companiesTypes';
 
 const authHeaders = async () => {
@@ -48,3 +49,26 @@ export const updateCompany = (id, payload) => async (dispatch) => {
 };
 
 export const resetUpdateCompany = () => ({ type: COMPANY_UPDATE_RESET });
+
+export const createCompany = (payload) => async (dispatch) => {
+  dispatch({ type: COMPANY_CREATE_REQUEST });
+  try {
+    const headers = await authHeaders();
+    const res     = await fetch(COMPANY_ENDPOINTS.list, {
+      method:  'POST',
+      headers,
+      body:    JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      dispatch({ type: COMPANY_CREATE_SUCCESS, payload: data });
+    } else {
+      const msg = data.code?.[0] || data.detail || JSON.stringify(data);
+      dispatch({ type: COMPANY_CREATE_FAILURE, payload: msg });
+    }
+  } catch {
+    dispatch({ type: COMPANY_CREATE_FAILURE, payload: 'Network error.' });
+  }
+};
+
+export const resetCreateCompany = () => ({ type: COMPANY_CREATE_RESET });

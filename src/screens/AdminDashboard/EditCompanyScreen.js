@@ -6,36 +6,50 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
-import { updateCompany, resetUpdateCompany } from '../../redux/actions/companiesActions';
+import {
+  updateCompany, resetUpdateCompany,
+  createCompany, resetCreateCompany,
+} from '../../redux/actions/companiesActions';
 import { COLORS } from '../../constants/theme';
 import styles from '../UserManagement/createStyles';
 
 export default function EditCompanyScreen({ navigation, route }) {
-  const company = route?.params?.company;
-  const dispatch = useDispatch();
-  const { updating, updateError, updateSuccess } = useSelector((s) => s.companies);
+  const company = route?.params?.company ?? null;
+  const isEdit  = !!company;
 
-  const [code, setCode] = useState(company?.code ?? '');
-  const [name, setName] = useState(company?.name ?? '');
+  const dispatch = useDispatch();
+  const {
+    updating, updateError, updateSuccess,
+    creating, createError, createSuccess,
+  } = useSelector((s) => s.companies);
+
+  const busy    = isEdit ? updating  : creating;
+  const success = isEdit ? updateSuccess : createSuccess;
+  const err     = isEdit ? updateError   : createError;
+
+  const [code,      setCode]      = useState(company?.code ?? '');
+  const [name,      setName]      = useState(company?.name ?? '');
+  const [email,     setEmail]     = useState(company?.email ?? '');
+  const [phone,     setPhone]     = useState(company?.phone ?? '');
   const [codeError, setCodeError] = useState('');
 
   useEffect(() => {
-    if (updateSuccess) {
-      dispatch(resetUpdateCompany());
+    if (success) {
+      dispatch(isEdit ? resetUpdateCompany() : resetCreateCompany());
       navigation.goBack();
     }
-  }, [updateSuccess]);
+  }, [success]);
 
   useEffect(() => {
-    if (updateError) {
-      if (updateError.toLowerCase().includes('code')) {
-        setCodeError(updateError);
+    if (err) {
+      if (err.toLowerCase().includes('code')) {
+        setCodeError(err);
       } else {
-        Alert.alert('Error', updateError);
+        Alert.alert('Error', err);
       }
-      dispatch(resetUpdateCompany());
+      dispatch(isEdit ? resetUpdateCompany() : resetCreateCompany());
     }
-  }, [updateError]);
+  }, [err]);
 
   const handleSubmit = () => {
     const trimCode = code.trim().toUpperCase();
@@ -43,7 +57,11 @@ export default function EditCompanyScreen({ navigation, route }) {
     if (!trimCode) return Alert.alert('Validation', 'Company code is required.');
     if (!trimName) return Alert.alert('Validation', 'Company name is required.');
     setCodeError('');
-    dispatch(updateCompany(company.id, { code: trimCode, name: trimName }));
+    if (isEdit) {
+      dispatch(updateCompany(company.id, { code: trimCode, name: trimName }));
+    } else {
+      dispatch(createCompany({ code: trimCode, name: trimName, email: email.trim(), phone: phone.trim() }));
+    }
   };
 
   const avatarInitial = name.trim() ? name.trim()[0].toUpperCase() : '?';
@@ -57,7 +75,7 @@ export default function EditCompanyScreen({ navigation, route }) {
         <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="close" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Company</Text>
+        <Text style={styles.headerTitle}>{isEdit ? 'Edit Company' : 'New Company'}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -77,10 +95,12 @@ export default function EditCompanyScreen({ navigation, route }) {
             </Text>
             <Text style={styles.previewRole}>{code.trim().toUpperCase() || 'CODE'}</Text>
           </View>
-          <View style={styles.editBadge}>
-            <Ionicons name="pencil" size={12} color={COLORS.secondary} />
-            <Text style={styles.editBadgeText}>Editing</Text>
-          </View>
+          {isEdit && (
+            <View style={styles.editBadge}>
+              <Ionicons name="pencil" size={12} color={COLORS.secondary} />
+              <Text style={styles.editBadgeText}>Editing</Text>
+            </View>
+          )}
         </View>
 
         {/* Company Code */}
@@ -126,26 +146,65 @@ export default function EditCompanyScreen({ navigation, route }) {
           />
         </View>
 
-        {/* Warning */}
-        <View style={warnStyle.box}>
-          <Ionicons name="warning-outline" size={16} color="#E65100" style={{ marginRight: 8, marginTop: 1 }} />
-          <Text style={warnStyle.text}>
-            Changing the company code will update the login code for all users of this company.
-          </Text>
-        </View>
+        {/* Email — only for create */}
+        {!isEdit && (
+          <>
+            <Text style={styles.label}>EMAIL (OPTIONAL)</Text>
+            <View style={styles.inputWrap}>
+              <Ionicons name="mail-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="company@example.com"
+                placeholderTextColor={COLORS.textSecondary}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <Text style={styles.label}>PHONE (OPTIONAL)</Text>
+            <View style={styles.inputWrap}>
+              <Ionicons name="call-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="+91 98765 43210"
+                placeholderTextColor={COLORS.textSecondary}
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+              />
+            </View>
+          </>
+        )}
+
+        {/* Warning — only on edit */}
+        {isEdit && (
+          <View style={warnStyle.box}>
+            <Ionicons name="warning-outline" size={16} color="#E65100" style={{ marginRight: 8, marginTop: 1 }} />
+            <Text style={warnStyle.text}>
+              Changing the company code will update the login code for all users of this company.
+            </Text>
+          </View>
+        )}
 
         {/* Submit */}
         <TouchableOpacity
-          style={[styles.submitBtn, updating && { opacity: 0.7 }]}
+          style={[styles.submitBtn, busy && { opacity: 0.7 }]}
           onPress={handleSubmit}
-          disabled={updating}
+          disabled={busy}
         >
-          {updating ? (
+          {busy ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Ionicons name="checkmark-circle-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.submitBtnText}>Update Company</Text>
+              <Ionicons
+                name={isEdit ? 'checkmark-circle-outline' : 'business-outline'}
+                size={18}
+                color="#fff"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.submitBtnText}>{isEdit ? 'Update Company' : 'Create Company'}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -156,18 +215,18 @@ export default function EditCompanyScreen({ navigation, route }) {
 
 const warnStyle = {
   box: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection:   'row',
+    alignItems:      'flex-start',
     backgroundColor: '#FFF3E0',
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 20,
-    marginBottom: 4,
+    borderRadius:    10,
+    padding:         12,
+    marginTop:       20,
+    marginBottom:    4,
   },
   text: {
-    flex: 1,
-    fontSize: 12,
-    color: '#E65100',
+    flex:       1,
+    fontSize:   12,
+    color:      '#E65100',
     lineHeight: 18,
   },
 };

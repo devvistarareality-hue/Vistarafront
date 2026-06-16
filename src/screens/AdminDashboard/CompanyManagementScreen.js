@@ -145,10 +145,19 @@ export default function CompanyManagementScreen({ navigation }) {
               onEdit={() => navigation.navigate('EditCompany', { company: item })}
             />
           )}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* FAB — Create Company */}
+      <TouchableOpacity
+        style={s.fab}
+        onPress={() => navigation.navigate('EditCompany', {})}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={26} color="#fff" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -188,4 +197,21 @@ const s = StyleSheet.create({
 
   errorText:  { textAlign: 'center', marginTop: 40, color: COLORS.error, fontSize: 14 },
   emptyText:  { textAlign: 'center', marginTop: 40, color: COLORS.textSecondary, fontSize: 14 },
+
+  fab: {
+    position:        'absolute',
+    bottom:          28,
+    right:           20,
+    width:           56,
+    height:          56,
+    borderRadius:    28,
+    backgroundColor: '#182350',
+    justifyContent:  'center',
+    alignItems:      'center',
+    elevation:       6,
+    shadowColor:     '#182350',
+    shadowOffset:    { width: 0, height: 4 },
+    shadowOpacity:   0.30,
+    shadowRadius:    8,
+  },
 });
