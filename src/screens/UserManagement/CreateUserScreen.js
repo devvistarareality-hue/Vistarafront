@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StatusBar, ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   createUser, resetCreateUser,
   updateUser, resetUpdateUser,
 } from '../../redux/actions/userManagementActions';
+import { BASE_URL } from '../../constants/api';
 import { COLORS } from '../../constants/theme';
 import styles from './createStyles';
 
@@ -32,7 +34,7 @@ function generateUserCodePrefix(companyCode) {
   return (c1 + c2 + c3).toUpperCase();
 }
 
-const ROLES   = ['Admin', 'Sales', 'Pre-Sales', 'HR', 'Exec'];
+const ROLES   = ['Admin', 'Manager', 'Employee'];
 const MODULES = ['Sales', 'Pre-Sales', 'HR', 'Execution', 'Purchase', 'Land'];
 
 const MODULE_ICONS = {
@@ -45,11 +47,9 @@ const MODULE_ICONS = {
 };
 
 const ROLE_AVATAR_COLOR = {
-  Admin:       '#182350',
-  Sales:       '#F9A825',
-  'Pre-Sales': '#0097A7',
-  HR:          '#3D5AFE',
-  Exec:        '#7B1FA2',
+  Admin:    '#182350',
+  Manager:  '#F9A825',
+  Employee: '#3D5AFE',
 };
 
 export default function CreateUserScreen({ navigation, route }) {
@@ -75,9 +75,33 @@ export default function CreateUserScreen({ navigation, route }) {
   const [password,        setPassword]        = useState('');
   const [showPass,        setShowPass]        = useState(false);
   const [changePass,      setChangePass]      = useState(false);
-  const [role,            setRole]            = useState(editUser?.role            ?? 'Sales');
-  const [modules,         setModules]         = useState(editUser?.modules         ?? ['Sales']);
+  const [role,            setRole]            = useState(editUser?.role            ?? 'Employee');
+  const [designation,     setDesignation]     = useState(editUser?.designation     ?? '');
+  const [modules,         setModules]         = useState(editUser?.modules         ?? []);
   const [managerModules,  setManagerModules]  = useState(editUser?.manager_modules ?? []);
+  const [allDesignations, setAllDesignations] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await AsyncStorage.getItem('access_token');
+        const res   = await fetch(`${BASE_URL}/api/auth/designations/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) setAllDesignations(await res.json());
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  // Available designations based on selected modules
+  const availableDesignations = allDesignations.filter((d) => modules.includes(d.module));
+
+  // Reset designation if its module is deselected
+  useEffect(() => {
+    if (designation && !availableDesignations.find((d) => d.name === designation)) {
+      setDesignation('');
+    }
+  }, [modules]);
 
   useEffect(() => {
     if (success) {
@@ -115,11 +139,11 @@ export default function CreateUserScreen({ navigation, route }) {
 
     if (isEdit) {
       setUserCodeError('');
-      const payload = { name, email, user_code: userCode.toUpperCase().trim(), role, modules, manager_modules: managerModules };
+      const payload = { name, email, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules };
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
-      dispatch(createUser({ name, email, password, role, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix }));
+      dispatch(createUser({ name, email, password, role, designation, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix }));
     }
   };
 
@@ -279,6 +303,42 @@ export default function CreateUserScreen({ navigation, route }) {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Designation */}
+        <Text style={styles.label}>DESIGNATION</Text>
+        {availableDesignations.length === 0 ? (
+          <View style={[styles.inputWrap, { backgroundColor: '#F5F6FA' }]}>
+            <Ionicons name="briefcase-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+            <Text style={[styles.input, { color: COLORS.textSecondary, paddingVertical: 12 }]}>
+              {modules.length === 0 ? 'Select modules to see designations' : 'No designations for selected modules'}
+            </Text>
+          </View>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
+            <TouchableOpacity
+              style={[styles.pill, !designation && styles.pillActive]}
+              onPress={() => setDesignation('')}
+            >
+              <Text style={[styles.pillText, !designation && styles.pillTextActive]}>None</Text>
+            </TouchableOpacity>
+            {availableDesignations.map((d) => (
+              <TouchableOpacity
+                key={d.id}
+                style={[styles.pill, designation === d.name && styles.pillActive]}
+                onPress={() => setDesignation(d.name)}
+              >
+                <Text style={[styles.pillText, designation === d.name && styles.pillTextActive]}>
+                  {d.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+        {designation ? (
+          <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginBottom: 8, marginLeft: 2 }}>
+            Selected: {designation}
+          </Text>
+        ) : null}
 
         {/* Module Access */}
         <Text style={styles.label}>MODULE ACCESS</Text>
