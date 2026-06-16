@@ -1,15 +1,12 @@
 // ── Base URL ──────────────────────────────────────────────────────────
-// Set PRODUCTION_URL to your Railway backend URL once deployed.
-// Leave empty to fall back to local network discovery (dev mode).
-const PRODUCTION_URL = 'https://vistararealtybackend-production.up.railway.app';
+// Always tries local server first on startup; falls back to Railway
+// if no local server is found on the network.
+export const RAILWAY_URL = 'https://vistararealtybackend-production.up.railway.app';
 
-export let BASE_URL = PRODUCTION_URL || 'http://192.168.1.7:8000';
+export let BASE_URL = RAILWAY_URL;
 
 export const setBaseUrl = (url) => { BASE_URL = url; };
 export const getBaseUrl = () => BASE_URL;
-
-// If a production URL is set, skip local network discovery
-export const isProductionMode = () => Boolean(PRODUCTION_URL);
 
 export const ATTENDANCE_ENDPOINTS = {
   get dashboard() { return `${BASE_URL}/api/attendance/dashboard/`; },

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Image, StatusBar, Animated, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { discoverServer } from '../../utils/serverDiscovery';
-import { setBaseUrl, getBaseUrl, isProductionMode } from '../../constants/api';
+import { setBaseUrl, RAILWAY_URL } from '../../constants/api';
 
 const ORANGE = '#FF6B2B';
 
@@ -11,11 +11,9 @@ const SplashScreen = ({ onFinish }) => {
   const scaleAnim = new Animated.Value(0.7);
 
   useEffect(() => {
-    if (!isProductionMode()) {
-      discoverServer(getBaseUrl()).then((url) => {
-        if (url) setBaseUrl(url);
-      });
-    }
+    discoverServer(RAILWAY_URL).then((url) => {
+      if (url) setBaseUrl(url);
+    });
 
     Animated.parallel([
       Animated.timing(fadeAnim, {

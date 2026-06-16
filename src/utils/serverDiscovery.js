@@ -42,25 +42,18 @@ async function scanSubnet(subnet) {
 }
 
 export async function discoverServer(fallback) {
-  // 1. Try cached URL first (avoids scan if WiFi hasn't changed)
+  // 1. Try cached local URL first (avoids full scan when WiFi hasn't changed)
   try {
     const cached = await AsyncStorage.getItem(CACHE_KEY);
-    if (cached) {
+    if (cached && !cached.startsWith('https://')) {
       const ip = cached.replace('http://', '').replace(`:${PORT}`, '');
       if (await probe(ip)) return cached;
+      // Cache is stale — clear it and continue
+      await AsyncStorage.removeItem(CACHE_KEY);
     }
   } catch {}
 
-  // 2. Try the known fallback before doing a full scan
-  if (fallback) {
-    const fallbackIp = fallback.replace('http://', '').replace(`:${PORT}`, '');
-    if (await probe(fallbackIp)) {
-      try { await AsyncStorage.setItem(CACHE_KEY, fallback); } catch {}
-      return fallback;
-    }
-  }
-
-  // 3. Get device subnet and scan (WiFi must have changed)
+  // 2. Scan local subnet for a running Django server
   let subnet = null;
   try {
     const deviceIp = await Network.getIpAddressAsync();
@@ -69,14 +62,14 @@ export async function discoverServer(fallback) {
     }
   } catch {}
 
-  if (!subnet) return fallback;
-
-  const found = await scanSubnet(subnet);
-
-  if (found) {
-    try { await AsyncStorage.setItem(CACHE_KEY, found); } catch {}
-    return found;
+  if (subnet) {
+    const found = await scanSubnet(subnet);
+    if (found) {
+      try { await AsyncStorage.setItem(CACHE_KEY, found); } catch {}
+      return found;
+    }
   }
 
+  // 3. No local server found — use Railway (production fallback)
   return fallback;
 }
