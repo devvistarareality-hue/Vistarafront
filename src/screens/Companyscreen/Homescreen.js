@@ -188,16 +188,14 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   logoCircle: {
-    width: 72, height: 72, borderRadius: 36,
+    width: 78, height: 78, borderRadius: 39,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
-    overflow: 'hidden',
     shadowColor: '#FF6B2B', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+    shadowOpacity: 0.5, shadowRadius: 14, elevation: 10,
   },
   logoImg: {
-    width: 56, height: 56,
-    backgroundColor: '#FFFFFF',
+    width: 60, height: 60,
   },
 
   // ── Divider ──
