@@ -1,0 +1,12 @@
+{
+  "javascript.validate.enable": false,
+  "typescript.validate.enable": false,
+  "eslint.enable": false,
+  "search.exclude": {
+    "**/node_modules": true
+  },
+  "files.exclude": {
+    "**/node_modules": false
+  },
+  "javascript.preferences.importModuleSpecifier": "relative"
+}
