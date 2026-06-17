@@ -274,37 +274,34 @@ function MetaTab() {
         )}
       </Card>
 
-      {/* Form → Project Routing */}
-      <Card style={{ paddingBottom: 8 }}>
-        <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Form → Project Routing</Text>
-        <Text style={{ fontSize: 12, color: MUTED }}>Map each Meta Lead Ads form to a project so leads auto-classify on arrival.</Text>
-      </Card>
-
-      {/* Existing mappings */}
-      {mappings.length > 0 && (
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
-          {mappings.map((m, i) => (
-            <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: i < mappings.length - 1 ? 1 : 0, borderBottomColor: '#F0F3FA' }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{m.form_name || m.form_id}</Text>
-                <Text style={{ fontSize: 11, color: MUTED }}>{m.form_id}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: BLUE }} />
-                  <Text style={{ fontSize: 11, color: BLUE, fontWeight: '600' }}>{m.project_name}</Text>
-                  {m.total_leads > 0 && <Text style={{ fontSize: 11, color: MUTED }}>· {m.total_leads} leads</Text>}
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => deleteMapping(m.id)} style={{ padding: 8 }}>
-                <Ionicons name="trash-outline" size={16} color="#EF4444" />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </Card>
-      )}
-
-      {/* Add new mapping */}
+      {/* Form → Project Routing (single card) */}
       <Card>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT, marginBottom: 12 }}>Add Form Mapping</Text>
+        <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>Form → Project Routing</Text>
+        <Text style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>Map each Meta Lead Ads form to a project so leads auto-classify on arrival.</Text>
+
+        {/* Existing mappings */}
+        {mappings.length > 0 && (
+          <View style={{ borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#E0E6F0', marginBottom: 14 }}>
+            {mappings.map((m, i) => (
+              <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: i < mappings.length - 1 ? 1 : 0, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{m.form_name || m.form_id}</Text>
+                  <Text style={{ fontSize: 11, color: MUTED }}>{m.form_id}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: BLUE }} />
+                    <Text style={{ fontSize: 11, color: BLUE, fontWeight: '600' }}>{m.project_name}</Text>
+                    {m.total_leads > 0 && <Text style={{ fontSize: 11, color: MUTED }}>· {m.total_leads} leads</Text>}
+                  </View>
+                </View>
+                <TouchableOpacity onPress={() => deleteMapping(m.id)} style={{ padding: 8 }}>
+                  <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT, marginBottom: 12 }}>Add Mapping</Text>
         <TextInput
           value={mapFormId}
           onChangeText={setMapFormId}
@@ -347,7 +344,7 @@ function MetaTab() {
             Go to <Text style={{ fontWeight: '700' }}>Meta Ads Manager → Lead Ads Forms → your form → Preview</Text>. The ID appears in the URL after <Text style={{ fontWeight: '700' }}>form_id=</Text>
           </Text>
         </View>
-      </Card>
+      </Card>  {/* end Form → Project Routing card */}
 
     </ScrollView>
   );
