@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StatusBar, ActivityIndicator, Alert,
+  StatusBar, ActivityIndicator, Alert, Modal, FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -82,6 +82,10 @@ export default function CreateUserScreen({ navigation, route }) {
   const [managerModules,  setManagerModules]  = useState(editUser?.manager_modules ?? []);
   const [allDesignations, setAllDesignations] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [reportingManager,    setReportingManager]    = useState(editUser?.reporting_manager ?? null);
+  const [allUsers,            setAllUsers]            = useState([]);
+  const [showManagerPicker,   setShowManagerPicker]   = useState(false);
+  const [managerSearch,       setManagerSearch]       = useState('');
 
   const userCodePrefix = generateUserCodePrefix(
     isVRLAdmin && selectedCompany ? selectedCompany.code : loggedInUser?.company_code
@@ -91,10 +95,12 @@ export default function CreateUserScreen({ navigation, route }) {
     (async () => {
       try {
         const token = await AsyncStorage.getItem('access_token');
-        const res   = await fetch(`${BASE_URL}/api/auth/designations/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) setAllDesignations(await res.json());
+        const [desigRes, usersRes] = await Promise.all([
+          fetch(`${BASE_URL}/api/auth/designations/`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${BASE_URL}/api/auth/users/`,        { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        if (desigRes.ok) setAllDesignations(await desigRes.json());
+        if (usersRes.ok) setAllUsers(await usersRes.json());
       } catch { /* ignore */ }
     })();
     if (isVRLAdmin && !isEdit) dispatch(fetchCompanies());
@@ -129,6 +135,11 @@ export default function CreateUserScreen({ navigation, route }) {
     }
   }, [err]);
 
+  // Clear reporting manager when selected company changes (VRL admin only)
+  useEffect(() => {
+    setReportingManager(null);
+  }, [selectedCompany]);
+
   // Remove manager access for deselected modules
   useEffect(() => {
     setManagerModules((prev) => prev.filter((m) => modules.includes(m)));
@@ -146,12 +157,12 @@ export default function CreateUserScreen({ navigation, route }) {
 
     if (isEdit) {
       setUserCodeError('');
-      const payload = { name, email, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules };
+      const payload = { name, email, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, reporting_manager_id: reportingManager?.id ?? null };
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
       if (isVRLAdmin && !selectedCompany) return Alert.alert('Validation', 'Please select a company.');
-      const payload = { name, email, password, role, designation, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix };
+      const payload = { name, email, password, role, designation, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
       if (isVRLAdmin && selectedCompany) payload.company_id = selectedCompany.id;
       dispatch(createUser(payload));
     }
@@ -389,6 +400,31 @@ export default function CreateUserScreen({ navigation, route }) {
           </Text>
         ) : null}
 
+        {/* Reporting Manager */}
+        <Text style={styles.label}>REPORTING MANAGER</Text>
+        <TouchableOpacity
+          style={styles.inputWrap}
+          onPress={() => { setManagerSearch(''); setShowManagerPicker(true); }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="people-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+          <Text style={[styles.input, { paddingVertical: 12, color: reportingManager ? COLORS.textPrimary : COLORS.textSecondary }]}>
+            {reportingManager ? `${reportingManager.name}  ·  ${reportingManager.user_code || ''}` : 'Select reporting manager (optional)'}
+          </Text>
+          {reportingManager ? (
+            <TouchableOpacity onPress={() => setReportingManager(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          ) : (
+            <Ionicons name="chevron-down" size={16} color={COLORS.textSecondary} />
+          )}
+        </TouchableOpacity>
+        {reportingManager && (
+          <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 4, marginBottom: 4, marginLeft: 2 }}>
+            {reportingManager.role}{reportingManager.designation ? `  ·  ${reportingManager.designation}` : ''}
+          </Text>
+        )}
+
         {/* Manager Access */}
         {modules.length > 0 && (
           <>
@@ -420,6 +456,87 @@ export default function CreateUserScreen({ navigation, route }) {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Reporting Manager Picker Modal */}
+      <Modal
+        visible={showManagerPicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowManagerPicker(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '75%' }}>
+            {/* Modal header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#EEF1F7' }}>
+              <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: COLORS.textPrimary }}>Select Reporting Manager</Text>
+              <TouchableOpacity onPress={() => setShowManagerPicker(false)}>
+                <Ionicons name="close" size={22} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', margin: 12, backgroundColor: '#F5F6FA', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
+              <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} style={{ marginRight: 8 }} />
+              <TextInput
+                style={{ flex: 1, fontSize: 14, color: COLORS.textPrimary }}
+                placeholder="Search by name or user code..."
+                placeholderTextColor={COLORS.textSecondary}
+                value={managerSearch}
+                onChangeText={setManagerSearch}
+                autoCorrect={false}
+              />
+              {managerSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setManagerSearch('')}>
+                  <Ionicons name="close-circle" size={16} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* User list */}
+            <FlatList
+              data={allUsers.filter((u) => {
+                if (isEdit && u.id === editUser?.id) return false;
+                if (isVRLAdmin && selectedCompany && u.company_code !== selectedCompany.code) return false;
+                if (!managerSearch) return true;
+                const q = managerSearch.toLowerCase();
+                return (
+                  u.name?.toLowerCase().includes(q) ||
+                  u.user_code?.toLowerCase().includes(q)
+                );
+              })}
+              keyExtractor={(u) => String(u.id)}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 24 }}
+              ListEmptyComponent={
+                <Text style={{ textAlign: 'center', color: COLORS.textSecondary, padding: 24 }}>No users found</Text>
+              }
+              renderItem={({ item }) => {
+                const selected = reportingManager?.id === item.id;
+                return (
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: selected ? '#FFF8E7' : '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}
+                    onPress={() => { setReportingManager(item); setShowManagerPicker(false); }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: ROLE_AVATAR_COLOR[item.role] || '#8492A6', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                      <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff' }}>
+                        {item.name?.trim()?.[0]?.toUpperCase() || '?'}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.textPrimary }}>{item.name}</Text>
+                      <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 1 }}>
+                        {item.user_code}  ·  {item.role}{item.designation ? `  ·  ${item.designation}` : ''}
+                      </Text>
+                    </View>
+                    {selected && <Ionicons name="checkmark-circle" size={20} color="#F9A825" />}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
