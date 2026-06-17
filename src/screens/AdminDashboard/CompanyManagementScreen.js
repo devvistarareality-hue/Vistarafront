@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, TextInput,
-  StatusBar, ActivityIndicator, ScrollView, StyleSheet,
+  StatusBar, ActivityIndicator, Alert, ScrollView, StyleSheet, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchCompanies } from '../../redux/actions/companiesActions';
+import { fetchCompanies, updateCompany, resetUpdateCompany, deleteCompany } from '../../redux/actions/companiesActions';
 import { COLORS } from '../../constants/theme';
 
 const STATUS_FILTERS = ['All', 'Active', 'Inactive'];
@@ -19,18 +19,20 @@ function avatarColor(name = '') {
   return AVATAR_COLORS[idx] || '#182350';
 }
 
-function CompanyCard({ company, onEdit }) {
+function CompanyCard({ company, onEdit, onDeactivate, onActivate, onDelete }) {
   const initial = company.name ? company.name[0].toUpperCase() : '?';
   const bg      = avatarColor(company.name);
 
   return (
-    <TouchableOpacity style={s.card} activeOpacity={0.85} onPress={onEdit}>
-      <View style={[s.avatar, { backgroundColor: bg }]}>
+    <TouchableOpacity style={[s.card, !company.is_active && s.cardInactive]} activeOpacity={0.85} onPress={onEdit}>
+      <View style={[s.avatar, { backgroundColor: company.is_active ? bg : '#9CA3AF' }]}>
         <Text style={s.avatarText}>{initial}</Text>
       </View>
 
       <View style={s.cardBody}>
-        <Text style={s.companyName} numberOfLines={1}>{company.name}</Text>
+        <Text style={[s.companyName, !company.is_active && { color: '#9CA3AF' }]} numberOfLines={1}>
+          {company.name}
+        </Text>
         <View style={s.tagRow}>
           <View style={s.codeBadge}>
             <Text style={s.codeText}>{company.code}</Text>
@@ -43,24 +45,115 @@ function CompanyCard({ company, onEdit }) {
         </View>
       </View>
 
-      <TouchableOpacity
-        style={s.editBtn}
-        onPress={onEdit}
-        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-      >
-        <Ionicons name="pencil-outline" size={16} color={COLORS.secondary} />
-      </TouchableOpacity>
+      <View style={{ gap: 6, alignItems: 'center' }}>
+        <TouchableOpacity
+          style={s.editBtn}
+          onPress={onEdit}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Ionicons name="pencil-outline" size={15} color={COLORS.secondary} />
+        </TouchableOpacity>
+
+        {company.is_active ? (
+          <TouchableOpacity
+            style={s.deactBtn}
+            onPress={onDeactivate}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Ionicons name="ban-outline" size={15} color="#EA580C" />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={s.activateBtn}
+            onPress={onActivate}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Ionicons name="checkmark-circle-outline" size={15} color="#15803D" />
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={s.deleteBtn}
+          onPress={onDelete}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Ionicons name="trash-outline" size={15} color="#DC2626" />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 }
 
 export default function CompanyManagementScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { companies, loading, error } = useSelector((s) => s.companies);
+  const { companies, loading, error, updating, updateSuccess, updateError } = useSelector((s) => s.companies);
   const [search,       setSearch]       = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [refreshing,   setRefreshing]   = useState(false);
 
-  useFocusEffect(useCallback(() => { dispatch(fetchCompanies()); }, [dispatch]));
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchCompanies());
+      const interval = setInterval(() => dispatch(fetchCompanies()), 30000);
+      return () => clearInterval(interval);
+    }, [dispatch]),
+  );
+
+  useEffect(() => {
+    if (!loading) setRefreshing(false);
+  }, [loading]);
+
+  useEffect(() => {
+    if (updateError) Alert.alert('Error', updateError, [{ text: 'OK', onPress: () => dispatch(resetUpdateCompany()) }]);
+    if (updateSuccess) dispatch(resetUpdateCompany());
+  }, [updateSuccess, updateError]);
+
+  const handleDeactivate = useCallback((company) => {
+    Alert.alert(
+      'Deactivate Company',
+      `Deactivate "${company.name}"? Users of this company will no longer be able to log in.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Deactivate', style: 'destructive', onPress: () => dispatch(updateCompany(company.id, { is_active: false })) },
+      ],
+    );
+  }, [dispatch]);
+
+  const handleActivate = useCallback((company) => {
+    Alert.alert(
+      'Reactivate Company',
+      `Reactivate "${company.name}"? Users will regain access.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Activate', onPress: () => dispatch(updateCompany(company.id, { is_active: true })) },
+      ],
+    );
+  }, [dispatch]);
+
+  const handleDelete = useCallback((company) => {
+    Alert.alert(
+      'Delete Company',
+      `Permanently delete "${company.name}"? This cannot be undone and all related data will be removed.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await dispatch(deleteCompany(company.id));
+            if (result && !result.success) {
+              Alert.alert('Error', result.error || 'Failed to delete company.');
+            }
+          },
+        },
+      ],
+    );
+  }, [dispatch]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    dispatch(fetchCompanies());
+  }, [dispatch]);
 
   const filtered = companies.filter((c) => {
     const matchStatus =
@@ -130,12 +223,10 @@ export default function CompanyManagementScreen({ navigation }) {
       </Text>
 
       {/* Content */}
-      {loading ? (
+      {loading && companies.length === 0 ? (
         <ActivityIndicator size="large" color={COLORS.secondary} style={{ marginTop: 40 }} />
       ) : error ? (
         <Text style={s.errorText}>{error}</Text>
-      ) : filtered.length === 0 ? (
-        <Text style={s.emptyText}>No companies found.</Text>
       ) : (
         <FlatList
           data={filtered}
@@ -144,10 +235,22 @@ export default function CompanyManagementScreen({ navigation }) {
             <CompanyCard
               company={item}
               onEdit={() => navigation.navigate('EditCompany', { company: item })}
+              onDeactivate={() => handleDeactivate(item)}
+              onActivate={() => handleActivate(item)}
+              onDelete={() => handleDelete(item)}
             />
           )}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<Text style={s.emptyText}>No companies found.</Text>}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.secondary]}
+              tintColor={COLORS.secondary}
+            />
+          }
         />
       )}
 
@@ -194,7 +297,11 @@ const s = StyleSheet.create({
   statusBadge:{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
   statusText: { fontSize: 11, fontWeight: '600' },
 
+  cardInactive: { backgroundColor: '#F9FAFB', opacity: 0.85 },
   editBtn:    { padding: 6, borderRadius: 8, backgroundColor: '#EEF1FF' },
+  deactBtn:   { padding: 6, borderRadius: 8, backgroundColor: '#FFF7ED' },
+  activateBtn:{ padding: 6, borderRadius: 8, backgroundColor: '#F0FDF4' },
+  deleteBtn:  { padding: 6, borderRadius: 8, backgroundColor: '#FEF2F2' },
 
   errorText:  { textAlign: 'center', marginTop: 40, color: COLORS.error, fontSize: 14 },
   emptyText:  { textAlign: 'center', marginTop: 40, color: COLORS.textSecondary, fontSize: 14 },

@@ -12,7 +12,9 @@ const SplashScreen = ({ onFinish }) => {
 
   useEffect(() => {
     discoverServer(RAILWAY_URL).then((url) => {
-      if (url) setBaseUrl(url);
+      if (url) {
+        setBaseUrl(url);
+      }
     });
 
     Animated.parallel([

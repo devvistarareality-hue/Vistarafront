@@ -24,13 +24,13 @@ const CARD = {
 const MODULE_CONFIG = {
   Sales: {
     label:     'Sales',
-    sub:       'Leads & Pipeline',
-    icon:      'pencil',
+    sub:       'Projects & Plots',
+    icon:      'business',
     iconBg:    '#FFF8E1',
     iconColor: '#F9A825',
     linkColor: '#F9A825',
-    screen:    'Placeholder',
-    getParams: () => ({ title: 'Sales' }),
+    screen:    'SalesProjects',
+    getParams: () => ({}),
   },
   HR: {
     label:     'HR',
