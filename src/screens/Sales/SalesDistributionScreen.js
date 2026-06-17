@@ -1,76 +1,138 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, StatusBar, Switch, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity, TextInput,
+  ActivityIndicator, Alert, StatusBar, RefreshControl,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SALES_ENDPOINTS } from '../../constants/api';
 
-const NAVY = '#182350'; const BLUE = '#3D5AFE'; const BG = '#F5F6FA'; const TEXT = '#1A1A2E'; const MUTED = '#8492A6';
-const CARD = { backgroundColor: '#fff', borderRadius: 14, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3 };
+const NAVY = '#182350';
+const BLUE = '#3D5AFE';
+const BG   = '#F5F6FA';
+const TEXT = '#1A1A2E';
+const MUTED = '#8492A6';
+
+const CARD = {
+  backgroundColor: '#fff', borderRadius: 14,
+  shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, marginBottom: 16,
+};
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
-export default function SalesDistributionScreen({ navigation }) {
-  const [settings,      setSettings]      = useState(null);
-  const [availability,  setAvailability]  = useState([]);
-  const [weights,       setWeights]       = useState([]);
-  const [distLog,       setDistLog]       = useState([]);
-  const [stats,         setStats]         = useState(null);
-  const [loading,       setLoading]       = useState(true);
-  const [distributing,  setDistributing]  = useState('');
-  const [savingSettings,setSavingSettings]= useState(false);
-  const [refreshing,    setRefreshing]    = useState(false);
-  const [localSettings, setLocalSettings] = useState({});
-  const [localWeights,  setLocalWeights]  = useState({});
+function currentIST() {
+  const now = new Date();
+  const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+  return `${String(ist.getUTCHours()).padStart(2, '0')}:${String(ist.getUTCMinutes()).padStart(2, '0')}`;
+}
 
-  async function load(refresh = false) {
+function WeightBar({ pct, color }) {
+  return (
+    <View style={{ width: 52, height: 6, backgroundColor: color + '30', borderRadius: 4, overflow: 'hidden' }}>
+      <View style={{ width: `${pct}%`, height: '100%', backgroundColor: color, borderRadius: 4 }} />
+    </View>
+  );
+}
+
+function SectionLabel({ children, color }) {
+  return (
+    <Text style={{ fontSize: 12, fontWeight: '700', color: color || MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      {children}
+    </Text>
+  );
+}
+
+export default function SalesDistributionScreen({ navigation }) {
+  const [settings,       setSettings]       = useState({ tc_signin_time: '10:20', tc_signout_time: '22:00', stm_signin_time: '10:20', stm_signout_time: '22:00' });
+  const [settingsForm,   setSettingsForm]   = useState(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [availability,   setAvailability]   = useState([]);
+  const [allUsers,       setAllUsers]       = useState([]);
+  const [weights,        setWeights]        = useState({});
+  const [savedWeights,   setSavedWeights]   = useState({});
+  const [savingWeights,  setSavingWeights]  = useState(false);
+  const [distLog,        setDistLog]        = useState([]);
+  const [stats,          setStats]          = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [distributing,   setDistributing]   = useState('');
+  const [refreshing,     setRefreshing]     = useState(false);
+
+  const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
       const headers = await authHeaders();
       const [sRes, aRes, wRes, lRes, stRes] = await Promise.all([
-        fetch(SALES_ENDPOINTS.distSettings,  { headers }),
-        fetch(SALES_ENDPOINTS.availability,  { headers }),
-        fetch(SALES_ENDPOINTS.distWeight,    { headers }),
-        fetch(SALES_ENDPOINTS.distLog,       { headers }),
-        fetch(SALES_ENDPOINTS.stats,         { headers }),
+        fetch(SALES_ENDPOINTS.distSettings, { headers }),
+        fetch(SALES_ENDPOINTS.availability, { headers }),
+        fetch(SALES_ENDPOINTS.distWeight,   { headers }),
+        fetch(SALES_ENDPOINTS.distLog,      { headers }),
+        fetch(SALES_ENDPOINTS.stats,        { headers }),
       ]);
-      if (sRes.ok)  { const d = await sRes.json();  setSettings(d);        setLocalSettings(d); }
-      if (aRes.ok)  { const d = await aRes.json();  setAvailability(Array.isArray(d) ? d : (d.results || [])); }
-      if (wRes.ok)  { const d = await wRes.json();  setWeights(Array.isArray(d) ? d : (d.results || []));
-                      const wMap = {}; (Array.isArray(d) ? d : []).forEach(w => { wMap[w.user_id] = String(w.weight || 1); }); setLocalWeights(wMap); }
-      if (lRes.ok)  { const d = await lRes.json();  setDistLog(Array.isArray(d) ? d : (d.results || [])); }
+      if (sRes.ok)  { const d = await sRes.json(); if (!d.detail) setSettings(d); }
+      if (aRes.ok)  { const d = await aRes.json(); setAvailability(Array.isArray(d) ? d : (d.results || [])); }
+      if (wRes.ok)  {
+        const d = await wRes.json();
+        const arr = Array.isArray(d) ? d : (d.results || []);
+        setAllUsers(arr);
+        const wMap = {};
+        arr.forEach(u => { wMap[u.user_id] = u.weight ?? 1; });
+        setWeights(wMap);
+        setSavedWeights(wMap);
+      }
+      if (lRes.ok)  { const d = await lRes.json(); setDistLog(Array.isArray(d) ? d : (d.results || [])); }
       if (stRes.ok) setStats(await stRes.json());
     } catch (_) {}
-    setLoading(false); setRefreshing(false);
-  }
+    setLoading(false);
+    setRefreshing(false);
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
-  async function toggleAvailability(userId) {
-    const current = availability.find(a => String(a.user_id) === String(userId));
-    const newVal  = !(current?.is_available);
+  const now             = currentIST();
+  const tcWindowOpen    = now >= settings.tc_signin_time  && now < settings.tc_signout_time;
+  const stmWindowOpen   = now >= settings.stm_signin_time && now < settings.stm_signout_time;
+  const tcAfterSignout  = now >= settings.tc_signout_time;
+  const stmAfterSignout = now >= settings.stm_signout_time;
+
+  const allTc    = availability.filter(a => (a.dist_type || a.role || '').toLowerCase() === 'telecaller');
+  const allStm   = availability.filter(a => (a.dist_type || a.role || '').toLowerCase() === 'stm');
+  const tcAvail  = allTc.filter(a => a.is_available);
+  const stmAvail = allStm.filter(a => a.is_available);
+
+  const tcUsers  = allUsers.filter(u => (u.dist_type || u.role || '').toLowerCase() === 'telecaller');
+  const stmUsers = allUsers.filter(u => (u.dist_type || u.role || '').toLowerCase() === 'stm');
+  const weightsChanged = Object.keys(weights).some(id => weights[id] !== savedWeights[id]);
+
+  async function toggleAvailability(userId, current) {
     const headers = await authHeaders();
     const res = await fetch(SALES_ENDPOINTS.availability, {
-      method: 'POST', headers, body: JSON.stringify({ user_id: userId, is_available: newVal }),
+      method: 'POST', headers, body: JSON.stringify({ user_id: userId, is_available: !current }),
     });
-    if (res.ok) setAvailability(prev => prev.map(a => String(a.user_id) === String(userId) ? { ...a, is_available: newVal } : a));
+    if (res.ok) setAvailability(prev => prev.map(a => String(a.user_id) === String(userId) ? { ...a, is_available: !current } : a));
   }
 
   async function saveSettings() {
     setSavingSettings(true);
     const headers = await authHeaders();
-    await fetch(SALES_ENDPOINTS.distSettings, { method: 'PUT', headers, body: JSON.stringify(localSettings) });
+    await fetch(SALES_ENDPOINTS.distSettings, { method: 'PUT', headers, body: JSON.stringify(settingsForm) });
+    setSettings(settingsForm);
+    setSettingsForm(null);
     setSavingSettings(false);
     Alert.alert('Saved', 'Distribution settings updated.');
   }
 
   async function saveWeights() {
+    setSavingWeights(true);
     const headers = await authHeaders();
-    const payload = Object.entries(localWeights).map(([user_id, weight]) => ({ user_id: parseInt(user_id), weight: parseInt(weight) || 1 }));
-    await fetch(SALES_ENDPOINTS.distWeight, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+    const updates = Object.entries(weights).map(([user_id, weight]) => ({ user_id: parseInt(user_id), weight: parseInt(weight) || 1 }));
+    const res = await fetch(SALES_ENDPOINTS.distWeight, { method: 'PATCH', headers, body: JSON.stringify({ updates }) });
+    if (res.ok) setSavedWeights({ ...weights });
+    setSavingWeights(false);
     Alert.alert('Saved', 'Distribution weights updated.');
   }
 
@@ -102,147 +164,336 @@ export default function SalesDistributionScreen({ navigation }) {
     ]);
   }
 
-  const tcAvailable  = availability.filter(a => a.dist_type === 'telecaller' && a.is_available).length;
-  const stmAvailable = availability.filter(a => a.dist_type === 'stm'        && a.is_available).length;
-  const tcTotal      = availability.filter(a => a.dist_type === 'telecaller').length;
-  const stmTotal     = availability.filter(a => a.dist_type === 'stm').length;
-
-  const setLS = (k, v) => setLocalSettings(s => ({ ...s, [k]: v }));
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={22} color={TEXT} /></TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Distribution</Text>
+      {/* Header */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
+          <Ionicons name="arrow-back" size={24} color={TEXT} />
+        </TouchableOpacity>
+        <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: TEXT }}>Lead Distribution</Text>
         <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6 }}>
-          <Ionicons name="refresh-outline" size={20} color={refreshing ? MUTED : BLUE} />
+          <Ionicons name="refresh-outline" size={22} color={refreshing ? MUTED : BLUE} />
         </TouchableOpacity>
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color={NAVY} /></View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={NAVY} />
+        </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
+        <ScrollView
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
+        >
 
-          {/* Trigger Distribution */}
-          <View style={[CARD, { padding: 16, marginBottom: 16 }]}>
-            <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Trigger Distribution</Text>
-            <Text style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>
-              Unassigned leads: <Text style={{ fontWeight: '700', color: BLUE }}>{stats?.unassigned ?? '—'}</Text>
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity onPress={() => triggerDist('telecaller')} disabled={!!distributing}
-                style={{ flex: 1, paddingVertical: 12, backgroundColor: NAVY, borderRadius: 12, alignItems: 'center', opacity: distributing === 'telecaller' ? 0.6 : 1 }}>
-                {distributing === 'telecaller' ? <ActivityIndicator color="#fff" size="small" /> :
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Telecallers ({tcAvailable}/{tcTotal})</Text>}
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => triggerDist('stm')} disabled={!!distributing}
-                style={{ flex: 1, paddingVertical: 12, backgroundColor: BLUE, borderRadius: 12, alignItems: 'center', opacity: distributing === 'stm' ? 0.6 : 1 }}>
-                {distributing === 'stm' ? <ActivityIndicator color="#fff" size="small" /> :
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>STMs ({stmAvailable}/{stmTotal})</Text>}
-              </TouchableOpacity>
+          {/* ═══ 1. Distribution Settings ═══ */}
+          <View style={CARD}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 12 }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>⚙ Distribution Settings</Text>
+              {settingsForm === null && (
+                <TouchableOpacity onPress={() => setSettingsForm({ ...settings })}
+                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 8 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: TEXT }}>Edit</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {settingsForm ? (
+              <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                {[
+                  { label: 'TC Sign-in',   key: 'tc_signin_time' },
+                  { label: 'TC Sign-out',  key: 'tc_signout_time' },
+                  { label: 'STM Sign-in',  key: 'stm_signin_time' },
+                  { label: 'STM Sign-out', key: 'stm_signout_time' },
+                ].map(f => (
+                  <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: TEXT }}>{f.label}</Text>
+                    <TextInput
+                      value={settingsForm[f.key] || ''} placeholder="HH:MM"
+                      onChangeText={v => setSettingsForm(s => ({ ...s, [f.key]: v }))}
+                      style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, fontSize: 15, width: 100, textAlign: 'center', color: TEXT }}
+                    />
+                  </View>
+                ))}
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+                  <TouchableOpacity onPress={saveSettings} disabled={savingSettings}
+                    style={{ flex: 1, paddingVertical: 12, backgroundColor: NAVY, borderRadius: 9, alignItems: 'center', opacity: savingSettings ? 0.6 : 1 }}>
+                    {savingSettings
+                      ? <ActivityIndicator color="#fff" size="small" />
+                      : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Save Settings</Text>}
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setSettingsForm(null)}
+                    style={{ flex: 1, paddingVertical: 12, borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 9, alignItems: 'center' }}>
+                    <Text style={{ fontWeight: '600', fontSize: 15, color: TEXT }}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingBottom: 16 }}>
+                {[
+                  { role: 'TELECALLER', signin: settings.tc_signin_time, signout: settings.tc_signout_time },
+                  { role: 'STM',        signin: settings.stm_signin_time, signout: settings.stm_signout_time },
+                ].map(({ role, signin, signout }) => (
+                  <View key={role} style={{ flex: 1, backgroundColor: '#E8ECF2', borderRadius: 10, padding: 13 }}>
+                    <SectionLabel>{role}</SectionLabel>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 9, marginBottom: 6 }}>
+                      <Text style={{ fontSize: 13, color: MUTED }}>Sign-in</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{signin}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 13, color: MUTED }}>Sign-out</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{signout}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* ═══ 2. Today's Availability ═══ */}
+          <View style={CARD}>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, padding: 16, paddingBottom: 12 }}>👥 Today's Availability</Text>
+            <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, gap: 14 }}>
+
+              <View style={{ flex: 1 }}>
+                <SectionLabel>Telecallers · {tcAvail.length}/{allTc.length} avail</SectionLabel>
+                <View style={{ marginTop: 10 }}>
+                  {allTc.length === 0
+                    ? <Text style={{ fontSize: 14, color: MUTED }}>No telecallers</Text>
+                    : allTc.map(a => (
+                      <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
+                        <Text style={{ fontSize: 18, color: a.is_available ? '#22C55E' : '#CBD5E1', fontWeight: '800', width: 20 }}>
+                          {a.is_available ? '✓' : '✗'}
+                        </Text>
+                        <Text style={{ fontSize: 15, color: a.is_available ? TEXT : MUTED }} numberOfLines={1}>{a.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                </View>
+              </View>
+
+              <View style={{ width: 1, backgroundColor: '#F0F3FA' }} />
+
+              <View style={{ flex: 1 }}>
+                <SectionLabel>STMs · {stmAvail.length}/{allStm.length} avail</SectionLabel>
+                <View style={{ marginTop: 10 }}>
+                  {allStm.length === 0
+                    ? <Text style={{ fontSize: 14, color: MUTED }}>No STMs</Text>
+                    : allStm.map(a => (
+                      <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
+                        <Text style={{ fontSize: 18, color: a.is_available ? '#22C55E' : '#CBD5E1', fontWeight: '800', width: 20 }}>
+                          {a.is_available ? '✓' : '✗'}
+                        </Text>
+                        <Text style={{ fontSize: 15, color: a.is_available ? TEXT : MUTED }} numberOfLines={1}>{a.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                </View>
+              </View>
             </View>
           </View>
 
-          {/* Availability */}
-          {availability.length > 0 && (
-            <View style={[CARD, { padding: 16, marginBottom: 16 }]}>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 12 }}>Today's Availability</Text>
-              {availability.map(a => (
-                <View key={a.user_id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-                  <View>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: TEXT }}>{a.name}</Text>
-                    <Text style={{ fontSize: 11, color: MUTED }}>{a.dist_type?.toUpperCase()}</Text>
-                  </View>
-                  <Switch value={!!a.is_available} onValueChange={() => toggleAvailability(a.user_id)} trackColor={{ false: '#E0E6F0', true: '#2E7D32' }} />
+          {/* ═══ 3. Lead Distribution Ratio ═══ */}
+          {allUsers.length > 0 && (
+            <View style={CARD}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', padding: 16, paddingBottom: 12 }}>
+                <View>
+                  <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>📊 Lead Distribution Ratio</Text>
+                  <Text style={{ fontSize: 13, color: MUTED, marginTop: 3 }}>Higher weight = more leads assigned</Text>
                 </View>
-              ))}
-            </View>
-          )}
-
-          {/* Distribution weights */}
-          {weights.length > 0 && (
-            <View style={[CARD, { padding: 16, marginBottom: 16 }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>Lead Distribution Ratio</Text>
-                <TouchableOpacity onPress={saveWeights}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, backgroundColor: NAVY, borderRadius: 8 }}>
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Save</Text>
+                <TouchableOpacity onPress={saveWeights} disabled={savingWeights || !weightsChanged}
+                  style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 8, opacity: (!weightsChanged || savingWeights) ? 0.4 : 1 }}>
+                  {savingWeights
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
                 </TouchableOpacity>
               </View>
-              {weights.map(w => (
-                <View key={w.user_id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{w.name}</Text>
-                    <Text style={{ fontSize: 11, color: MUTED }}>{w.dist_type?.toUpperCase()}</Text>
+
+              {/* Telecallers panel */}
+              {tcUsers.length > 0 && (() => {
+                const total = tcUsers.reduce((s, u) => s + (weights[u.user_id] ?? 1), 0);
+                return (
+                  <View style={{ marginHorizontal: 16, marginBottom: 10, borderWidth: 1.5, borderColor: '#BBF7D0', borderRadius: 12, padding: 14, backgroundColor: '#F0FDF4' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: '#22C55E' }} />
+                      <SectionLabel color="#15803D">Telecallers</SectionLabel>
+                    </View>
+                    {tcUsers.map(u => {
+                      const w   = weights[u.user_id] ?? 1;
+                      const pct = total > 0 ? Math.round((w / total) * 100) : 0;
+                      return (
+                        <View key={u.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#fff', borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: '#BBF7D0', marginBottom: 7 }}>
+                          <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{u.name}</Text>
+                          <WeightBar pct={pct} color="#22C55E" />
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803D', width: 36, textAlign: 'right' }}>{pct}%</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#BBF7D0', borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
+                            <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: Math.max(1, (prev[u.user_id] ?? 1) - 1) }))}
+                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#E8FFF0' }}>
+                              <Text style={{ color: '#15803D', fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={{ paddingHorizontal: 10, fontSize: 15, fontWeight: '700', color: TEXT }}>{w}</Text>
+                            <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: (prev[u.user_id] ?? 1) + 1 }))}
+                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#E8FFF0' }}>
+                              <Text style={{ color: '#15803D', fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      );
+                    })}
+                    <Text style={{ fontSize: 13, color: '#15803D', fontWeight: '600', marginTop: 5 }}>
+                      Ratio: {tcUsers.map(u => weights[u.user_id] ?? 1).join(' : ')}
+                    </Text>
                   </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <TouchableOpacity onPress={() => setLocalWeights(lw => ({ ...lw, [w.user_id]: String(Math.max(1, parseInt(lw[w.user_id] || 1) - 1)) }))}
-                      style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: '#F0F3FA', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 18, color: TEXT, lineHeight: 22 }}>−</Text>
-                    </TouchableOpacity>
-                    <TextInput value={localWeights[w.user_id] || '1'} onChangeText={v => setLocalWeights(lw => ({ ...lw, [w.user_id]: v }))} keyboardType="numeric"
-                      style={{ width: 40, textAlign: 'center', borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 8, paddingVertical: 5, fontSize: 14, fontWeight: '700', color: TEXT }} />
-                    <TouchableOpacity onPress={() => setLocalWeights(lw => ({ ...lw, [w.user_id]: String(parseInt(lw[w.user_id] || 1) + 1) }))}
-                      style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 18, color: '#fff', lineHeight: 22 }}>+</Text>
-                    </TouchableOpacity>
+                );
+              })()}
+
+              {/* STMs panel */}
+              {stmUsers.length > 0 && (() => {
+                const total = stmUsers.reduce((s, u) => s + (weights[u.user_id] ?? 1), 0);
+                return (
+                  <View style={{ marginHorizontal: 16, marginBottom: 16, borderWidth: 1.5, borderColor: '#BFDBFE', borderRadius: 12, padding: 14, backgroundColor: '#EFF6FF' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: '#3B82F6' }} />
+                      <SectionLabel color="#1D4ED8">STMs</SectionLabel>
+                    </View>
+                    {stmUsers.map(u => {
+                      const w   = weights[u.user_id] ?? 1;
+                      const pct = total > 0 ? Math.round((w / total) * 100) : 0;
+                      return (
+                        <View key={u.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#fff', borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: '#BFDBFE', marginBottom: 7 }}>
+                          <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{u.name}</Text>
+                          <WeightBar pct={pct} color="#3B82F6" />
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: '#1D4ED8', width: 36, textAlign: 'right' }}>{pct}%</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#BFDBFE', borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
+                            <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: Math.max(1, (prev[u.user_id] ?? 1) - 1) }))}
+                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#E0EEFF' }}>
+                              <Text style={{ color: '#1D4ED8', fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={{ paddingHorizontal: 10, fontSize: 15, fontWeight: '700', color: TEXT }}>{w}</Text>
+                            <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: (prev[u.user_id] ?? 1) + 1 }))}
+                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#E0EEFF' }}>
+                              <Text style={{ color: '#1D4ED8', fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      );
+                    })}
+                    <Text style={{ fontSize: 13, color: '#1D4ED8', fontWeight: '600', marginTop: 5 }}>
+                      Ratio: {stmUsers.map(u => weights[u.user_id] ?? 1).join(' : ')}
+                    </Text>
                   </View>
-                </View>
-              ))}
+                );
+              })()}
             </View>
           )}
 
-          {/* Distribution settings */}
-          {localSettings && (
-            <View style={[CARD, { padding: 16, marginBottom: 16 }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>Distribution Settings</Text>
-                <TouchableOpacity onPress={saveSettings} disabled={savingSettings}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, backgroundColor: NAVY, borderRadius: 8, opacity: savingSettings ? 0.6 : 1 }}>
-                  {savingSettings ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Save</Text>}
-                </TouchableOpacity>
+          {/* ═══ 4 & 5. Distribution Action Cards ═══ */}
+          {[
+            {
+              type: 'telecaller', label: 'Telecaller Distribution',
+              unassigned: stats?.unassigned ?? 0, avail: tcAvail.length,
+              windowOpen: tcWindowOpen, afterSignout: tcAfterSignout,
+              signin: settings.tc_signin_time, signout: settings.tc_signout_time,
+              borderOpen: '#BBF7D0', bgOpen: '#F0FDF4',
+              borderClose: '#FECACA', bgClose: '#FEF2F2',
+              badgeOpenBg: '#DCFCE7', badgeOpenColor: '#15803D',
+              badgeCloseBg: '#FEE2E2', badgeCloseColor: '#DC2626',
+              badgeWaitBg: '#F1F5F9', badgeWaitColor: '#64748B',
+            },
+            {
+              type: 'stm', label: 'STM Distribution',
+              unassigned: stats?.sv_done ?? 0, avail: stmAvail.length,
+              windowOpen: stmWindowOpen, afterSignout: stmAfterSignout,
+              signin: settings.stm_signin_time, signout: settings.stm_signout_time,
+              borderOpen: '#BFDBFE', bgOpen: '#EFF6FF',
+              borderClose: '#FECACA', bgClose: '#FEF2F2',
+              badgeOpenBg: '#DBEAFE', badgeOpenColor: '#1D4ED8',
+              badgeCloseBg: '#FEE2E2', badgeCloseColor: '#DC2626',
+              badgeWaitBg: '#F1F5F9', badgeWaitColor: '#64748B',
+            },
+          ].map(({ type, label, unassigned, avail, windowOpen, afterSignout, signin, signout,
+                   borderOpen, bgOpen, borderClose, bgClose,
+                   badgeOpenBg, badgeOpenColor, badgeCloseBg, badgeCloseColor, badgeWaitBg, badgeWaitColor }) => {
+            const badgeBg    = windowOpen ? badgeOpenBg    : afterSignout ? badgeCloseBg    : badgeWaitBg;
+            const badgeColor = windowOpen ? badgeOpenColor : afterSignout ? badgeCloseColor : badgeWaitColor;
+            const borderClr  = windowOpen ? borderOpen     : afterSignout ? borderClose     : '#E0E6F0';
+            const bgClr      = windowOpen ? bgOpen         : afterSignout ? bgClose         : '#fff';
+            const disabled   = !!distributing || afterSignout || avail === 0;
+            return (
+              <View key={type} style={[CARD, { borderWidth: 2, borderColor: borderClr, backgroundColor: bgClr }]}>
+                <View style={{ padding: 16 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <View style={{ flex: 1, marginRight: 10 }}>
+                      <Text style={{ fontWeight: '700', fontSize: 17, color: TEXT, marginBottom: 4 }}>{label}</Text>
+                      <Text style={{ fontSize: 14, color: MUTED }}>
+                        {unassigned} unassigned leads · {avail} {type === 'telecaller' ? 'TC' : 'STM'}s signed in
+                      </Text>
+                    </View>
+                    <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 20, backgroundColor: badgeBg }}>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: badgeColor }}>
+                        {windowOpen ? 'Window open' : afterSignout ? 'Window closed' : `Opens ${signin}`}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {afterSignout && (
+                    <Text style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>
+                      Sign-out ({signout}) has passed. Leads remain unassigned until tomorrow.
+                    </Text>
+                  )}
+
+                  <TouchableOpacity onPress={() => triggerDist(type)} disabled={disabled}
+                    style={{ paddingVertical: 14, backgroundColor: NAVY, borderRadius: 10, alignItems: 'center', opacity: disabled ? 0.45 : 1 }}>
+                    {distributing === type
+                      ? <ActivityIndicator color="#fff" size="small" />
+                      : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
+                          ⚡ Distribute to {type === 'telecaller' ? 'Telecallers' : 'STMs'}
+                        </Text>}
+                  </TouchableOpacity>
+
+                  {avail === 0 && !afterSignout && (
+                    <Text style={{ fontSize: 13, color: MUTED, textAlign: 'center', marginTop: 7 }}>
+                      No {type === 'telecaller' ? 'telecallers' : 'STMs'} have signed in today
+                    </Text>
+                  )}
+                </View>
               </View>
-              {[
-                { label: 'TC Sign-in',   key: 'tc_signin_time' },
-                { label: 'TC Sign-out',  key: 'tc_signout_time' },
-                { label: 'STM Sign-in',  key: 'stm_signin_time' },
-                { label: 'STM Sign-out', key: 'stm_signout_time' },
-              ].map(f => (
-                <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-                  <Text style={{ fontSize: 13, color: TEXT, fontWeight: '600' }}>{f.label}</Text>
-                  <TextInput value={localSettings[f.key] || ''} onChangeText={v => setLS(f.key, v)} placeholder="HH:MM"
-                    style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, fontSize: 13, width: 90, textAlign: 'center', color: TEXT }} />
-                </View>
-              ))}
-            </View>
-          )}
+            );
+          })}
 
-          {/* Distribution log */}
-          {distLog.length > 0 && (
-            <View style={[CARD, { marginBottom: 16, overflow: 'hidden' }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF' }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>Distribution History</Text>
+          {/* ═══ 6. Distribution History ═══ */}
+          <View style={CARD}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF', borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>🕐 Recent Distribution History</Text>
+              {distLog.length > 0 && (
                 <TouchableOpacity onPress={clearLog}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#EF4444' }}>Clear</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Clear</Text>
                 </TouchableOpacity>
-              </View>
-              {distLog.slice(0, 10).map((log, i) => (
-                <View key={log.id || i} style={{ padding: 14, borderBottomWidth: i < Math.min(distLog.length, 10) - 1 ? 1 : 0, borderBottomColor: '#F0F3FA' }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{log.dist_type?.toUpperCase()}</Text>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#2E7D32' }}>{log.leads_distributed} leads</Text>
+              )}
+            </View>
+            {distLog.length === 0
+              ? <Text style={{ textAlign: 'center', color: MUTED, padding: 36, fontSize: 15 }}>No distributions run yet</Text>
+              : distLog.slice(0, 10).map((log, i) => (
+                <View key={log.id || i} style={{ padding: 16, borderBottomWidth: i < Math.min(distLog.length, 10) - 1 ? 1 : 0, borderBottomColor: '#F0F3FA' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, backgroundColor: log.dist_type === 'telecaller' ? '#FFF8E1' : '#EFF6FF' }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: log.dist_type === 'telecaller' ? '#F9A825' : '#3B82F6' }}>
+                        {log.dist_type === 'telecaller' ? 'Telecaller' : 'STM'}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#2E7D32' }}>{log.leads_distributed} leads</Text>
                   </View>
-                  <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
+                  <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
                     By {log.triggered_by_name || '—'} · {log.created_at ? new Date(log.created_at).toLocaleDateString('en-IN') : ''}
                   </Text>
                 </View>
-              ))}
-            </View>
-          )}
+              ))
+            }
+          </View>
 
         </ScrollView>
       )}
