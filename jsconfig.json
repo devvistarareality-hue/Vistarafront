@@ -1,15 +1,8 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "jsx": "react-native",
-    "module": "commonjs",
-    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "checkJs": false,
-    "noEmit": true,
-    "paths": {
-      "*": ["node_modules/*"]
-    }
+    "checkJs": false
   },
   "include": ["src/**/*", "App.js", "index.js"],
   "exclude": ["node_modules"]
