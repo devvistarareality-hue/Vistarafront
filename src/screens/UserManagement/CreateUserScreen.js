@@ -35,7 +35,7 @@ function generateUserCodePrefix(companyCode) {
   return (c1 + c2 + c3).toUpperCase();
 }
 
-const ROLES   = ['Admin', 'Manager', 'Employee'];
+const ROLES   = ['Admin', 'Manager', 'Employee', 'Intern'];
 const MODULES = ['Sales', 'HR', 'Execution', 'Purchase', 'Land'];
 
 const MODULE_ICONS = {
@@ -50,6 +50,7 @@ const ROLE_AVATAR_COLOR = {
   Admin:    '#182350',
   Manager:  '#F9A825',
   Employee: '#3D5AFE',
+  Intern:   '#7B1FA2',
 };
 
 export default function CreateUserScreen({ navigation, route }) {
