@@ -32,16 +32,6 @@ const MODULE_CONFIG = {
     screen:    'Placeholder',
     getParams: () => ({ title: 'Sales' }),
   },
-  'Pre-Sales': {
-    label:     'Pre-Sales',
-    sub:       'Leads & Follow-ups',
-    icon:      'funnel',
-    iconBg:    '#E0F7FA',
-    iconColor: '#0097A7',
-    linkColor: '#0097A7',
-    screen:    'Placeholder',
-    getParams: () => ({ title: 'Pre-Sales' }),
-  },
   HR: {
     label:     'HR',
     sub:       'People & Attendance',

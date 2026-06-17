@@ -13,12 +13,11 @@ import {
 } from '../../redux/actions/userManagementActions';
 import { COLORS } from '../../constants/theme';
 
-const ROLES = ['All', 'Admin', 'Sales', 'Pre-Sales', 'HR', 'Exec'];
+const ROLES = ['All', 'Admin', 'Sales', 'HR', 'Exec'];
 
 const ROLE_AVATAR_COLOR = {
   Admin:       '#182350',
   Sales:       '#F9A825',
-  'Pre-Sales': '#0097A7',
   HR:          '#3D5AFE',
   Exec:        '#7B1FA2',
 };
@@ -26,7 +25,6 @@ const ROLE_AVATAR_COLOR = {
 const ROLE_BADGE_STYLE = {
   Admin:       { bg: '#E8EEFF', text: '#3D5AFE' },
   Sales:       { bg: '#FFF8E1', text: '#E6960A' },
-  'Pre-Sales': { bg: '#E0F7FA', text: '#0097A7' },
   HR:          { bg: '#E8EEFF', text: '#3D5AFE' },
   Exec:        { bg: '#F3E5F5', text: '#7B1FA2' },
 };
