@@ -344,7 +344,7 @@ function MetaTab() {
             Go to <Text style={{ fontWeight: '700' }}>Meta Ads Manager → Lead Ads Forms → your form → Preview</Text>. The ID appears in the URL after <Text style={{ fontWeight: '700' }}>form_id=</Text>
           </Text>
         </View>
-      </Card>  {/* end Form → Project Routing card */}
+      </Card>
 
     </ScrollView>
   );
