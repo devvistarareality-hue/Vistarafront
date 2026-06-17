@@ -110,9 +110,9 @@ export default function CreateUserScreen({ navigation, route }) {
   // Available designations based on selected modules
   const availableDesignations = allDesignations.filter((d) => modules.includes(d.module));
 
-  // Reset designation if its module is deselected
+  // Reset designation if its module is deselected — only after designations have loaded
   useEffect(() => {
-    if (designation && !availableDesignations.find((d) => d.name === designation)) {
+    if (allDesignations.length > 0 && designation && !availableDesignations.find((d) => d.name === designation)) {
       setDesignation('');
     }
   }, [modules]);
@@ -136,9 +136,9 @@ export default function CreateUserScreen({ navigation, route }) {
     }
   }, [err]);
 
-  // Clear reporting manager when selected company changes (VRL admin only)
+  // Clear reporting manager when selected company changes (VRL admin create mode only)
   useEffect(() => {
-    setReportingManager(null);
+    if (!isEdit) setReportingManager(null);
   }, [selectedCompany]);
 
   // Remove manager access for deselected modules
