@@ -25,3 +25,37 @@ export const COMPANY_ENDPOINTS = {
   get list()   { return `${BASE_URL}/api/company/all/`; },
   get detail() { return (id) => `${BASE_URL}/api/company/${id}/`; },
 };
+
+export const SALES_ENDPOINTS = {
+  // Dashboard
+  get stats()      { return `${BASE_URL}/api/sales/stats/`; },
+  // Leads
+  get leads()      { return `${BASE_URL}/api/sales/leads/`; },
+  get bulkDelete() { return `${BASE_URL}/api/sales/leads/bulk-delete/`; },
+  lead: (id)       => `${BASE_URL}/api/sales/leads/${id}/`,
+  get leadsImport(){ return `${BASE_URL}/api/sales/leads/import/`; },
+  // Projects & Plots
+  get projects()   { return `${BASE_URL}/api/sales/projects/`; },
+  project: (id)    => `${BASE_URL}/api/sales/projects/${id}/`,
+  get sources()    { return `${BASE_URL}/api/sales/sources/`; },
+  get followUps()  { return `${BASE_URL}/api/sales/follow-ups/`; },
+  followUp: (id)   => `${BASE_URL}/api/sales/follow-ups/${id}/`,
+  get siteVisits() { return `${BASE_URL}/api/sales/site-visits/`; },
+  siteVisit: (id)  => `${BASE_URL}/api/sales/site-visits/${id}/`,
+  get closures()   { return `${BASE_URL}/api/sales/closures/`; },
+  // Team/Users
+  get telecallers(){ return `${BASE_URL}/api/sales/users/telecallers/`; },
+  get usersSlim()  { return `${BASE_URL}/api/sales/users/slim/`; },
+  get team()       { return `${BASE_URL}/api/sales/team/`; },
+  teamMember: (id) => `${BASE_URL}/api/sales/team/${id}/`,
+  // Distribution
+  get distribute() { return `${BASE_URL}/api/sales/distribute/`; },
+  get distLog()    { return `${BASE_URL}/api/sales/distribution-log/`; },
+  get import_()    { return `${BASE_URL}/api/sales/leads/import/`; },
+  get reports()    { return `${BASE_URL}/api/sales/reports/`; },
+  get distSettings(){ return `${BASE_URL}/api/sales/dist-settings/`; },
+  get availability(){ return `${BASE_URL}/api/sales/availability/`; },
+  get distWeight() { return `${BASE_URL}/api/sales/dist-weight/`; },
+  get plots()      { return `${BASE_URL}/api/sales/plots/`; },
+  plot: (id)       => `${BASE_URL}/api/sales/plots/${id}/`,
+};
