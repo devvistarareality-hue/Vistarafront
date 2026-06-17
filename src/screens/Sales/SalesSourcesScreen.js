@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
-  ActivityIndicator, Alert, StatusBar, RefreshControl, Clipboard,
+  ActivityIndicator, Alert, StatusBar, RefreshControl, Clipboard, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,6 +48,55 @@ function Card({ children, style }) {
     <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 14, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, ...style }}>
       {children}
     </View>
+  );
+}
+
+const GUIDE_STEPS = [
+  { n: '1', title: 'Create a Meta App',          body: 'Go to developers.facebook.com → My Apps → Create App. Choose Business type → enter app name → Create App.' },
+  { n: '2', title: 'Add Webhooks Product',       body: 'Inside your app, click Add Product → find Webhooks → Set Up. From the dropdown select Page → Subscribe to this object.' },
+  { n: '3', title: 'Configure Webhook URL',      body: 'In the popup: paste the Webhook URL as Callback URL. Paste the Verify Token. Click Verify and Save.\n\n⚠ URL must be HTTPS — localhost will not work.' },
+  { n: '4', title: 'Subscribe to leadgen field', body: 'After verification, find leadgen in the fields list → click Subscribe. Meta will now notify your CRM on every new lead.' },
+  { n: '5', title: 'Get Page Access Token',      body: 'Meta Business Suite → Settings → Advanced → Page Access Tokens. Generate token (EAA…) → paste it → Save Configuration.\n\n💡 Use a long-lived token (60 days) to avoid reconnecting.' },
+  { n: '6', title: 'Get your Form IDs',          body: 'Ads Manager → Lead Ads Forms → click a form → copy the number after form_id= in the URL.\n\nOr call Graph API Explorer: GET /me/leadgen_forms?access_token=YOUR_TOKEN' },
+  { n: '7', title: 'Map Forms to Projects',      body: 'In Form → Project Routing: enter Form ID, a label, select the project → tap + Add Mapping. Repeat for each project.' },
+  { n: '8', title: 'Test the Integration',       body: 'Meta for Developers → your app → Webhooks → leadgen → Test → Send. Check All Leads — the test lead should appear within 5 seconds.' },
+];
+
+function SetupGuideModal({ visible, onClose }) {
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
+        {/* Header */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Setup Guide</Text>
+            <Text style={{ fontSize: 12, color: MUTED, marginTop: 1 }}>Follow these steps to connect Meta Lead Ads</Text>
+          </View>
+          <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F0F3FA', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="close" size={18} color={TEXT} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          {GUIDE_STEPS.map(step => (
+            <View key={step.n} style={{ flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: '#FAFBFF', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#EAEEF8' }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>{step.n}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 4 }}>{step.title}</Text>
+                <Text style={{ fontSize: 12, color: MUTED, lineHeight: 18 }}>{step.body}</Text>
+              </View>
+            </View>
+          ))}
+
+          <View style={{ padding: 14, borderRadius: 12, backgroundColor: '#FFF8E1', borderWidth: 1.5, borderColor: '#FFE082' }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: '#7A5000', marginBottom: 4 }}>⚠ Important</Text>
+            <Text style={{ fontSize: 12, color: '#7A5000', lineHeight: 18 }}>The webhook URL must be HTTPS and publicly accessible — localhost will not work. Your Railway deployment URL is used automatically.</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 }
 
@@ -298,35 +347,6 @@ function MetaTab() {
         </View>
       </Card>
 
-      {/* Setup Guide */}
-      <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 4, marginTop: 4 }}>Setup Guide</Text>
-      <Text style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>Follow these steps to connect Meta Lead Ads</Text>
-
-      {[
-        { n: '1', title: 'Create a Meta App',          body: 'Go to developers.facebook.com → My Apps → Create App. Choose Business type → enter app name → Create App.' },
-        { n: '2', title: 'Add Webhooks Product',       body: 'Inside your app, click Add Product → find Webhooks → Set Up. From the dropdown select Page → Subscribe to this object.' },
-        { n: '3', title: 'Configure Webhook URL',      body: 'In the popup: paste the Webhook URL above as Callback URL. Paste the Verify Token above. Click Verify and Save.\n\n⚠ URL must be HTTPS — localhost will not work.' },
-        { n: '4', title: 'Subscribe to leadgen field', body: 'After verification, find leadgen in the fields list → click Subscribe. Meta will now notify your CRM on every new lead.' },
-        { n: '5', title: 'Get Page Access Token',      body: 'Meta Business Suite → Settings → Advanced → Page Access Tokens. Generate token (EAA…) → paste it above → Save Configuration.\n\n💡 Use a long-lived token (60 days) to avoid reconnecting.' },
-        { n: '6', title: 'Get your Form IDs',          body: 'Ads Manager → Lead Ads Forms → click a form → copy the number after form_id= in the URL.\n\nOr call Graph API: GET /me/leadgen_forms?access_token=YOUR_TOKEN' },
-        { n: '7', title: 'Map Forms to Projects',      body: 'In Form → Project Routing above: enter Form ID, a label, select the project → tap + Add Mapping. Repeat for each project.' },
-        { n: '8', title: 'Test the Integration',       body: 'Meta for Developers → your app → Webhooks → leadgen → Test → Send. Check All Leads — the test lead should appear within 5 seconds.' },
-      ].map(step => (
-        <Card key={step.n} style={{ flexDirection: 'row', gap: 12 }}>
-          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-            <Text style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>{step.n}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 4 }}>{step.title}</Text>
-            <Text style={{ fontSize: 12, color: MUTED, lineHeight: 18 }}>{step.body}</Text>
-          </View>
-        </Card>
-      ))}
-
-      <View style={{ padding: 14, borderRadius: 12, backgroundColor: '#FFF8E1', borderWidth: 1.5, borderColor: '#FFE082', marginBottom: 20 }}>
-        <Text style={{ fontSize: 11, fontWeight: '800', color: '#7A5000', marginBottom: 4 }}>⚠ Important</Text>
-        <Text style={{ fontSize: 12, color: '#7A5000', lineHeight: 18 }}>The webhook URL must be HTTPS and publicly accessible — localhost will not work. Your Railway deployment URL is used automatically.</Text>
-      </View>
     </ScrollView>
   );
 }
@@ -434,17 +454,24 @@ function SourcesTab() {
 
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 export default function SalesSourcesScreen({ navigation }) {
-  const [tab, setTab] = useState('meta');
+  const [tab,          setTab]          = useState('meta');
+  const [guideVisible, setGuideVisible] = useState(false);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
+
+      <SetupGuideModal visible={guideVisible} onClose={() => setGuideVisible(false)} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
           <Ionicons name="arrow-back" size={22} color={TEXT} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Lead Setup</Text>
+        <TouchableOpacity onPress={() => setGuideVisible(true)}
+          style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 16, fontWeight: '900', color: '#fff', lineHeight: 20 }}>?</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={{ flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 2, borderBottomColor: '#E4E8F0' }}>
