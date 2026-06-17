@@ -275,8 +275,10 @@ function MetaTab() {
       </Card>
 
       {/* Form → Project Routing */}
-      <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 4, marginTop: 4 }}>Form → Project Routing</Text>
-      <Text style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>Map each Meta Lead Ads form to a project so leads auto-classify on arrival.</Text>
+      <Card style={{ paddingBottom: 8 }}>
+        <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Form → Project Routing</Text>
+        <Text style={{ fontSize: 12, color: MUTED }}>Map each Meta Lead Ads form to a project so leads auto-classify on arrival.</Text>
+      </Card>
 
       {/* Existing mappings */}
       {mappings.length > 0 && (
@@ -469,8 +471,9 @@ export default function SalesSourcesScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Lead Setup</Text>
         <TouchableOpacity onPress={() => setGuideVisible(true)}
-          style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 16, fontWeight: '900', color: '#fff', lineHeight: 20 }}>?</Text>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: NAVY }}>
+          <Text style={{ fontSize: 14, fontWeight: '900', color: '#fff' }}>?</Text>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>Setup Guide</Text>
         </TouchableOpacity>
       </View>
 
