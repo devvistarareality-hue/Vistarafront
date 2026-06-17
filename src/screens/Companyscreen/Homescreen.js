@@ -191,11 +191,13 @@ const s = StyleSheet.create({
     width: 72, height: 72, borderRadius: 36,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
+    overflow: 'hidden',
     shadowColor: '#FF6B2B', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
   },
   logoImg: {
     width: 56, height: 56,
+    backgroundColor: '#FFFFFF',
   },
 
   // ── Divider ──
