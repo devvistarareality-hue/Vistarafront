@@ -36,11 +36,10 @@ function generateUserCodePrefix(companyCode) {
 }
 
 const ROLES   = ['Admin', 'Manager', 'Employee'];
-const MODULES = ['Sales', 'Pre-Sales', 'HR', 'Execution', 'Purchase', 'Land'];
+const MODULES = ['Sales', 'HR', 'Execution', 'Purchase', 'Land'];
 
 const MODULE_ICONS = {
   Sales:      'pencil-outline',
-  'Pre-Sales':'filter-outline',
   HR:         'account-group-outline',
   Execution:  'wrench-outline',
   Purchase:   'cart-outline',

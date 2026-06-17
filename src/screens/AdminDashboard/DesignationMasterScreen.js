@@ -9,11 +9,10 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BASE_URL } from '../../constants/api';
 import { COLORS } from '../../constants/theme';
 
-const ALL_MODULES = ['Sales', 'Pre-Sales', 'HR', 'Execution', 'Purchase', 'Land'];
+const ALL_MODULES = ['Sales', 'HR', 'Execution', 'Purchase', 'Land'];
 
 const MODULE_META = {
   Sales:       { color: '#E6960A', bg: '#FFF8E1', icon: 'pencil-outline' },
-  'Pre-Sales': { color: '#0097A7', bg: '#E0F7FA', icon: 'filter-outline' },
   HR:          { color: '#3D5AFE', bg: '#EEF0FF', icon: 'account-group-outline' },
   Execution:   { color: '#2E7D32', bg: '#E8F5E9', icon: 'wrench-outline' },
   Purchase:    { color: '#E65100', bg: '#FFF3E0', icon: 'cart-outline' },
