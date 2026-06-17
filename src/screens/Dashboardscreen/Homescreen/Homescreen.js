@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StatusBar, Alert, ActivityIndicator, Dimensions,
+  StatusBar, Alert, ActivityIndicator, Dimensions, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -49,8 +49,25 @@ const HomeScreen = () => {
   const [calYear,  setCalYear]  = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth() + 1);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [refreshing,  setRefreshing]  = useState(false);
 
-  useEffect(() => { dispatch(fetchDashboard()); }, []);
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchDashboard());
+      const interval = setInterval(() => dispatch(fetchDashboard()), 30000);
+      return () => clearInterval(interval);
+    }, [dispatch]),
+  );
+
+  useEffect(() => {
+    if (!loading) setRefreshing(false);
+  }, [loading]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    dispatch(fetchDashboard());
+    if (attendanceTab === 'month') dispatch(fetchMonthlyAttendance(calYear, calMonth));
+  }, [dispatch, attendanceTab, calYear, calMonth]);
 
   useEffect(() => {
     if (attendanceTab === 'month') {
@@ -141,7 +158,18 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 28 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[NAVY]}
+            tintColor={NAVY}
+          />
+        }
+      >
 
         {/* ── Top Bar ── */}
         <View style={{

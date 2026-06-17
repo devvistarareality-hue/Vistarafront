@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, TextInput,
-  StatusBar, ActivityIndicator, Alert, StyleSheet, ScrollView,
+  StatusBar, ActivityIndicator, Alert, StyleSheet, ScrollView, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -153,10 +153,24 @@ export default function UserManagementScreen({ navigation }) {
     useSelector((s) => s.userManagement);
   const [search,     setSearch]     = useState('');
   const [activeRole, setActiveRole] = useState('All');
+  const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
-    useCallback(() => { dispatch(fetchUsers()); }, [dispatch]),
+    useCallback(() => {
+      dispatch(fetchUsers());
+      const interval = setInterval(() => dispatch(fetchUsers()), 30000);
+      return () => clearInterval(interval);
+    }, [dispatch]),
   );
+
+  useEffect(() => {
+    if (!loading) setRefreshing(false);
+  }, [loading]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    dispatch(fetchUsers());
+  }, [dispatch]);
 
   useEffect(() => {
     if (updateSuccess) {
@@ -254,12 +268,10 @@ export default function UserManagementScreen({ navigation }) {
       </Text>
 
       {/* ── Content ── */}
-      {loading ? (
+      {loading && users.length === 0 ? (
         <ActivityIndicator size="large" color={COLORS.secondary} style={{ marginTop: 40 }} />
       ) : error ? (
         <Text style={s.errorText}>{error}</Text>
-      ) : filtered.length === 0 ? (
-        <Text style={s.emptyText}>No users found.</Text>
       ) : (
         <FlatList
           data={filtered}
@@ -275,6 +287,15 @@ export default function UserManagementScreen({ navigation }) {
           )}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<Text style={s.emptyText}>No users found.</Text>}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.secondary]}
+              tintColor={COLORS.secondary}
+            />
+          }
         />
       )}
     </SafeAreaView>
