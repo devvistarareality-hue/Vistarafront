@@ -16,7 +16,7 @@ async function authHeaders() {
 const MENU = [
   { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: '#3D5AFE', bg: '#EEF0FF' },
   { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: '#2E7D32', bg: '#E8F5E9' },
-  { key: 'SalesSources',      label: 'Lead Sources',  icon: 'git-network-outline',     color: '#0097A7', bg: '#E0F7FA' },
+  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: '#0097A7', bg: '#E0F7FA' },
   { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: '#7B1FA2', bg: '#F3E5F5' },
   { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: '#E65100', bg: '#FFF3E0' },
   { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: '#00796B', bg: '#E0F2F1' },
