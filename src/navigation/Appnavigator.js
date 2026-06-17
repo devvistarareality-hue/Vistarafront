@@ -23,6 +23,17 @@ import CompanyManagementScreen  from '../screens/AdminDashboard/CompanyManagemen
 import EditCompanyScreen        from '../screens/AdminDashboard/EditCompanyScreen';
 import DesignationMasterScreen  from '../screens/AdminDashboard/DesignationMasterScreen';
 
+// Sales CRM screens
+import SalesCRMScreen          from '../screens/Sales/SalesCRMScreen';
+import SalesLeadsScreen        from '../screens/Sales/SalesLeadsScreen';
+import ProjectsScreen          from '../screens/Sales/ProjectsScreen';
+import ManagePlotsScreen       from '../screens/Sales/ManagePlotsScreen';
+import SalesSourcesScreen      from '../screens/Sales/SalesSourcesScreen';
+import SalesTeamScreen         from '../screens/Sales/SalesTeamScreen';
+import SalesDistributionScreen from '../screens/Sales/SalesDistributionScreen';
+import SalesReportsScreen      from '../screens/Sales/SalesReportsScreen';
+import SalesImportScreen       from '../screens/Sales/SalesImportScreen';
+
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
 import PostSignOutScreen  from '../screens/PostSignOut/PostSignOutScreen';
@@ -52,8 +63,17 @@ const AppNavigator = () => {
             <Stack.Screen name="CreateUser"         component={CreateUserScreen} />
             <Stack.Screen name="CompanyManagement"  component={CompanyManagementScreen} />
             <Stack.Screen name="EditCompany"        component={EditCompanyScreen} />
-            <Stack.Screen name="DesignationMaster"  component={DesignationMasterScreen} />
-            <Stack.Screen name="Placeholder"        component={PlaceholderScreen} />
+            <Stack.Screen name="DesignationMaster"    component={DesignationMasterScreen} />
+            <Stack.Screen name="SalesCRM"            component={SalesCRMScreen} />
+            <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
+            <Stack.Screen name="SalesProjects"       component={ProjectsScreen} />
+            <Stack.Screen name="ManagePlots"         component={ManagePlotsScreen} />
+            <Stack.Screen name="SalesSources"        component={SalesSourcesScreen} />
+            <Stack.Screen name="SalesTeam"           component={SalesTeamScreen} />
+            <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
+            <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
+            <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
+            <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
           </>
 
         ) : (
@@ -64,6 +84,8 @@ const AppNavigator = () => {
             <Stack.Screen name="PostSignOut"   component={PostSignOutScreen} />
             <Stack.Screen name="Leave"         component={LeaveScreen} />
             <Stack.Screen name="RequestLeave"  component={RequestLeaveScreen} />
+            <Stack.Screen name="SalesProjects" component={ProjectsScreen} />
+            <Stack.Screen name="ManagePlots"   component={ManagePlotsScreen} />
             <Stack.Screen name="Placeholder"   component={PlaceholderScreen} />
           </>
         )}

@@ -15,6 +15,7 @@
     "expo": "~56.0.12",
     "expo-document-picker": "~56.0.4",
     "expo-file-system": "~56.0.8",
+    "expo-image-picker": "~56.0.18",
     "expo-linear-gradient": "~56.0.4",
     "expo-local-authentication": "~56.0.4",
     "expo-location": "~56.0.18",
@@ -27,9 +28,10 @@
     "react-native-maps": "1.27.2",
     "react-native-pager-view": "8.0.1",
     "react-native-reanimated": "4.3.1",
-    "react-native-tab-view": "^4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
+    "react-native-svg": "15.15.4",
+    "react-native-tab-view": "^4.3.1",
     "react-native-web": "^0.21.2",
     "react-redux": "^9.3.0",
     "redux": "^5.0.1",
@@ -42,5 +44,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "expo-module-scripts": "^56.0.3"
+  }
 }

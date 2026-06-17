@@ -12,7 +12,7 @@ const ADMIN_MODULES = [
   { name: 'User Management',    icon: 'account-cog-outline',  color: '#182350', iconBg: '#E8EEFF', screen: 'UserManagement',     params: undefined },
   { name: 'Company Management', icon: 'domain',               color: '#0097A7', iconBg: '#E0F7FA', screen: 'CompanyManagement',  params: undefined },
   { name: 'Designation Master', icon: 'tag-multiple-outline', color: '#E65100', iconBg: '#FFF3E0', screen: 'DesignationMaster',  params: undefined },
-  { name: 'Sales',              icon: 'pencil-outline',       color: '#F9A825', iconBg: '#FFF8E1', screen: 'Placeholder',        params: { title: 'Sales' } },
+  { name: 'Sales',              icon: 'storefront-outline',   color: '#F9A825', iconBg: '#FFF8E1', screen: 'SalesCRM',           params: undefined },
   { name: 'HR',                 icon: 'account-group-outline',color: '#3D5AFE', iconBg: '#EEF0FF', screen: 'Placeholder',        params: { title: 'HR' } },
   { name: 'Execution',          icon: 'wrench-outline',       color: '#2E7D32', iconBg: '#E8F5E9', screen: 'Placeholder',        params: { title: 'Execution' } },
   { name: 'Purchase',           icon: 'cart-outline',         color: '#E65100', iconBg: '#FFF3E0', screen: 'Placeholder',        params: { title: 'Purchase' } },
