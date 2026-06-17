@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "jsx": "react-native",
     "allowSyntheticDefaultImports": true,
     "checkJs": false
