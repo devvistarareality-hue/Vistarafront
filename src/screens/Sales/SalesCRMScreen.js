@@ -43,16 +43,12 @@ export default function SalesCRMScreen({ navigation }) {
     try {
       const headers = await authHeaders();
       const endpoint = SALES_ENDPOINTS.stats;
-      console.log('[SalesCRM] Loading stats from:', endpoint);
       const res = await fetch(endpoint, { headers });
-      console.log('[SalesCRM] Stats response status:', res.status);
       if (res.ok) {
         const data = await res.json();
-        console.log('[SalesCRM] Stats data:', data);
         setStats(data);
       } else {
         const text = await res.text();
-        console.log('[SalesCRM] Stats error:', res.status, text);
       }
     } catch (e) {
       console.log('[SalesCRM] Stats exception:', e);

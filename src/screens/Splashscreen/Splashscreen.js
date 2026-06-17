@@ -14,9 +14,6 @@ const SplashScreen = ({ onFinish }) => {
     discoverServer(RAILWAY_URL).then((url) => {
       if (url) {
         setBaseUrl(url);
-        console.log('[ServerDiscovery] ✅ Using server:', url);
-      } else {
-        console.log('[ServerDiscovery] ❌ No local server found, using Railway');
       }
     });
 

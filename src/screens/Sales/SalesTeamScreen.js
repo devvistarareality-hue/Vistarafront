@@ -47,27 +47,18 @@ export default function SalesTeamScreen({ navigation }) {
     try {
       const headers = await authHeaders();
       const url = SALES_ENDPOINTS.usersSlim;
-      const baseServer = url.replace('/api/sales/users/slim/', '');
-      console.log(`[SalesTeam] 🔗 Server: ${baseServer}`);
-      console.log('[SalesTeam] 📡 Fetching from:', url);
-      
       const res = await fetch(url, { headers });
-      console.log('[SalesTeam] ✅ Response status:', res.status);
-      
       if (res.ok) {
         const d = await res.json();
-        console.log('[SalesTeam] 📦 Received', Array.isArray(d) ? d.length : 0, 'members');
         const dataArray = Array.isArray(d) ? d : (d.results || []);
         setMembers(dataArray);
       } else {
         const t = await res.text();
-        console.log('[SalesTeam] ❌ Error response:', t.slice(0, 200));
         const msg = `${res.status} from ${url.replace(/https?:\/\/[^/]+/, '')}: ${t.slice(0, 200)}`;
         setFetchError(msg);
       }
-    } catch (e) { 
-      console.log('[SalesTeam] 💥 Exception:', e.message);
-      setFetchError(e.message); 
+    } catch (e) {
+      setFetchError(e.message);
     }
     setLoading(false); setRefreshing(false);
   }
