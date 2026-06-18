@@ -54,30 +54,70 @@ function initials(name) {
   return (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
+const HISTORY_LABEL = {
+  status:            'Overall Status',
+  telecaller_status: 'TC Status',
+  stm_status:        'STM Status',
+  telecaller:        'Telecaller Assigned',
+  stm:               'STM Assigned',
+};
+const HISTORY_COLOR = {
+  status:            '#3D5AFE',
+  telecaller_status: '#0097A7',
+  stm_status:        '#FF6B2B',
+  telecaller:        '#7B1FA2',
+  stm:               '#2E7D32',
+};
+const FU_STATUS_COLOR = { pending: '#F9A825', completed: '#2E7D32', missed: '#EF4444', rescheduled: '#0097A7' };
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 /* ── Lead Detail Modal ── */
 function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated }) {
   const [form, setForm]   = useState({});
   const [saving, setSaving] = useState(false);
   const [tab, setTab]     = useState('details');
+  const [detail, setDetail] = useState(null);
+
+  // Followup form
+  const [fuForm,   setFuForm]   = useState({ role_context: 'telecaller', scheduled_at: '', remarks: '' });
+  const [savingFu, setSavingFu] = useState(false);
+  const [fuErr,    setFuErr]    = useState('');
 
   useEffect(() => {
-    if (lead) setForm({
-      name:              lead.name            || '',
-      phone:             lead.phone           || '',
-      alt_phone:         lead.alt_phone       || '',
-      email:             lead.email           || '',
-      status:            lead.status          || 'new',
-      project:           lead.project         || '',
-      source:            lead.source          || '',
-      telecaller:        lead.telecaller      || '',
-      telecaller_status: lead.telecaller_status || '',
-      telecaller_remarks:lead.telecaller_remarks || '',
-      stm:               lead.stm             || '',
-      stm_status:        lead.stm_status      || '',
-      stm_remarks:       lead.stm_remarks     || '',
-    });
-    setTab('details');
-  }, [lead, visible]);
+    if (lead) {
+      setForm({
+        name:              lead.name            || '',
+        phone:             lead.phone           || '',
+        alt_phone:         lead.alt_phone       || '',
+        email:             lead.email           || '',
+        status:            lead.status          || 'new',
+        project:           lead.project         || '',
+        source:            lead.source          || '',
+        telecaller:        lead.telecaller      || '',
+        telecaller_status: lead.telecaller_status || '',
+        telecaller_remarks:lead.telecaller_remarks || '',
+        stm:               lead.stm             || '',
+        stm_status:        lead.stm_status      || '',
+        stm_remarks:       lead.stm_remarks     || '',
+      });
+      setTab('details');
+      setDetail(null);
+      async function loadDetail() {
+        try {
+          const headers = await authHeaders();
+          const res = await fetch(SALES_ENDPOINTS.lead(lead.id), { headers });
+          if (res.ok) setDetail(await res.json());
+        } catch (_) {}
+      }
+      loadDetail();
+    }
+  }, [lead?.id, visible]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -90,6 +130,50 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       else { Alert.alert('Error', 'Could not save lead.'); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
+  }
+
+  async function addFollowup() {
+    if (!fuForm.scheduled_at) { setFuErr('Date & time required.'); return; }
+    const assignedTo = fuForm.role_context === 'telecaller' ? form.telecaller : form.stm;
+    if (!assignedTo) { setFuErr('Assign a telecaller/STM to the lead first.'); return; }
+    setFuErr('');
+    setSavingFu(true);
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(SALES_ENDPOINTS.followUps, {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          lead: lead.id,
+          assigned_to: assignedTo,
+          role_context: fuForm.role_context,
+          scheduled_at: fuForm.scheduled_at,
+          remarks: fuForm.remarks,
+          status: 'pending',
+        }),
+      });
+      if (res.ok) {
+        const newFu = await res.json();
+        setDetail(d => ({ ...d, follow_ups: [newFu, ...(d?.follow_ups || [])] }));
+        setFuForm({ role_context: 'telecaller', scheduled_at: '', remarks: '' });
+      } else {
+        setFuErr('Could not save follow-up.');
+      }
+    } catch (e) { setFuErr(e.message); }
+    setSavingFu(false);
+  }
+
+  async function markFollowupDone(fuId) {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(SALES_ENDPOINTS.followUp(fuId), {
+        method: 'PATCH', headers,
+        body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString() }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setDetail(d => ({ ...d, follow_ups: d.follow_ups.map(f => f.id === fuId ? updated : f) }));
+      }
+    } catch (_) {}
   }
 
   async function deleteLead() {
@@ -125,13 +209,15 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
           </View>
 
           {/* Tabs */}
-          <View style={{ flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-            {[['details','Info'], ['telecaller','Telecaller'], ['stm','STM']].map(([key, lbl]) => (
-              <TouchableOpacity key={key} onPress={() => setTab(key)} style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: tab === key ? BLUE : 'transparent' }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: tab === key ? BLUE : MUTED }}>{lbl}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+            <View style={{ flexDirection: 'row' }}>
+              {[['details','Info'],['telecaller','Telecaller'],['stm','STM'],['history','History'],['followups','Follow-ups']].map(([key, lbl]) => (
+                <TouchableOpacity key={key} onPress={() => setTab(key)} style={{ paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: tab === key ? BLUE : 'transparent' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: tab === key ? BLUE : MUTED }}>{lbl}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
 
           <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
             {tab === 'details' && <>
@@ -272,6 +358,114 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
                 multiline style={[inpS, { minHeight: 80, textAlignVertical: 'top' }]} />
             </>}
+
+            {/* ── HISTORY TAB ── */}
+            {tab === 'history' && <>
+              {/* Lead received event */}
+              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+                <View style={{ alignItems: 'center' }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#3D5AFE18', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 16 }}>📥</Text>
+                  </View>
+                  <View style={{ width: 2, flex: 1, backgroundColor: '#F0F3FA', marginTop: 4 }} />
+                </View>
+                <View style={{ flex: 1, paddingBottom: 16 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>Lead Received</Text>
+                  <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>Source: {lead.source_name || '—'} · Project: {lead.project_name || '—'}</Text>
+                  <Text style={{ fontSize: 11, color: '#B0BAC9', marginTop: 2 }}>{fmtDateTime(lead.created_at)}</Text>
+                </View>
+              </View>
+
+              {!detail && <ActivityIndicator size="small" color={MUTED} style={{ marginTop: 20 }} />}
+              {detail && (!detail.history || detail.history.length === 0) && (
+                <Text style={{ fontSize: 13, color: '#B0BAC9', textAlign: 'center', marginTop: 24 }}>No changes recorded yet.</Text>
+              )}
+              {detail?.history?.map((h, idx) => {
+                const isLast = idx === detail.history.length - 1;
+                const color  = HISTORY_COLOR[h.field_changed] || MUTED;
+                const icon   = h.field_changed === 'telecaller' ? '👤'
+                             : h.field_changed === 'stm'        ? '🏢'
+                             : '🔄';
+                return (
+                  <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
+                    <View style={{ alignItems: 'center' }}>
+                      <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontSize: 16 }}>{icon}</Text>
+                      </View>
+                      {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: '#F0F3FA', marginTop: 4 }} />}
+                    </View>
+                    <View style={{ flex: 1, paddingBottom: isLast ? 0 : 16 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{HISTORY_LABEL[h.field_changed] || h.field_changed}</Text>
+                      <Text style={{ fontSize: 12, color: TEXT, marginTop: 2 }}>
+                        <Text style={{ color: MUTED }}>{h.old_value || '—'}</Text>
+                        <Text> → </Text>
+                        <Text style={{ color, fontWeight: '700' }}>{h.new_value || '—'}</Text>
+                      </Text>
+                      {!!h.changed_by_name && <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>by {h.changed_by_name}</Text>}
+                      <Text style={{ fontSize: 11, color: '#B0BAC9', marginTop: 2 }}>{fmtDateTime(h.created_at)}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </>}
+
+            {/* ── FOLLOWUPS TAB ── */}
+            {tab === 'followups' && <>
+              {/* Add form */}
+              <View style={{ backgroundColor: '#F8FAFD', borderRadius: 12, padding: 14, borderWidth: 1.5, borderColor: '#E4E8F0', marginBottom: 20 }}>
+                <Text style={[lblS, { marginBottom: 10 }]}>Schedule Follow-up</Text>
+                <Text style={lblS}>Role</Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                  {['telecaller','stm'].map(r => (
+                    <TouchableOpacity key={r} onPress={() => setFuForm(f => ({ ...f, role_context: r }))}
+                      style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: fuForm.role_context === r ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: fuForm.role_context === r ? NAVY : '#E0E6F0', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: fuForm.role_context === r ? '#fff' : MUTED }}>{r.toUpperCase()}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={lblS}>Date & Time</Text>
+                <TextInput value={fuForm.scheduled_at} onChangeText={v => setFuForm(f => ({ ...f, scheduled_at: v }))}
+                  placeholder="YYYY-MM-DDTHH:MM" style={inpS} />
+                <Text style={lblS}>Remarks</Text>
+                <TextInput value={fuForm.remarks} onChangeText={v => setFuForm(f => ({ ...f, remarks: v }))}
+                  placeholder="Call notes, instructions…" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+                {!!fuErr && <Text style={{ color: '#EF4444', fontSize: 12, marginBottom: 8 }}>{fuErr}</Text>}
+                <TouchableOpacity onPress={addFollowup} disabled={savingFu}
+                  style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', opacity: savingFu ? 0.6 : 1 }}>
+                  {savingFu ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>+ Add Follow-up</Text>}
+                </TouchableOpacity>
+              </View>
+
+              {!detail && <ActivityIndicator size="small" color={MUTED} />}
+              {detail && (!detail.follow_ups || detail.follow_ups.length === 0) && (
+                <Text style={{ fontSize: 13, color: '#B0BAC9', textAlign: 'center', marginTop: 8 }}>No follow-ups yet.</Text>
+              )}
+              {detail?.follow_ups?.map(fu => (
+                <View key={fu.id} style={{ borderWidth: 1.5, borderColor: '#E4E8F0', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: fu.role_context === 'stm' ? '#FF6B2B' : '#0097A7', textTransform: 'uppercase' }}>{fu.role_context}</Text>
+                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (FU_STATUS_COLOR[fu.status] || MUTED) + '18' }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: FU_STATUS_COLOR[fu.status] || MUTED }}>{fu.status}</Text>
+                      </View>
+                    </View>
+                    {fu.status === 'pending' && (
+                      <TouchableOpacity onPress={() => markFollowupDone(fu.id)}
+                        style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#2E7D32' }}>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#2E7D32' }}>Mark Done</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{fmtDateTime(fu.scheduled_at)}</Text>
+                  {!!fu.assigned_to_name && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Assigned to: {fu.assigned_to_name}</Text>}
+                  {!!fu.remarks && <Text style={{ fontSize: 12, color: TEXT, marginTop: 6 }}>{fu.remarks}</Text>}
+                  {fu.status === 'completed' && !!fu.completed_at && (
+                    <Text style={{ fontSize: 11, color: '#2E7D32', marginTop: 4 }}>✓ Done {fmtDateTime(fu.completed_at)}</Text>
+                  )}
+                </View>
+              ))}
+            </>}
+
             <View style={{ height: 20 }} />
           </ScrollView>
         </KeyboardAvoidingView>
