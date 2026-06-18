@@ -62,7 +62,7 @@ function PickerDropdown({ items, value, onChange, placeholder = '— Select —'
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)}
-        style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <View style={{ flex: 1 }}>
           {selected ? (
             <>
@@ -249,8 +249,12 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     ]);
   }
 
-  const inpS = { borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: '#fff', marginBottom: 10 };
-  const lblS = { fontSize: 10, fontWeight: '700', color: '#B0BAC9', textTransform: 'uppercase', marginBottom: 4 };
+  const inpS = { borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: '#fff', marginBottom: 8 };
+  const lblS = { fontSize: 10, fontWeight: '700', color: '#B0BAC9', textTransform: 'uppercase', marginBottom: 3, letterSpacing: 0.4 };
+  const secH = { fontSize: 11, fontWeight: '800', color: NAVY, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 };
+  const row2 = { flexDirection: 'row', gap: 10 };
+  const half = { flex: 1 };
+  const divider = { height: 1, backgroundColor: '#F0F3FA', marginVertical: 10 };
 
   if (!lead) return null;
   return (
@@ -279,108 +283,128 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             ))}
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
 
             {/* ── DETAIL TAB ── */}
             {tab === 'detail' && <>
-              {/* Name + Alt Phone side by side */}
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={{ flex: 1 }}>
+
+              {/* Row 1: Name | Alt Phone */}
+              <View style={row2}>
+                <View style={half}>
                   <Text style={lblS}>Name</Text>
                   <TextInput value={form.name} onChangeText={v => set('name', v)} style={inpS} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={lblS}>Alternate Phone</Text>
-                  <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate" />
+                <View style={half}>
+                  <Text style={lblS}>Alt Phone</Text>
+                  <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate" placeholderTextColor="#C8D0DC" />
                 </View>
               </View>
 
-              {/* Phone + Email read-only */}
-              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 4 }}>
-                <View style={{ flex: 1 }}>
+              {/* Row 2: Phone | Email read-only */}
+              <View style={row2}>
+                <View style={half}>
                   <Text style={lblS}>Phone</Text>
-                  <View style={{ ...inpS, backgroundColor: '#F5F6FA', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 14, color: MUTED }} selectable>{lead.phone || '—'}</Text>
+                  <View style={{ ...inpS, backgroundColor: '#F5F7FB', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 13, color: MUTED }} selectable>{lead.phone || '—'}</Text>
                   </View>
                 </View>
-                {!!lead.email && (
-                  <View style={{ flex: 1 }}>
-                    <Text style={lblS}>Email</Text>
-                    <View style={{ ...inpS, backgroundColor: '#F5F6FA', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 13, color: MUTED }} selectable numberOfLines={1}>{lead.email}</Text>
-                    </View>
+                <View style={half}>
+                  <Text style={lblS}>Email</Text>
+                  <View style={{ ...inpS, backgroundColor: '#F5F7FB', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 12, color: MUTED }} selectable numberOfLines={1}>{lead.email || '—'}</Text>
                   </View>
-                )}
+                </View>
               </View>
 
-              <View style={{ height: 1, backgroundColor: '#F0F3FA', marginVertical: 12 }} />
+              <View style={divider} />
 
-              <Text style={lblS}>Overall Status</Text>
-              <PickerDropdown
-                items={STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))}
-                value={form.status} onChange={v => set('status', v)}
-                placeholder="— Select Status —" title="Overall Status" />
+              {/* Row 3: Overall Status | Source */}
+              <View style={row2}>
+                <View style={half}>
+                  <Text style={lblS}>Overall Status</Text>
+                  <PickerDropdown
+                    items={STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))}
+                    value={form.status} onChange={v => set('status', v)}
+                    placeholder="Status" title="Overall Status" />
+                </View>
+                <View style={half}>
+                  <Text style={lblS}>Source</Text>
+                  <PickerDropdown
+                    items={sources.map(s => ({ value: s.id, label: s.name }))}
+                    value={form.source} onChange={v => set('source', v)}
+                    placeholder="Source" title="Source" />
+                </View>
+              </View>
 
+              {/* Row 4: Project (full width) */}
               <Text style={lblS}>Project</Text>
               <PickerDropdown
                 items={projects.map(p => ({ value: p.id, label: p.name }))}
                 value={form.project} onChange={v => set('project', v)}
-                placeholder="— Select Project —" title="Project" />
+                placeholder="Select Project" title="Project" />
 
-              <Text style={lblS}>Source</Text>
-              <PickerDropdown
-                items={sources.map(s => ({ value: s.id, label: s.name }))}
-                value={form.source} onChange={v => set('source', v)}
-                placeholder="— Select Source —" title="Source" />
-
-              <View style={{ height: 1, backgroundColor: '#F0F3FA', marginVertical: 12 }} />
+              <View style={divider} />
 
               {/* Telecaller section */}
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>Telecaller (Pre-Sales)</Text>
+              <Text style={secH}>Telecaller (Pre-Sales)</Text>
 
-              <Text style={lblS}>Assign Telecaller</Text>
-              <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="— Select Telecaller —" title="Assign Telecaller" />
-
-              <Text style={lblS}>TC Status</Text>
-              <PickerDropdown
-                items={['hot','warm','cold','not_interested','not_reachable','callback'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
-                value={form.telecaller_status} onChange={v => set('telecaller_status', v)}
-                placeholder="— Select TC Status —" title="TC Status" />
+              {/* Row 5: Assign Telecaller | TC Status */}
+              <View style={row2}>
+                <View style={half}>
+                  <Text style={lblS}>Assign</Text>
+                  <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="Telecaller" title="Assign Telecaller" />
+                </View>
+                <View style={half}>
+                  <Text style={lblS}>TC Status</Text>
+                  <PickerDropdown
+                    items={['hot','warm','cold','not_interested','not_reachable','callback'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
+                    value={form.telecaller_status} onChange={v => set('telecaller_status', v)}
+                    placeholder="Status" title="TC Status" />
+                </View>
+              </View>
 
               <Text style={lblS}>TC Remarks</Text>
               <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
-                multiline placeholder="Call notes…" style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+                multiline placeholder="Call notes…" placeholderTextColor="#C8D0DC"
+                style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
 
-              <View style={{ height: 1, backgroundColor: '#F0F3FA', marginVertical: 12 }} />
+              <View style={divider} />
 
               {/* STM section */}
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>STM (Sales)</Text>
+              <Text style={secH}>STM (Sales)</Text>
 
-              <Text style={lblS}>Assign STM</Text>
-              <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="— Select STM —" title="Assign STM" />
-
-              <Text style={lblS}>STM Status</Text>
-              <PickerDropdown
-                items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
-                value={form.stm_status} onChange={v => set('stm_status', v)}
-                placeholder="— Select STM Status —" title="STM Status" />
+              {/* Row 6: Assign STM | STM Status */}
+              <View style={row2}>
+                <View style={half}>
+                  <Text style={lblS}>Assign</Text>
+                  <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="STM" title="Assign STM" />
+                </View>
+                <View style={half}>
+                  <Text style={lblS}>STM Status</Text>
+                  <PickerDropdown
+                    items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
+                    value={form.stm_status} onChange={v => set('stm_status', v)}
+                    placeholder="Status" title="STM Status" />
+                </View>
+              </View>
 
               <Text style={lblS}>STM Remarks</Text>
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
-                multiline placeholder="Notes…" style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+                multiline placeholder="Notes…" placeholderTextColor="#C8D0DC"
+                style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
 
               {/* Meta Ads Info */}
               {(lead.meta_campaign_name || lead.meta_adset_name || lead.meta_ad_name) && (
-                <View style={{ marginTop: 12, padding: 12, backgroundColor: '#F8FAFD', borderRadius: 10, borderWidth: 1.5, borderColor: '#E4E8F0' }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>Meta Ads Info</Text>
-                  {!!lead.meta_campaign_name && <View style={{ flexDirection: 'row', marginBottom: 4 }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>CAMPAIGN</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_campaign_name}</Text></View>}
-                  {!!lead.meta_adset_name    && <View style={{ flexDirection: 'row', marginBottom: 4 }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>AD SET</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_adset_name}</Text></View>}
-                  {!!lead.meta_ad_name       && <View style={{ flexDirection: 'row' }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>AD NAME</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_ad_name}</Text></View>}
+                <View style={{ marginTop: 8, padding: 12, backgroundColor: '#F8FAFD', borderRadius: 10, borderWidth: 1.5, borderColor: '#E4E8F0' }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>Meta Ads</Text>
+                  {!!lead.meta_campaign_name && <View style={{ flexDirection: 'row', marginBottom: 3 }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 66 }}>CAMPAIGN</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_campaign_name}</Text></View>}
+                  {!!lead.meta_adset_name    && <View style={{ flexDirection: 'row', marginBottom: 3 }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 66 }}>AD SET</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_adset_name}</Text></View>}
+                  {!!lead.meta_ad_name       && <View style={{ flexDirection: 'row' }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 66 }}>AD</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_ad_name}</Text></View>}
                 </View>
               )}
 
-              <TouchableOpacity onPress={deleteLead} style={{ marginTop: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FEE2E2', alignItems: 'center', borderWidth: 1.5, borderColor: '#FCA5A5' }}>
-                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>Delete Lead</Text>
+              <TouchableOpacity onPress={deleteLead} style={{ marginTop: 14, paddingVertical: 11, borderRadius: 12, backgroundColor: '#FEE2E2', alignItems: 'center', borderWidth: 1.5, borderColor: '#FCA5A5' }}>
+                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>Delete Lead</Text>
               </TouchableOpacity>
             </>}
 
