@@ -176,6 +176,29 @@ function LeadDetailModal({ lead, projects, sources, telecallers, visible, onClos
                   ))}
                 </View>
               </ScrollView>
+              {(lead.meta_campaign_name || lead.meta_adset_name || lead.meta_ad_name) && (
+                <View style={{ marginTop: 12, padding: 12, backgroundColor: '#F8FAFD', borderRadius: 10, borderWidth: 1.5, borderColor: '#E4E8F0' }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>Meta Ads Info</Text>
+                  {lead.meta_campaign_name ? (
+                    <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>CAMPAIGN</Text>
+                      <Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_campaign_name}</Text>
+                    </View>
+                  ) : null}
+                  {lead.meta_adset_name ? (
+                    <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>AD SET</Text>
+                      <Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_adset_name}</Text>
+                    </View>
+                  ) : null}
+                  {lead.meta_ad_name ? (
+                    <View style={{ flexDirection: 'row' }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>AD NAME</Text>
+                      <Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_ad_name}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
               <TouchableOpacity onPress={deleteLead} style={{ marginTop: 12, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FEE2E2', alignItems: 'center', borderWidth: 1.5, borderColor: '#FCA5A5' }}>
                 <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>Delete Lead</Text>
               </TouchableOpacity>
@@ -352,13 +375,22 @@ export default function SalesLeadsScreen({ navigation }) {
 
   useEffect(() => { loadData(true); }, [search, statusFilter]);
 
+  // Auto-refresh every 30 seconds to pick up new incoming leads
+  useEffect(() => {
+    const id = setInterval(() => loadData(true), 30000);
+    return () => clearInterval(id);
+  }, [search, statusFilter]);
+
   function onLeadUpdated(updated) {
     if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
     else setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
   }
 
   const LeadCard = useCallback(({ item }) => {
-    const sc = STATUS_COLOR[item.status] || { bg: '#F5F5F5', text: MUTED };
+    const metaLine = [item.meta_campaign_name, item.meta_adset_name, item.meta_ad_name].filter(Boolean).join(' · ');
+    const dateObj  = item.created_at ? new Date(item.created_at) : null;
+    const dateStr  = dateObj ? dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '';
+    const timeStr  = dateObj ? dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
     return (
       <TouchableOpacity style={[CARD, { marginHorizontal: 16, marginBottom: 10, padding: 14 }]}
         onPress={() => { setSelectedLead(item); setDetailModal(true); }} activeOpacity={0.8}>
@@ -368,14 +400,25 @@ export default function SalesLeadsScreen({ navigation }) {
           </View>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }} numberOfLines={1}>{item.name}</Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, flex: 1, marginRight: 8 }} numberOfLines={1}>{item.name}</Text>
               <StatusBadge status={item.status} />
             </View>
             <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{item.phone}</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-              {item.project_name ? <Text style={{ fontSize: 11, color: MUTED }}>📂 {item.project_name}</Text> : null}
-              {item.source_name  ? <Text style={{ fontSize: 11, color: MUTED }}>• {item.source_name}</Text>  : null}
-              {item.telecaller_name ? <Text style={{ fontSize: 11, color: MUTED }}>👤 {item.telecaller_name}</Text> : null}
+            {!!metaLine && (
+              <Text style={{ fontSize: 10, color: '#8492A6', marginTop: 2 }} numberOfLines={1}>{metaLine}</Text>
+            )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 }}>
+                {item.project_name    ? <Text style={{ fontSize: 11, color: MUTED }}>📂 {item.project_name}</Text>    : null}
+                {item.source_name     ? <Text style={{ fontSize: 11, color: MUTED }}>• {item.source_name}</Text>      : null}
+                {item.telecaller_name ? <Text style={{ fontSize: 11, color: MUTED }}>👤 {item.telecaller_name}</Text> : null}
+              </View>
+              {!!dateStr && (
+                <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+                  <Text style={{ fontSize: 11, color: MUTED }}>{dateStr}</Text>
+                  <Text style={{ fontSize: 10, color: '#B0BAC9' }}>{timeStr}</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
