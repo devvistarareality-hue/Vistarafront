@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SALES_ENDPOINTS } from '../../constants/api';
 
 const NAVY = '#182350'; const BLUE = '#3D5AFE'; const BG = '#F5F6FA'; const TEXT = '#1A1A2E'; const MUTED = '#8492A6';
@@ -147,7 +148,10 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const [detail, setDetail] = useState(null);
 
   // Followup form
-  const [fuForm,   setFuForm]   = useState({ role_context: 'telecaller', scheduled_at: '', remarks: '' });
+  const defaultPickerDate = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
+  const [fuForm,   setFuForm]   = useState({ role_context: 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [savingFu, setSavingFu] = useState(false);
   const [fuErr,    setFuErr]    = useState('');
 
@@ -196,6 +200,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
   async function addFollowup() {
     if (!fuForm.scheduled_at) { setFuErr('Date & time required.'); return; }
+
     const assignedTo = fuForm.role_context === 'telecaller' ? form.telecaller : form.stm;
     if (!assignedTo) { setFuErr('Assign a telecaller/STM to the lead first.'); return; }
     setFuErr('');
@@ -208,7 +213,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
           lead: lead.id,
           assigned_to: assignedTo,
           role_context: fuForm.role_context,
-          scheduled_at: fuForm.scheduled_at,
+          scheduled_at: fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at.toISOString() : fuForm.scheduled_at,
           remarks: fuForm.remarks,
           status: 'pending',
         }),
@@ -216,7 +221,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       if (res.ok) {
         const newFu = await res.json();
         setDetail(d => ({ ...d, follow_ups: [newFu, ...(d?.follow_ups || [])] }));
-        setFuForm({ role_context: 'telecaller', scheduled_at: '', remarks: '' });
+        setFuForm({ role_context: 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
       } else {
         setFuErr('Could not save follow-up.');
       }
@@ -473,8 +478,112 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   ))}
                 </View>
                 <Text style={lblS}>Date & Time</Text>
-                <TextInput value={fuForm.scheduled_at} onChangeText={v => setFuForm(f => ({ ...f, scheduled_at: v }))}
-                  placeholder="YYYY-MM-DDTHH:MM" style={inpS} />
+                {/* Date button */}
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                  <TouchableOpacity onPress={() => setShowDatePicker(true)}
+                    style={{ flex: 1, borderWidth: 1.5, borderColor: '#3D5AFE', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#F0F3FF', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="calendar-outline" size={16} color={BLUE} />
+                    <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>
+                      {fuForm.scheduled_at instanceof Date
+                        ? fuForm.scheduled_at.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : 'Pick Date'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowTimePicker(true)}
+                    style={{ flex: 1, borderWidth: 1.5, borderColor: '#3D5AFE', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#F0F3FF', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="time-outline" size={16} color={BLUE} />
+                    <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>
+                      {fuForm.scheduled_at instanceof Date
+                        ? fuForm.scheduled_at.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                        : 'Pick Time'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* iOS: inline pickers inside modals */}
+                {Platform.OS === 'ios' && showDatePicker && (
+                  <Modal transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
+                    <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowDatePicker(false)}>
+                      <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                          <TouchableOpacity onPress={() => setShowDatePicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                          <Text style={{ fontWeight: '700', color: TEXT }}>Pick Date</Text>
+                          <TouchableOpacity onPress={() => setShowDatePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                          value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
+                          mode="date" display="spinner" textColor={TEXT}
+                          onChange={(_, d) => d && setFuForm(f => {
+                            const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
+                            const merged = new Date(d);
+                            merged.setHours(cur.getHours(), cur.getMinutes(), 0, 0);
+                            return { ...f, scheduled_at: merged };
+                          })}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </Modal>
+                )}
+                {Platform.OS === 'ios' && showTimePicker && (
+                  <Modal transparent animationType="slide" onRequestClose={() => setShowTimePicker(false)}>
+                    <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
+                      <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                          <TouchableOpacity onPress={() => setShowTimePicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                          <Text style={{ fontWeight: '700', color: TEXT }}>Pick Time</Text>
+                          <TouchableOpacity onPress={() => setShowTimePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                          value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
+                          mode="time" display="spinner" textColor={TEXT}
+                          onChange={(_, d) => d && setFuForm(f => {
+                            const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
+                            const merged = new Date(cur);
+                            merged.setHours(d.getHours(), d.getMinutes(), 0, 0);
+                            return { ...f, scheduled_at: merged };
+                          })}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </Modal>
+                )}
+
+                {/* Android: native dialog pickers */}
+                {Platform.OS === 'android' && showDatePicker && (
+                  <DateTimePicker
+                    value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
+                    mode="date" display="default"
+                    onChange={(e, d) => {
+                      setShowDatePicker(false);
+                      if (e.type === 'dismissed') return;
+                      if (d) {
+                        setFuForm(f => {
+                          const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
+                          const merged = new Date(d);
+                          merged.setHours(cur.getHours(), cur.getMinutes(), 0, 0);
+                          return { ...f, scheduled_at: merged };
+                        });
+                        setShowTimePicker(true);
+                      }
+                    }}
+                  />
+                )}
+                {Platform.OS === 'android' && showTimePicker && (
+                  <DateTimePicker
+                    value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
+                    mode="time" display="default" is24Hour={false}
+                    onChange={(e, d) => {
+                      setShowTimePicker(false);
+                      if (e.type === 'dismissed') return;
+                      if (d) setFuForm(f => {
+                        const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
+                        const merged = new Date(cur);
+                        merged.setHours(d.getHours(), d.getMinutes(), 0, 0);
+                        return { ...f, scheduled_at: merged };
+                      });
+                    }}
+                  />
+                )}
                 <Text style={lblS}>Remarks</Text>
                 <TextInput value={fuForm.remarks} onChangeText={v => setFuForm(f => ({ ...f, remarks: v }))}
                   placeholder="Call notes, instructions…" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
