@@ -54,6 +54,60 @@ function initials(name) {
   return (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
+/* ── Custom user dropdown (no Picker package needed) ── */
+function UserPickerDropdown({ users, value, onChange, placeholder = '— Select —' }) {
+  const [open, setOpen] = useState(false);
+  const selected = users.find(u => String(u.id) === String(value));
+  return (
+    <>
+      <TouchableOpacity onPress={() => setOpen(true)}
+        style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <View style={{ flex: 1 }}>
+          {selected ? (
+            <>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A2E' }}>{selected.name}</Text>
+              {!!selected.designation && <Text style={{ fontSize: 11, color: '#8492A6', marginTop: 1 }}>{selected.designation}</Text>}
+            </>
+          ) : (
+            <Text style={{ fontSize: 14, color: '#B0BAC9' }}>{placeholder}</Text>
+          )}
+        </View>
+        <Text style={{ fontSize: 12, color: '#8492A6', marginLeft: 8 }}>▼</Text>
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, maxHeight: '60%' }}>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A2E' }}>Select User</Text>
+              <TouchableOpacity onPress={() => setOpen(false)}><Text style={{ fontSize: 18, color: '#8492A6' }}>✕</Text></TouchableOpacity>
+            </View>
+            <ScrollView>
+              {/* None option */}
+              <TouchableOpacity onPress={() => { onChange(''); setOpen(false); }}
+                style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 14, color: '#B0BAC9' }}>— None —</Text>
+                {!value && <Text style={{ color: '#3D5AFE', fontSize: 16 }}>✓</Text>}
+              </TouchableOpacity>
+              {users.map(u => (
+                <TouchableOpacity key={u.id} onPress={() => { onChange(u.id); setOpen(false); }}
+                  style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: String(value) === String(u.id) ? '700' : '500', color: String(value) === String(u.id) ? '#3D5AFE' : '#1A1A2E' }}>{u.name}</Text>
+                    {!!u.designation && <Text style={{ fontSize: 11, color: '#8492A6', marginTop: 1 }}>{u.designation}</Text>}
+                  </View>
+                  {String(value) === String(u.id) && <Text style={{ color: '#3D5AFE', fontSize: 16 }}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+              <View style={{ height: 30 }} />
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
 const HISTORY_LABEL = {
   status:            'Overall Status',
   telecaller_status: 'TC Status',
@@ -295,16 +349,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <Text style={{ fontSize: 11, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>Telecaller (Pre-Sales)</Text>
 
               <Text style={lblS}>Assign Telecaller</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {telecallers.map(u => (
-                    <TouchableOpacity key={u.id} onPress={() => set('telecaller', u.id)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.telecaller) === String(u.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.telecaller) === String(u.id) ? NAVY : '#E0E6F0' }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.telecaller) === String(u.id) ? '#fff' : MUTED }}>{u.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="— Select Telecaller —" />
 
               <Text style={lblS}>TC Status</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
@@ -328,16 +373,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <Text style={{ fontSize: 11, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>STM (Sales)</Text>
 
               <Text style={lblS}>Assign STM</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {stms.map(u => (
-                    <TouchableOpacity key={u.id} onPress={() => set('stm', u.id)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.stm) === String(u.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.stm) === String(u.id) ? NAVY : '#E0E6F0' }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.stm) === String(u.id) ? '#fff' : MUTED }}>{u.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="— Select STM —" />
 
               <Text style={lblS}>STM Status</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
