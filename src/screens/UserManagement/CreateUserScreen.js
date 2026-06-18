@@ -72,6 +72,7 @@ export default function CreateUserScreen({ navigation, route }) {
 
   const [name,            setName]            = useState(editUser?.name            ?? '');
   const [email,           setEmail]           = useState(editUser?.email           ?? '');
+  const [phone,           setPhone]           = useState(editUser?.phone           ?? '');
   const [userCode,        setUserCode]        = useState(editUser?.user_code       ?? '');
   const [userCodeError,   setUserCodeError]   = useState('');
   const [password,        setPassword]        = useState('');
@@ -158,12 +159,12 @@ export default function CreateUserScreen({ navigation, route }) {
 
     if (isEdit) {
       setUserCodeError('');
-      const payload = { name, email, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, reporting_manager_id: reportingManager?.id ?? null };
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
       if (isVRLAdmin && !selectedCompany) return Alert.alert('Validation', 'Please select a company.');
-      const payload = { name, email, password, role, designation, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
       if (isVRLAdmin && selectedCompany) payload.company_id = selectedCompany.id;
       dispatch(createUser(payload));
     }
@@ -294,6 +295,20 @@ export default function CreateUserScreen({ navigation, route }) {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+          />
+        </View>
+
+        {/* Phone */}
+        <Text style={styles.label}>PHONE NUMBER</Text>
+        <View style={styles.inputWrap}>
+          <Ionicons name="call-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter mobile number"
+            placeholderTextColor={COLORS.textSecondary}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
           />
         </View>
 
