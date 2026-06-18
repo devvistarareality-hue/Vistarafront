@@ -45,7 +45,8 @@ export const SALES_ENDPOINTS = {
   siteVisit: (id)  => `${BASE_URL}/api/sales/site-visits/${id}/`,
   get closures()   { return `${BASE_URL}/api/sales/closures/`; },
   // Team/Users
-  get telecallers(){ return `${BASE_URL}/api/sales/users/telecallers/`; },
+  get telecallers(){ return `${BASE_URL}/api/sales/users/telecallers/?crm_role=telecaller`; },
+  get stms()       { return `${BASE_URL}/api/sales/users/telecallers/?crm_role=stm`; },
   get usersSlim()  { return `${BASE_URL}/api/sales/users/slim/`; },
   get team()       { return `${BASE_URL}/api/sales/team/`; },
   teamMember: (id) => `${BASE_URL}/api/sales/team/${id}/`,

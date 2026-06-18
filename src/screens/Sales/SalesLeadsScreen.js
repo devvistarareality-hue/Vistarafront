@@ -55,7 +55,7 @@ function initials(name) {
 }
 
 /* ── Lead Detail Modal ── */
-function LeadDetailModal({ lead, projects, sources, telecallers, visible, onClose, onUpdated }) {
+function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated }) {
   const [form, setForm]   = useState({});
   const [saving, setSaving] = useState(false);
   const [tab, setTab]     = useState('details');
@@ -246,6 +246,17 @@ function LeadDetailModal({ lead, projects, sources, telecallers, visible, onClos
             </>}
 
             {tab === 'stm' && <>
+              <Text style={lblS}>Assign STM</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {stms.map(u => (
+                    <TouchableOpacity key={u.id} onPress={() => set('stm', u.id)}
+                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.stm) === String(u.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.stm) === String(u.id) ? NAVY : '#E0E6F0' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.stm) === String(u.id) ? '#fff' : MUTED }}>{u.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
               <Text style={lblS}>STM Status</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -346,6 +357,7 @@ export default function SalesLeadsScreen({ navigation }) {
   const [projects,    setProjects]    = useState([]);
   const [sources,     setSources]     = useState([]);
   const [telecallers, setTelecallers] = useState([]);
+  const [stms,        setStms]        = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [refreshing,  setRefreshing]  = useState(false);
   const [search,      setSearch]      = useState('');
@@ -366,11 +378,12 @@ export default function SalesLeadsScreen({ navigation }) {
       let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
       if (search)                        url += `&search=${encodeURIComponent(search)}`;
       if (statusFilter && statusFilter !== 'all') url += `&status=${statusFilter}`;
-      const [leadsRes, projRes, srcRes, tcRes] = await Promise.all([
+      const [leadsRes, projRes, srcRes, tcRes, stmRes] = await Promise.all([
         fetch(url, { headers }),
-        projects.length ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.projects, { headers }),
-        sources.length  ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.sources,  { headers }),
+        projects.length    ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.projects,    { headers }),
+        sources.length     ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.sources,     { headers }),
         telecallers.length ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.telecallers, { headers }),
+        stms.length        ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.stms,        { headers }),
       ]);
       if (leadsRes.ok) {
         const d = await leadsRes.json();
@@ -382,6 +395,7 @@ export default function SalesLeadsScreen({ navigation }) {
       if (projRes?.ok)  setProjects(await projRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
       if (srcRes?.ok)   setSources(await srcRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
       if (tcRes?.ok)    setTelecallers(await tcRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
+      if (stmRes?.ok)   setStms(await stmRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
     } catch (_) {}
     setLoading(false); setLoadingMore(false); setRefreshing(false);
   }
@@ -501,7 +515,7 @@ export default function SalesLeadsScreen({ navigation }) {
         />
       )}
 
-      <LeadDetailModal lead={selectedLead} projects={projects} sources={sources} telecallers={telecallers}
+      <LeadDetailModal lead={selectedLead} projects={projects} sources={sources} telecallers={telecallers} stms={stms}
         visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} />
       <CreateLeadModal projects={projects} sources={sources}
         visible={createModal} onClose={() => setCreateModal(false)} onCreated={l => setLeads(prev => [l, ...prev])} />
