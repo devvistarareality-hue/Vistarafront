@@ -54,10 +54,11 @@ function initials(name) {
   return (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-/* ── Custom user dropdown (no Picker package needed) ── */
-function UserPickerDropdown({ users, value, onChange, placeholder = '— Select —' }) {
+/* ── Generic bottom-sheet dropdown ── */
+function PickerDropdown({ items, value, onChange, placeholder = '— Select —', title = 'Select' }) {
+  // items: [{ value, label, sublabel? }]
   const [open, setOpen] = useState(false);
-  const selected = users.find(u => String(u.id) === String(value));
+  const selected = items.find(i => String(i.value) === String(value));
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)}
@@ -65,47 +66,54 @@ function UserPickerDropdown({ users, value, onChange, placeholder = '— Select 
         <View style={{ flex: 1 }}>
           {selected ? (
             <>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A2E' }}>{selected.name}</Text>
-              {!!selected.designation && <Text style={{ fontSize: 11, color: '#8492A6', marginTop: 1 }}>{selected.designation}</Text>}
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1A1A2E' }}>{selected.label}</Text>
+              {!!selected.sublabel && <Text style={{ fontSize: 11, color: '#8492A6', marginTop: 1 }}>{selected.sublabel}</Text>}
             </>
           ) : (
             <Text style={{ fontSize: 14, color: '#B0BAC9' }}>{placeholder}</Text>
           )}
         </View>
-        <Text style={{ fontSize: 12, color: '#8492A6', marginLeft: 8 }}>▼</Text>
+        <Text style={{ fontSize: 11, color: '#8492A6', marginLeft: 8 }}>▼</Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, maxHeight: '60%' }}>
+      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '65%' }}>
             <View style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A2E' }}>Select User</Text>
-              <TouchableOpacity onPress={() => setOpen(false)}><Text style={{ fontSize: 18, color: '#8492A6' }}>✕</Text></TouchableOpacity>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A2E' }}>{title}</Text>
+              <TouchableOpacity onPress={() => setOpen(false)} style={{ padding: 4 }}>
+                <Text style={{ fontSize: 18, color: '#8492A6' }}>✕</Text>
+              </TouchableOpacity>
             </View>
-            <ScrollView>
-              {/* None option */}
+            <ScrollView bounces={false}>
               <TouchableOpacity onPress={() => { onChange(''); setOpen(false); }}
                 style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 14, color: '#B0BAC9' }}>— None —</Text>
                 {!value && <Text style={{ color: '#3D5AFE', fontSize: 16 }}>✓</Text>}
               </TouchableOpacity>
-              {users.map(u => (
-                <TouchableOpacity key={u.id} onPress={() => { onChange(u.id); setOpen(false); }}
+              {items.map(item => (
+                <TouchableOpacity key={item.value} onPress={() => { onChange(item.value); setOpen(false); }}
                   style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <View>
-                    <Text style={{ fontSize: 14, fontWeight: String(value) === String(u.id) ? '700' : '500', color: String(value) === String(u.id) ? '#3D5AFE' : '#1A1A2E' }}>{u.name}</Text>
-                    {!!u.designation && <Text style={{ fontSize: 11, color: '#8492A6', marginTop: 1 }}>{u.designation}</Text>}
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: String(value) === String(item.value) ? '700' : '500', color: String(value) === String(item.value) ? '#3D5AFE' : '#1A1A2E' }}>{item.label}</Text>
+                    {!!item.sublabel && <Text style={{ fontSize: 11, color: '#8492A6', marginTop: 1 }}>{item.sublabel}</Text>}
                   </View>
-                  {String(value) === String(u.id) && <Text style={{ color: '#3D5AFE', fontSize: 16 }}>✓</Text>}
+                  {String(value) === String(item.value) && <Text style={{ color: '#3D5AFE', fontSize: 16 }}>✓</Text>}
                 </TouchableOpacity>
               ))}
-              <View style={{ height: 30 }} />
+              <View style={{ height: 34 }} />
             </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
     </>
   );
+}
+
+/* UserPickerDropdown — same as PickerDropdown but takes users array */
+function UserPickerDropdown({ users, value, onChange, placeholder = '— Select —', title = 'Select User' }) {
+  const items = users.map(u => ({ value: u.id, label: u.name, sublabel: u.designation || u.user_code }));
+  return <PickerDropdown items={items} value={value} onChange={onChange} placeholder={placeholder} title={title} />;
 }
 
 const HISTORY_LABEL = {
@@ -308,40 +316,22 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <View style={{ height: 1, backgroundColor: '#F0F3FA', marginVertical: 12 }} />
 
               <Text style={lblS}>Overall Status</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {STATUSES.filter(s => s.key !== 'all').map(s => (
-                    <TouchableOpacity key={s.key} onPress={() => set('status', s.key)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: form.status === s.key ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: form.status === s.key ? NAVY : '#E0E6F0' }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: form.status === s.key ? '#fff' : MUTED }}>{s.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <PickerDropdown
+                items={STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))}
+                value={form.status} onChange={v => set('status', v)}
+                placeholder="— Select Status —" title="Overall Status" />
 
               <Text style={lblS}>Project</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {projects.map(p => (
-                    <TouchableOpacity key={p.id} onPress={() => set('project', p.id)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.project) === String(p.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.project) === String(p.id) ? NAVY : '#E0E6F0' }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.project) === String(p.id) ? '#fff' : MUTED }}>{p.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <PickerDropdown
+                items={projects.map(p => ({ value: p.id, label: p.name }))}
+                value={form.project} onChange={v => set('project', v)}
+                placeholder="— Select Project —" title="Project" />
 
               <Text style={lblS}>Source</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {sources.map(s => (
-                    <TouchableOpacity key={s.id} onPress={() => set('source', s.id)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.source) === String(s.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.source) === String(s.id) ? NAVY : '#E0E6F0' }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.source) === String(s.id) ? '#fff' : MUTED }}>{s.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <PickerDropdown
+                items={sources.map(s => ({ value: s.id, label: s.name }))}
+                value={form.source} onChange={v => set('source', v)}
+                placeholder="— Select Source —" title="Source" />
 
               <View style={{ height: 1, backgroundColor: '#F0F3FA', marginVertical: 12 }} />
 
@@ -349,19 +339,13 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <Text style={{ fontSize: 11, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>Telecaller (Pre-Sales)</Text>
 
               <Text style={lblS}>Assign Telecaller</Text>
-              <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="— Select Telecaller —" />
+              <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="— Select Telecaller —" title="Assign Telecaller" />
 
               <Text style={lblS}>TC Status</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {['hot','warm','cold','not_interested','not_reachable','callback'].map(s => (
-                    <TouchableOpacity key={s} onPress={() => set('telecaller_status', s)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: form.telecaller_status === s ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: form.telecaller_status === s ? NAVY : '#E0E6F0' }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: form.telecaller_status === s ? '#fff' : MUTED }}>{s.replace(/_/g,' ')}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <PickerDropdown
+                items={['hot','warm','cold','not_interested','not_reachable','callback'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
+                value={form.telecaller_status} onChange={v => set('telecaller_status', v)}
+                placeholder="— Select TC Status —" title="TC Status" />
 
               <Text style={lblS}>TC Remarks</Text>
               <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
@@ -373,19 +357,13 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <Text style={{ fontSize: 11, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>STM (Sales)</Text>
 
               <Text style={lblS}>Assign STM</Text>
-              <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="— Select STM —" />
+              <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="— Select STM —" title="Assign STM" />
 
               <Text style={lblS}>STM Status</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'].map(s => (
-                    <TouchableOpacity key={s} onPress={() => set('stm_status', s)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: form.stm_status === s ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: form.stm_status === s ? NAVY : '#E0E6F0' }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: form.stm_status === s ? '#fff' : MUTED }}>{s.replace(/_/g,' ')}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <PickerDropdown
+                items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
+                value={form.stm_status} onChange={v => set('stm_status', v)}
+                placeholder="— Select STM Status —" title="STM Status" />
 
               <Text style={lblS}>STM Remarks</Text>
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
