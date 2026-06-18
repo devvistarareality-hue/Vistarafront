@@ -57,6 +57,9 @@ export const SALES_ENDPOINTS = {
   get distSettings(){ return `${BASE_URL}/api/sales/dist-settings/`; },
   get availability(){ return `${BASE_URL}/api/sales/availability/`; },
   get distWeight() { return `${BASE_URL}/api/sales/dist-weight/`; },
-  get plots()      { return `${BASE_URL}/api/sales/plots/`; },
-  plot: (id)       => `${BASE_URL}/api/sales/plots/${id}/`,
+  get plots()           { return `${BASE_URL}/api/sales/plots/`; },
+  plot: (id)            => `${BASE_URL}/api/sales/plots/${id}/`,
+  source: (id)          => `${BASE_URL}/api/sales/sources/${id}/`,
+  get metaWebhookConfig(){ return `${BASE_URL}/api/sales/webhooks/meta/config/`; },
+  get metaMappings()    { return `${BASE_URL}/api/sales/webhooks/meta/mappings/`; },
 };
