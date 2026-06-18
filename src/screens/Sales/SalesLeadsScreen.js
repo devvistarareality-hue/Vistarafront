@@ -137,12 +137,25 @@ function LeadDetailModal({ lead, projects, sources, telecallers, visible, onClos
             {tab === 'details' && <>
               <Text style={lblS}>Name</Text>
               <TextInput value={form.name} onChangeText={v => set('name', v)} style={inpS} />
-              <Text style={lblS}>Phone</Text>
-              <TextInput value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" style={inpS} />
               <Text style={lblS}>Alternate Phone</Text>
-              <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} />
-              <Text style={lblS}>Email</Text>
-              <TextInput value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" style={inpS} />
+              <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate number" />
+              {/* Phone and email are read-only — shown as info, not editable */}
+              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={lblS}>Phone</Text>
+                  <View style={{ ...inpS, backgroundColor: '#F5F6FA', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 14, color: MUTED }} selectable>{lead.phone || '—'}</Text>
+                  </View>
+                </View>
+                {!!lead.email && (
+                  <View style={{ flex: 1 }}>
+                    <Text style={lblS}>Email</Text>
+                    <View style={{ ...inpS, backgroundColor: '#F5F6FA', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 13, color: MUTED }} selectable numberOfLines={1}>{lead.email}</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
               <Text style={lblS}>Status</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
