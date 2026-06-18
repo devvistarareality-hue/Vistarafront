@@ -354,6 +354,13 @@ export default function SignInInternalScreen({ navigation }) {
                 fillColor={inGeofence ? 'rgba(46,125,50,0.22)' : 'rgba(239,68,68,0.18)'}
               />
               <Marker coordinate={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }} title="Office" pinColor="#182350" />
+              {userLocation && (
+                <Marker coordinate={userLocation} title="You" anchor={{ x: 0.5, y: 0.5 }}>
+                  <View style={s.userDot}>
+                    <View style={s.userDotInner} />
+                  </View>
+                </Marker>
+              )}
             </MapView>
           )}
           <View style={[s.geofenceBadge, { backgroundColor: inGeofence ? COLORS.success : COLORS.error }]}>
@@ -623,6 +630,8 @@ const s = StyleSheet.create({
   mapLoaderText: { fontSize: 13, color: '#8492A6' },
   geofenceBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, gap: 8, flexWrap: 'wrap' },
   geofenceDot:   { width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' },
+  userDot:       { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(66,133,244,0.25)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#fff' },
+  userDotInner:  { width: 11, height: 11, borderRadius: 6, backgroundColor: '#4285F4' },
   geofenceBadgeText: { color: '#fff', fontWeight: '700', fontSize: 12, flex: 1 },
   geofenceCoords:    { color: 'rgba(255,255,255,0.75)', fontSize: 10 },
 
