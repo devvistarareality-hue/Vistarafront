@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator,
+  TextInput, Alert, ActivityIndicator, Modal,
+  StatusBar, StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import MapView, { Circle, Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { ATTENDANCE_ENDPOINTS } from '../../../../constants/api';
-import styles from './styles';
+import { COLORS } from '../../../../constants/theme';
 
-// ── Office location & geofence ──────────────────────────────────
-const OFFICE = {
-  latitude:  23.1318,
-  longitude: 72.5691,
-  radius:    500,
-};
+// ── Office geofence ──────────────────────────────────────────────────
+const OFFICE = { latitude: 23.1318, longitude: 72.5691, radius: 500 };
 
 const getDistance = (lat1, lng1, lat2, lng2) => {
   const R    = 6371000;
@@ -28,11 +28,16 @@ const getDistance = (lat1, lng1, lat2, lng2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-const formatTime = (d) =>
-  `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-
-const formatDate = (d) =>
-  `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+// 12-hour format with AM/PM
+const fmt12h = (d) => {
+  if (!d) return '--:-- --';
+  const h      = d.getHours();
+  const m      = String(d.getMinutes()).padStart(2, '0');
+  const s      = String(d.getSeconds()).padStart(2, '0');
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = String(h % 12 || 12).padStart(2, '0');
+  return `${hour12}:${m}:${s} ${period}`;
+};
 
 const parseTimeStr = (str) => {
   if (!str) return null;
@@ -42,17 +47,32 @@ const parseTimeStr = (str) => {
   return d;
 };
 
-const SignInInternalScreen = ({ navigation }) => {
+const fmtHHMM = (d) =>
+  `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+// ── Component ────────────────────────────────────────────────────────
+export default function SignInInternalScreen({ navigation }) {
   const [userLocation, setUserLocation] = useState(null);
   const [locLoading, setLocLoading]     = useState(true);
   const [inGeofence, setInGeofence]     = useState(false);
-  const [signedIn, setSignedIn]         = useState(false);
-  const [inTime, setInTime]             = useState(null);
-  const [outTime, setOutTime]           = useState(null);
-  const [workSeconds, setWorkSeconds]   = useState(0);
-  const [remarks, setRemarks]           = useState('');
-  const [moreDetail, setMoreDetail]     = useState(false);
-  const [submitting, setSubmitting]     = useState(false);
+
+  // Attendance state
+  const [signedIn, setSignedIn]     = useState(false); // signed in for the day
+  const [signedOut, setSignedOut]   = useState(false); // signed out for the day
+  const [onBreak, setOnBreak]       = useState(false); // on break
+  const [inTime, setInTime]         = useState(null);
+  const [outTime, setOutTime]       = useState(null);
+  const [workSeconds, setWorkSeconds] = useState(0);
+  const [remarks, setRemarks]       = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Modify attendance
+  const [showModify, setShowModify]       = useState(false);
+  const [modDate, setModDate]             = useState(new Date());
+  const [modInTime, setModInTime]         = useState(() => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; });
+  const [modOutTime, setModOutTime]       = useState(() => { const d = new Date(); d.setHours(18, 0, 0, 0); return d; });
+  const [pickerShowing, setPickerShowing] = useState(null);
+  const [modifying, setModifying]         = useState(false);
 
   const watchIdRef = useRef(null);
   const timerRef   = useRef(null);
@@ -68,7 +88,6 @@ const SignInInternalScreen = ({ navigation }) => {
     };
   }, []);
 
-  // Restore today's sign-in state from backend
   const loadTodayRecord = async () => {
     try {
       const token    = await AsyncStorage.getItem('access_token');
@@ -78,20 +97,21 @@ const SignInInternalScreen = ({ navigation }) => {
       if (!response.ok) return;
       const data = await response.json();
       if (data.in_time) {
-        const inDate = parseTimeStr(data.in_time);
-        setInTime(inDate);
+        setInTime(parseTimeStr(data.in_time));
         if (data.signed_in) {
-          setSignedIn(true);
+          // Currently signed in — restore timer
+          const inDate  = parseTimeStr(data.in_time);
           const elapsed = Math.floor((Date.now() - inDate.getTime()) / 1000);
+          setSignedIn(true);
           setWorkSeconds(elapsed > 0 ? elapsed : 0);
           timerRef.current = setInterval(() => setWorkSeconds(s => s + 1), 1000);
         } else if (data.out_time) {
+          // Signed out for the day
           setOutTime(parseTimeStr(data.out_time));
+          setSignedOut(true);
         }
       }
-    } catch {
-      // non-fatal — screen still works without restoring state
-    }
+    } catch {}
   };
 
   const onPosition = ({ coords }) => {
@@ -99,8 +119,12 @@ const SignInInternalScreen = ({ navigation }) => {
     setUserLocation({ latitude, longitude });
     setInGeofence(getDistance(latitude, longitude, OFFICE.latitude, OFFICE.longitude) <= OFFICE.radius);
     setLocLoading(false);
+    const midLat  = (latitude + OFFICE.latitude) / 2;
+    const midLng  = (longitude + OFFICE.longitude) / 2;
+    const latDelta = Math.max(Math.abs(latitude - OFFICE.latitude) * 3.2, 0.010);
+    const lngDelta = Math.max(Math.abs(longitude - OFFICE.longitude) * 3.2, 0.010);
     mapRef.current?.animateToRegion(
-      { latitude, longitude, latitudeDelta: 0.012, longitudeDelta: 0.012 },
+      { latitude: midLat, longitude: midLng, latitudeDelta: latDelta, longitudeDelta: lngDelta },
       600,
     );
   };
@@ -120,6 +144,7 @@ const SignInInternalScreen = ({ navigation }) => {
     );
   };
 
+  // ── Sign In (start of day) ──────────────────────────────────────────
   const handleSignIn = async () => {
     if (!inGeofence) {
       Alert.alert('Outside Office Zone', 'You must be within the office area to sign in.');
@@ -134,9 +159,10 @@ const SignInInternalScreen = ({ navigation }) => {
       });
       const data = await response.json();
       if (response.ok) {
-        const inDate = parseTimeStr(data.in_time);
-        setInTime(inDate);
+        setInTime(parseTimeStr(data.in_time));
         setSignedIn(true);
+        setSignedOut(false);
+        setOnBreak(false);
         setWorkSeconds(0);
         timerRef.current = setInterval(() => setWorkSeconds(s => s + 1), 1000);
       } else {
@@ -149,27 +175,84 @@ const SignInInternalScreen = ({ navigation }) => {
     }
   };
 
+  // ── Sign Out (end of day) ───────────────────────────────────────────
   const handleSignOut = async () => {
-    setSubmitting(true);
+    Alert.alert('Sign Out', 'Are you sure you want to sign out for the day?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out', style: 'destructive', onPress: async () => {
+          setSubmitting(true);
+          try {
+            const token    = await AsyncStorage.getItem('access_token');
+            const response = await fetch(ATTENDANCE_ENDPOINTS.signOut, {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            });
+            const data = await response.json();
+            if (response.ok) {
+              setOutTime(parseTimeStr(data.out_time));
+              setSignedIn(false);
+              setSignedOut(true);
+              setOnBreak(false);
+              if (timerRef.current) clearInterval(timerRef.current);
+              navigation.navigate('PostSignOut');
+            } else {
+              Alert.alert('Sign Out Failed', data.detail || 'Could not sign out.');
+            }
+          } catch {
+            Alert.alert('Error', 'Network error. Please try again.');
+          } finally {
+            setSubmitting(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  // ── Check Out (go on break) — pauses timer ──────────────────────────
+  const handleBreakOut = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setOnBreak(true);
+  };
+
+  // ── Check In (return from break) — resumes timer ────────────────────
+  const handleBreakIn = () => {
+    setOnBreak(false);
+    timerRef.current = setInterval(() => setWorkSeconds(s => s + 1), 1000);
+  };
+
+  // ── Modify attendance ───────────────────────────────────────────────
+  const handleModifySubmit = async () => {
+    const inTotal  = modInTime.getHours() * 60 + modInTime.getMinutes();
+    const outTotal = modOutTime.getHours() * 60 + modOutTime.getMinutes();
+    if (inTotal >= outTotal) {
+      Alert.alert('Invalid Time', 'Out time must be after in time.');
+      return;
+    }
+    setModifying(true);
     try {
-      const token    = await AsyncStorage.getItem('access_token');
-      const response = await fetch(ATTENDANCE_ENDPOINTS.signOut, {
-        method:  'POST',
+      const token = await AsyncStorage.getItem('access_token');
+      const res   = await fetch(ATTENDANCE_ENDPOINTS.modify, {
+        method:  'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({
+          date:     modDate.toISOString().split('T')[0],
+          in_time:  fmtHHMM(modInTime),
+          out_time: fmtHHMM(modOutTime),
+        }),
       });
-      const data = await response.json();
-      if (response.ok) {
-        setOutTime(parseTimeStr(data.out_time));
-        setSignedIn(false);
-        if (timerRef.current) clearInterval(timerRef.current);
-        navigation.navigate('PostSignOut');
+      const data = await res.json();
+      if (res.ok) {
+        Alert.alert('Success', 'Attendance modified successfully.');
+        setShowModify(false);
+        loadTodayRecord();
       } else {
-        Alert.alert('Sign Out Failed', data.detail || 'Could not sign out.');
+        Alert.alert('Error', data.detail || 'Failed to modify attendance.');
       }
     } catch {
       Alert.alert('Error', 'Network error. Please try again.');
     } finally {
-      setSubmitting(false);
+      setModifying(false);
     }
   };
 
@@ -179,147 +262,426 @@ const SignInInternalScreen = ({ navigation }) => {
     return `${h}:${m}`;
   };
 
+  // ── Derived status ──────────────────────────────────────────────────
+  const statusText  = signedOut ? 'Signed Out' : onBreak ? 'On Break' : signedIn ? 'Working' : 'Not Started';
+  const statusColor = signedOut ? COLORS.navy  : onBreak ? '#E65100' : signedIn ? COLORS.success : '#B9915E';
+  const statusBg    = signedOut ? '#E8EEFF'    : onBreak ? '#FFF3E0' : signedIn ? '#E8F5E9'      : '#FFF8E1';
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* Live Map */}
-      <View style={styles.mapCard}>
-        {locLoading ? (
-          <View style={styles.mapLoader}>
-            <ActivityIndicator size="large" color="#1E4080" />
-            <Text style={styles.locLoadingText}>Getting your location...</Text>
+      {/* ── Header ── */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+        <Text style={s.headerTitle}>Attendance</Text>
+        <TouchableOpacity style={s.iconBtn} onPress={() => setShowModify(true)}>
+          <Ionicons name="create-outline" size={20} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
+
+        {/* ── Stat cards ── */}
+        <View style={s.statsRow}>
+          <View style={s.statCard}>
+            <View style={[s.statIcon, { backgroundColor: '#E8EEFF' }]}>
+              <Ionicons name="time-outline" size={20} color="#3D5AFE" />
+            </View>
+            <Text style={s.statLabel}>WORK HOURS</Text>
+            <Text style={s.statValue}>{workHours()}</Text>
           </View>
-        ) : (
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            showsUserLocation
-            showsMyLocationButton={false}
-            initialRegion={{
-              latitude:      userLocation?.latitude  ?? OFFICE.latitude,
-              longitude:     userLocation?.longitude ?? OFFICE.longitude,
-              latitudeDelta:  0.012,
-              longitudeDelta: 0.012,
-            }}
-          >
-            <Circle
-              center={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }}
-              radius={OFFICE.radius}
-              strokeColor={inGeofence ? '#2E7D32' : '#C62828'}
-              strokeWidth={2}
-              fillColor={inGeofence ? 'rgba(46,125,50,0.12)' : 'rgba(198,40,40,0.10)'}
-            />
-            <Marker
-              coordinate={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }}
-              title="Office"
-              pinColor="#1E4080"
-            />
-          </MapView>
-        )}
 
-        {!locLoading && (
-          <View style={[styles.mapStatusBar, { backgroundColor: inGeofence ? '#2E7D32' : '#C62828' }]}>
-            <View style={styles.locDot} />
-            <Text style={styles.mapStatusText}>
-              {inGeofence ? '✓  Inside Office Zone' : '✗  Outside Office Zone (500 m radius)'}
+          <View style={s.statCard}>
+            <View style={[s.statIcon, { backgroundColor: statusBg }]}>
+              <Ionicons
+                name={
+                  signedOut ? 'exit-outline' :
+                  onBreak   ? 'pause-circle-outline' :
+                  signedIn  ? 'checkmark-circle-outline' :
+                  'ellipse-outline'
+                }
+                size={20}
+                color={statusColor}
+              />
+            </View>
+            <Text style={s.statLabel}>STATUS</Text>
+            <Text style={[s.statValue, { color: statusColor, fontSize: 13 }]}>{statusText}</Text>
+          </View>
+
+          <View style={s.statCard}>
+            <View style={[s.statIcon, { backgroundColor: '#FFF8E1' }]}>
+              <Ionicons name="calendar-outline" size={20} color="#F9A825" />
+            </View>
+            <Text style={s.statLabel}>TODAY</Text>
+            <Text style={[s.statValue, { fontSize: 12 }]}>
+              {today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+            </Text>
+          </View>
+        </View>
+
+        {/* ── Map ── */}
+        <View style={s.sectionLabel}>
+          <Ionicons name="location-outline" size={13} color={COLORS.textSecondary} />
+          <Text style={s.sectionLabelText}>LIVE LOCATION</Text>
+        </View>
+
+        <View style={s.mapCard}>
+          {locLoading ? (
+            <View style={s.mapLoader}>
+              <ActivityIndicator size="large" color={COLORS.navy} />
+              <Text style={s.mapLoaderText}>Getting your location...</Text>
+            </View>
+          ) : (
+            <MapView
+              ref={mapRef}
+              style={s.map}
+              showsUserLocation
+              showsMyLocationButton={false}
+              initialRegion={{
+                latitude: OFFICE.latitude, longitude: OFFICE.longitude,
+                latitudeDelta: 0.010, longitudeDelta: 0.010,
+              }}
+              onMapReady={() => { if (userLocation) onPosition({ coords: userLocation }); }}
+            >
+              <Circle
+                center={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }}
+                radius={OFFICE.radius}
+                strokeColor={inGeofence ? '#2E7D32' : '#EF4444'}
+                strokeWidth={3}
+                fillColor={inGeofence ? 'rgba(46,125,50,0.22)' : 'rgba(239,68,68,0.18)'}
+              />
+              <Marker coordinate={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }} title="Office" pinColor="#182350" />
+            </MapView>
+          )}
+          <View style={[s.geofenceBadge, { backgroundColor: inGeofence ? COLORS.success : COLORS.error }]}>
+            <View style={s.geofenceDot} />
+            <Text style={s.geofenceBadgeText}>
+              {inGeofence ? 'Inside Office Zone' : 'Outside Office Zone  (500 m radius)'}
             </Text>
             {userLocation && (
-              <Text style={styles.mapCoordsText}>
+              <Text style={s.geofenceCoords}>
                 {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
               </Text>
             )}
           </View>
-        )}
-      </View>
-
-      {/* Work Hours & Status */}
-      <View style={styles.statusRow}>
-        <View style={styles.statusBox}>
-          <Text style={styles.statusLabel}>WORK HOURS</Text>
-          <Text style={styles.statusValue}>{workHours()}</Text>
         </View>
-        <View style={[styles.statusBox, styles.statusBoxRight]}>
-          <Text style={styles.statusLabel}>STATUS</Text>
-          <Text style={styles.statusValue}>{signedIn ? 'Signed In' : outTime ? 'Signed Out' : 'Not Signed In'}</Text>
-        </View>
-      </View>
 
-      {/* Details Card */}
-      <View style={styles.card}>
-        <View style={styles.timeRow}>
-          <View style={[styles.timeBox, { marginRight: 8 }]}>
-            <Text style={styles.timeLabel}>IN TIME</Text>
-            <Text style={styles.timeValue}>{inTime ? formatTime(inTime) : '00:00:00'}</Text>
+        {/* ── Attendance details ── */}
+        <View style={s.sectionLabel}>
+          <Ionicons name="clipboard-outline" size={13} color={COLORS.textSecondary} />
+          <Text style={s.sectionLabelText}>TODAY'S ATTENDANCE</Text>
+        </View>
+
+        <View style={s.card}>
+          <View style={s.timeRow}>
+            {/* In Time */}
+            <View style={[s.timeChip, { backgroundColor: '#E8F5E9' }]}>
+              <View style={[s.timeChipIcon, { backgroundColor: '#C8E6C9' }]}>
+                <Ionicons name="log-in-outline" size={16} color={COLORS.success} />
+              </View>
+              <Text style={[s.timeChipLabel, { color: COLORS.success }]}>IN TIME</Text>
+              <Text style={s.timeChipValue}>{fmt12h(inTime)}</Text>
+            </View>
+            {/* Out Time */}
+            <View style={[s.timeChip, { backgroundColor: '#FEF2F2' }]}>
+              <View style={[s.timeChipIcon, { backgroundColor: '#FECACA' }]}>
+                <Ionicons name="log-out-outline" size={16} color={COLORS.error} />
+              </View>
+              <Text style={[s.timeChipLabel, { color: COLORS.error }]}>OUT TIME</Text>
+              <Text style={s.timeChipValue}>{fmt12h(outTime)}</Text>
+            </View>
           </View>
-          <View style={styles.timeBox}>
-            <Text style={styles.timeLabel}>OUT TIME</Text>
-            <Text style={styles.timeValue}>{outTime ? formatTime(outTime) : '00:00:00'}</Text>
+
+          <View style={s.divider} />
+
+          <View style={s.fieldRow}>
+            <View style={[s.fieldIcon, { backgroundColor: '#FFF8E1' }]}>
+              <Ionicons name="calendar-outline" size={16} color="#F9A825" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.fieldRowLabel}>Date</Text>
+              <Text style={s.fieldRowValue}>
+                {today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={s.divider} />
+
+          <View style={s.fieldRow}>
+            <View style={[s.fieldIcon, { backgroundColor: '#E8EEFF' }]}>
+              <Ionicons name="chatbubble-ellipses-outline" size={16} color="#3D5AFE" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.fieldRowLabel}>Remarks</Text>
+              <TextInput
+                style={s.remarksInput}
+                placeholder="Add remarks (optional)"
+                placeholderTextColor={COLORS.textSecondary}
+                value={remarks}
+                onChangeText={setRemarks}
+                multiline
+              />
+            </View>
           </View>
         </View>
 
-        <Text style={styles.fieldLabel}>Date*</Text>
-        <View style={styles.dateRow}>
-          <Text style={styles.dateText}>{formatDate(today)}</Text>
-          <Text>📅</Text>
-        </View>
-        <View style={styles.divider} />
+        {/* ── Action Buttons ── */}
+        <View style={s.btnSection}>
 
-        <Text style={styles.fieldLabel}>Remarks</Text>
-        <TextInput
-          style={styles.remarksInput}
-          placeholder="Enter remarks..."
-          placeholderTextColor="#aaa"
-          value={remarks}
-          onChangeText={setRemarks}
-          multiline
-        />
-        <View style={styles.divider} />
-
-        <TouchableOpacity style={styles.expandBtn} onPress={() => setMoreDetail(!moreDetail)}>
-          <Text style={styles.expandText}>MORE DETAIL</Text>
-          <Text style={styles.expandArrow}>{moreDetail ? '∧' : '∨'}</Text>
-        </TouchableOpacity>
-        {moreDetail && (
-          <View style={styles.moreDetail}>
-            <Text style={styles.moreDetailText}>Total: {workHours()}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Bottom Buttons */}
-      <View style={styles.bottomRow}>
-        <TouchableOpacity
-          style={[styles.bottomBtn, styles.signOutBtn, (!signedIn || submitting) && styles.btnDisabled]}
-          onPress={handleSignOut}
-          disabled={!signedIn || submitting}
-          activeOpacity={0.8}
-        >
-          {submitting && !signedIn ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.bottomBtnText}>SIGN OUT</Text>
+          {/* ── NOT SIGNED IN → Show Sign In ── */}
+          {!signedIn && !signedOut && (
+            <TouchableOpacity
+              style={[s.primaryBtn, s.signInBtn, (locLoading || submitting || !inGeofence) && s.btnDisabled]}
+              onPress={handleSignIn}
+              disabled={locLoading || submitting || !inGeofence}
+              activeOpacity={0.85}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="log-in-outline" size={22} color="#fff" />
+                  <Text style={s.primaryBtnText}>
+                    {locLoading ? 'Locating...' : !inGeofence ? 'Outside Zone' : 'Sign In'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.bottomBtn, styles.checkInBtn, (!inGeofence || signedIn || submitting) && styles.btnDisabled]}
-          onPress={handleSignIn}
-          disabled={!inGeofence || signedIn || submitting}
-          activeOpacity={0.8}
-        >
-          {submitting && signedIn === false ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.bottomBtnText}>
-              {locLoading ? 'LOCATING...' : inGeofence ? 'CHECK IN' : 'OUT OF ZONE'}
-            </Text>
+          {/* ── SIGNED IN & WORKING → Show Check Out (break) + Sign Out ── */}
+          {signedIn && !onBreak && (
+            <View style={s.actionRow}>
+              <TouchableOpacity
+                style={[s.actionBtn, s.breakBtn, submitting && s.btnDisabled]}
+                onPress={handleBreakOut}
+                disabled={submitting}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="pause-circle-outline" size={22} color="#fff" />
+                <Text style={s.actionBtnText}>Check Out</Text>
+                <Text style={s.actionBtnSub}>Break</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[s.actionBtn, s.signOutBtn, submitting && s.btnDisabled]}
+                onPress={handleSignOut}
+                disabled={submitting}
+                activeOpacity={0.85}
+              >
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="exit-outline" size={22} color="#AFD2FA" />
+                    <Text style={s.actionBtnText}>Sign Out</Text>
+                    <Text style={s.actionBtnSub}>End Day</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           )}
-        </TouchableOpacity>
-      </View>
 
-      <View style={{ height: 30 }} />
-    </ScrollView>
+          {/* ── ON BREAK → Show Check In (return) ── */}
+          {signedIn && onBreak && (
+            <View style={s.breakBanner}>
+              <View style={s.breakBannerLeft}>
+                <Ionicons name="pause-circle" size={28} color="#E65100" />
+                <View>
+                  <Text style={s.breakBannerTitle}>On Break</Text>
+                  <Text style={s.breakBannerSub}>Timer is paused</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={s.resumeBtn}
+                onPress={handleBreakIn}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="play-circle-outline" size={20} color="#fff" />
+                <Text style={s.resumeBtnText}>Check In</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ── SIGNED OUT → Day complete banner ── */}
+          {signedOut && (
+            <View style={s.completedBanner}>
+              <Ionicons name="checkmark-circle" size={26} color={COLORS.success} />
+              <View>
+                <Text style={s.completedTitle}>Day Complete</Text>
+                <Text style={s.completedSub}>See you tomorrow!</Text>
+              </View>
+            </View>
+          )}
+
+        </View>
+
+      </ScrollView>
+
+      {/* ── Modify Attendance Modal ── */}
+      <Modal visible={showModify} animationType="slide" transparent onRequestClose={() => setShowModify(false)}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalSheet}>
+            <View style={s.modalHeader}>
+              <View style={s.modalHeaderLeft}>
+                <View style={[s.statIcon, { backgroundColor: '#E8EEFF', marginRight: 10 }]}>
+                  <Ionicons name="create-outline" size={18} color="#3D5AFE" />
+                </View>
+                <View>
+                  <Text style={s.modalTitle}>Modify Attendance</Text>
+                  <Text style={s.modalSubtitle}>Correct a past attendance record</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setShowModify(false)} style={s.iconBtn}>
+                <Ionicons name="close" size={18} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={s.divider} />
+
+            <Text style={s.modFieldLabel}>DATE</Text>
+            <TouchableOpacity style={s.modFieldRow} onPress={() => setPickerShowing('date')} activeOpacity={0.8}>
+              <View style={[s.fieldIcon, { backgroundColor: '#FFF8E1' }]}>
+                <Ionicons name="calendar-outline" size={16} color="#F9A825" />
+              </View>
+              <Text style={s.modFieldValue}>
+                {modDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+
+            <Text style={s.modFieldLabel}>IN TIME</Text>
+            <TouchableOpacity style={s.modFieldRow} onPress={() => setPickerShowing('in')} activeOpacity={0.8}>
+              <View style={[s.fieldIcon, { backgroundColor: '#E8F5E9' }]}>
+                <Ionicons name="log-in-outline" size={16} color={COLORS.success} />
+              </View>
+              <Text style={s.modFieldValue}>{fmtHHMM(modInTime)}</Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+
+            <Text style={s.modFieldLabel}>OUT TIME</Text>
+            <TouchableOpacity style={s.modFieldRow} onPress={() => setPickerShowing('out')} activeOpacity={0.8}>
+              <View style={[s.fieldIcon, { backgroundColor: '#FEF2F2' }]}>
+                <Ionicons name="log-out-outline" size={16} color={COLORS.error} />
+              </View>
+              <Text style={s.modFieldValue}>{fmtHHMM(modOutTime)}</Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[s.saveBtn, modifying && { opacity: 0.7 }]}
+              onPress={handleModifySubmit}
+              disabled={modifying}
+              activeOpacity={0.85}
+            >
+              {modifying ? <ActivityIndicator size="small" color="#fff" /> : <Text style={s.saveBtnText}>Save Changes</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {pickerShowing === 'date' && (
+        <DateTimePicker value={modDate} mode="date" maximumDate={new Date()}
+          onChange={(_, d) => { setPickerShowing(null); if (d) setModDate(d); }} />
+      )}
+      {pickerShowing === 'in' && (
+        <DateTimePicker value={modInTime} mode="time" is24Hour
+          onChange={(_, t) => { setPickerShowing(null); if (t) setModInTime(t); }} />
+      )}
+      {pickerShowing === 'out' && (
+        <DateTimePicker value={modOutTime} mode="time" is24Hour
+          onChange={(_, t) => { setPickerShowing(null); if (t) setModOutTime(t); }} />
+      )}
+    </SafeAreaView>
   );
-};
+}
 
-export default SignInInternalScreen;
+const s = StyleSheet.create({
+  screen:        { flex: 1, backgroundColor: '#F5F6FA' },
+  scrollContent: { paddingBottom: 40 },
+
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#EEF1F7' },
+  iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#1A1A2E' },
+
+  sectionLabel:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginTop: 20, marginBottom: 8 },
+  sectionLabelText: { fontSize: 11, fontWeight: '700', color: '#8492A6', letterSpacing: 0.8 },
+
+  statsRow:  { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 16 },
+  statCard:  { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 12, alignItems: 'center', elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  statIcon:  { width: 38, height: 38, borderRadius: 11, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  statLabel: { fontSize: 9, fontWeight: '700', color: '#8492A6', letterSpacing: 0.6, marginBottom: 4 },
+  statValue: { fontSize: 16, fontWeight: '800', color: '#1A1A2E', textAlign: 'center' },
+
+  mapCard:       { marginHorizontal: 16, borderRadius: 14, overflow: 'hidden', backgroundColor: '#fff', elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  map:           { width: '100%', height: 210 },
+  mapLoader:     { height: 210, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: '#F5F6FA' },
+  mapLoaderText: { fontSize: 13, color: '#8492A6' },
+  geofenceBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, gap: 8, flexWrap: 'wrap' },
+  geofenceDot:   { width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' },
+  geofenceBadgeText: { color: '#fff', fontWeight: '700', fontSize: 12, flex: 1 },
+  geofenceCoords:    { color: 'rgba(255,255,255,0.75)', fontSize: 10 },
+
+  card:    { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 14, padding: 16, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  divider: { height: 1, backgroundColor: '#EEF1F7', marginVertical: 12 },
+
+  timeRow:       { flexDirection: 'row', gap: 10, marginBottom: 4 },
+  timeChip:      { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
+  timeChipIcon:  { width: 30, height: 30, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  timeChipLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, marginBottom: 4 },
+  timeChipValue: { fontSize: 13, fontWeight: '800', color: '#1A1A2E' },
+
+  fieldRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  fieldIcon:     { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
+  fieldRowLabel: { fontSize: 11, fontWeight: '600', color: '#8492A6', marginBottom: 3 },
+  fieldRowValue: { fontSize: 14, fontWeight: '600', color: '#1A1A2E' },
+  remarksInput:  { fontSize: 14, color: '#1A1A2E', paddingTop: 0, minHeight: 36 },
+
+  // ── Button section ──
+  btnSection: { marginHorizontal: 16, marginTop: 20 },
+
+  // Sign In — full width
+  primaryBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 14, paddingVertical: 17, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
+  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  signInBtn:      { backgroundColor: '#2E7D32', shadowColor: '#2E7D32' },
+
+  // Sign Out + Check Out — side by side
+  actionRow:     { flexDirection: 'row', gap: 12 },
+  actionBtn:     { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 16, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
+  breakBtn:      { backgroundColor: '#E65100', shadowColor: '#E65100' },
+  signOutBtn:    { backgroundColor: '#182350', shadowColor: '#182350' },
+  actionBtnText: { color: '#fff', fontSize: 14, fontWeight: '700', marginTop: 4 },
+  actionBtnSub:  { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '500', marginTop: 2 },
+
+  btnDisabled: { opacity: 0.40 },
+
+  // Break banner
+  breakBanner:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF3E0', borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: '#FFB74D' },
+  breakBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  breakBannerTitle:{ fontSize: 15, fontWeight: '700', color: '#E65100' },
+  breakBannerSub:  { fontSize: 12, color: '#8492A6', marginTop: 2 },
+  resumeBtn:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#2E7D32', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  resumeBtnText:   { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  // Day complete banner
+  completedBanner: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#E8F5E9', borderRadius: 14, padding: 18, borderWidth: 1.5, borderColor: '#A5D6A7' },
+  completedTitle:  { fontSize: 15, fontWeight: '700', color: '#2E7D32' },
+  completedSub:    { fontSize: 12, color: '#8492A6', marginTop: 2 },
+
+  // Modify Modal
+  modalOverlay:    { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.40)' },
+  modalSheet:      { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHeader:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  modalHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  modalTitle:      { fontSize: 16, fontWeight: '700', color: '#1A1A2E' },
+  modalSubtitle:   { fontSize: 12, color: '#8492A6', marginTop: 2 },
+  modFieldLabel:   { fontSize: 11, fontWeight: '700', color: '#8492A6', letterSpacing: 0.6, marginBottom: 6, marginTop: 14 },
+  modFieldRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F5F6FA', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  modFieldValue:   { flex: 1, fontSize: 15, fontWeight: '600', color: '#1A1A2E' },
+  saveBtn:         { marginTop: 24, backgroundColor: '#182350', borderRadius: 14, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: '#182350', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
+  saveBtnText:     { color: '#fff', fontSize: 15, fontWeight: '700' },
+});

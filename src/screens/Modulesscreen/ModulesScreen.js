@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -24,12 +24,12 @@ const CARD = {
 const MODULE_CONFIG = {
   Sales: {
     label:     'Sales',
-    sub:       'Projects & Plots',
+    sub:       'Leads & Pipeline',
     icon:      'business',
     iconBg:    '#FFF8E1',
     iconColor: '#F9A825',
     linkColor: '#F9A825',
-    screen:    'SalesProjects',
+    screen:    'SalesCRM',
     getParams: () => ({}),
   },
   HR: {
@@ -83,7 +83,16 @@ const ModulesScreen = () => {
   // Build module list from user.modules (filtered by MODULE_CONFIG)
   const userModules = (user?.modules || [])
     .filter((m) => MODULE_CONFIG[m])
-    .map((m) => MODULE_CONFIG[m]);
+    .map((m) => ({ key: m, ...MODULE_CONFIG[m] }));
+
+  // Auto-navigate when only one module is assigned — skip this screen entirely
+  useEffect(() => {
+    if (userModules.length === 1) {
+      navigation.replace(userModules[0].screen, userModules[0].getParams(user));
+    }
+  }, [userModules.length]);
+
+  if (userModules.length === 1) return null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -152,7 +161,7 @@ const ModulesScreen = () => {
           <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {userModules.map((mod) => (
               <TouchableOpacity
-                key={mod.label}
+                key={mod.key}
                 style={{ width: '47%', ...CARD, padding: 16 }}
                 activeOpacity={0.85}
                 onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}

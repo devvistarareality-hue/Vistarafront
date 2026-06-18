@@ -1,12 +1,27 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/Dashboardscreen/Homescreen/Homescreen';
 import ModulesScreen from '../screens/Modulesscreen/ModulesScreen';
-import SettingsScreen from '../screens/Drawerscreen/Settingscreen/Settingscreen';
+import SalesCRMScreen from '../screens/Sales/SalesCRMScreen';
+import SalesLeadsScreen from '../screens/Sales/SalesLeadsScreen';
+import SalesReportsScreen from '../screens/Sales/SalesReportsScreen';
 
 const Tab = createBottomTabNavigator();
+const ModulesStack = createNativeStackNavigator();
+
+function ModulesNavigator() {
+  return (
+    <ModulesStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+      <ModulesStack.Screen name="ModulesList"   component={ModulesScreen} />
+      <ModulesStack.Screen name="SalesCRM"      component={SalesCRMScreen} />
+      <ModulesStack.Screen name="SalesLeads"    component={SalesLeadsScreen} />
+      <ModulesStack.Screen name="SalesReports"  component={SalesReportsScreen} />
+    </ModulesStack.Navigator>
+  );
+}
 
 const BottomTabNavigator = () => {
   const insets = useSafeAreaInsets();
@@ -39,8 +54,6 @@ const BottomTabNavigator = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Modules') {
             iconName = focused ? 'grid' : 'grid-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
           }
           return <Ionicons name={iconName} size={22} color={color} />;
         },
@@ -53,13 +66,8 @@ const BottomTabNavigator = () => {
       />
       <Tab.Screen
         name="Modules"
-        component={ModulesScreen}
+        component={ModulesNavigator}
         options={{ tabBarLabel: 'Modules' }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{ tabBarLabel: 'Settings' }}
       />
     </Tab.Navigator>
   );

@@ -5,6 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050D1A"
+    },
     "userInterfaceStyle": "light",
     "plugins": [
       "@react-native-community/datetimepicker",
@@ -43,7 +48,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "PASTE_YOUR_REAL_KEY_HERE"
+          "apiKey": "AIzaSyCuEw97S0W0PfipI4YTyhNrcdfVlZAum8k"
         }
       }
     },

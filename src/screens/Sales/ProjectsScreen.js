@@ -17,7 +17,7 @@ const BLUE  = '#3D5AFE';
 const BG    = '#F5F6FA';
 const TEXT  = '#1A1A2E';
 const MUTED = '#8492A6';
-const CARD  = { backgroundColor: '#fff', borderRadius: 14, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.18, shadowRadius: 10, elevation: 4 };
+const CARD  = { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#C8D2E8', shadowColor: '#6B80A8', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.18, shadowRadius: 10, elevation: 5 };
 
 const STATUS_COLORS = {
   available: { bg: '#E8F5E9', text: '#2E7D32', zone: '#22c55e' },
@@ -406,8 +406,11 @@ export default function ProjectsScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 }}>
-        <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E4E8F0' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
+          <Ionicons name="arrow-back" size={22} color={TEXT} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 22, fontWeight: '800', color: TEXT }}>Projects</Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</Text>
         </View>
@@ -422,7 +425,7 @@ export default function ProjectsScreen() {
         data={projects}
         keyExtractor={p => String(p.id)}
         renderItem={({ item }) => <ProjectCard project={item} onEdit={openEdit} onManage={openManage} />}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
         ListEmptyComponent={
