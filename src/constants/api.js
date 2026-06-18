@@ -14,6 +14,7 @@ export const ATTENDANCE_ENDPOINTS = {
   get today()     { return `${BASE_URL}/api/attendance/today/`; },
   get signIn()    { return `${BASE_URL}/api/attendance/sign-in/`; },
   get signOut()   { return `${BASE_URL}/api/attendance/sign-out/`; },
+  get modify()    { return `${BASE_URL}/api/attendance/modify/`; },
 };
 
 export const USER_ENDPOINTS = {
