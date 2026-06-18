@@ -81,7 +81,7 @@ function fmtDateTime(iso) {
 function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated }) {
   const [form, setForm]   = useState({});
   const [saving, setSaving] = useState(false);
-  const [tab, setTab]     = useState('details');
+  const [tab, setTab]     = useState('detail');
   const [detail, setDetail] = useState(null);
 
   // Followup form
@@ -106,7 +106,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         stm_status:        lead.stm_status      || '',
         stm_remarks:       lead.stm_remarks     || '',
       });
-      setTab('details');
+      setTab('detail');
       setDetail(null);
       async function loadDetail() {
         try {
@@ -208,25 +208,33 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             </TouchableOpacity>
           </View>
 
-          {/* Tabs */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-            <View style={{ flexDirection: 'row' }}>
-              {[['details','Info'],['telecaller','Telecaller'],['stm','STM'],['history','History'],['followups','Follow-ups']].map(([key, lbl]) => (
-                <TouchableOpacity key={key} onPress={() => setTab(key)} style={{ paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: tab === key ? BLUE : 'transparent' }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: tab === key ? BLUE : MUTED }}>{lbl}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
+          {/* Tabs — 3 tabs matching web */}
+          <View style={{ flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+            {[['detail','Detail'],['history','History'],['followups','Follow-ups']].map(([key, lbl]) => (
+              <TouchableOpacity key={key} onPress={() => setTab(key)} style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: tab === key ? BLUE : 'transparent' }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: tab === key ? BLUE : MUTED }}>{lbl}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
-            {tab === 'details' && <>
-              <Text style={lblS}>Name</Text>
-              <TextInput value={form.name} onChangeText={v => set('name', v)} style={inpS} />
-              <Text style={lblS}>Alternate Phone</Text>
-              <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate number" />
-              {/* Phone and email are read-only — shown as info, not editable */}
-              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 10 }}>
+
+            {/* ── DETAIL TAB ── */}
+            {tab === 'detail' && <>
+              {/* Name + Alt Phone side by side */}
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={lblS}>Name</Text>
+                  <TextInput value={form.name} onChangeText={v => set('name', v)} style={inpS} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={lblS}>Alternate Phone</Text>
+                  <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate" />
+                </View>
+              </View>
+
+              {/* Phone + Email read-only */}
+              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 4 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={lblS}>Phone</Text>
                   <View style={{ ...inpS, backgroundColor: '#F5F6FA', justifyContent: 'center' }}>
@@ -242,7 +250,10 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   </View>
                 )}
               </View>
-              <Text style={lblS}>Status</Text>
+
+              <View style={{ height: 1, backgroundColor: '#F0F3FA', marginVertical: 12 }} />
+
+              <Text style={lblS}>Overall Status</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   {STATUSES.filter(s => s.key !== 'all').map(s => (
@@ -253,6 +264,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   ))}
                 </View>
               </ScrollView>
+
               <Text style={lblS}>Project</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -264,6 +276,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   ))}
                 </View>
               </ScrollView>
+
               <Text style={lblS}>Source</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -275,35 +288,12 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   ))}
                 </View>
               </ScrollView>
-              {(lead.meta_campaign_name || lead.meta_adset_name || lead.meta_ad_name) && (
-                <View style={{ marginTop: 12, padding: 12, backgroundColor: '#F8FAFD', borderRadius: 10, borderWidth: 1.5, borderColor: '#E4E8F0' }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>Meta Ads Info</Text>
-                  {lead.meta_campaign_name ? (
-                    <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>CAMPAIGN</Text>
-                      <Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_campaign_name}</Text>
-                    </View>
-                  ) : null}
-                  {lead.meta_adset_name ? (
-                    <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>AD SET</Text>
-                      <Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_adset_name}</Text>
-                    </View>
-                  ) : null}
-                  {lead.meta_ad_name ? (
-                    <View style={{ flexDirection: 'row' }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>AD NAME</Text>
-                      <Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_ad_name}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              )}
-              <TouchableOpacity onPress={deleteLead} style={{ marginTop: 12, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FEE2E2', alignItems: 'center', borderWidth: 1.5, borderColor: '#FCA5A5' }}>
-                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>Delete Lead</Text>
-              </TouchableOpacity>
-            </>}
 
-            {tab === 'telecaller' && <>
+              <View style={{ height: 1, backgroundColor: '#F0F3FA', marginVertical: 12 }} />
+
+              {/* Telecaller section */}
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>Telecaller (Pre-Sales)</Text>
+
               <Text style={lblS}>Assign Telecaller</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -315,10 +305,11 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   ))}
                 </View>
               </ScrollView>
-              <Text style={lblS}>Telecaller Status</Text>
+
+              <Text style={lblS}>TC Status</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {['pending','called','warm','not_reachable','transferred'].map(s => (
+                  {['hot','warm','cold','not_interested','not_reachable','callback'].map(s => (
                     <TouchableOpacity key={s} onPress={() => set('telecaller_status', s)}
                       style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: form.telecaller_status === s ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: form.telecaller_status === s ? NAVY : '#E0E6F0' }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: form.telecaller_status === s ? '#fff' : MUTED }}>{s.replace(/_/g,' ')}</Text>
@@ -326,12 +317,16 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   ))}
                 </View>
               </ScrollView>
-              <Text style={lblS}>Remarks</Text>
-              <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
-                multiline style={[inpS, { minHeight: 80, textAlignVertical: 'top' }]} />
-            </>}
 
-            {tab === 'stm' && <>
+              <Text style={lblS}>TC Remarks</Text>
+              <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
+                multiline placeholder="Call notes…" style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+
+              <View style={{ height: 1, backgroundColor: '#F0F3FA', marginVertical: 12 }} />
+
+              {/* STM section */}
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>STM (Sales)</Text>
+
               <Text style={lblS}>Assign STM</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -343,10 +338,11 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   ))}
                 </View>
               </ScrollView>
+
               <Text style={lblS}>STM Status</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {['pending','contacted','hot','sv_scheduled','sv_done','closed','lost'].map(s => (
+                  {['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'].map(s => (
                     <TouchableOpacity key={s} onPress={() => set('stm_status', s)}
                       style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: form.stm_status === s ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: form.stm_status === s ? NAVY : '#E0E6F0' }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: form.stm_status === s ? '#fff' : MUTED }}>{s.replace(/_/g,' ')}</Text>
@@ -354,9 +350,24 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   ))}
                 </View>
               </ScrollView>
+
               <Text style={lblS}>STM Remarks</Text>
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
-                multiline style={[inpS, { minHeight: 80, textAlignVertical: 'top' }]} />
+                multiline placeholder="Notes…" style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+
+              {/* Meta Ads Info */}
+              {(lead.meta_campaign_name || lead.meta_adset_name || lead.meta_ad_name) && (
+                <View style={{ marginTop: 12, padding: 12, backgroundColor: '#F8FAFD', borderRadius: 10, borderWidth: 1.5, borderColor: '#E4E8F0' }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#8492A6', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>Meta Ads Info</Text>
+                  {!!lead.meta_campaign_name && <View style={{ flexDirection: 'row', marginBottom: 4 }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>CAMPAIGN</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_campaign_name}</Text></View>}
+                  {!!lead.meta_adset_name    && <View style={{ flexDirection: 'row', marginBottom: 4 }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>AD SET</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_adset_name}</Text></View>}
+                  {!!lead.meta_ad_name       && <View style={{ flexDirection: 'row' }}><Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', width: 70 }}>AD NAME</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_ad_name}</Text></View>}
+                </View>
+              )}
+
+              <TouchableOpacity onPress={deleteLead} style={{ marginTop: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FEE2E2', alignItems: 'center', borderWidth: 1.5, borderColor: '#FCA5A5' }}>
+                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>Delete Lead</Text>
+              </TouchableOpacity>
             </>}
 
             {/* ── HISTORY TAB ── */}
