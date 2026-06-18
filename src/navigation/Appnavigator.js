@@ -84,8 +84,6 @@ const AppNavigator = () => {
             <Stack.Screen name="PostSignOut"   component={PostSignOutScreen} />
             <Stack.Screen name="Leave"         component={LeaveScreen} />
             <Stack.Screen name="RequestLeave"  component={RequestLeaveScreen} />
-            <Stack.Screen name="SalesProjects" component={ProjectsScreen} />
-            <Stack.Screen name="ManagePlots"   component={ManagePlotsScreen} />
             <Stack.Screen name="Placeholder"   component={PlaceholderScreen} />
           </>
         )}

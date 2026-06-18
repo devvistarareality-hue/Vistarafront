@@ -10,6 +10,20 @@ import {
   LOGOUT,
 } from '../types/authTypes';
 
+export const loadUser = () => async (dispatch) => {
+  try {
+    const token = await AsyncStorage.getItem('access_token');
+    if (!token) return;
+    const res = await fetch(`${getBaseUrl()}/api/auth/me/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      dispatch({ type: LOGIN_SUCCESS, payload: data });
+    }
+  } catch (_) {}
+};
+
 // ── Company Verify ────────────────────────────────────────────────
 export const verifyCompany = (companyCode) => async (dispatch) => {
   dispatch({ type: COMPANY_VERIFY_REQUEST });

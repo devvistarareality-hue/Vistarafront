@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StatusBar, Alert, ActivityIndicator, Dimensions, RefreshControl,
+  Modal, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -9,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { fetchDashboard, fetchMonthlyAttendance } from '../../../redux/actions/dashboardActions';
+import { logout, loadUser } from '../../../redux/actions/authActions';
 
 const { width } = Dimensions.get('window');
 
@@ -45,11 +47,17 @@ const HomeScreen = () => {
 
   const today = new Date();
 
-  const [attendanceTab, setAttendanceTab] = useState('month');
-  const [calYear,  setCalYear]  = useState(today.getFullYear());
-  const [calMonth, setCalMonth] = useState(today.getMonth() + 1);
-  const [selectedDay, setSelectedDay] = useState(null);
-  const [refreshing,  setRefreshing]  = useState(false);
+  const [attendanceTab,  setAttendanceTab]  = useState('month');
+  const [calYear,        setCalYear]        = useState(today.getFullYear());
+  const [calMonth,       setCalMonth]       = useState(today.getMonth() + 1);
+  const [selectedDay,    setSelectedDay]    = useState(null);
+  const [refreshing,     setRefreshing]     = useState(false);
+  const [profileVisible, setProfileVisible] = useState(false);
+
+  const handleLogout = () => {
+    setProfileVisible(false);
+    dispatch(logout());
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -149,10 +157,14 @@ const HomeScreen = () => {
   ];
 
   const userDetails = [
-    { icon: 'id-card-outline',    label: 'Employee Code', value: user?.user_code },
-    { icon: 'business-outline',   label: 'Organisation',  value: user?.organisation },
-    { icon: 'folder-outline',     label: 'Department',    value: user?.department },
-    { icon: 'briefcase-outline',  label: 'Designation',   value: user?.designation },
+    { icon: 'person-outline',          label: 'Full Name',          value: user?.name },
+    { icon: 'id-card-outline',         label: 'Employee Code',      value: user?.user_code },
+    { icon: 'call-outline',            label: 'Phone',              value: user?.phone },
+    { icon: 'mail-outline',            label: 'Email',              value: user?.email },
+    { icon: 'business-outline',        label: 'Organisation',       value: user?.company_name },
+    { icon: 'folder-outline',          label: 'Department',         value: user?.department },
+    { icon: 'briefcase-outline',       label: 'Designation',        value: user?.designation },
+    { icon: 'people-circle-outline',   label: 'Reporting Manager',  value: user?.reporting_manager?.name },
   ];
 
   return (
@@ -196,12 +208,15 @@ const HomeScreen = () => {
                 backgroundColor: '#EF4444',
               }} />
             </TouchableOpacity>
-            <View style={{
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
-            }}>
+            <TouchableOpacity
+              onPress={() => { dispatch(loadUser()); setProfileVisible(true); }}
+              style={{
+                width: 40, height: 40, borderRadius: 20,
+                backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
+              }}
+            >
               <Text style={{ fontSize: 15, fontWeight: '800', color: '#AFD2FA' }}>{initials}</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -471,34 +486,78 @@ const HomeScreen = () => {
           )}
         </View>
 
-        {/* ── User Details ── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>User Details</Text>
-          </View>
-          <View style={{ ...CARD, paddingVertical: 4 }}>
-            {userDetails.map((item, i, arr) => (
-              <View key={i}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#E8EEFF', justifyContent: 'center', alignItems: 'center', marginRight: 14 }}>
-                    <Ionicons name={item.icon} size={20} color="#3D5AFE" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, color: MUTED, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>
-                      {item.label}
-                    </Text>
-                    <Text style={{ fontSize: 14, color: TEXT, fontWeight: '600' }}>
-                      {item.value || '—'}
-                    </Text>
-                  </View>
+      </ScrollView>
+
+      {/* ── Profile Modal ── */}
+      <Modal
+        visible={profileVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setProfileVisible(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
+          onPress={() => setProfileVisible(false)}
+        />
+        <View style={{
+          backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+          padding: 24, paddingBottom: 36,
+          shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.12, shadowRadius: 16, elevation: 20,
+        }}>
+          {/* Handle */}
+          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0', alignSelf: 'center', marginBottom: 20 }} />
+
+          {/* Title */}
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginBottom: 20 }}>User Details</Text>
+
+          {/* Details list */}
+          <View style={{
+            backgroundColor: '#F5F6FA', borderRadius: 16,
+            overflow: 'hidden', marginBottom: 24,
+          }}>
+            {userDetails.map((item, i) => (
+              <View key={i} style={{
+                flexDirection: 'row', alignItems: 'center', gap: 14,
+                paddingHorizontal: 16, paddingVertical: 14,
+                borderBottomWidth: i < userDetails.length - 1 ? 1 : 0,
+                borderBottomColor: '#E8ECF4',
+              }}>
+                <View style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  backgroundColor: '#E8EEFF',
+                  justifyContent: 'center', alignItems: 'center', flexShrink: 0,
+                }}>
+                  <Ionicons name={item.icon} size={20} color={LINK} />
                 </View>
-                {i < arr.length - 1 && <View style={{ height: 1, backgroundColor: '#F5F6FA', marginHorizontal: 16 }} />}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>
+                    {item.label}
+                  </Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>
+                    {item.value || '—'}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>
-        </View>
 
-      </ScrollView>
+          {/* Sign Out button */}
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.85}
+            style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA',
+              borderRadius: 14, paddingVertical: 14,
+            }}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };

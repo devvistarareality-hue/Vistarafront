@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 
 const NAVY = '#182350'; const BLUE = '#3D5AFE'; const BG = '#F5F6FA'; const TEXT = '#1A1A2E'; const MUTED = '#8492A6';
@@ -14,16 +15,28 @@ async function authHeaders() {
 }
 
 const MENU = [
-  { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: '#3D5AFE', bg: '#EEF0FF' },
-  { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: '#2E7D32', bg: '#E8F5E9' },
-  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: '#0097A7', bg: '#E0F7FA' },
-  { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: '#7B1FA2', bg: '#F3E5F5' },
-  { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: '#E65100', bg: '#FFF3E0' },
-  { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: '#00796B', bg: '#E0F2F1' },
-  { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: '#1565C0', bg: '#E3F2FD' },
+  { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: '#3D5AFE', bg: '#EEF0FF',  adminOnly: false },
+  { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: '#2E7D32', bg: '#E8F5E9',  adminOnly: true  },
+  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: '#0097A7', bg: '#E0F7FA',  adminOnly: true  },
+  { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: '#7B1FA2', bg: '#F3E5F5',  adminOnly: true  },
+  { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: '#E65100', bg: '#FFF3E0',  adminOnly: true  },
+  { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: '#00796B', bg: '#E0F2F1',  adminOnly: true  },
+  { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: '#1565C0', bg: '#E3F2FD',  adminOnly: false },
 ];
 
+function getDesignationLabel(user) {
+  const des = (user?.designation || '').toLowerCase();
+  if (des.includes('telecaller') || des.includes('tele caller')) return { title: 'Telecaller Portal', sub: 'Your call queue & leads' };
+  if (des.includes('stm') || des.includes('sales team') || des.includes('sales executive')) return { title: 'Sales Executive', sub: 'Your pipeline & site visits' };
+  return { title: 'Sales CRM', sub: 'Vistara Realty' };
+}
+
 export default function SalesCRMScreen({ navigation }) {
+  const user     = useSelector((s) => s.auth.user);
+  const isAdmin  = user?.role === 'Admin' || user?.is_staff;
+  const visibleMenu = MENU.filter(m => !m.adminOnly || isAdmin);
+  const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
+
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,12 +68,9 @@ export default function SalesCRMScreen({ navigation }) {
 
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
-        </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Sales CRM</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>Vistara Realty</Text>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{screenTitle}</Text>
+          <Text style={{ fontSize: 12, color: MUTED }}>{screenSub}</Text>
         </View>
         <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6 }}>
           <Ionicons name="refresh-outline" size={20} color={refreshing ? MUTED : BLUE} />
@@ -91,7 +101,7 @@ export default function SalesCRMScreen({ navigation }) {
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Modules</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {MENU.map(m => (
+            {visibleMenu.map(m => (
               <TouchableOpacity key={m.key} onPress={() => navigation.navigate(m.key)}
                 style={[CARD, { width: '47%', padding: 16 }]} activeOpacity={0.8}>
                 <View style={{ width: 46, height: 46, borderRadius: 13, backgroundColor: m.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
