@@ -10,7 +10,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { fetchDashboard, fetchMonthlyAttendance } from '../../../redux/actions/dashboardActions';
-import { logout, loadUser } from '../../../redux/actions/authActions';
+import { logout } from '../../../redux/actions/authActions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getBaseUrl } from '../../../constants/api';
 
 const { width } = Dimensions.get('window');
 
@@ -52,12 +54,27 @@ const HomeScreen = () => {
   const [calMonth,       setCalMonth]       = useState(today.getMonth() + 1);
   const [selectedDay,    setSelectedDay]    = useState(null);
   const [refreshing,     setRefreshing]     = useState(false);
-  const [profileVisible, setProfileVisible] = useState(false);
+  const [profileVisible,  setProfileVisible]  = useState(false);
+  const [profileUser,     setProfileUser]     = useState(null);
+  const [profileLoading,  setProfileLoading]  = useState(false);
 
   const handleLogout = () => {
     setProfileVisible(false);
     dispatch(logout());
   };
+
+  async function openProfile() {
+    setProfileVisible(true);
+    setProfileLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const res   = await fetch(`${getBaseUrl()}/api/auth/me/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setProfileUser(await res.json());
+    } catch (_) {}
+    setProfileLoading(false);
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -156,15 +173,16 @@ const HomeScreen = () => {
     { label: 'Leaves Used', value: stats?.leaves_utilised  ?? '0',     icon: 'clipboard-outline',  iconBg: '#FFF3E0', iconColor: '#E65100' },
   ];
 
+  const p = profileUser || user;
   const userDetails = [
-    { icon: 'person-outline',          label: 'Full Name',          value: user?.name },
-    { icon: 'id-card-outline',         label: 'Employee Code',      value: user?.user_code },
-    { icon: 'call-outline',            label: 'Phone',              value: user?.phone },
-    { icon: 'mail-outline',            label: 'Email',              value: user?.email },
-    { icon: 'business-outline',        label: 'Organisation',       value: user?.company_name },
-    { icon: 'folder-outline',          label: 'Department',         value: user?.department },
-    { icon: 'briefcase-outline',       label: 'Designation',        value: user?.designation },
-    { icon: 'people-circle-outline',   label: 'Reporting Manager',  value: user?.reporting_manager?.name },
+    { icon: 'person-outline',          label: 'Full Name',          value: p?.name },
+    { icon: 'id-card-outline',         label: 'Employee Code',      value: p?.user_code },
+    { icon: 'call-outline',            label: 'Phone',              value: p?.phone },
+    { icon: 'mail-outline',            label: 'Email',              value: p?.email },
+    { icon: 'business-outline',        label: 'Organisation',       value: p?.company_name },
+    { icon: 'folder-outline',          label: 'Department',         value: p?.department },
+    { icon: 'briefcase-outline',       label: 'Designation',        value: p?.designation },
+    { icon: 'people-circle-outline',   label: 'Reporting Manager',  value: p?.reporting_manager?.name },
   ];
 
   return (
@@ -209,7 +227,7 @@ const HomeScreen = () => {
               }} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => { dispatch(loadUser()); setProfileVisible(true); }}
+              onPress={openProfile}
               style={{
                 width: 40, height: 40, borderRadius: 20,
                 backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
@@ -516,7 +534,9 @@ const HomeScreen = () => {
             backgroundColor: '#F5F6FA', borderRadius: 16,
             overflow: 'hidden', marginBottom: 24,
           }}>
-            {userDetails.map((item, i) => (
+            {profileLoading ? (
+              <ActivityIndicator color={NAVY} style={{ marginVertical: 32 }} />
+            ) : userDetails.map((item, i) => (
               <View key={i} style={{
                 flexDirection: 'row', alignItems: 'center', gap: 14,
                 paddingHorizontal: 16, paddingVertical: 14,
