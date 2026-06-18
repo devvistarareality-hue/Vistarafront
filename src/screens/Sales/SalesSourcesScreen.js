@@ -102,19 +102,20 @@ function SetupGuideModal({ visible, onClose }) {
 
 // ─── META INTEGRATION TAB ────────────────────────────────────────────────────
 function MetaTab() {
-  const [cfg,         setCfg]        = useState(null);
-  const [loading,     setLoading]    = useState(true);
-  const [refreshing,  setRefreshing] = useState(false);
-  const [pat,         setPat]        = useState('');
-  const [saving,      setSaving]     = useState(false);
-  const [msg,         setMsg]        = useState('');
-  const [regen,       setRegen]      = useState(false);
-  const [mappings,    setMappings]   = useState([]);
-  const [mapFormId,   setMapFormId]  = useState('');
-  const [mapFormName, setMapFormName]= useState('');
-  const [mapProject,  setMapProject] = useState('');
-  const [mapSaving,   setMapSaving]  = useState(false);
-  const [projOpen,    setProjOpen]   = useState(false);
+  const [cfg,          setCfg]         = useState(null);
+  const [loading,      setLoading]     = useState(true);
+  const [refreshing,   setRefreshing]  = useState(false);
+  const [pat,          setPat]         = useState('');
+  const [saving,       setSaving]      = useState(false);
+  const [msg,          setMsg]         = useState('');
+  const [regen,        setRegen]       = useState(false);
+  const [mappings,     setMappings]    = useState([]);
+  const [mapFormId,    setMapFormId]   = useState('');
+  const [mapFormName,  setMapFormName] = useState('');
+  const [mapProject,   setMapProject]  = useState('');
+  const [mapSaving,    setMapSaving]   = useState(false);
+  const [projOpen,     setProjOpen]    = useState(false);
+  const [expandedPages,setExpandedPages] = useState({});
 
   const webhookUrl = `${RAILWAY_URL}/api/sales/webhooks/meta/`;
 
@@ -274,6 +275,59 @@ function MetaTab() {
         )}
       </Card>
 
+      {/* Connected Pages & Forms */}
+      {(cfg?.pages_data || []).length > 0 && (
+        <Card>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 12 }}>Connected Pages & Forms</Text>
+          {(cfg.pages_data).map(pg => {
+            const mappingMap = {};
+            mappings.forEach(m => { mappingMap[m.form_id] = m; });
+            const isOpen = !!expandedPages[pg.page_id];
+            return (
+              <View key={pg.page_id} style={{ borderRadius: 10, borderWidth: 1.5, borderColor: '#E4E8F0', overflow: 'hidden', marginBottom: 8 }}>
+                <TouchableOpacity
+                  onPress={() => setExpandedPages(prev => ({ ...prev, [pg.page_id]: !prev[pg.page_id] }))}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, backgroundColor: '#F5F7FC' }}
+                  activeOpacity={0.7}>
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: GREEN }} />
+                  <Text style={{ flex: 1, fontSize: 13, fontWeight: '700', color: NAVY }}>{pg.page_name}</Text>
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: '#E8EEFF' }}>
+                    <Text style={{ fontSize: 11, color: MUTED }}>{pg.forms.length} forms</Text>
+                  </View>
+                  <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={14} color={MUTED} />
+                </TouchableOpacity>
+                {isOpen && pg.forms.length > 0 && (
+                  <View style={{ padding: 8, gap: 4 }}>
+                    {pg.forms.map(f => {
+                      const mapped = mappingMap[f.id];
+                      return (
+                        <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 8, backgroundColor: mapped ? '#F0FFF4' : '#FAFAFA' }}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }} numberOfLines={1}>{f.name || 'Unnamed'}</Text>
+                            <Text style={{ fontSize: 10, color: '#B0BAC9', fontFamily: 'monospace' }}>{f.id}</Text>
+                          </View>
+                          <CopyButton text={f.id} label="ID" />
+                          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: mapped ? '#D1FAE5' : '#F3F4F6' }}>
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: mapped ? '#065F46' : '#9CA3AF' }}>
+                              {mapped ? mapped.project_name : 'No project'}
+                            </Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+                {isOpen && pg.forms.length === 0 && (
+                  <View style={{ padding: 12 }}>
+                    <Text style={{ fontSize: 12, color: MUTED, textAlign: 'center' }}>No forms found for this page</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </Card>
+      )}
+
       {/* Form → Project Routing (single card) */}
       <Card>
         <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>Form → Project Routing</Text>
@@ -286,7 +340,10 @@ function MetaTab() {
               <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: i < mappings.length - 1 ? 1 : 0, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF' }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{m.form_name || m.form_id}</Text>
-                  <Text style={{ fontSize: 11, color: MUTED }}>{m.form_id}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                    <Text style={{ fontSize: 11, color: MUTED, fontFamily: 'monospace' }}>{m.form_id}</Text>
+                    <CopyButton text={m.form_id} label="Copy" />
+                  </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: BLUE }} />
                     <Text style={{ fontSize: 11, color: BLUE, fontWeight: '600' }}>{m.project_name}</Text>
