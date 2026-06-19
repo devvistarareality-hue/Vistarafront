@@ -139,8 +139,17 @@ export default function CreateUserScreen({ navigation, route }) {
     if (isVRLAdmin && !isEdit) dispatch(fetchCompanies());
   }, []);
 
-  // Available designations based on selected modules
-  const availableDesignations = allDesignations.filter((d) => modules.includes(d.module));
+  // Available designations for the selected modules, scoped to the relevant company.
+  // (Platform admin now receives every company's designations, so filter by company + dedupe by name.)
+  const desigCompanyCode = isVRLAdmin
+    ? (isEdit ? editUser?.company_code : selectedCompany?.code)
+    : null;
+  const availableDesignations = (() => {
+    let list = allDesignations.filter((d) => modules.includes(d.module));
+    if (isVRLAdmin && desigCompanyCode) list = list.filter((d) => d.company_code === desigCompanyCode);
+    const seen = new Set();
+    return list.filter((d) => (seen.has(d.name) ? false : (seen.add(d.name), true)));
+  })();
 
   // Reset designation if its module is deselected — only after designations have loaded
   useEffect(() => {

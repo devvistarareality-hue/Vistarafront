@@ -158,11 +158,6 @@ export default function CompanyManagementScreen({ navigation }) {
           }
         />
       )}
-
-      {/* FAB add */}
-      <TouchableOpacity style={s.fab} onPress={() => navigation.navigate('EditCompany')} activeOpacity={0.85}>
-        <Ionicons name="add" size={26} color={COLORS.white} />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }

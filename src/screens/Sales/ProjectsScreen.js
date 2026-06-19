@@ -12,6 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { uploadToSupabase } from '../../utils/supabaseStorage';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FormSheet from '../../components/FormSheet';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
@@ -378,9 +379,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   }
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <FormSheet visible={visible} onClose={onClose}>
           {/* Header */}
           <View style={{ backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -396,7 +395,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>{editing ? 'Update project details' : 'Fill in the project details below'}</Text>
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
             <Field label="Project Name *">
               <TextInput value={form.name} onChangeText={v => set('name', v)} placeholder="e.g. Vistara Gardens Phase 2" style={inp} />
@@ -572,9 +571,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
 
             <View style={{ height: 20 }} />
           </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Modal>
+    </FormSheet>
   );
 }
 

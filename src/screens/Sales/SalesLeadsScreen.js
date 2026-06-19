@@ -11,6 +11,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { SALES_ENDPOINTS } from '../../constants/api';
 
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FormSheet from '../../components/FormSheet';
+import { Field, TextField } from '../../components/Field';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
@@ -265,9 +267,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
   if (!lead) return null;
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <FormSheet visible={visible} onClose={onClose}>
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
             <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
@@ -290,7 +290,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             ))}
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 14, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
 
             {/* ── DETAIL TAB ── */}
             {tab === 'detail' && <>
@@ -628,20 +628,18 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
             <View style={{ height: 20 }} />
           </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Modal>
+    </FormSheet>
   );
 }
 
 /* ── Reusable Dropdown Picker ── */
-function DropdownPicker({ value, onChange, options, placeholder }) {
+function DropdownPicker({ value, onChange, options, placeholder, triggerStyle }) {
   const [open, setOpen] = useState(false);
   const selected = options.find(o => String(o.value) === String(value));
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)}
-        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }}>
+        style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }, triggerStyle]}>
         <Text style={{ fontSize: 14, color: selected ? TEXT : MUTED, fontWeight: selected ? '600' : '400' }}>
           {selected ? selected.label : placeholder}
         </Text>
@@ -688,13 +686,8 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
     setSaving(false);
   }
 
-  const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.white, marginBottom: 10 };
-  const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 4 };
-
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <FormSheet visible={visible} onClose={onClose}>
           <View style={{ backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}>
@@ -708,33 +701,31 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
             <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Add Lead</Text>
             <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>Fill in the contact details below</Text>
           </View>
-          <ScrollView contentContainerStyle={{ padding: 16 }}>
-            <Text style={lblS}>Full Name *</Text>
-            <TextInput value={form.name} onChangeText={v => set('name', v)} placeholder="Lead name" style={inpS} />
-            <Text style={lblS}>Phone *</Text>
-            <TextInput value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" placeholder="10-digit mobile" style={inpS} />
-            <Text style={lblS}>Alt Phone</Text>
-            <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} />
-            <Text style={lblS}>Email</Text>
-            <TextInput value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" style={inpS} />
-            <Text style={lblS}>Project</Text>
-            <DropdownPicker
-              value={form.project}
-              onChange={v => set('project', v)}
-              options={projects.map(p => ({ value: p.id, label: p.name }))}
-              placeholder="Select project"
-            />
-            <Text style={lblS}>Source</Text>
-            <DropdownPicker
-              value={form.source}
-              onChange={v => set('source', v)}
-              options={sources.map(s => ({ value: s.id, label: s.name }))}
-              placeholder="Select source"
-            />
+          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 20 }}>
+            <TextField label="Full Name" required value={form.name} onChangeText={v => set('name', v)} placeholder="Lead name" />
+            <TextField label="Phone" required value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" placeholder="10-digit mobile" />
+            <TextField label="Alt Phone" value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" placeholder="Optional" />
+            <TextField label="Email" value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" autoCapitalize="none" placeholder="name@email.com" />
+            <Field label="Project">
+              <DropdownPicker
+                value={form.project}
+                onChange={v => set('project', v)}
+                options={projects.map(p => ({ value: p.id, label: p.name }))}
+                placeholder="Select project"
+                triggerStyle={{ marginBottom: 0 }}
+              />
+            </Field>
+            <Field label="Source">
+              <DropdownPicker
+                value={form.source}
+                onChange={v => set('source', v)}
+                options={sources.map(s => ({ value: s.id, label: s.name }))}
+                placeholder="Select source"
+                triggerStyle={{ marginBottom: 0 }}
+              />
+            </Field>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Modal>
+    </FormSheet>
   );
 }
 
@@ -753,15 +744,14 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
   const activeCount = Object.entries(filters).filter(([k, v]) => v && v !== false && v !== '').length;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }} edges={['top']}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+    <FormSheet visible={visible} onClose={onClose}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Filters</Text>
           <TouchableOpacity onPress={() => { setLocal(EMPTY_FILTERS); setFilters(EMPTY_FILTERS); onClose(); }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.error }}>Clear All</Text>
           </TouchableOpacity>
         </View>
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+        <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, gap: 16 }}>
 
           {/* Quick date */}
           <View>
@@ -851,8 +841,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
             <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
-    </Modal>
+    </FormSheet>
   );
 }
 const fsLbl = { fontSize: 10, fontWeight: '700', color: MUTED, letterSpacing: 0.8, marginBottom: 8 };

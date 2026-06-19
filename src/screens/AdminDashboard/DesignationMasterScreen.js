@@ -6,7 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSelector, useDispatch } from 'react-redux';
 import { BASE_URL } from '../../constants/api';
+import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const ALL_MODULES = ['Sales', 'HR', 'Execution', 'Purchase', 'Land'];
@@ -58,6 +60,12 @@ const MODULE_META = {
 };
 
 export default function DesignationMasterScreen({ navigation }) {
+  const dispatch = useDispatch();
+  const loggedInUser = useSelector((s) => s.auth.user);
+  const { companies } = useSelector((s) => s.companies);
+  const companyId = useSelector((s) => s.adminFilter.companyId);
+  const isVRLAdmin = loggedInUser?.role === 'Admin' && loggedInUser?.company_code === 'VRL';
+
   const [designations,   setDesignations]   = useState([]);
   const [loading,        setLoading]        = useState(true);
   const [selectedModule, setSelectedModule] = useState('Sales');
@@ -76,16 +84,18 @@ export default function DesignationMasterScreen({ navigation }) {
   }, []);
 
   useEffect(() => { loadDesignations(); }, []);
+  useEffect(() => { if (isVRLAdmin) dispatch(fetchCompanies()); }, [isVRLAdmin]);
 
   const handleAdd = async () => {
     if (!name.trim()) return;
+    if (isVRLAdmin && !companyId) { Alert.alert('Select company', 'Please select a company first.'); return; }
     setSaving(true);
     try {
       const token = await AsyncStorage.getItem('access_token');
       const res   = await fetch(`${BASE_URL}/api/auth/designations/`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ module: selectedModule, name: name.trim() }),
+        body:    JSON.stringify({ module: selectedModule, name: name.trim(), ...(isVRLAdmin && companyId ? { company_id: companyId } : {}) }),
       });
       if (res.ok) {
         const newDesig = await res.json();
@@ -118,8 +128,13 @@ export default function DesignationMasterScreen({ navigation }) {
       },
     ]);
 
+  const selectedCompany = companies.find((c) => c.id === companyId) || null;
+  const visibleDesignations = isVRLAdmin
+    ? (selectedCompany ? designations.filter((d) => d.company_code === selectedCompany.code) : [])
+    : designations;
+
   const grouped = ALL_MODULES.reduce((acc, mod) => {
-    acc[mod] = designations.filter((d) => d.module === mod);
+    acc[mod] = visibleDesignations.filter((d) => d.module === mod);
     return acc;
   }, {});
 
@@ -137,9 +152,17 @@ export default function DesignationMasterScreen({ navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        {isVRLAdmin && !selectedCompany ? (
+          <View style={{ alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 }}>
+            <Ionicons name="business-outline" size={48} color={COLORS.textTertiary} />
+            <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.textPrimary, marginTop: 12 }}>No company selected</Text>
+            <Text style={{ fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', marginTop: 4 }}>Pick a company on the Admin screen to view and manage its designations.</Text>
+          </View>
+        ) : (
+        <>
         {/* Add form */}
         <View style={[s.card, { padding: 0, overflow: 'hidden' }]}>
-          <View style={{ backgroundColor: COLORS.surfaceAlt, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
+          <View style={{ backgroundColor: COLORS.cardBg, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.textPrimary }}>Add New Designation</Text>
             <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 2 }}>Define designations for each module</Text>
           </View>
@@ -210,6 +233,8 @@ export default function DesignationMasterScreen({ navigation }) {
               );
             })}
           </View>
+        )}
+        </>
         )}
       </ScrollView>
     </SafeAreaView>

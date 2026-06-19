@@ -12,8 +12,7 @@ import {
   updateUser, resetUpdateUser,
 } from '../../redux/actions/userManagementActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-
-const ROLES = ['All', 'Admin', 'Sales', 'HR', 'Exec'];
+import FilterSelect from '../../components/FilterSelect';
 
 const ROLE_AVATAR_COLOR = {
   Admin:       COLORS.navy,
@@ -33,8 +32,10 @@ export default function UserManagementScreen({ navigation }) {
   const dispatch = useDispatch();
   const { users, loading, error } = useSelector((s) => s.userManagement);
   const [search, setSearch] = useState('');
-  const [role, setRole] = useState('All');
+  const [dept, setDept] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const companyId = useSelector((s) => s.adminFilter.companyId);
+  const { companies: allCompanies } = useSelector((s) => s.companies);
 
   useFocusEffect(useCallback(() => { dispatch(fetchUsers()); }, [dispatch]));
   useEffect(() => { if (error) Alert.alert('Error', error); }, [error]);
@@ -56,15 +57,20 @@ export default function UserManagementScreen({ navigation }) {
     ]);
   };
 
+  const departments = [...new Set(users.flatMap((u) => u.modules || []))].sort();
+  const selectedCompany = allCompanies.find((c) => c.id === companyId) || null;
+
   const filtered = users.filter((u) => {
-    const matchRole = role === 'All' || u.role === role;
+    const matchDept = !dept
+      || (dept === '__admin__' ? u.role === 'Admin' : (u.modules || []).includes(dept));
+    const matchCompany = !selectedCompany || (u.company_code || '') === selectedCompany.code;
     const matchSearch = !search.trim() ||
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase()) ||
       u.user_code?.toLowerCase().includes(search.toLowerCase()) ||
       u.phone?.toLowerCase().includes(search.toLowerCase()) ||
       u.designation?.toLowerCase().includes(search.toLowerCase());
-    return matchRole && matchSearch;
+    return matchDept && matchCompany && matchSearch;
   });
 
   const activeCount   = users.filter((u) => u.is_active).length;
@@ -101,15 +107,18 @@ export default function UserManagementScreen({ navigation }) {
         {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={18} color={COLORS.textSecondary} /></TouchableOpacity> : null}
       </View>
 
-      {/* Role tabs */}
-      <View style={s.tabsWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabsRow}>
-          {ROLES.map((r) => (
-            <TouchableOpacity key={r} onPress={() => setRole(r)} style={[s.tab, role === r && s.tabActive]}>
-              <Text style={[s.tabText, role === r && s.tabTextActive]}>{r}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* Department / Company filters */}
+      <View style={s.filterRow}>
+        <FilterSelect
+          label="Department"
+          value={dept}
+          onChange={setDept}
+          options={[
+            { value: '', label: 'All Departments' },
+            { value: '__admin__', label: 'Admin' },
+            ...departments.map((d) => ({ value: d, label: d })),
+          ]}
+        />
       </View>
 
       {/* List */}
@@ -175,12 +184,7 @@ const s = StyleSheet.create({
   searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
-  tabsWrapper:  { height: 44, marginTop: 14 },
-  tabsRow:      { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  tab:          { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
-  tabActive:    { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
-  tabText:      { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
-  tabTextActive:{ color: COLORS.white, fontWeight: '700' },
+  filterRow:    { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 14 },
 
   card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginTop: 10, ...CARD_SHADOW },
   avatar:      { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },

@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SALES_ENDPOINTS, RAILWAY_URL } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FormSheet from '../../components/FormSheet';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const GREEN = COLORS.success; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
@@ -60,10 +61,9 @@ const GUIDE_STEPS = [
 
 function SetupGuideModal({ visible, onClose }) {
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }} edges={['top']}>
+    <FormSheet visible={visible} onClose={onClose}>
         {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Setup Guide</Text>
             <Text style={{ fontSize: 12, color: MUTED, marginTop: 1 }}>Follow these steps to connect Meta Lead Ads</Text>
@@ -73,7 +73,7 @@ function SetupGuideModal({ visible, onClose }) {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {GUIDE_STEPS.map(step => (
             <View key={step.n} style={{ flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: COLORS.white, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: COLORS.surfaceAlt }}>
               <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
@@ -91,8 +91,7 @@ function SetupGuideModal({ visible, onClose }) {
             <Text style={{ fontSize: 12, color: COLORS.goldDark, lineHeight: 18 }}>The webhook URL must be HTTPS and publicly accessible — localhost will not work. Your Railway deployment URL is used automatically.</Text>
           </View>
         </ScrollView>
-      </SafeAreaView>
-    </Modal>
+    </FormSheet>
   );
 }
 

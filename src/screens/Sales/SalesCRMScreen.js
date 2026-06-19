@@ -92,6 +92,11 @@ export default function SalesCRMScreen({ navigation }) {
 
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        {navigation.canGoBack() && (
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="arrow-back" size={20} color={NAVY} />
+          </TouchableOpacity>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{screenTitle}</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{screenSub}</Text>

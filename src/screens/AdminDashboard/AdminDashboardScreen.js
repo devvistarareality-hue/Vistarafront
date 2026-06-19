@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, StatusBar, Alert,
@@ -7,6 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { logout } from '../../redux/actions/authActions';
+import { fetchCompanies } from '../../redux/actions/companiesActions';
+import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
+import FilterSelect from '../../components/FilterSelect';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const ADMIN_MODULES = [
@@ -23,6 +26,11 @@ const ADMIN_MODULES = [
 export default function AdminDashboardScreen({ navigation }) {
   const dispatch = useDispatch();
   const user     = useSelector((s) => s.auth.user);
+  const { companies } = useSelector((s) => s.companies);
+  const companyId = useSelector((s) => s.adminFilter.companyId);
+  const isVRLAdmin = user?.role === 'Admin' && user?.company_code === 'VRL';
+
+  useEffect(() => { if (isVRLAdmin) dispatch(fetchCompanies()); }, [isVRLAdmin]);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -54,6 +62,18 @@ export default function AdminDashboardScreen({ navigation }) {
 
       {/* ── Module grid ── */}
       <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+        {isVRLAdmin && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={[s.sectionTitle, { marginBottom: 8 }]}>VIEWING COMPANY</Text>
+            <FilterSelect
+              label="All companies"
+              value={companyId}
+              onChange={(v) => dispatch(setAdminCompany(v))}
+              options={[{ value: null, label: 'All companies' }, ...companies.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` }))]}
+              style={{ alignSelf: 'flex-start' }}
+            />
+          </View>
+        )}
         <Text style={s.sectionTitle}>ALL MODULES</Text>
         <View style={s.grid}>
           {ADMIN_MODULES.map((mod) => (
