@@ -632,6 +632,42 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   );
 }
 
+/* ── Reusable Dropdown Picker ── */
+function DropdownPicker({ value, onChange, options, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find(o => String(o.value) === String(value));
+  return (
+    <>
+      <TouchableOpacity onPress={() => setOpen(true)}
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFD', borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }}>
+        <Text style={{ fontSize: 14, color: selected ? TEXT : MUTED, fontWeight: selected ? '600' : '400' }}>
+          {selected ? selected.label : placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color={MUTED} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }}>
+            <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{placeholder}</Text>
+              <TouchableOpacity onPress={() => setOpen(false)}><Ionicons name="close" size={20} color={MUTED} /></TouchableOpacity>
+            </View>
+            <ScrollView>
+              {options.map(o => (
+                <TouchableOpacity key={o.value} onPress={() => { onChange(o.value); setOpen(false); }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F8FAFD' }}>
+                  <Text style={{ fontSize: 14, color: TEXT, fontWeight: String(value) === String(o.value) ? '700' : '400' }}>{o.label}</Text>
+                  {String(value) === String(o.value) && <Ionicons name="checkmark" size={18} color={NAVY} />}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
 /* ── Create Lead Modal ── */
 function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
   const [form, setForm] = useState({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new' });
@@ -675,27 +711,19 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
             <Text style={lblS}>Email</Text>
             <TextInput value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" style={inpS} />
             <Text style={lblS}>Project</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {projects.map(p => (
-                  <TouchableOpacity key={p.id} onPress={() => set('project', p.id)}
-                    style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.project) === String(p.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.project) === String(p.id) ? NAVY : '#E0E6F0' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.project) === String(p.id) ? '#fff' : MUTED }}>{p.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+            <DropdownPicker
+              value={form.project}
+              onChange={v => set('project', v)}
+              options={projects.map(p => ({ value: p.id, label: p.name }))}
+              placeholder="Select project"
+            />
             <Text style={lblS}>Source</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {sources.map(s => (
-                  <TouchableOpacity key={s.id} onPress={() => set('source', s.id)}
-                    style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.source) === String(s.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.source) === String(s.id) ? NAVY : '#E0E6F0' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.source) === String(s.id) ? '#fff' : MUTED }}>{s.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+            <DropdownPicker
+              value={form.source}
+              onChange={v => set('source', v)}
+              options={sources.map(s => ({ value: s.id, label: s.name }))}
+              placeholder="Select source"
+            />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
