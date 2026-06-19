@@ -96,13 +96,13 @@ const ModulesScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }}>
 
         {/* ── Top Bar ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Modules</Text>
-          <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>Your assigned ERP modules</Text>
+        <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 14, backgroundColor: '#182350' }}>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>Modules</Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>Your assigned ERP modules</Text>
         </View>
 
         {/* ── Module Manager Banner ── */}

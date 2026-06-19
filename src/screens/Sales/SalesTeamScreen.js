@@ -75,16 +75,16 @@ export default function SalesTeamScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={22} color={TEXT} /></TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#182350', borderBottomWidth: 0 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Sales Team</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>{members.length} team members</Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: '#fff' }}>Sales Team</Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{members.length} team members</Text>
         </View>
-        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6 }}>
-          <Ionicons name="refresh-outline" size={20} color={refreshing ? MUTED : BLUE} />
+        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: 8 }}>
+          <Ionicons name="refresh-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
