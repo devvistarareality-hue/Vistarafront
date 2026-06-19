@@ -13,6 +13,7 @@ import { fetchDashboard, fetchMonthlyAttendance } from '../../../redux/actions/d
 import { logout } from '../../../redux/actions/authActions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseUrl } from '../../../constants/api';
+import { COLORS, CARD_SHADOW as THEME_SHADOW } from '../../../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -23,20 +24,16 @@ const MONTH_NAMES = [
 const DAY_HEADERS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-const BG    = '#F5F6FA';
-const NAVY  = '#182350';
-const TEXT  = '#1A1A2E';
-const MUTED = '#8492A6';
-const LINK  = '#3D5AFE';
+const BG    = COLORS.screenBg;
+const NAVY  = COLORS.navy;
+const TEXT  = COLORS.textPrimary;
+const MUTED = COLORS.textSecondary;
+const LINK  = COLORS.link;
 
 const CARD = {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: COLORS.cardBg,
   borderRadius: 18,
-  shadowColor: '#B8C4D6',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.20,
-  shadowRadius: 12,
-  elevation: 4,
+  ...THEME_SHADOW,
 };
 
 const CAL_CELL = Math.floor((width - 40 - 32) / 7);

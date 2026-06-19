@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BASE_URL } from '../../constants/api';
-import { COLORS } from '../../constants/theme';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const ALL_MODULES = ['Sales', 'HR', 'Execution', 'Purchase', 'Land'];
 
@@ -125,21 +125,21 @@ export default function DesignationMasterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={[s.header, { backgroundColor: '#182350', borderBottomWidth: 0 }]}>
-        <TouchableOpacity style={[s.iconBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
+      <View style={s.header}>
+        <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: '#fff' }]}>Designation Master</Text>
+        <Text style={s.headerTitle}>Designation Master</Text>
         <View style={{ width: 34 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Add form */}
         <View style={[s.card, { padding: 0, overflow: 'hidden' }]}>
-          <View style={{ backgroundColor: '#182350', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16 }}>
+          <View style={{ backgroundColor: COLORS.navy, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: '#fff' }}>Add New Designation</Text>
             <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>Define designations for each module</Text>
           </View>
@@ -217,12 +217,12 @@ export default function DesignationMasterScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: '#F5F6FA' },
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#EEF1F7' },
+  screen:      { flex: 1, backgroundColor: COLORS.screenBg },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: '#EEF1F7' },
   iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
-  card:        { backgroundColor: '#fff', margin: 16, borderRadius: 16, padding: 18, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  card:        { backgroundColor: COLORS.cardBg, margin: 16, borderRadius: 16, padding: 18, ...CARD_SHADOW },
   cardTitle:   { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 14 },
   sectionLabel:{ fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 10 },
   pillRow:     { gap: 8, paddingBottom: 4 },
@@ -230,7 +230,7 @@ const s = StyleSheet.create({
   modPillText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   inputRow:    { flexDirection: 'row', gap: 10 },
   input:       { flex: 1, backgroundColor: '#F5F6FA', borderRadius: 10, borderWidth: 1.5, borderColor: '#E0E6F0', paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textPrimary },
-  addBtn:      { backgroundColor: '#182350', paddingHorizontal: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  addBtn:      { backgroundColor: COLORS.navy, paddingHorizontal: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   addBtnText:  { color: '#fff', fontWeight: '700', fontSize: 14 },
 
   groupsWrap:  { paddingHorizontal: 16, gap: 12 },

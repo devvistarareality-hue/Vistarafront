@@ -1,9 +1,10 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { COLORS } from '../../../../constants/theme';
 
 const { width } = Dimensions.get('window');
-const NAVY = '#182350';
-const TEXT = '#1A1A2E';
-const MUTED = '#8492A6';
+const NAVY = COLORS.navy;
+const TEXT = COLORS.textPrimary;
+const MUTED = COLORS.textSecondary;
 const SUCCESS = '#2E7D32';
 const ERROR = '#EF4444';
 

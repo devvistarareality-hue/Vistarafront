@@ -353,7 +353,7 @@ export default function SignInInternalScreen({ navigation }) {
                 strokeWidth={3}
                 fillColor={inGeofence ? 'rgba(46,125,50,0.22)' : 'rgba(239,68,68,0.18)'}
               />
-              <Marker coordinate={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }} title="Office" pinColor="#182350" />
+               <Marker coordinate={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }} title="Office" pinColor={COLORS.navy} />
               {userLocation && (
                 <Marker coordinate={userLocation} title="You" anchor={{ x: 0.5, y: 0.5 }}>
                   <View style={s.userDot}>
@@ -662,7 +662,7 @@ const s = StyleSheet.create({
   actionRow:     { flexDirection: 'row', gap: 12 },
   actionBtn:     { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 16, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
   breakBtn:      { backgroundColor: '#E65100', shadowColor: '#E65100' },
-  signOutBtn:    { backgroundColor: '#182350', shadowColor: '#182350' },
+  signOutBtn:    { backgroundColor: COLORS.navy, shadowColor: COLORS.navy },
   actionBtnText: { color: '#fff', fontSize: 14, fontWeight: '700', marginTop: 4 },
   actionBtnSub:  { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '500', marginTop: 2 },
 
@@ -691,6 +691,6 @@ const s = StyleSheet.create({
   modFieldLabel:   { fontSize: 11, fontWeight: '700', color: '#8492A6', letterSpacing: 0.6, marginBottom: 6, marginTop: 14 },
   modFieldRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F5F6FA', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
   modFieldValue:   { flex: 1, fontSize: 15, fontWeight: '600', color: '#1A1A2E' },
-  saveBtn:         { marginTop: 24, backgroundColor: '#182350', borderRadius: 14, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: '#182350', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
+  saveBtn:         { marginTop: 24, backgroundColor: COLORS.navy, borderRadius: 14, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
   saveBtnText:     { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

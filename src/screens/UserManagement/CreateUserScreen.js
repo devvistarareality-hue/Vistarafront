@@ -78,9 +78,9 @@ const MODULE_ICONS = {
 };
 
 const ROLE_AVATAR_COLOR = {
-  Admin:    '#182350',
+  Admin:    COLORS.navy,
   Manager:  '#F9A825',
-  Employee: '#3D5AFE',
+  Employee: COLORS.link,
   Intern:   '#7B1FA2',
 };
 
@@ -206,14 +206,14 @@ export default function CreateUserScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: '#182350', borderBottomWidth: 0 }]}>
-        <TouchableOpacity style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]} onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={22} color="#fff" />
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="close" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: '#fff' }]}>{isEdit ? 'Edit User' : 'New User'}</Text>
+        <Text style={styles.headerTitle}>{isEdit ? 'Edit User' : 'New User'}</Text>
         <View style={{ width: 36 }} />
       </View>
 

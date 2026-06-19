@@ -1,22 +1,23 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { COLORS } from '../../../../constants/theme';
 
 const { width } = Dimensions.get('window');
-const NAVY  = '#182350';
-const TEXT  = '#1A1A2E';
-const MUTED = '#8492A6';
+const NAVY  = COLORS.navy;
+const TEXT  = COLORS.textPrimary;
+const MUTED = COLORS.textSecondary;
 
 export default StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F6FA' },
+  container: { flex: 1, backgroundColor: COLORS.screenBg },
 
   tableHeader: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: '#E0E6F0',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.cardBg,
   },
   headerCell:  { fontSize: 12, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, backgroundColor: '#FFFFFF' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, backgroundColor: COLORS.cardBg },
   separator: { height: 1, backgroundColor: '#F5F6FA', marginHorizontal: 16 },
 
   dateCol:    { flex: 1 },

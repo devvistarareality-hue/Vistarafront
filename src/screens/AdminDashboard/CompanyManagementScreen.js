@@ -8,15 +8,15 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchCompanies, updateCompany, resetUpdateCompany, deleteCompany } from '../../redux/actions/companiesActions';
-import { COLORS } from '../../constants/theme';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const STATUS_FILTERS = ['All', 'Active', 'Inactive'];
 
-const AVATAR_COLORS = ['#182350', '#0097A7', '#3D5AFE', '#2E7D32', '#E65100', '#6A1B9A', '#F9A825'];
+const AVATAR_COLORS = [COLORS.navy, '#0097A7', COLORS.link, '#2E7D32', '#E65100', '#6A1B9A', '#F9A825'];
 
 function avatarColor(name = '') {
   const idx = name.charCodeAt(0) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[idx] || '#182350';
+  return AVATAR_COLORS[idx] || COLORS.navy;
 }
 
 function CompanyCard({ company, onEdit, onDeactivate, onActivate, onDelete }) {
@@ -24,142 +24,82 @@ function CompanyCard({ company, onEdit, onDeactivate, onActivate, onDelete }) {
   const bg      = avatarColor(company.name);
 
   return (
-    <TouchableOpacity style={[s.card, !company.is_active && s.cardInactive]} activeOpacity={0.85} onPress={onEdit}>
-      <View style={[s.avatar, { backgroundColor: company.is_active ? bg : '#9CA3AF' }]}>
+    <View style={[s.card, !company.is_active && s.cardInactive]}>
+      <View style={[s.avatar, { backgroundColor: bg }]}>
         <Text style={s.avatarText}>{initial}</Text>
       </View>
-
       <View style={s.cardBody}>
-        <Text style={[s.companyName, !company.is_active && { color: '#9CA3AF' }]} numberOfLines={1}>
-          {company.name}
-        </Text>
+        <Text style={s.companyName} numberOfLines={1}>{company.name}</Text>
         <View style={s.tagRow}>
-          <View style={s.codeBadge}>
-            <Text style={s.codeText}>{company.code}</Text>
-          </View>
-          <View style={[s.statusBadge, { backgroundColor: company.is_active ? '#E8F5E9' : '#F5F6FA' }]}>
-            <Text style={[s.statusText, { color: company.is_active ? COLORS.success : COLORS.textSecondary }]}>
+          {company.code && <View style={s.codeBadge}><Text style={s.codeText}>{company.code}</Text></View>}
+          <View style={[s.statusBadge, { backgroundColor: company.is_active ? '#E8F5E9' : '#FEE2E2' }]}>
+            <Text style={[s.statusText, { color: company.is_active ? '#2E7D32' : '#EF4444' }]}>
               {company.is_active ? 'Active' : 'Inactive'}
             </Text>
           </View>
         </View>
       </View>
-
-      <View style={{ gap: 6, alignItems: 'center' }}>
-        <TouchableOpacity
-          style={s.editBtn}
-          onPress={onEdit}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-        >
-          <Ionicons name="pencil-outline" size={15} color={COLORS.secondary} />
+      <View style={{ flexDirection: 'column', gap: 6 }}>
+        <TouchableOpacity style={s.editBtn} onPress={() => onEdit(company)}>
+          <Ionicons name="pencil" size={16} color={COLORS.link} />
         </TouchableOpacity>
-
         {company.is_active ? (
-          <TouchableOpacity
-            style={s.deactBtn}
-            onPress={onDeactivate}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <Ionicons name="ban-outline" size={15} color="#EA580C" />
+          <TouchableOpacity style={s.deactBtn} onPress={() => onDeactivate(company)}>
+            <Ionicons name="pause-circle" size={18} color="#E65100" />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            style={s.activateBtn}
-            onPress={onActivate}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <Ionicons name="checkmark-circle-outline" size={15} color="#15803D" />
+          <TouchableOpacity style={s.activateBtn} onPress={() => onActivate(company)}>
+            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
           </TouchableOpacity>
         )}
-
-        <TouchableOpacity
-          style={s.deleteBtn}
-          onPress={onDelete}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-        >
-          <Ionicons name="trash-outline" size={15} color="#DC2626" />
+        <TouchableOpacity style={s.deleteBtn} onPress={() => onDelete(company)}>
+          <Ionicons name="trash-outline" size={16} color="#EF4444" />
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
 export default function CompanyManagementScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { companies, loading, error, updating, updateSuccess, updateError } = useSelector((s) => s.companies);
-  const [search,       setSearch]       = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [refreshing,   setRefreshing]   = useState(false);
+  const { companies, loading, updateLoading, error, updateError, updateSuccess, deleteSuccess } = useSelector((s) => s.companies);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [refreshing, setRefreshing] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      dispatch(fetchCompanies());
-    }, [dispatch]),
-  );
+  useFocusEffect(useCallback(() => { dispatch(fetchCompanies()); }, [dispatch]));
 
   useEffect(() => {
-    if (!loading) setRefreshing(false);
-  }, [loading]);
+    if (updateSuccess) { dispatch(resetUpdateCompany()); dispatch(fetchCompanies()); }
+    if (deleteSuccess) { dispatch(fetchCompanies()); }
+  }, [updateSuccess, deleteSuccess]);
 
   useEffect(() => {
-    if (updateError) Alert.alert('Error', updateError, [{ text: 'OK', onPress: () => dispatch(resetUpdateCompany()) }]);
-    if (updateSuccess) dispatch(resetUpdateCompany());
-  }, [updateSuccess, updateError]);
+    if (error) Alert.alert('Error', error);
+    if (updateError) Alert.alert('Update Error', updateError);
+  }, [error, updateError]);
 
-  const handleDeactivate = useCallback((company) => {
-    Alert.alert(
-      'Deactivate Company',
-      `Deactivate "${company.name}"? Users of this company will no longer be able to log in.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Deactivate', style: 'destructive', onPress: () => dispatch(updateCompany(company.id, { is_active: false })) },
-      ],
-    );
-  }, [dispatch]);
-
-  const handleActivate = useCallback((company) => {
-    Alert.alert(
-      'Reactivate Company',
-      `Reactivate "${company.name}"? Users will regain access.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Activate', onPress: () => dispatch(updateCompany(company.id, { is_active: true })) },
-      ],
-    );
-  }, [dispatch]);
-
-  const handleDelete = useCallback((company) => {
-    Alert.alert(
-      'Delete Company',
-      `Permanently delete "${company.name}"? This cannot be undone and all related data will be removed.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const result = await dispatch(deleteCompany(company.id));
-            if (result && !result.success) {
-              Alert.alert('Error', result.error || 'Failed to delete company.');
-            }
-          },
-        },
-      ],
-    );
-  }, [dispatch]);
-
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    dispatch(fetchCompanies());
+    await dispatch(fetchCompanies());
+    setRefreshing(false);
   }, [dispatch]);
+
+  const handleEdit     = (c) => navigation.navigate('EditCompany', { company: c });
+  const handleDeactivate = (c) => dispatch(updateCompany({ id: c.id, is_active: false }));
+  const handleActivate   = (c) => dispatch(updateCompany({ id: c.id, is_active: true }));
+  const handleDelete     = (c) => {
+    Alert.alert('Delete Company', `Delete ${c.name}? This action cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => dispatch(deleteCompany(c.id)) },
+    ]);
+  };
 
   const filtered = companies.filter((c) => {
-    const matchStatus =
-      activeFilter === 'All' ||
-      (activeFilter === 'Active' && c.is_active) ||
-      (activeFilter === 'Inactive' && !c.is_active);
-    const matchSearch =
-      !search ||
+    const matchStatus = statusFilter === 'All' ||
+      (statusFilter === 'Active' && c.is_active) ||
+      (statusFilter === 'Inactive' && !c.is_active);
+    const matchSearch = !search.trim() ||
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.code.toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchSearch;
@@ -167,97 +107,60 @@ export default function CompanyManagementScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={s.headerTitle}>Company Management</Text>
         <TouchableOpacity
-          style={[s.iconBtn, { backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }]}
-          onPress={() => dispatch(fetchCompanies())}
+          style={[s.iconBtn, { backgroundColor: COLORS.navy }]}
+          onPress={() => navigation.navigate('EditCompany')}
         >
-          <Ionicons name="refresh-outline" size={20} color="#fff" />
+          <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
       {/* Search */}
       <View style={s.searchRow}>
-        <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} />
-        <TextInput
-          style={s.searchInput}
-          placeholder="Search by name or code..."
-          placeholderTextColor={COLORS.textSecondary}
-          value={search}
-          onChangeText={setSearch}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={16} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        )}
+        <Ionicons name="search-outline" size={18} color={COLORS.textSecondary} />
+        <TextInput style={s.searchInput} placeholder="Search by name or code…" value={search} onChangeText={setSearch} />
+        {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={18} color={COLORS.textSecondary} /></TouchableOpacity> : null}
       </View>
 
-      {/* Filter tabs */}
+      {/* Status tabs */}
       <View style={s.tabsWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabsRow}>
           {STATUS_FILTERS.map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[s.tab, activeFilter === f && s.tabActive]}
-              onPress={() => setActiveFilter(f)}
-            >
-              <Text style={[s.tabText, activeFilter === f && s.tabTextActive]}>{f}</Text>
+            <TouchableOpacity key={f} onPress={() => setStatusFilter(f)} style={[s.tab, statusFilter === f && s.tabActive]}>
+              <Text style={[s.tabText, statusFilter === f && s.tabTextActive]}>{f}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* Count */}
-      <Text style={s.countLabel}>
-        {loading ? '' : `${filtered.length} ${filtered.length === 1 ? 'company' : 'companies'}`}
-      </Text>
+      <Text style={s.countLabel}>{filtered.length} company{filtered.length !== 1 ? 'ies' : 'y'}</Text>
 
-      {/* Content */}
-      {loading && companies.length === 0 ? (
-        <ActivityIndicator size="large" color={COLORS.secondary} style={{ marginTop: 40 }} />
-      ) : error ? (
-        <Text style={s.errorText}>{error}</Text>
+      {/* List */}
+      {loading ? (
+        <ActivityIndicator size="large" color={COLORS.navy} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={(c) => String(c.id)}
-          renderItem={({ item }) => (
-            <CompanyCard
-              company={item}
-              onEdit={() => navigation.navigate('EditCompany', { company: item })}
-              onDeactivate={() => handleDeactivate(item)}
-              onActivate={() => handleActivate(item)}
-              onDelete={() => handleDelete(item)}
-            />
-          )}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 4 }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<Text style={s.emptyText}>No companies found.</Text>}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[COLORS.secondary]}
-              tintColor={COLORS.secondary}
-            />
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.navy]} tintColor={COLORS.navy} />}
+          renderItem={({ item }) => <CompanyCard company={item} onEdit={handleEdit} onDeactivate={handleDeactivate} onActivate={handleActivate} onDelete={handleDelete} />}
+          ListEmptyComponent={
+            <Text style={s.emptyText}>No companies found</Text>
           }
         />
       )}
 
-      {/* FAB — Create Company */}
-      <TouchableOpacity
-        style={s.fab}
-        onPress={() => navigation.navigate('EditCompany', {})}
-        activeOpacity={0.85}
-      >
+      {/* FAB add */}
+      <TouchableOpacity style={s.fab} onPress={() => navigation.navigate('EditCompany')} activeOpacity={0.85}>
         <Ionicons name="add" size={26} color="#fff" />
       </TouchableOpacity>
     </SafeAreaView>
@@ -265,25 +168,25 @@ export default function CompanyManagementScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: '#F5F6FA' },
+  screen:      { flex: 1, backgroundColor: COLORS.screenBg },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#182350' },
-  iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: '#fff' },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' },
+  iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
-  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 6 },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
   tabsWrapper: { height: 44, marginTop: 14 },
   tabsRow:     { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  tab:         { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#DDE3F0' },
-  tabActive:   { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
+  tab:         { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: '#DDE3F0' },
+  tabActive:   { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
   tabText:     { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
   tabTextActive: { color: '#fff', fontWeight: '700' },
 
   countLabel: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 10, ...CARD_SHADOW },
   avatar:     { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText: { fontSize: 18, fontWeight: '700', color: '#fff' },
   cardBody:   { flex: 1 },
@@ -291,7 +194,7 @@ const s = StyleSheet.create({
 
   tagRow:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
   codeBadge:  { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, backgroundColor: '#E8EEFF' },
-  codeText:   { fontSize: 11, fontWeight: '700', color: COLORS.primary, letterSpacing: 0.5 },
+  codeText:   { fontSize: 11, fontWeight: '700', color: COLORS.navy, letterSpacing: 0.5 },
   statusBadge:{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
   statusText: { fontSize: 11, fontWeight: '600' },
 
@@ -311,11 +214,11 @@ const s = StyleSheet.create({
     width:           56,
     height:          56,
     borderRadius:    28,
-    backgroundColor: '#182350',
+    backgroundColor: COLORS.navy,
     justifyContent:  'center',
     alignItems:      'center',
     elevation:       6,
-    shadowColor:     '#182350',
+    shadowColor:     COLORS.navy,
     shadowOffset:    { width: 0, height: 4 },
     shadowOpacity:   0.30,
     shadowRadius:    8,

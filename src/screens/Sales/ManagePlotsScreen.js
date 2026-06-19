@@ -14,12 +14,9 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { uploadToSupabase } from '../../utils/supabaseStorage';
 
 const { width: SW } = Dimensions.get('window');
-const NAVY  = '#182350';
-const BLUE  = '#3D5AFE';
-const BG    = '#F5F6FA';
-const TEXT  = '#1A1A2E';
-const MUTED = '#8492A6';
-const CARD  = { backgroundColor: '#fff', borderRadius: 14, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.18, shadowRadius: 10, elevation: 4 };
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
+const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 const STATUS_CFG = {
   available: { label: 'Available', color: '#2E7D32', bg: '#E8F5E9', border: '#2E7D32', zone: '#22c55e' },
@@ -862,16 +859,16 @@ export default function ManagePlotsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#182350' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color={NAVY} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: '#fff' }} numberOfLines={1}>{project.name}</Text>
-          {project.location ? <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{project.location}</Text> : null}
+          <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }} numberOfLines={1}>{project.name}</Text>
+          {project.location ? <Text style={{ fontSize: 11, color: MUTED }}>{project.location}</Text> : null}
         </View>
         <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: project.is_active ? 'rgba(46,125,50,0.3)' : 'rgba(239,68,68,0.3)', borderWidth: 1, borderColor: project.is_active ? 'rgba(165,214,167,0.5)' : 'rgba(254,202,202,0.5)' }}>
           <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? '#A5D6A7' : '#FECACA' }}>

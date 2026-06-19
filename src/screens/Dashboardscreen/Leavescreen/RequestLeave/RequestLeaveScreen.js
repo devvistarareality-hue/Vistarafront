@@ -7,7 +7,6 @@ import {
   StatusBar,
   ScrollView,
   Platform,
-  Image,
   Modal,
   Animated,
   Dimensions,
@@ -18,8 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../../../constants/theme';
-import images from '../../../../constants/images';
 import { requestLeave, resetRequestLeave } from '../../../../redux/actions/requestLeaveActions';
 import styles from './styles';
 
@@ -151,12 +150,12 @@ const RequestLeaveScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#182350" barStyle="light-content" />
+      <StatusBar backgroundColor={COLORS.screenBg} barStyle="dark-content" />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Image source={images.backIcon} style={styles.backIcon} />
+          <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Leave</Text>
         <View style={styles.headerRight} />
@@ -184,7 +183,7 @@ const RequestLeaveScreen = () => {
           <Text style={styles.dropdownLabel}>Leave Type</Text>
           <View style={styles.dropdownRight}>
             <Text style={styles.dropdownValue}>{selectedLeave}</Text>
-            {/* <Image source={images.rightArrow} style={styles.dropdownArrow} /> */}
+            <Ionicons name="chevron-down" size={18} color={COLORS.navy} />
           </View>
         </TouchableOpacity>
 
@@ -239,7 +238,7 @@ const RequestLeaveScreen = () => {
         {/* End Date — Full Day only */}
         {dayType === 'Full Day' && (
           <TouchableOpacity style={styles.dateCard} onPress={() => setShowEndPicker(true)}>
-            <Text style={styles.calendarIcon}>📅</Text>
+          <Ionicons name="calendar-outline" size={20} color={COLORS.navy} style={{ marginRight: 12 }} />
             <Text style={styles.dateTextFilled}>{formatDate(endDate)}</Text>
           </TouchableOpacity>
         )}

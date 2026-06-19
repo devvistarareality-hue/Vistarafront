@@ -8,11 +8,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchLeaveHistory } from '../../../../redux/actions/leaveHistoryActions';
 import { updateLeaveStatus, resetLeaveAction } from '../../../../redux/actions/leaveActionActions';
 import { triggerBalanceRefresh } from '../../../../redux/actions/leaveBalanceActions';
 import Toast from '../../../../components/Toast';
-import images from '../../../../constants/images';
 import styles from './styles';
 import LeaveDetailModal from './LeaveDetailModal';
 
@@ -70,7 +70,7 @@ const LeaveCard = ({ item, onPress }) => (
           {item.status}
         </Text>
       </View>
-      <Image source={images.rightArrow} style={styles.chevronIcon} />
+      <Ionicons name="chevron-forward" size={18} color="#D0D5DD" />
     </View>
   </TouchableOpacity>
 );

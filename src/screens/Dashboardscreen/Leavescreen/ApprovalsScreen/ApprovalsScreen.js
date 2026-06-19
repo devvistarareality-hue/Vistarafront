@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, SectionList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchTeamLeaves } from '../../../../redux/actions/teamLeavesActions';
 import { updateLeaveStatus, resetLeaveAction } from '../../../../redux/actions/leaveActionActions';
 import Toast from '../../../../components/Toast';
-import images from '../../../../constants/images';
 import styles from '../HistoryScreen/styles';
 import LeaveDetailModal from '../HistoryScreen/LeaveDetailModal';
 
@@ -49,7 +49,7 @@ const LeaveCard = ({ item, onPress }) => (
       <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
         <Text style={[styles.statusText, getStatusTextStyle(item.status)]}>{item.status}</Text>
       </View>
-      <Image source={images.rightArrow} style={styles.chevronIcon} />
+      <Ionicons name="chevron-forward" size={18} color="#D0D5DD" />
     </View>
   </TouchableOpacity>
 );

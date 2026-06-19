@@ -1,31 +1,35 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS } from '../../../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, CARD_SHADOW } from '../../../constants/theme';
 import styles from './styles';
 
 const ProjectsScreen = () => {
   const navigation = useNavigation();
 
-  const handleLogout = () => {
-    navigation.navigate('Home');
-  };
-
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-{/*       
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>StrategicERP</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View> */}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Projects</Text>
+          <View style={styles.headerRight} />
+        </View>
 
-      <View style={styles.content}>
-        <Text style={styles.screenTitle}>Projects Screen</Text>
-      </View>
-    </View>
+        <View style={styles.comingSoonCard}>
+          <View style={styles.iconCircle}>
+            <Ionicons name="folder-open-outline" size={40} color="#2E7D32" />
+          </View>
+          <Text style={styles.comingSoonTitle}>Coming Soon</Text>
+          <Text style={styles.comingSoonSub}>Projects module is under development</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

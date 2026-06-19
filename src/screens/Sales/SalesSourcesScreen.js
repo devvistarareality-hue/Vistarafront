@@ -7,13 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SALES_ENDPOINTS, RAILWAY_URL } from '../../constants/api';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
-const NAVY = '#182350';
-const BLUE = '#3D5AFE';
-const GREEN = '#2E7D32';
-const BG = '#F5F6FA';
-const TEXT = '#1A1A2E';
-const MUTED = '#8492A6';
+const NAVY = COLORS.navy; const BLUE = COLORS.link; const GREEN = COLORS.success; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
 const PRESETS = ['Meta', 'Google', 'Referral', 'Walk-in', 'IVR', 'Portal', 'Other'];
 const SOURCE_COLORS = ['#3D5AFE','#2E7D32','#E65100','#0097A7','#7B1FA2','#F9A825','#EF4444','#00796B','#1565C0'];
@@ -515,28 +511,28 @@ export default function SalesSourcesScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       <SetupGuideModal visible={guideVisible} onClose={() => setGuideVisible(false)} />
 
-      <View style={{ backgroundColor: '#182350', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 0 }}>
+      <View style={{ backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 0, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="arrow-back" size={20} color={NAVY} />
           </TouchableOpacity>
-          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#fff' }}>Lead Setup</Text>
+          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Lead Setup</Text>
           <TouchableOpacity onPress={() => setGuideVisible(true)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: NAVY }}>
             <Ionicons name="help-circle-outline" size={16} color="#fff" />
             <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>Guide</Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ flexDirection: 'row' }}>
-          {[{ key: 'meta', label: '🔗 Meta Integration' }, { key: 'sources', label: '📋 Lead Sources' }].map(t => (
+          {[{ key: 'meta', label: 'Meta Integration' }, { key: 'sources', label: 'Lead Sources' }].map(t => (
             <TouchableOpacity key={t.key} onPress={() => setTab(t.key)}
-              style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: tab === t.key ? '#fff' : 'transparent' }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: tab === t.key ? '#fff' : 'rgba(255,255,255,0.5)' }}>{t.label}</Text>
+              style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: tab === t.key ? NAVY : 'transparent' }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: tab === t.key ? NAVY : MUTED }}>{t.label}</Text>
             </TouchableOpacity>
           ))}
         </View>

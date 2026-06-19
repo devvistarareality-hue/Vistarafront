@@ -1,80 +1,50 @@
-import { StyleSheet, Dimensions } from 'react-native';
-
-const { width, height } = Dimensions.get('window');
-const NAVY = '#182350';
-const TEXT = '#1A1A2E';
-const MUTED = '#8492A6';
-const CARD_SHADOW = {
-  shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.18, shadowRadius: 12, elevation: 4,
-};
+import { StyleSheet } from 'react-native';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F6FA',
-  },
+  container: { flex: 1, backgroundColor: COLORS.screenBg },
   header: {
-    backgroundColor: '#182350',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    backgroundColor: COLORS.navy,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#fff',
+  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.white },
+  logoutBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center', alignItems: 'center',
   },
-  logoutButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
+  content: { flex: 1, padding: 20 },
   welcomeCard: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
+    backgroundColor: COLORS.cardBg,
+    padding: 24,
     borderRadius: 18,
     marginBottom: 16,
+    alignItems: 'center',
     ...CARD_SHADOW,
   },
-  welcomeTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: TEXT,
-    marginBottom: 12,
+  welcomeIconRow: { marginBottom: 12 },
+  welcomeIcon: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center', alignItems: 'center',
   },
-  infoText: {
-    fontSize: 14,
-    color: MUTED,
-    marginBottom: 6,
-  },
-  infoValue: {
-    fontWeight: '700',
-    color: TEXT,
-  },
+  welcomeTitle: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 12 },
+  infoText: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 6 },
+  infoValue: { fontWeight: '700', color: COLORS.textPrimary },
   infoBox: {
-    backgroundColor: NAVY,
+    backgroundColor: COLORS.navy,
     padding: 20,
     borderRadius: 18,
+    alignItems: 'center',
     ...CARD_SHADOW,
   },
   infoBoxText: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: COLORS.white,
     textAlign: 'center',
     lineHeight: 22,
   },

@@ -7,18 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
-const NAVY = '#182350';
-const BLUE = '#3D5AFE';
-const BG   = '#F5F6FA';
-const TEXT = '#1A1A2E';
-const MUTED = '#8492A6';
-
-const CARD = {
-  backgroundColor: '#fff', borderRadius: 14,
-  shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, marginBottom: 16,
-};
+const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW, marginBottom: 16 };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -166,16 +158,16 @@ export default function SalesDistributionScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#182350', borderBottomWidth: 0 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="arrow-back" size={22} color={NAVY} />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: '#fff' }}>Lead Distribution</Text>
-        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: 8 }}>
-          <Ionicons name="refresh-outline" size={22} color="#fff" />
+        <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: TEXT }}>Lead Distribution</Text>
+        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: '#E0E6F0', borderRadius: 8 }}>
+          <Ionicons name="refresh-outline" size={22} color={NAVY} />
         </TouchableOpacity>
       </View>
 

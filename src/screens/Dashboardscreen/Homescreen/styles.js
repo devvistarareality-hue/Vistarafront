@@ -1,10 +1,11 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { COLORS } from '../../../constants/theme';
 
 const { width } = Dimensions.get('window');
 
-const NAVY   = '#1E4080';
+const NAVY   = COLORS.navy;
 const ORANGE = '#D44B1A';
-const BG     = '#F0F4F8';
+const BG     = COLORS.screenBg;
 
 // Calendar cell width: card has 16px padding each side, section has 12px each side
 const CAL_CELL_SIZE = Math.floor((width - 24 - 32) / 7);
