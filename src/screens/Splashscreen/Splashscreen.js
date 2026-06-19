@@ -1,21 +1,24 @@
 import React, { useEffect } from 'react';
 import { View, Image, StatusBar, Animated, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useDispatch } from 'react-redux';
 import { discoverServer } from '../../utils/serverDiscovery';
 import { setBaseUrl, RAILWAY_URL } from '../../constants/api';
+import { loadUser } from '../../redux/actions/authActions';
 
 const ORANGE = '#FF6B2B';
 
 const SplashScreen = ({ onFinish }) => {
+  const dispatch  = useDispatch();
   const fadeAnim  = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.7);
 
   useEffect(() => {
-    discoverServer(RAILWAY_URL).then((url) => {
-      if (url) {
-        setBaseUrl(url);
-      }
-    });
+    discoverServer(RAILWAY_URL)
+      .then((url) => { if (url) setBaseUrl(url); })
+      .catch(() => {})
+      // Refresh the cached user (picks up is_approver, role changes, etc.)
+      .finally(() => dispatch(loadUser()));
 
     Animated.parallel([
       Animated.timing(fadeAnim, {
