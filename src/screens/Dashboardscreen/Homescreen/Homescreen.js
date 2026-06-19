@@ -69,13 +69,19 @@ const HomeScreen = () => {
 
   const profilePanResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gs) => gs.dy > 8 && Math.abs(gs.dy) > Math.abs(gs.dx),
-      onPanResponderMove: (_, gs) => { if (gs.dy > 0) profileSheetY.setValue(gs.dy); },
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gs) => {
+        if (gs.dy > 0) profileSheetY.setValue(gs.dy);
+      },
       onPanResponderRelease: (_, gs) => {
         if (gs.dy > 100 || gs.vy > 0.5) {
-          closeProfileSheet();
+          Animated.timing(profileSheetY, { toValue: 700, duration: 220, useNativeDriver: true }).start(() => {
+            setProfileVisible(false);
+            profileSheetY.setValue(0);
+          });
         } else {
-          Animated.spring(profileSheetY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 10 }).start();
+          Animated.spring(profileSheetY, { toValue: 0, useNativeDriver: true }).start();
         }
       },
     })
@@ -549,10 +555,14 @@ const HomeScreen = () => {
               shadowOpacity: 0.12, shadowRadius: 16, elevation: 20,
               transform: [{ translateY: profileSheetY }],
             }}
-            {...profilePanResponder.panHandlers}
           >
-          {/* Handle — drag down to close */}
-          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0', alignSelf: 'center', marginBottom: 20 }} />
+          {/* Drag handle — swipe down to close */}
+          <View
+            {...profilePanResponder.panHandlers}
+            style={{ alignItems: 'center', paddingBottom: 16, marginTop: -8, marginHorizontal: -24, paddingTop: 12 }}
+          >
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0' }} />
+          </View>
 
           {/* Title */}
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginBottom: 20 }}>User Details</Text>
