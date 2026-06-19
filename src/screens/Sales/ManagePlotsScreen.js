@@ -917,24 +917,45 @@ export default function ManagePlotsScreen({ route, navigation }) {
             {/* Plot Type Floor Plans */}
             <PlotTypePlansEditor project={project} plots={plots} onProjectUpdate={setProject} />
 
-            {/* Filter tabs */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 12, gap: 8, flexDirection: 'row' }}>
-              {[
-                { key: 'all',       label: 'All',       color: TEXT,      bg: '#F0F3FF' },
-                { key: 'available', label: 'Available', color: '#2E7D32', bg: '#E8F5E9' },
-                { key: 'hold',      label: 'Hold',      color: '#E65100', bg: '#FFF3E0' },
-                { key: 'sold',      label: 'Sold',      color: '#EF4444', bg: '#FEE2E2' },
-              ].map(({ key, label, color, bg }) => (
-                <TouchableOpacity key={key} onPress={() => setFilter(key)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
-                    backgroundColor: filter === key ? bg : '#fff',
-                    borderWidth: 1.5, borderColor: filter === key ? color + '60' : '#E0E6F0' }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: filter === key ? color : MUTED }}>
-                    {label} ({counts[key]})
-                  </Text>
+            {/* Filter tabs + Delete All */}
+            <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, flexDirection: 'row', marginBottom: plots.length > 0 ? 10 : 0 }}>
+                {[
+                  { key: 'all',       label: 'All',       color: TEXT,      bg: '#F0F3FF' },
+                  { key: 'available', label: 'Available', color: '#2E7D32', bg: '#E8F5E9' },
+                  { key: 'hold',      label: 'Hold',      color: '#E65100', bg: '#FFF3E0' },
+                  { key: 'sold',      label: 'Sold',      color: '#EF4444', bg: '#FEE2E2' },
+                ].map(({ key, label, color, bg }) => (
+                  <TouchableOpacity key={key} onPress={() => setFilter(key)}
+                    style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+                      backgroundColor: filter === key ? bg : '#fff',
+                      borderWidth: 1.5, borderColor: filter === key ? color + '60' : '#E0E6F0' }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: filter === key ? color : MUTED }}>
+                      {label} ({counts[key]})
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              {plots.length > 0 && (
+                <TouchableOpacity onPress={async () => {
+                  Alert.alert('Delete All Plots', `Delete all ${plots.length} plots for this project? This cannot be undone.`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete All', style: 'destructive', onPress: async () => {
+                      const headers = await authHeaders();
+                      const res = await fetch(SALES_ENDPOINTS.plotsBulkDelete, {
+                        method: 'DELETE', headers, body: JSON.stringify({ project_id: project.id }),
+                      });
+                      if (res.ok) { setPlots([]); Alert.alert('Done', 'All plots deleted.'); }
+                      else { const e = await res.json(); Alert.alert('Error', e.detail || 'Failed to delete plots'); }
+                    }},
+                  ]);
+                }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: '#FFF5F5', borderWidth: 1.5, borderColor: '#FECACA' }}>
+                  <Ionicons name="trash-outline" size={15} color="#DC2626" />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#DC2626' }}>Delete All Plots</Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+            </View>
           </View>
         )}
         renderItem={({ item }) => (
