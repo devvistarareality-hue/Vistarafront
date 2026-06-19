@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StatusBar, Alert, ActivityIndicator, Dimensions, RefreshControl,
-  Modal, Pressable,
+  Modal, Pressable, StyleSheet, Animated, PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -58,6 +58,35 @@ const HomeScreen = () => {
   const [profileUser,     setProfileUser]     = useState(null);
   const [profileLoading,  setProfileLoading]  = useState(false);
 
+  const profileSheetY = useRef(new Animated.Value(0)).current;
+
+  const closeProfileSheet = () => {
+    Animated.timing(profileSheetY, { toValue: 700, duration: 220, useNativeDriver: true }).start(() => {
+      setProfileVisible(false);
+    });
+  };
+
+  const profilePanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => { profileSheetY.stopAnimation(); },
+      onPanResponderMove: (_, gs) => {
+        if (gs.dy > 0) profileSheetY.setValue(gs.dy);
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy > 80 || gs.vy > 0.5) {
+          Animated.timing(profileSheetY, { toValue: 700, duration: 200, useNativeDriver: true }).start(() => {
+            setProfileVisible(false);
+          });
+        } else {
+          Animated.spring(profileSheetY, {
+            toValue: 0, useNativeDriver: true, overshootClamping: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   const handleLogout = () => {
     setProfileVisible(false);
     dispatch(logout());
@@ -100,6 +129,13 @@ const HomeScreen = () => {
       setSelectedDay(null);
     }
   }, [attendanceTab, calYear, calMonth]);
+
+  useEffect(() => {
+    if (profileVisible) {
+      profileSheetY.setValue(700);
+      Animated.spring(profileSheetY, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }).start();
+    }
+  }, [profileVisible]);
 
   const authenticateAndNavigate = async () => {
     try {
@@ -510,71 +546,83 @@ const HomeScreen = () => {
       <Modal
         visible={profileVisible}
         transparent
-        animationType="slide"
-        onRequestClose={() => setProfileVisible(false)}
+        animationType="none"
+        onRequestClose={closeProfileSheet}
       >
-        <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
-          onPress={() => setProfileVisible(false)}
-        />
-        <View style={{
-          backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
-          padding: 24, paddingBottom: 36,
-          shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.12, shadowRadius: 16, elevation: 20,
-        }}>
-          {/* Handle */}
-          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0', alignSelf: 'center', marginBottom: 20 }} />
+        <View style={{ flex: 1 }}>
 
-          {/* Title */}
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginBottom: 20 }}>User Details</Text>
-
-          {/* Details list */}
-          <View style={{
-            backgroundColor: '#F5F6FA', borderRadius: 16,
-            overflow: 'hidden', marginBottom: 24,
-          }}>
-            {profileLoading ? (
-              <ActivityIndicator color={NAVY} style={{ marginVertical: 32 }} />
-            ) : userDetails.map((item, i) => (
-              <View key={i} style={{
-                flexDirection: 'row', alignItems: 'center', gap: 14,
-                paddingHorizontal: 16, paddingVertical: 14,
-                borderBottomWidth: i < userDetails.length - 1 ? 1 : 0,
-                borderBottomColor: '#E8ECF4',
-              }}>
-                <View style={{
-                  width: 40, height: 40, borderRadius: 12,
-                  backgroundColor: '#E8EEFF',
-                  justifyContent: 'center', alignItems: 'center', flexShrink: 0,
-                }}>
-                  <Ionicons name={item.icon} size={20} color={LINK} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>
-                    {item.label}
-                  </Text>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>
-                    {item.value || '—'}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          {/* Sign Out button */}
+          {/* Dark backdrop — tap anywhere outside sheet to close */}
           <TouchableOpacity
-            onPress={handleLogout}
-            activeOpacity={0.85}
-            style={{
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-              backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA',
-              borderRadius: 14, paddingVertical: 14,
-            }}
-          >
-            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Sign Out</Text>
-          </TouchableOpacity>
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+            activeOpacity={1}
+            onPress={closeProfileSheet}
+          />
+
+          {/* Sheet — position:absolute so it sits cleanly on top of backdrop */}
+          <Animated.View style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            backgroundColor: '#fff',
+            borderTopLeftRadius: 28, borderTopRightRadius: 28,
+            paddingHorizontal: 24, paddingBottom: 40,
+            transform: [{ translateY: profileSheetY }],
+          }}>
+
+            {/* Drag handle — PanResponder here only, no competing children */}
+            <View
+              {...profilePanResponder.panHandlers}
+              style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 16 }}
+            >
+              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0' }} />
+            </View>
+
+            {/* Title */}
+            <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginBottom: 20 }}>User Details</Text>
+
+            {/* Details list */}
+            <View style={{ backgroundColor: '#F5F6FA', borderRadius: 16, overflow: 'hidden', marginBottom: 24 }}>
+              {profileLoading ? (
+                <ActivityIndicator color={NAVY} style={{ marginVertical: 32 }} />
+              ) : userDetails.map((item, i) => (
+                <View key={i} style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 14,
+                  paddingHorizontal: 16, paddingVertical: 14,
+                  borderBottomWidth: i < userDetails.length - 1 ? 1 : 0,
+                  borderBottomColor: '#E8ECF4',
+                }}>
+                  <View style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    backgroundColor: '#E8EEFF',
+                    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
+                  }}>
+                    <Ionicons name={item.icon} size={20} color={LINK} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>
+                      {item.label}
+                    </Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>
+                      {item.value || '—'}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Sign Out */}
+            <TouchableOpacity
+              onPress={handleLogout}
+              activeOpacity={0.85}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA',
+                borderRadius: 14, paddingVertical: 14,
+              }}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Sign Out</Text>
+            </TouchableOpacity>
+
+          </Animated.View>
         </View>
       </Modal>
 
