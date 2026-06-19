@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, FlatList, TouchableOpacity, Modal, ScrollView, TextInput,
   ActivityIndicator, Alert, StatusBar, RefreshControl, KeyboardAvoidingView, Platform, Linking,
@@ -877,6 +878,29 @@ export default function SalesLeadsScreen({ navigation }) {
 
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
+  const lastLeadIdRef   = useRef(null);
+  const [newLeadCount, setNewLeadCount] = useState(0);
+
+  // On screen focus: silently check if new leads arrived since last load
+  useFocusEffect(useCallback(() => {
+    if (lastLeadIdRef.current === null) return;
+    (async () => {
+      try {
+        const headers = await authHeaders();
+        const res  = await fetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=5`, { headers });
+        if (!res.ok) return;
+        const d       = await res.json();
+        const results = Array.isArray(d) ? d : (d.results || []);
+        if (!results.length) return;
+        const latestId = results[0].id;
+        if (latestId !== lastLeadIdRef.current) {
+          const count = results.filter(r => r.id > lastLeadIdRef.current).length;
+          setNewLeadCount(count || 1);
+        }
+      } catch (_) {}
+    })();
+  }, []));
+
   async function loadData(reset = false) {
     const p = reset ? 1 : page;
     if (!reset && !hasMore) return;
@@ -908,6 +932,10 @@ export default function SalesLeadsScreen({ navigation }) {
         setLeads(prev => reset ? results : [...prev, ...results]);
         setHasMore(!!d.next);
         setPage(p + 1);
+        if (reset && results.length) {
+          lastLeadIdRef.current = results[0].id;
+          setNewLeadCount(0);
+        }
       }
       if (projRes?.ok)  setProjects(await projRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
       if (srcRes?.ok)   setSources(await srcRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
@@ -918,11 +946,6 @@ export default function SalesLeadsScreen({ navigation }) {
   }
 
   useEffect(() => { loadData(true); }, [search, filters]);
-
-  useEffect(() => {
-    const id = setInterval(() => loadData(true), 30000);
-    return () => clearInterval(id);
-  }, [search, filters]);
 
   function onLeadUpdated(updated) {
     if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
@@ -1004,6 +1027,26 @@ export default function SalesLeadsScreen({ navigation }) {
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Add</Text>
         </TouchableOpacity>
       </View>
+
+      {/* New leads notification banner */}
+      {newLeadCount > 0 && (
+        <TouchableOpacity
+          onPress={() => loadData(true)}
+          style={{ backgroundColor: '#1E3A6E', paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+          activeOpacity={0.85}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="notifications" size={16} color="#FFD700" />
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
+              {newLeadCount} new lead{newLeadCount > 1 ? 's' : ''} arrived
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}>Tap to refresh</Text>
+            <Ionicons name="refresh" size={13} color="rgba(255,255,255,0.75)" />
+          </View>
+        </TouchableOpacity>
+      )}
 
       {/* Search + Filter button */}
       <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', gap: 10 }}>

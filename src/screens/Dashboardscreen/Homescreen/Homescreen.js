@@ -108,8 +108,6 @@ const HomeScreen = () => {
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchDashboard());
-      const interval = setInterval(() => dispatch(fetchDashboard()), 30000);
-      return () => clearInterval(interval);
     }, [dispatch]),
   );
 

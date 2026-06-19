@@ -158,8 +158,6 @@ export default function UserManagementScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchUsers());
-      const interval = setInterval(() => dispatch(fetchUsers()), 30000);
-      return () => clearInterval(interval);
     }, [dispatch]),
   );
 

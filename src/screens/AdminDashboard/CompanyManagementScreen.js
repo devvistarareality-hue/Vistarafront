@@ -94,8 +94,6 @@ export default function CompanyManagementScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchCompanies());
-      const interval = setInterval(() => dispatch(fetchCompanies()), 30000);
-      return () => clearInterval(interval);
     }, [dispatch]),
   );
 
