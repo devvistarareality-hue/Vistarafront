@@ -78,8 +78,8 @@ export default function SalesCRMScreen({ navigation }) {
 
   const STAT_CARDS = [
     { label: 'Total Leads',  value: stats?.total_leads    ?? '—', color: BLUE,      bg: '#EEF0FF' },
-    { label: 'New Today',    value: stats?.new_today       ?? '—', color: '#2E7D32', bg: '#E8F5E9' },
-    { label: 'Unassigned',   value: stats?.unassigned      ?? '—', color: '#E65100', bg: '#FFF3E0' },
+    { label: 'New Today',    value: stats?.leads_today     ?? '—', color: '#2E7D32', bg: '#E8F5E9' },
+    { label: 'Unassigned',   value: stats?.new_leads       ?? '—', color: '#E65100', bg: '#FFF3E0' },
     { label: 'Closures',     value: stats?.closures        ?? '—', color: '#EF4444', bg: '#FEE2E2' },
     { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: '#7B1FA2', bg: '#F3E5F5' },
     { label: 'Projects',     value: stats?.active_projects ?? '—', color: '#0097A7', bg: '#E0F7FA' },
