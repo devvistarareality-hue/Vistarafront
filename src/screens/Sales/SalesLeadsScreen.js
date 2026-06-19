@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, Modal, ScrollView, TextInput,
-  ActivityIndicator, Alert, StatusBar, RefreshControl, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Alert, StatusBar, RefreshControl, KeyboardAvoidingView, Platform, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -954,7 +954,18 @@ export default function SalesLeadsScreen({ navigation }) {
               </View>
               <StatusBadge status={item.status} />
             </View>
-            <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{item.phone}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 8 }}>
+              <Text style={{ fontSize: 12, color: MUTED, flex: 1 }}>{item.phone}</Text>
+              {!!item.phone && (
+                <TouchableOpacity
+                  onPress={e => { e.stopPropagation?.(); Linking.openURL(`tel:${item.phone}`); }}
+                  style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#E8F5E9', justifyContent: 'center', alignItems: 'center' }}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Ionicons name="call" size={14} color="#2E7D32" />
+                </TouchableOpacity>
+              )}
+            </View>
             {!!metaLine && (
               <Text style={{ fontSize: 10, color: '#8492A6', marginTop: 2 }} numberOfLines={1}>{metaLine}</Text>
             )}
