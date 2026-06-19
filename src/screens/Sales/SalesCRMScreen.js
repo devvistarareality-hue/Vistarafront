@@ -47,23 +47,22 @@ export default function SalesCRMScreen({ navigation }) {
   const STATS_TTL_MS    = 2 * 60 * 1000; // 2 minutes
 
   async function loadStats(refresh = false) {
-    if (refresh) {
-      setRefreshing(true);
-    } else {
-      // Show cached data instantly, skip spinner
-      try {
-        const raw = await AsyncStorage.getItem(STATS_CACHE_KEY);
-        if (raw) {
-          const { ts, data } = JSON.parse(raw);
-          if (Date.now() - ts < STATS_TTL_MS) {
-            setStats(data);
-            setLoading(false);
-            return; // Cache is fresh — no network call needed
-          }
-        }
-      } catch {}
-      setLoading(true);
-    }
+    // Always show cached data immediately (even if stale) — no spinner on repeat visits
+    try {
+      const raw = await AsyncStorage.getItem(STATS_CACHE_KEY);
+      if (raw) {
+        const { ts, data } = JSON.parse(raw);
+        setStats(data);
+        setLoading(false);
+        // If cache is fresh and not a manual refresh, skip network call
+        if (!refresh && Date.now() - ts < STATS_TTL_MS) return;
+      }
+    } catch {}
+
+    // Fetch fresh data in background (show spinner only if no cached data at all)
+    if (refresh) setRefreshing(true);
+    else if (!stats) setLoading(true);
+
     try {
       const headers = await authHeaders();
       const res = await fetch(SALES_ENDPOINTS.stats, { headers });
