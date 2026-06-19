@@ -799,15 +799,23 @@ export default function SalesLeadsScreen({ navigation }) {
     const dateStr  = dateObj ? dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '';
     const timeStr  = dateObj ? dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
     return (
-      <TouchableOpacity style={[CARD, { marginHorizontal: 16, marginBottom: 10, padding: 14 }]}
+      <TouchableOpacity
+        style={[CARD, { marginHorizontal: 16, marginBottom: 10, padding: 14, borderLeftWidth: item.is_duplicate ? 3 : 0, borderLeftColor: '#DC2626', backgroundColor: item.is_duplicate ? '#FFFBFB' : '#fff' }]}
         onPress={() => { setSelectedLead(item); setDetailModal(true); }} activeOpacity={0.8}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12, flexShrink: 0 }}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: item.is_duplicate ? '#DC2626' : NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12, flexShrink: 0 }}>
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>{initials(item.name)}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, flex: 1, marginRight: 8 }} numberOfLines={1}>{item.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, marginRight: 8 }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, flexShrink: 1 }} numberOfLines={1}>{item.name}</Text>
+                {item.is_duplicate && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#FFF1F1', borderWidth: 1, borderColor: '#FECACA', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '800', color: '#DC2626' }}>⚠ DUP</Text>
+                  </View>
+                )}
+              </View>
               <StatusBadge status={item.status} />
             </View>
             <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{item.phone}</Text>
