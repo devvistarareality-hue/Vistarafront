@@ -63,7 +63,6 @@ const HomeScreen = () => {
   const closeProfileSheet = () => {
     Animated.timing(profileSheetY, { toValue: 700, duration: 220, useNativeDriver: true }).start(() => {
       setProfileVisible(false);
-      profileSheetY.setValue(0);
     });
   };
 
@@ -78,7 +77,6 @@ const HomeScreen = () => {
         if (gs.dy > 80 || gs.vy > 0.5) {
           Animated.timing(profileSheetY, { toValue: 700, duration: 200, useNativeDriver: true }).start(() => {
             setProfileVisible(false);
-            profileSheetY.setValue(0);
           });
         } else {
           Animated.spring(profileSheetY, {
