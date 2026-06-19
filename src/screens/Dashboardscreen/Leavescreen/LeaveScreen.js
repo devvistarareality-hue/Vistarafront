@@ -10,10 +10,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import BalanceScreen from './BalanceScreen/BalanceScreen';
 import HistoryScreen from './HistoryScreen/HistoryScreen';
-import ApprovalsScreen from './ApprovalsScreen/ApprovalsScreen';
 import { triggerBalanceRefresh } from '../../../redux/actions/leaveBalanceActions';
 import { COLORS } from '../../../constants/theme';
 import images from '../../../constants/images';
@@ -24,7 +23,6 @@ const { width } = Dimensions.get('window');
 const renderScene = SceneMap({
   balance: BalanceScreen,
   history: HistoryScreen,
-  approvals: ApprovalsScreen,
 });
 
 const BASE_ROUTES = [
@@ -56,13 +54,9 @@ const CustomTabBar = ({ navigationState, onTabPress }) => (
 const LeaveScreen = () => {
   const navigation = useNavigation();
   const dispatch   = useDispatch();
-  const user       = useSelector((s) => s.auth.user);
   const [index, setIndex] = useState(0);
 
-  // Managers / admins get an extra "Approvals" tab for their team's requests.
-  const routes = user?.is_approver
-    ? [...BASE_ROUTES, { key: 'approvals', title: 'Approvals' }]
-    : BASE_ROUTES;
+  const routes = BASE_ROUTES;
 
   const handleIndexChange = (newIndex) => {
     setIndex(newIndex);

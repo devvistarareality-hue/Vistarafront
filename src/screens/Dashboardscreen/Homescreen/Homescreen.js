@@ -290,31 +290,45 @@ const HomeScreen = () => {
           ))}
         </View>
 
-        {/* ── Action Buttons ── */}
-        <View style={{ paddingHorizontal: 20, flexDirection: 'row', gap: 12, marginBottom: 28 }}>
-          {[
-            { label: 'Sign In',     icon: 'log-in-outline',   color: '#2E7D32', action: authenticateAndNavigate },
-            { label: 'Sign Out',    icon: 'log-out-outline',  color: '#EF4444', action: authenticateAndNavigate },
-            { label: 'Apply Leave', icon: 'calendar-outline', color: '#3D5AFE', action: () => navigation.navigate('Leave') },
-            ...(authUser?.is_approver ? [{
-              label: 'Approvals', icon: 'checkmark-done-outline', color: '#7C3AED',
-              action: () => navigation.navigate('Leave', { initialTab: 'approvals' }),
-            }] : []),
-          ].map((a, i) => (
-            <TouchableOpacity
-              key={i}
-              style={{
-                flex: 1, backgroundColor: a.color, borderRadius: 14,
-                paddingVertical: 14, alignItems: 'center',
-                shadowColor: a.color, shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.30, shadowRadius: 8, elevation: 4,
-              }}
-              onPress={a.action} activeOpacity={0.85}
-            >
-              <Ionicons name={a.icon} size={20} color="#FFFFFF" style={{ marginBottom: 4 }} />
-              <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700', textAlign: 'center' }}>{a.label}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* ── Quick Actions ── */}
+        <View style={{
+          marginHorizontal: 20, marginBottom: 28, padding: 16,
+          backgroundColor: '#FFFFFF', borderRadius: 20,
+          shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
+        }}>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 14 }}>Quick Actions</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            {[
+              { key: 'sign-in', label: 'Sign In', icon: 'log-in-outline', color: '#16803C', backgroundColor: '#E8F7EE', action: authenticateAndNavigate },
+              { key: 'sign-out', label: 'Sign Out', icon: 'log-out-outline', color: '#DC3B4B', backgroundColor: '#FFF0F1', action: authenticateAndNavigate },
+              { key: 'apply-leave', label: 'Apply Leave', icon: 'calendar-outline', color: '#3D5AFE', backgroundColor: '#EEF1FF', action: () => navigation.navigate('Leave') },
+              ...(authUser?.is_approver ? [{
+                key: 'leave-approvals', label: 'Leave\nApprovals', icon: 'checkmark-done-outline', color: '#7C3AED', backgroundColor: '#F4EDFF',
+                action: () => navigation.navigate('LeaveApprovals'),
+              }] : []),
+            ].map((a) => (
+              <TouchableOpacity
+                key={a.key}
+                style={{ flex: 1, minWidth: 0, alignItems: 'center' }}
+                onPress={a.action}
+                activeOpacity={0.75}
+              >
+                <View style={{
+                  width: 52, height: 52, borderRadius: 16, backgroundColor: a.backgroundColor,
+                  alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+                }}>
+                  <Ionicons name={a.icon} size={24} color={a.color} />
+                </View>
+                <Text
+                  numberOfLines={2}
+                  style={{ color: TEXT, fontSize: 10, lineHeight: 13, fontWeight: '700', textAlign: 'center', minHeight: 26 }}
+                >
+                  {a.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* ── Attendance Section ── */}
