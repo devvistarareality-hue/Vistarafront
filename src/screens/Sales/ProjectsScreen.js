@@ -30,7 +30,7 @@ async function authHeaders() {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
-const PROJECT_TYPES = ['Plotted', 'Apartment', 'Villa', 'Commercial', 'Mixed'];
+const PROJECT_TYPES = ['Plotted', 'Apartment', 'Villa', 'Commercial', 'Mixed', 'Industrial'];
 
 /* ─── Image Picker helper ─── */
 async function pickAndUpload(folder, setUploading) {
@@ -155,6 +155,34 @@ const inp = {
   fontSize: 14, color: TEXT, backgroundColor: '#fff',
 };
 
+function TypeDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setOpen(true)}
+        style={{ ...inp, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 14, color: value ? TEXT : MUTED }}>{value || 'Select type'}</Text>
+        <Ionicons name="chevron-down" size={16} color={MUTED} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', paddingHorizontal: 40 }}
+          activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden' }}>
+            {PROJECT_TYPES.map((t, i) => (
+              <TouchableOpacity key={t} onPress={() => { onChange(t); setOpen(false); }}
+                style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: value === t ? '#F0F3FA' : '#fff',
+                  borderBottomWidth: i < PROJECT_TYPES.length - 1 ? 1 : 0, borderBottomColor: '#E0E6F0' }}>
+                <Text style={{ fontSize: 15, color: value === t ? NAVY : TEXT, fontWeight: value === t ? '700' : '400' }}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
 /* ─── Add / Edit Modal ─── */
 function AddEditModal({ visible, project, onClose, onSaved }) {
   const editing = !!project;
@@ -246,16 +274,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
               </View>
               <View style={{ flex: 1 }}>
                 <Field label="Type">
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 0 }}>
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                      {PROJECT_TYPES.map(t => (
-                        <TouchableOpacity key={t} onPress={() => set('project_type', t)}
-                          style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, backgroundColor: form.project_type === t ? NAVY : '#F0F3FA' }}>
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: form.project_type === t ? '#fff' : MUTED }}>{t}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
+                  <TypeDropdown value={form.project_type} onChange={v => set('project_type', v)} />
                 </Field>
               </View>
             </View>
