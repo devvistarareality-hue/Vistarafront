@@ -385,15 +385,18 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
       <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           {/* Header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#fff' }}>
-            <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
-              <Ionicons name="close" size={22} color={MUTED} />
-            </TouchableOpacity>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>{editing ? 'Edit Project' : 'Add Project'}</Text>
-            <TouchableOpacity onPress={save} disabled={saving}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 10, opacity: saving ? 0.6 : 1 }}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Save</Text>}
-            </TouchableOpacity>
+          <View style={{ backgroundColor: '#182350', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="close" size={18} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={save} disabled={saving}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', opacity: saving ? 0.6 : 1 }}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Save</Text>}
+              </TouchableOpacity>
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{editing ? 'Edit Project' : 'New Project'}</Text>
+            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{editing ? 'Update project details' : 'Fill in the project details below'}</Text>
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -623,18 +626,18 @@ export default function ProjectsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E4E8F0' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#182350' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: TEXT }}>Projects</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>Projects</Text>
+          <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</Text>
         </View>
         <TouchableOpacity onPress={openAdd}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: NAVY, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}>
           <Ionicons name="add" size={18} color="#fff" />
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Add Project</Text>
         </TouchableOpacity>

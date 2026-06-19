@@ -853,19 +853,19 @@ export default function ManagePlotsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#182350' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }} numberOfLines={1}>{project.name}</Text>
-          {project.location ? <Text style={{ fontSize: 11, color: MUTED }}>{project.location}</Text> : null}
+          <Text style={{ fontSize: 17, fontWeight: '800', color: '#fff' }} numberOfLines={1}>{project.name}</Text>
+          {project.location ? <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{project.location}</Text> : null}
         </View>
-        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: project.is_active ? '#E8F5E9' : '#FEE2E2' }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? '#2E7D32' : '#EF4444' }}>
+        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: project.is_active ? 'rgba(46,125,50,0.3)' : 'rgba(239,68,68,0.3)', borderWidth: 1, borderColor: project.is_active ? 'rgba(165,214,167,0.5)' : 'rgba(254,202,202,0.5)' }}>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? '#A5D6A7' : '#FECACA' }}>
             {project.is_active ? 'ACTIVE' : 'INACTIVE'}
           </Text>
         </View>

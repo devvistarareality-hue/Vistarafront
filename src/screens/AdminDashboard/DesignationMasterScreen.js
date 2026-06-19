@@ -87,21 +87,25 @@ export default function DesignationMasterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
       {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
+      <View style={[s.header, { backgroundColor: '#182350', borderBottomWidth: 0 }]}>
+        <TouchableOpacity style={[s.iconBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Designation Master</Text>
+        <Text style={[s.headerTitle, { color: '#fff' }]}>Designation Master</Text>
         <View style={{ width: 34 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Add form */}
-        <View style={s.card}>
-          <Text style={s.cardTitle}>Add New Designation</Text>
+        <View style={[s.card, { padding: 0, overflow: 'hidden' }]}>
+          <View style={{ backgroundColor: '#182350', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16 }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: '#fff' }}>Add New Designation</Text>
+            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>Define designations for each module</Text>
+          </View>
+          <View style={{ padding: 18 }}>
 
           <Text style={s.sectionLabel}>SELECT MODULE</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pillRow}>
@@ -144,6 +148,7 @@ export default function DesignationMasterScreen({ navigation }) {
                 ? <ActivityIndicator color="#fff" size="small" />
                 : <Text style={s.addBtnText}>Add</Text>}
             </TouchableOpacity>
+          </View>
           </View>
         </View>
 

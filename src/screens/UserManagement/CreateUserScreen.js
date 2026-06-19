@@ -175,14 +175,14 @@ export default function CreateUserScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={22} color={COLORS.textPrimary} />
+      <View style={[styles.header, { backgroundColor: '#182350', borderBottomWidth: 0 }]}>
+        <TouchableOpacity style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="close" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isEdit ? 'Edit User' : 'New User'}</Text>
+        <Text style={[styles.headerTitle, { color: '#fff' }]}>{isEdit ? 'Edit User' : 'New User'}</Text>
         <View style={{ width: 36 }} />
       </View>
 
