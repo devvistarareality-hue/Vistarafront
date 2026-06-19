@@ -43,20 +43,43 @@ export default function SalesCRMScreen({ navigation }) {
 
   useEffect(() => { loadStats(); }, []);
 
+  const STATS_CACHE_KEY = '@vistara_sales_stats';
+  const STATS_TTL_MS    = 2 * 60 * 1000; // 2 minutes
+
   async function loadStats(refresh = false) {
-    if (refresh) setRefreshing(true); else setLoading(true);
+    // Always show cached data immediately (even if stale) — no spinner on repeat visits
+    try {
+      const raw = await AsyncStorage.getItem(STATS_CACHE_KEY);
+      if (raw) {
+        const { ts, data } = JSON.parse(raw);
+        setStats(data);
+        setLoading(false);
+        // If cache is fresh and not a manual refresh, skip network call
+        if (!refresh && Date.now() - ts < STATS_TTL_MS) return;
+      }
+    } catch {}
+
+    // Fetch fresh data in background (show spinner only if no cached data at all)
+    if (refresh) setRefreshing(true);
+    else if (!stats) setLoading(true);
+
     try {
       const headers = await authHeaders();
       const res = await fetch(SALES_ENDPOINTS.stats, { headers });
-      if (res.ok) setStats(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+        await AsyncStorage.setItem(STATS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+      }
     } catch (e) {}
-    setLoading(false); setRefreshing(false);
+    setLoading(false);
+    setRefreshing(false);
   }
 
   const STAT_CARDS = [
     { label: 'Total Leads',  value: stats?.total_leads    ?? '—', color: BLUE,      bg: '#EEF0FF' },
-    { label: 'New Today',    value: stats?.new_today       ?? '—', color: '#2E7D32', bg: '#E8F5E9' },
-    { label: 'Unassigned',   value: stats?.unassigned      ?? '—', color: '#E65100', bg: '#FFF3E0' },
+    { label: 'New Today',    value: stats?.leads_today     ?? '—', color: '#2E7D32', bg: '#E8F5E9' },
+    { label: 'Unassigned',   value: stats?.new_leads       ?? '—', color: '#E65100', bg: '#FFF3E0' },
     { label: 'Closures',     value: stats?.closures        ?? '—', color: '#EF4444', bg: '#FEE2E2' },
     { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: '#7B1FA2', bg: '#F3E5F5' },
     { label: 'Projects',     value: stats?.active_projects ?? '—', color: '#0097A7', bg: '#E0F7FA' },
