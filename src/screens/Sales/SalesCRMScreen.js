@@ -43,14 +43,38 @@ export default function SalesCRMScreen({ navigation }) {
 
   useEffect(() => { loadStats(); }, []);
 
+  const STATS_CACHE_KEY = '@vistara_sales_stats';
+  const STATS_TTL_MS    = 2 * 60 * 1000; // 2 minutes
+
   async function loadStats(refresh = false) {
-    if (refresh) setRefreshing(true); else setLoading(true);
+    if (refresh) {
+      setRefreshing(true);
+    } else {
+      // Show cached data instantly, skip spinner
+      try {
+        const raw = await AsyncStorage.getItem(STATS_CACHE_KEY);
+        if (raw) {
+          const { ts, data } = JSON.parse(raw);
+          if (Date.now() - ts < STATS_TTL_MS) {
+            setStats(data);
+            setLoading(false);
+            return; // Cache is fresh — no network call needed
+          }
+        }
+      } catch {}
+      setLoading(true);
+    }
     try {
       const headers = await authHeaders();
       const res = await fetch(SALES_ENDPOINTS.stats, { headers });
-      if (res.ok) setStats(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+        await AsyncStorage.setItem(STATS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+      }
     } catch (e) {}
-    setLoading(false); setRefreshing(false);
+    setLoading(false);
+    setRefreshing(false);
   }
 
   const STAT_CARDS = [
