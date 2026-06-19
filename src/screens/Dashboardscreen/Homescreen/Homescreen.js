@@ -69,8 +69,9 @@ const HomeScreen = () => {
 
   const profilePanResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => gs.dy > 5 && gs.dy > Math.abs(gs.dx),
+      onPanResponderGrant: () => { profileSheetY.stopAnimation(); },
       onPanResponderMove: (_, gs) => {
         if (gs.dy > 0) profileSheetY.setValue(gs.dy);
       },
@@ -559,7 +560,7 @@ const HomeScreen = () => {
           {/* Drag handle — swipe down to close */}
           <View
             {...profilePanResponder.panHandlers}
-            style={{ alignItems: 'center', paddingBottom: 16, marginTop: -8, marginHorizontal: -24, paddingTop: 12 }}
+            style={{ alignItems: 'center', paddingVertical: 8, marginBottom: 12 }}
           >
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0' }} />
           </View>
