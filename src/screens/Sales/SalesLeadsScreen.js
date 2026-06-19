@@ -632,6 +632,42 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   );
 }
 
+/* ── Reusable Dropdown Picker ── */
+function DropdownPicker({ value, onChange, options, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find(o => String(o.value) === String(value));
+  return (
+    <>
+      <TouchableOpacity onPress={() => setOpen(true)}
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFD', borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }}>
+        <Text style={{ fontSize: 14, color: selected ? TEXT : MUTED, fontWeight: selected ? '600' : '400' }}>
+          {selected ? selected.label : placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color={MUTED} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }}>
+            <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{placeholder}</Text>
+              <TouchableOpacity onPress={() => setOpen(false)}><Ionicons name="close" size={20} color={MUTED} /></TouchableOpacity>
+            </View>
+            <ScrollView>
+              {options.map(o => (
+                <TouchableOpacity key={o.value} onPress={() => { onChange(o.value); setOpen(false); }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F8FAFD' }}>
+                  <Text style={{ fontSize: 14, color: TEXT, fontWeight: String(value) === String(o.value) ? '700' : '400' }}>{o.label}</Text>
+                  {String(value) === String(o.value) && <Ionicons name="checkmark" size={18} color={NAVY} />}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
 /* ── Create Lead Modal ── */
 function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
   const [form, setForm] = useState({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new' });
@@ -657,13 +693,18 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#fff' }}>
-            <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Add Lead</Text>
-            <TouchableOpacity onPress={create} disabled={saving}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 10, opacity: saving ? 0.6 : 1 }}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Add</Text>}
-            </TouchableOpacity>
+          <View style={{ backgroundColor: '#182350', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="close" size={18} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={create} disabled={saving}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', opacity: saving ? 0.6 : 1 }}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Add Lead</Text>}
+              </TouchableOpacity>
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>Add Lead</Text>
+            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>Fill in the contact details below</Text>
           </View>
           <ScrollView contentContainerStyle={{ padding: 16 }}>
             <Text style={lblS}>Full Name *</Text>
@@ -675,33 +716,144 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
             <Text style={lblS}>Email</Text>
             <TextInput value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" style={inpS} />
             <Text style={lblS}>Project</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {projects.map(p => (
-                  <TouchableOpacity key={p.id} onPress={() => set('project', p.id)}
-                    style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.project) === String(p.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.project) === String(p.id) ? NAVY : '#E0E6F0' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.project) === String(p.id) ? '#fff' : MUTED }}>{p.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+            <DropdownPicker
+              value={form.project}
+              onChange={v => set('project', v)}
+              options={projects.map(p => ({ value: p.id, label: p.name }))}
+              placeholder="Select project"
+            />
             <Text style={lblS}>Source</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {sources.map(s => (
-                  <TouchableOpacity key={s.id} onPress={() => set('source', s.id)}
-                    style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: String(form.source) === String(s.id) ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: String(form.source) === String(s.id) ? NAVY : '#E0E6F0' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: String(form.source) === String(s.id) ? '#fff' : MUTED }}>{s.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+            <DropdownPicker
+              value={form.source}
+              onChange={v => set('source', v)}
+              options={sources.map(s => ({ value: s.id, label: s.name }))}
+              placeholder="Select source"
+            />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );
 }
+
+const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false };
+const TC_STATUSES  = ['hot','warm','cold','not_interested','not_reachable','callback'];
+const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'];
+
+/* ── Filter Bottom Sheet ── */
+function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms }) {
+  const [local, setLocal] = useState(filters);
+  useEffect(() => { if (visible) setLocal(filters); }, [visible]);
+  const set = (k, v) => setLocal(f => ({ ...f, [k]: v }));
+  const localDate = (d) => d.toISOString().slice(0, 10);
+  const today = localDate(new Date());
+  const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
+  const activeCount = Object.entries(filters).filter(([k, v]) => v && v !== false && v !== '').length;
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Filters</Text>
+          <TouchableOpacity onPress={() => { setLocal(EMPTY_FILTERS); setFilters(EMPTY_FILTERS); onClose(); }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#EF4444' }}>Clear All</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+
+          {/* Quick date */}
+          <View>
+            <Text style={fsLbl}>DATE RANGE</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+              {[['Today', today, today], ['Week', daysAgo(6), today], ['Month', daysAgo(29), today]].map(([label, from, to]) => {
+                const active = local.date_from === from && local.date_to === to;
+                return (
+                  <TouchableOpacity key={label} onPress={() => { set('date_from', active ? '' : from); set('date_to', active ? '' : to); }}
+                    style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: active ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: active ? NAVY : '#E0E6F0' }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#fff' : MUTED }}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Project */}
+          <View>
+            <Text style={fsLbl}>PROJECT</Text>
+            <DropdownPicker value={local.project_id} onChange={v => set('project_id', v)}
+              options={[{ value: '', label: 'All Projects' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))]}
+              placeholder="All Projects" />
+          </View>
+
+          {/* Source */}
+          <View>
+            <Text style={fsLbl}>SOURCE</Text>
+            <DropdownPicker value={local.source_id} onChange={v => set('source_id', v)}
+              options={[{ value: '', label: 'All Sources' }, ...sources.map(s => ({ value: String(s.id), label: s.name }))]}
+              placeholder="All Sources" />
+          </View>
+
+          {/* Telecaller */}
+          <View>
+            <Text style={fsLbl}>TELECALLER</Text>
+            <DropdownPicker value={local.telecaller_id} onChange={v => set('telecaller_id', v)}
+              options={[{ value: '', label: 'All Telecallers' }, ...telecallers.map(u => ({ value: String(u.id), label: u.name }))]}
+              placeholder="All Telecallers" />
+          </View>
+
+          {/* STM */}
+          <View>
+            <Text style={fsLbl}>STM</Text>
+            <DropdownPicker value={local.stm_id} onChange={v => set('stm_id', v)}
+              options={[{ value: '', label: 'All STMs' }, ...stms.map(u => ({ value: String(u.id), label: u.name }))]}
+              placeholder="All STMs" />
+          </View>
+
+          {/* Overall Status */}
+          <View>
+            <Text style={fsLbl}>OVERALL STATUS</Text>
+            <DropdownPicker value={local.status || ''} onChange={v => set('status', v)}
+              options={[{ value: '', label: 'All Statuses' }, ...STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))]}
+              placeholder="All Statuses" />
+          </View>
+
+          {/* TC Status */}
+          <View>
+            <Text style={fsLbl}>TC STATUS</Text>
+            <DropdownPicker value={local.tc_status} onChange={v => set('tc_status', v)}
+              options={[{ value: '', label: 'All TC Statuses' }, ...TC_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              placeholder="All TC Statuses" />
+          </View>
+
+          {/* STM Status */}
+          <View>
+            <Text style={fsLbl}>STM STATUS</Text>
+            <DropdownPicker value={local.stm_status} onChange={v => set('stm_status', v)}
+              options={[{ value: '', label: 'All STM Statuses' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              placeholder="All STM Statuses" />
+          </View>
+
+          {/* Duplicates toggle */}
+          <TouchableOpacity onPress={() => set('is_duplicate', !local.is_duplicate)}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: local.is_duplicate ? '#DC2626' : '#E0E6F0', backgroundColor: local.is_duplicate ? '#FFF5F5' : '#FAFBFF' }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: local.is_duplicate ? '#DC2626' : TEXT }}>Duplicates Only</Text>
+            <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: local.is_duplicate ? '#DC2626' : '#E0E6F0', alignItems: 'center', justifyContent: 'center' }}>
+              {local.is_duplicate && <Ionicons name="checkmark" size={14} color="#fff" />}
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+
+        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#F0F3FA' }}>
+          <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
+            style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+const fsLbl = { fontSize: 10, fontWeight: '700', color: MUTED, letterSpacing: 0.8, marginBottom: 8 };
 
 /* ── Main Leads Screen ── */
 export default function SalesLeadsScreen({ navigation }) {
@@ -714,12 +866,16 @@ export default function SalesLeadsScreen({ navigation }) {
   const [refreshing,  setRefreshing]  = useState(false);
   const [search,      setSearch]      = useState('');
   const [statusFilter,setStatusFilter]= useState('all');
+  const [filters,     setFilters]     = useState(EMPTY_FILTERS);
+  const [filterSheet, setFilterSheet] = useState(false);
   const [page,        setPage]        = useState(1);
   const [hasMore,     setHasMore]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedLead,setSelectedLead]= useState(null);
   const [detailModal, setDetailModal] = useState(false);
   const [createModal, setCreateModal] = useState(false);
+
+  const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
   async function loadData(reset = false) {
     const p = reset ? 1 : page;
@@ -728,8 +884,17 @@ export default function SalesLeadsScreen({ navigation }) {
     try {
       const headers = await authHeaders();
       let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
-      if (search)                        url += `&search=${encodeURIComponent(search)}`;
-      if (statusFilter && statusFilter !== 'all') url += `&status=${statusFilter}`;
+      if (search)            url += `&search=${encodeURIComponent(search)}`;
+      if (filters.status)    url += `&status=${filters.status}`;
+      if (filters.project_id)    url += `&project_id=${filters.project_id}`;
+      if (filters.source_id)     url += `&source_id=${filters.source_id}`;
+      if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
+      if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
+      if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
+      if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
+      if (filters.date_from)     url += `&date_from=${filters.date_from}`;
+      if (filters.date_to)       url += `&date_to=${filters.date_to}`;
+      if (filters.is_duplicate)  url += `&is_duplicate=true`;
       const [leadsRes, projRes, srcRes, tcRes, stmRes] = await Promise.all([
         fetch(url, { headers }),
         projects.length    ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.projects,    { headers }),
@@ -752,13 +917,12 @@ export default function SalesLeadsScreen({ navigation }) {
     setLoading(false); setLoadingMore(false); setRefreshing(false);
   }
 
-  useEffect(() => { loadData(true); }, [search, statusFilter]);
+  useEffect(() => { loadData(true); }, [search, filters]);
 
-  // Auto-refresh every 30 seconds to pick up new incoming leads
   useEffect(() => {
     const id = setInterval(() => loadData(true), 30000);
     return () => clearInterval(id);
-  }, [search, statusFilter]);
+  }, [search, filters]);
 
   function onLeadUpdated(updated) {
     if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
@@ -771,15 +935,23 @@ export default function SalesLeadsScreen({ navigation }) {
     const dateStr  = dateObj ? dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '';
     const timeStr  = dateObj ? dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
     return (
-      <TouchableOpacity style={[CARD, { marginHorizontal: 16, marginBottom: 10, padding: 14 }]}
+      <TouchableOpacity
+        style={[CARD, { marginHorizontal: 16, marginBottom: 10, padding: 14, borderLeftWidth: item.is_duplicate ? 3 : 0, borderLeftColor: '#DC2626', backgroundColor: item.is_duplicate ? '#FFFBFB' : '#fff' }]}
         onPress={() => { setSelectedLead(item); setDetailModal(true); }} activeOpacity={0.8}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12, flexShrink: 0 }}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: item.is_duplicate ? '#DC2626' : NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12, flexShrink: 0 }}>
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>{initials(item.name)}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, flex: 1, marginRight: 8 }} numberOfLines={1}>{item.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, marginRight: 8 }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, flexShrink: 1 }} numberOfLines={1}>{item.name}</Text>
+                {item.is_duplicate && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#FFF1F1', borderWidth: 1, borderColor: '#FECACA', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '800', color: '#DC2626' }}>⚠ DUP</Text>
+                  </View>
+                )}
+              </View>
               <StatusBadge status={item.status} />
             </View>
             <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{item.phone}</Text>
@@ -807,41 +979,43 @@ export default function SalesLeadsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#182350' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>All Leads</Text>
+        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#fff' }}>All Leads</Text>
         <TouchableOpacity onPress={() => setCreateModal(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}>
           <Ionicons name="add" size={16} color="#fff" />
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Add</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
+      {/* Search + Filter button */}
+      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
           <TextInput value={search} onChangeText={setSearch} placeholder="Search name, phone, email…" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
+        <TouchableOpacity onPress={() => setFilterSheet(true)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: activeFilterCount > 0 ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: activeFilterCount > 0 ? NAVY : '#E0E6F0' }}>
+          <Ionicons name="options-outline" size={16} color={activeFilterCount > 0 ? '#fff' : MUTED} />
+          {activeFilterCount > 0 && (
+            <View style={{ backgroundColor: '#EF4444', borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{activeFilterCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
-      {/* Status filter */}
-      <View style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#fff' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}>
-          {STATUSES.map(s => (
-            <TouchableOpacity key={s.key} onPress={() => setStatusFilter(s.key)}
-              style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: statusFilter === s.key ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: statusFilter === s.key ? NAVY : '#E0E6F0' }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: statusFilter === s.key ? '#fff' : MUTED }}>{s.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+
+      <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
+        filters={filters} setFilters={setFilters}
+        projects={projects} sources={sources} telecallers={telecallers} stms={stms} />
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

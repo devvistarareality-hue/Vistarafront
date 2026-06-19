@@ -53,28 +53,39 @@ function zoneCenter(zone) {
 /* ────────────────────────────────────────────────
    PLOT EDIT MODAL
 ──────────────────────────────────────────────── */
-function PlotEditModal({ plot, visible, onClose, onSaved }) {
-  const [plotNo,  setPlotNo]  = useState('');
-  const [sizeVal, setSizeVal] = useState('');
-  const [unit,    setUnit]    = useState('sqft');
-  const [block,   setBlock]   = useState('');
-  const [saving,  setSaving]  = useState(false);
+function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
+  const [plotNo,   setPlotNo]   = useState('');
+  const [sizeVal,  setSizeVal]  = useState('');
+  const [unit,     setUnit]     = useState('sqft');
+  const [editType, setEditType] = useState('');
+  const [saving,   setSaving]   = useState(false);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const [unitOpen, setUnitOpen] = useState(false);
 
   useEffect(() => {
     if (plot) {
       const p = parseSizeUnit(plot.size);
-      setPlotNo(String(plot.number)); setSizeVal(p.sizeVal); setUnit(p.unit);
-      setBlock(plot.cluster_type || '');
+      // Strip cluster_type prefix from number display
+      const displayNum = plot.cluster_type
+        ? plot.number.replace(new RegExp('^' + plot.cluster_type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), '')
+        : plot.number;
+      setPlotNo(displayNum);
+      setSizeVal(p.sizeVal);
+      setUnit(UNITS.includes(p.unit) ? p.unit : 'sqft');
+      setEditType(plot.cluster_type || '');
     }
   }, [plot, visible]);
 
   async function save() {
     setSaving(true);
     try {
-      const headers = await authHeaders();
+      const headers  = await authHeaders();
       const combined = sizeVal ? `${sizeVal} ${unit}` : '';
+      // Rebuild the full number: type prefix + number
+      const fullNumber = editType ? `${editType}${plotNo}` : plotNo;
       const res = await fetch(SALES_ENDPOINTS.plot(plot.id), {
-        method: 'PATCH', headers, body: JSON.stringify({ number: plotNo, size: combined, cluster_type: block }),
+        method: 'PATCH', headers,
+        body: JSON.stringify({ number: fullNumber, size: combined, cluster_type: editType }),
       });
       if (res.ok) { onSaved(await res.json()); onClose(); }
       else { Alert.alert('Error', 'Could not save plot.'); }
@@ -82,49 +93,57 @@ function PlotEditModal({ plot, visible, onClose, onSaved }) {
     finally { setSaving(false); }
   }
 
-  const inpS = { borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: '#fff' };
+  const inpS = { borderWidth: 1.5, borderColor: '#C8B4E8', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: '#fff' };
   const lblS = { fontSize: 10, fontWeight: '700', color: '#B0BAC9', textTransform: 'uppercase', marginBottom: 5 };
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: BG, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 }}>
-          {/* Handle */}
           <View style={{ width: 40, height: 4, backgroundColor: '#DDE3F0', borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />
-          <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT, marginBottom: 18 }}>Edit Plot</Text>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT, marginBottom: 18 }}>Edit Plot Info</Text>
 
-          <Text style={lblS}>Plot No.</Text>
-          <TextInput value={plotNo} onChangeText={setPlotNo} placeholder="e.g. D-1, A1" style={[inpS, { marginBottom: 14 }]} />
-
+          {/* Size */}
           <Text style={lblS}>Size</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-            <TextInput value={sizeVal} onChangeText={setSizeVal} placeholder="5000" keyboardType="numeric"
+            <TextInput value={sizeVal} onChangeText={setSizeVal} placeholder="e.g. 5000" keyboardType="numeric"
               style={[inpS, { flex: 1 }]} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxWidth: 220 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
+            <TouchableOpacity onPress={() => setUnitOpen(true)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: '#673AB7', borderRadius: 10, paddingHorizontal: 12, backgroundColor: '#F3EFF8' }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#673AB7' }}>{unit}</Text>
+              <Ionicons name="chevron-down" size={14} color="#673AB7" />
+            </TouchableOpacity>
+          </View>
+          <Modal visible={unitOpen} transparent animationType="slide" onRequestClose={() => setUnitOpen(false)}>
+            <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setUnitOpen(false)}>
+              <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+                <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E6F0', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, paddingHorizontal: 16, paddingVertical: 12 }}>Select Unit</Text>
                 {UNITS.map(u => (
-                  <TouchableOpacity key={u} onPress={() => setUnit(u)}
-                    style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10,
-                      backgroundColor: unit === u ? BLUE : '#F0F3FA', borderWidth: 1.5,
-                      borderColor: unit === u ? BLUE : '#E0E6F0' }}>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: unit === u ? '#fff' : MUTED }}>{u}</Text>
+                  <TouchableOpacity key={u} onPress={() => { setUnit(u); setUnitOpen(false); }}
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6FA' }}>
+                    <Text style={{ fontSize: 14, color: unit === u ? '#673AB7' : TEXT, fontWeight: unit === u ? '700' : '400' }}>{u}</Text>
+                    {unit === u && <Ionicons name="checkmark" size={18} color="#673AB7" />}
                   </TouchableOpacity>
                 ))}
               </View>
-            </ScrollView>
-          </View>
+            </TouchableOpacity>
+          </Modal>
 
-          <Text style={lblS}>Block</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-            {BLOCKS.map(b => (
-              <TouchableOpacity key={b} onPress={() => setBlock(block === b ? '' : b)}
-                style={{ width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: block === b ? NAVY : '#F0F3FA' }}>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: block === b ? '#fff' : MUTED }}>{b}</Text>
+          {/* Cluster/Type + Number */}
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+            <View style={{ flex: 3 }}>
+              <Text style={lblS}>Cluster / Type</Text>
+              <TouchableOpacity onPress={() => setTypeOpen(true)}
+                style={{ ...inpS, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 14, color: editType ? TEXT : MUTED }}>{editType || '— None —'}</Text>
+                <Ionicons name="chevron-down" size={15} color={MUTED} />
               </TouchableOpacity>
-            ))}
-            <TextInput value={!BLOCKS.includes(block) ? block : ''} onChangeText={setBlock}
-              placeholder="Other" style={[inpS, { width: 80, paddingVertical: 8, textAlign: 'center' }]} />
+            </View>
+            <View style={{ flex: 2 }}>
+              <Text style={lblS}>Number</Text>
+              <TextInput value={plotNo} onChangeText={setPlotNo} placeholder="e.g. 1" style={inpS} />
+            </View>
           </View>
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -139,6 +158,24 @@ function PlotEditModal({ plot, visible, onClose, onSaved }) {
           </View>
         </View>
       </View>
+
+      {/* Type picker modal */}
+      <Modal visible={typeOpen} transparent animationType="fade" onRequestClose={() => setTypeOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', paddingHorizontal: 40 }}
+          activeOpacity={1} onPress={() => setTypeOpen(false)}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden' }}>
+            {['', ...clusterTypes].map((t, i) => (
+              <TouchableOpacity key={i} onPress={() => { setEditType(t); setTypeOpen(false); }}
+                style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: editType === t ? '#F0EBF8' : '#fff',
+                  borderBottomWidth: i < clusterTypes.length ? 1 : 0, borderBottomColor: '#F0F3FA' }}>
+                <Text style={{ fontSize: 14, color: editType === t ? '#673AB7' : TEXT, fontWeight: editType === t ? '700' : '400' }}>
+                  {t || '— None —'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </Modal>
   );
 }
@@ -149,6 +186,11 @@ function PlotEditModal({ plot, visible, onClose, onSaved }) {
 function PlotCard({ plot, onStatusChange, onEdit }) {
   const cfg    = STATUS_CFG[plot.status] || STATUS_CFG.available;
   const [saving, setSaving] = useState(false);
+
+  // Strip cluster_type prefix from displayed number (Ananda1 → 1)
+  const displayNum = plot.cluster_type
+    ? plot.number.replace(new RegExp('^' + plot.cluster_type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), '')
+    : plot.number;
 
   async function setStatus(s) {
     if (plot.status === s || saving) return;
@@ -161,9 +203,15 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
 
   return (
     <View style={[CARD, { width: cardW, margin: 6, overflow: 'hidden', opacity: saving ? 0.7 : 1 }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, backgroundColor: '#FAFBFF', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>#{plot.number}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+      {/* Header row: #number + type badge + status badge + edit */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, padding: 10, backgroundColor: '#FAFBFF', borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexWrap: 'wrap' }}>
+        <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>#{displayNum}</Text>
+        {plot.cluster_type ? (
+          <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 20, backgroundColor: '#EDE7F6' }}>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#673AB7' }}>{plot.cluster_type}</Text>
+          </View>
+        ) : null}
+        <View style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
           <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 20, backgroundColor: cfg.bg }}>
             <Text style={{ fontSize: 9, fontWeight: '700', color: cfg.color }}>{cfg.label}</Text>
           </View>
@@ -172,13 +220,15 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
           </TouchableOpacity>
         </View>
       </View>
-      {(plot.size || plot.cluster_type) ? (
-        <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-          <Text style={{ fontSize: 10, color: MUTED }} numberOfLines={1}>
-            {[plot.size, plot.cluster_type].filter(Boolean).join(' · ')}
-          </Text>
-        </View>
-      ) : null}
+
+      {/* Size row — always rendered */}
+      <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', minHeight: 24 }}>
+        <Text style={{ fontSize: 10, color: plot.size ? MUTED : '#D1D5DB', fontStyle: plot.size ? 'normal' : 'italic' }} numberOfLines={1}>
+          {plot.size || 'Area not set'}
+        </Text>
+      </View>
+
+      {/* Status buttons */}
       <View style={{ flexDirection: 'row', padding: 8, gap: 4 }}>
         {Object.entries(STATUS_CFG).map(([s, c]) => (
           <TouchableOpacity key={s} onPress={() => setStatus(s)} disabled={plot.status === s || saving}
@@ -188,6 +238,175 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
             <Text style={{ fontSize: 9, fontWeight: '700', color: plot.status === s ? c.color : MUTED }}>{c.label}</Text>
           </TouchableOpacity>
         ))}
+      </View>
+    </View>
+  );
+}
+
+/* ────────────────────────────────────────────────
+   PLOT TYPE FLOOR PLANS EDITOR
+──────────────────────────────────────────────── */
+function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
+  const seedPlans = () => {
+    const saved = project.plot_type_plans || [];
+    if (saved.length > 0) return saved;
+    const types = [...new Set(plots.map(p => p.cluster_type).filter(Boolean))].sort();
+    return types.map(name => ({ name, floor_plans: [] }));
+  };
+
+  const [plans,         setPlans]         = useState(seedPlans);
+  const [activeType,    setActiveType]     = useState(0);
+  const [saving,        setSaving]         = useState(false);
+  const [uploading,     setUploading]      = useState(false);
+  const [newFloorLabel, setNewFloorLabel]  = useState('');
+  const [newTypeName,   setNewTypeName]    = useState('');
+  const [addingType,    setAddingType]     = useState(false);
+
+  async function persist(updated) {
+    setSaving(true);
+    const headers = await authHeaders();
+    const res = await fetch(SALES_ENDPOINTS.project(project.id), {
+      method: 'PATCH', headers, body: JSON.stringify({ plot_type_plans: updated }),
+    });
+    if (res.ok) onProjectUpdate(await res.json());
+    setSaving(false);
+  }
+
+  function addType() {
+    const name = newTypeName.trim();
+    if (!name) return;
+    const updated = [...plans, { name, floor_plans: [] }];
+    setPlans(updated); setActiveType(updated.length - 1);
+    setNewTypeName(''); setAddingType(false);
+    persist(updated);
+  }
+
+  function removeType(idx) {
+    Alert.alert('Remove type?', `Remove "${plans[idx].name}" and all its floor plans?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => {
+        const updated = plans.filter((_, i) => i !== idx);
+        setPlans(updated);
+        setActiveType(Math.max(0, activeType - (idx <= activeType ? 1 : 0)));
+        persist(updated);
+      }},
+    ]);
+  }
+
+  async function addFloor() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('Permission needed'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    setUploading(true);
+    try {
+      const url   = await uploadToSupabase(asset.uri, asset.mimeType || 'image/jpeg', `erp/projects/${project.id}/floor-plans`);
+      const label = newFloorLabel.trim() || `Floor ${(plans[activeType]?.floor_plans.length || 0) + 1}`;
+      const updated = plans.map((t, i) => i === activeType
+        ? { ...t, floor_plans: [...t.floor_plans, { label, url }] } : t);
+      setPlans(updated); setNewFloorLabel(''); persist(updated);
+    } catch (e) { Alert.alert('Upload failed', e.message); }
+    finally { setUploading(false); }
+  }
+
+  function removeFloor(typeIdx, floorIdx) {
+    const updated = plans.map((t, i) => i === typeIdx
+      ? { ...t, floor_plans: t.floor_plans.filter((_, fi) => fi !== floorIdx) } : t);
+    setPlans(updated); persist(updated);
+  }
+
+  const current = plans[activeType];
+
+  return (
+    <View style={[CARD, { marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF' }}>
+        <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6 }}>Plot Type Floor Plans</Text>
+        {saving && <ActivityIndicator size="small" color={BLUE} />}
+      </View>
+
+      <View style={{ padding: 14 }}>
+        {/* Type tabs */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, flexDirection: 'row', marginBottom: 16 }}>
+          {plans.map((t, i) => {
+            const active = activeType === i;
+            return (
+              <TouchableOpacity key={i} onPress={() => setActiveType(i)}
+                style={{ paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, alignItems: 'center', minWidth: 100,
+                  backgroundColor: active ? '#F0EBF8' : '#fff',
+                  borderWidth: 2, borderColor: active ? '#C4B5E0' : '#E8ECF4' }}>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: active ? '#5E35B1' : TEXT, marginBottom: 2 }}>{t.name}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '600', color: active ? '#9C6FD6' : MUTED }}>
+                  {t.floor_plans.length > 0 ? `${t.floor_plans.length} plan${t.floor_plans.length > 1 ? 's' : ''}` : 'No plans yet'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          {addingType ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <TextInput autoFocus value={newTypeName} onChangeText={setNewTypeName}
+                onSubmitEditing={addType}
+                placeholder="Type name" style={{ borderWidth: 1.5, borderColor: '#673AB7', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, width: 130, color: TEXT }} />
+              <TouchableOpacity onPress={addType} style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#673AB7', borderRadius: 10 }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setAddingType(false); setNewTypeName(''); }} style={{ padding: 8 }}>
+                <Ionicons name="close" size={18} color={MUTED} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => setAddingType(true)}
+              style={{ paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, alignItems: 'center', minWidth: 100,
+                borderWidth: 2, borderColor: '#C4B5E0', borderStyle: 'dashed', backgroundColor: '#FAF8FF' }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#9C6FD6' }}>+ Add Type</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+
+        {plans.length === 0 && (
+          <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+            <Ionicons name="images-outline" size={36} color="#DDE3F0" />
+            <Text style={{ fontSize: 13, color: MUTED, marginTop: 8 }}>No plot types yet. Add a type to upload floor plans.</Text>
+          </View>
+        )}
+
+        {current && (
+          <View>
+            {/* Floor plan grid */}
+            {current.floor_plans.length > 0 && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                {current.floor_plans.map((fp, fi) => (
+                  <View key={fi} style={{ width: (SW - 80) / 2 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.4 }}>{fp.label}</Text>
+                      <TouchableOpacity onPress={() => removeFloor(activeType, fi)}>
+                        <Ionicons name="close-circle" size={16} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                    <Image source={{ uri: fp.url }} style={{ width: '100%', aspectRatio: 4/3, borderRadius: 10, backgroundColor: '#F4F6FB' }} resizeMode="contain" />
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Upload section */}
+            <View style={{ backgroundColor: '#F8F9FF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#EAE4F8' }}>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: '#9C6FD6', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+                Add Floor Plan to "{current.name}"
+              </Text>
+              <TextInput value={newFloorLabel} onChangeText={setNewFloorLabel}
+                placeholder="Floor label (e.g. Ground Floor, 1st Floor…)"
+                style={{ borderWidth: 1.5, borderColor: '#DDD6F3', borderRadius: 9, paddingHorizontal: 12, paddingVertical: 9, fontSize: 13, color: TEXT, backgroundColor: '#fff', marginBottom: 10 }} />
+              <TouchableOpacity onPress={addFloor} disabled={uploading}
+                style={{ borderWidth: 1.5, borderColor: '#C4B5E0', borderStyle: 'dashed', borderRadius: 10, paddingVertical: 20, alignItems: 'center', backgroundColor: '#FAFBFF' }}>
+                {uploading ? <ActivityIndicator color="#673AB7" /> : <>
+                  <Ionicons name="image-outline" size={26} color="#C4B5E0" />
+                  <Text style={{ fontSize: 13, color: '#9C6FD6', marginTop: 6 }}>Upload floor plan image</Text>
+                </>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -613,6 +832,8 @@ export default function ManagePlotsScreen({ route, navigation }) {
     setPlots(prev => prev.map(p => p.id === updated.id ? updated : p));
   }, []);
 
+  const clusterTypes = [...new Set(plots.map(p => p.cluster_type).filter(Boolean))];
+
   const counts = {
     all:       plots.length,
     available: plots.filter(p => p.status === 'available').length,
@@ -620,7 +841,9 @@ export default function ManagePlotsScreen({ route, navigation }) {
     sold:      plots.filter(p => p.status === 'sold').length,
   };
   const soldPct  = plots.length ? Math.round(counts.sold / plots.length * 100) : 0;
-  const filtered = filter === 'all' ? plots : plots.filter(p => p.status === filter);
+  const filtered = (filter === 'all' ? plots : plots.filter(p => p.status === filter))
+    .slice()
+    .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' }));
 
   if (loading) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
@@ -639,19 +862,19 @@ export default function ManagePlotsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#182350' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }} numberOfLines={1}>{project.name}</Text>
-          {project.location ? <Text style={{ fontSize: 11, color: MUTED }}>{project.location}</Text> : null}
+          <Text style={{ fontSize: 17, fontWeight: '800', color: '#fff' }} numberOfLines={1}>{project.name}</Text>
+          {project.location ? <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{project.location}</Text> : null}
         </View>
-        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: project.is_active ? '#E8F5E9' : '#FEE2E2' }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? '#2E7D32' : '#EF4444' }}>
+        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: project.is_active ? 'rgba(46,125,50,0.3)' : 'rgba(239,68,68,0.3)', borderWidth: 1, borderColor: project.is_active ? 'rgba(165,214,167,0.5)' : 'rgba(254,202,202,0.5)' }}>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? '#A5D6A7' : '#FECACA' }}>
             {project.is_active ? 'ACTIVE' : 'INACTIVE'}
           </Text>
         </View>
@@ -700,24 +923,48 @@ export default function ManagePlotsScreen({ route, navigation }) {
             {/* Site Map Editor */}
             <SiteMapEditor project={project} plots={plots} onProjectUpdate={setProject} />
 
-            {/* Filter tabs */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 12, gap: 8, flexDirection: 'row' }}>
-              {[
-                { key: 'all',       label: 'All',       color: TEXT,      bg: '#F0F3FF' },
-                { key: 'available', label: 'Available', color: '#2E7D32', bg: '#E8F5E9' },
-                { key: 'hold',      label: 'Hold',      color: '#E65100', bg: '#FFF3E0' },
-                { key: 'sold',      label: 'Sold',      color: '#EF4444', bg: '#FEE2E2' },
-              ].map(({ key, label, color, bg }) => (
-                <TouchableOpacity key={key} onPress={() => setFilter(key)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
-                    backgroundColor: filter === key ? bg : '#fff',
-                    borderWidth: 1.5, borderColor: filter === key ? color + '60' : '#E0E6F0' }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: filter === key ? color : MUTED }}>
-                    {label} ({counts[key]})
-                  </Text>
+            {/* Plot Type Floor Plans */}
+            <PlotTypePlansEditor project={project} plots={plots} onProjectUpdate={setProject} />
+
+            {/* Filter tabs + Delete All */}
+            <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, flexDirection: 'row', marginBottom: plots.length > 0 ? 10 : 0 }}>
+                {[
+                  { key: 'all',       label: 'All',       color: TEXT,      bg: '#F0F3FF' },
+                  { key: 'available', label: 'Available', color: '#2E7D32', bg: '#E8F5E9' },
+                  { key: 'hold',      label: 'Hold',      color: '#E65100', bg: '#FFF3E0' },
+                  { key: 'sold',      label: 'Sold',      color: '#EF4444', bg: '#FEE2E2' },
+                ].map(({ key, label, color, bg }) => (
+                  <TouchableOpacity key={key} onPress={() => setFilter(key)}
+                    style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+                      backgroundColor: filter === key ? bg : '#fff',
+                      borderWidth: 1.5, borderColor: filter === key ? color + '60' : '#E0E6F0' }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: filter === key ? color : MUTED }}>
+                      {label} ({counts[key]})
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              {plots.length > 0 && (
+                <TouchableOpacity onPress={async () => {
+                  Alert.alert('Delete All Plots', `Delete all ${plots.length} plots for this project? This cannot be undone.`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete All', style: 'destructive', onPress: async () => {
+                      const headers = await authHeaders();
+                      const res = await fetch(SALES_ENDPOINTS.plotsBulkDelete, {
+                        method: 'DELETE', headers, body: JSON.stringify({ project_id: project.id }),
+                      });
+                      if (res.ok) { setPlots([]); Alert.alert('Done', 'All plots deleted.'); }
+                      else { const e = await res.json(); Alert.alert('Error', e.detail || 'Failed to delete plots'); }
+                    }},
+                  ]);
+                }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: '#FFF5F5', borderWidth: 1.5, borderColor: '#FECACA' }}>
+                  <Ionicons name="trash-outline" size={15} color="#DC2626" />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#DC2626' }}>Delete All Plots</Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+            </View>
           </View>
         )}
         renderItem={({ item }) => (
@@ -727,6 +974,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
             onEdit={p => { setEditPlot(p); setEditModalVisible(true); }}
           />
         )}
+        key="plots-grid"
         ListEmptyComponent={
           <View style={{ alignItems: 'center', padding: 40 }}>
             <Ionicons name="grid-outline" size={40} color="#DDE3F0" />
@@ -740,6 +988,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
         visible={editModalVisible}
         onClose={() => setEditModalVisible(false)}
         onSaved={handlePlotUpdate}
+        clusterTypes={clusterTypes}
       />
     </SafeAreaView>
   );

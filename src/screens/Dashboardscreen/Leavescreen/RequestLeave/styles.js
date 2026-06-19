@@ -14,12 +14,12 @@ export default StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F5F6FA' },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F6FA',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#182350',
     paddingHorizontal: 20, paddingVertical: 14,
   },
-  backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', marginRight: 12, ...CARD_SHADOW },
-  backIcon:   { width: 22, height: 22, resizeMode: 'contain', tintColor: TEXT },
-  headerTitle:{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: TEXT },
+  backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  backIcon:   { width: 22, height: 22, resizeMode: 'contain', tintColor: '#fff' },
+  headerTitle:{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: '#fff' },
   headerRight:{ width: 38 },
 
   body: {

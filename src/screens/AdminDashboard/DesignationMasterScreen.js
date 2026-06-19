@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StatusBar, ActivityIndicator, Alert, StyleSheet,
+  StatusBar, ActivityIndicator, Alert, StyleSheet, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +10,44 @@ import { BASE_URL } from '../../constants/api';
 import { COLORS } from '../../constants/theme';
 
 const ALL_MODULES = ['Sales', 'HR', 'Execution', 'Purchase', 'Land'];
+
+function ModuleDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const meta = MODULE_META[value] || {};
+  return (
+    <>
+      <TouchableOpacity onPress={() => setOpen(true)} activeOpacity={0.85}
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: meta.color || '#E0E6F0', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: meta.bg || '#F5F6FA', marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <MaterialCommunityIcons name={meta.icon} size={18} color={meta.color} />
+          <Text style={{ fontSize: 14, fontWeight: '700', color: meta.color }}>{value}</Text>
+        </View>
+        <Ionicons name="chevron-down" size={16} color={meta.color} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E6F0', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A2E', paddingHorizontal: 16, paddingVertical: 12 }}>Select Module</Text>
+            {ALL_MODULES.map(m => {
+              const mt = MODULE_META[m];
+              return (
+                <TouchableOpacity key={m} onPress={() => { onChange(m); setOpen(false); }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6FA' }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: mt.bg, justifyContent: 'center', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name={mt.icon} size={18} color={mt.color} />
+                  </View>
+                  <Text style={{ flex: 1, fontSize: 14, color: m === value ? COLORS.secondary : '#1A1A2E', fontWeight: m === value ? '700' : '400' }}>{m}</Text>
+                  {m === value && <Ionicons name="checkmark" size={18} color={COLORS.secondary} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
 
 const MODULE_META = {
   Sales:       { color: '#E6960A', bg: '#FFF8E1', icon: 'pencil-outline' },
@@ -87,43 +125,28 @@ export default function DesignationMasterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
       {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
+      <View style={[s.header, { backgroundColor: '#182350', borderBottomWidth: 0 }]}>
+        <TouchableOpacity style={[s.iconBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Designation Master</Text>
+        <Text style={[s.headerTitle, { color: '#fff' }]}>Designation Master</Text>
         <View style={{ width: 34 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Add form */}
-        <View style={s.card}>
-          <Text style={s.cardTitle}>Add New Designation</Text>
+        <View style={[s.card, { padding: 0, overflow: 'hidden' }]}>
+          <View style={{ backgroundColor: '#182350', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16 }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: '#fff' }}>Add New Designation</Text>
+            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>Define designations for each module</Text>
+          </View>
+          <View style={{ padding: 18 }}>
 
           <Text style={s.sectionLabel}>SELECT MODULE</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pillRow}>
-            {ALL_MODULES.map((m) => {
-              const meta = MODULE_META[m];
-              const sel  = selectedModule === m;
-              return (
-                <TouchableOpacity
-                  key={m}
-                  style={[s.modPill, sel && { backgroundColor: meta.color, borderColor: meta.color }]}
-                  onPress={() => setSelectedModule(m)}
-                >
-                  <MaterialCommunityIcons
-                    name={meta.icon}
-                    size={13}
-                    color={sel ? '#fff' : COLORS.textSecondary}
-                  />
-                  <Text style={[s.modPillText, sel && { color: '#fff' }]}>{m}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          <ModuleDropdown value={selectedModule} onChange={setSelectedModule} />
 
           <Text style={[s.sectionLabel, { marginTop: 16 }]}>DESIGNATION NAME</Text>
           <View style={s.inputRow}>
@@ -144,6 +167,7 @@ export default function DesignationMasterScreen({ navigation }) {
                 ? <ActivityIndicator color="#fff" size="small" />
                 : <Text style={s.addBtnText}>Add</Text>}
             </TouchableOpacity>
+          </View>
           </View>
         </View>
 
