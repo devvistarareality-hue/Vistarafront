@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { COLORS } from '../../constants/theme';
 import { View, Image, StatusBar, Animated, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch } from 'react-redux';
@@ -6,7 +7,7 @@ import { discoverServer } from '../../utils/serverDiscovery';
 import { setBaseUrl, RAILWAY_URL } from '../../constants/api';
 import { loadUser } from '../../redux/actions/authActions';
 
-const ORANGE = '#FF6B2B';
+const ORANGE = COLORS.error;
 
 const SplashScreen = ({ onFinish }) => {
   const dispatch  = useDispatch();
@@ -35,10 +36,10 @@ const SplashScreen = ({ onFinish }) => {
 
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor="#050D1A" />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
       <LinearGradient
-        colors={['#050D1A', '#0C1E3C', '#112240']}
+        colors={[COLORS.black, COLORS.navyDark, COLORS.navyDark]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -115,7 +116,7 @@ const s = StyleSheet.create({
   },
   logoCircle: {
     width: 78, height: 78, borderRadius: 39,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     justifyContent: 'center', alignItems: 'center',
     shadowColor: ORANGE, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 14, elevation: 10,
@@ -130,7 +131,7 @@ const s = StyleSheet.create({
   dividerDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: ORANGE, marginHorizontal: 8 },
 
   brandName: {
-    fontSize: 38, fontWeight: '800', color: '#FFFFFF',
+    fontSize: 38, fontWeight: '800', color: COLORS.white,
     letterSpacing: 1, marginBottom: 8,
   },
   brandTag: {

@@ -199,10 +199,10 @@ const HomeScreen = () => {
   const selectedRecord = selectedDay ? recordMap[selectedDay] : null;
 
   const statCards = [
-    { label: 'Work Today',  value: stats?.work_today       ?? '--:--', icon: 'time-outline',      iconBg: '#E8EEFF', iconColor: '#3D5AFE' },
-    { label: 'This Week',   value: stats?.worked_this_week ?? '--:--', icon: 'bar-chart-outline',  iconBg: '#E0F7FA', iconColor: '#0097A7' },
-    { label: 'Leaves Left', value: stats?.leaves_available ?? '0',     icon: 'calendar-outline',   iconBg: '#FFF8E1', iconColor: '#F9A825' },
-    { label: 'Leaves Used', value: stats?.leaves_utilised  ?? '0',     icon: 'clipboard-outline',  iconBg: '#FFF3E0', iconColor: '#E65100' },
+    { label: 'Work Today',  value: stats?.work_today       ?? '--:--', icon: 'time-outline',      iconBg: COLORS.linkBg, iconColor: COLORS.link },
+    { label: 'This Week',   value: stats?.worked_this_week ?? '--:--', icon: 'bar-chart-outline',  iconBg: COLORS.infoBg, iconColor: COLORS.info },
+    { label: 'Leaves Left', value: stats?.leaves_available ?? '0',     icon: 'calendar-outline',   iconBg: COLORS.warningBg, iconColor: COLORS.warningAlt },
+    { label: 'Leaves Used', value: stats?.leaves_utilised  ?? '0',     icon: 'clipboard-outline',  iconBg: COLORS.warningBg, iconColor: COLORS.warning },
   ];
 
   const p = profileUser || user;
@@ -246,16 +246,16 @@ const HomeScreen = () => {
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
             <TouchableOpacity style={{
               width: 40, height: 40, borderRadius: 20,
-              backgroundColor: '#FFFFFF',
+              backgroundColor: COLORS.white,
               justifyContent: 'center', alignItems: 'center',
-              shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+              shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.18, shadowRadius: 10, elevation: 3,
             }}>
               <Ionicons name="notifications-outline" size={20} color={TEXT} />
               <View style={{
                 position: 'absolute', top: 8, right: 8,
                 width: 8, height: 8, borderRadius: 4,
-                backgroundColor: '#EF4444',
+                backgroundColor: COLORS.error,
               }} />
             </TouchableOpacity>
             <TouchableOpacity
@@ -265,7 +265,7 @@ const HomeScreen = () => {
                 backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
               }}
             >
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#AFD2FA' }}>{initials}</Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.powderBlue }}>{initials}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -290,18 +290,18 @@ const HomeScreen = () => {
         {/* ── Quick Actions ── */}
         <View style={{
           marginHorizontal: 20, marginBottom: 28, padding: 16,
-          backgroundColor: '#FFFFFF', borderRadius: 20,
-          shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+          backgroundColor: COLORS.white, borderRadius: 20,
+          shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
         }}>
           <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 14 }}>Quick Actions</Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             {[
-              { key: 'sign-in', label: 'Sign In', icon: 'log-in-outline', color: '#16803C', backgroundColor: '#E8F7EE', action: authenticateAndNavigate },
-              { key: 'sign-out', label: 'Sign Out', icon: 'log-out-outline', color: '#DC3B4B', backgroundColor: '#FFF0F1', action: authenticateAndNavigate },
-              { key: 'apply-leave', label: 'Apply Leave', icon: 'calendar-outline', color: '#3D5AFE', backgroundColor: '#EEF1FF', action: () => navigation.navigate('Leave') },
+              { key: 'sign-in', label: 'Sign In', icon: 'log-in-outline', color: COLORS.success, backgroundColor: COLORS.successBg, action: authenticateAndNavigate },
+              { key: 'sign-out', label: 'Sign Out', icon: 'log-out-outline', color: COLORS.error, backgroundColor: COLORS.screenBg, action: authenticateAndNavigate },
+              { key: 'apply-leave', label: 'Apply Leave', icon: 'calendar-outline', color: COLORS.link, backgroundColor: COLORS.linkBg, action: () => navigation.navigate('Leave') },
               ...(authUser?.is_approver ? [{
-                key: 'leave-approvals', label: 'Leave\nApprovals', icon: 'checkmark-done-outline', color: '#7C3AED', backgroundColor: '#F4EDFF',
+                key: 'leave-approvals', label: 'Leave\nApprovals', icon: 'checkmark-done-outline', color: COLORS.link, backgroundColor: COLORS.screenBg,
                 action: () => navigation.navigate('LeaveApprovals'),
               }] : []),
             ].map((a) => (
@@ -336,7 +336,7 @@ const HomeScreen = () => {
 
           {/* Tab Switcher */}
           <View style={{
-            flexDirection: 'row', backgroundColor: '#EAECF2',
+            flexDirection: 'row', backgroundColor: COLORS.surfaceAlt,
             borderRadius: 12, padding: 4, marginBottom: 16,
           }}>
             {['today', 'week', 'month'].map(tab => (
@@ -345,8 +345,8 @@ const HomeScreen = () => {
                 style={{
                   flex: 1, paddingVertical: 8, borderRadius: 10,
                   alignItems: 'center',
-                  backgroundColor: attendanceTab === tab ? '#FFFFFF' : 'transparent',
-                  shadowColor: attendanceTab === tab ? '#B8C4D6' : 'transparent',
+                  backgroundColor: attendanceTab === tab ? COLORS.white : 'transparent',
+                  shadowColor: attendanceTab === tab ? COLORS.shadow : 'transparent',
                   shadowOpacity: attendanceTab === tab ? 0.10 : 0,
                   shadowRadius: 4, elevation: attendanceTab === tab ? 2 : 0,
                 }}
@@ -371,9 +371,9 @@ const HomeScreen = () => {
               {todayRecord ? (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   {[
-                    { icon: 'time-outline',  label: 'In Time',  value: todayRecord.in_time,  color: '#2E7D32' },
-                    { icon: 'time-outline',  label: 'Out Time', value: todayRecord.out_time, color: '#E65100' },
-                    { icon: 'timer-outline', label: 'Total',    value: todayRecord.total,    color: '#3D5AFE' },
+                    { icon: 'time-outline',  label: 'In Time',  value: todayRecord.in_time,  color: COLORS.success },
+                    { icon: 'time-outline',  label: 'Out Time', value: todayRecord.out_time, color: COLORS.warning },
+                    { icon: 'timer-outline', label: 'Total',    value: todayRecord.total,    color: COLORS.link },
                   ].map((item, i) => (
                     <React.Fragment key={i}>
                       <View style={{ flex: 1, alignItems: 'center' }}>
@@ -387,14 +387,14 @@ const HomeScreen = () => {
                         <Text style={{ fontSize: 11, color: MUTED, fontWeight: '600', marginBottom: 4 }}>{item.label}</Text>
                         <Text style={{ fontSize: 16, fontWeight: '800', color: item.color }}>{item.value}</Text>
                       </View>
-                      {i < 2 && <View style={{ width: 1, height: 60, backgroundColor: '#F0F0F0' }} />}
+                      {i < 2 && <View style={{ width: 1, height: 60, backgroundColor: COLORS.surfaceAlt }} />}
                     </React.Fragment>
                   ))}
                 </View>
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-                  <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: '#E8EEFF', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
-                    <Ionicons name="home-outline" size={28} color="#3D5AFE" />
+                  <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: COLORS.linkBg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                    <Ionicons name="home-outline" size={28} color={COLORS.link} />
                   </View>
                   <Text style={{ fontSize: 14, color: MUTED, fontWeight: '500' }}>No attendance recorded today</Text>
                 </View>
@@ -415,14 +415,14 @@ const HomeScreen = () => {
                     <Text style={{ fontSize: 10, color: MUTED, marginBottom: 8, marginTop: 2 }}>
                       {parts[0] || '--'} {parts[1] || ''}
                     </Text>
-                    <View style={{ height: 1, backgroundColor: '#F0F0F0', width: '100%', marginBottom: 8 }} />
+                    <View style={{ height: 1, backgroundColor: COLORS.surfaceAlt, width: '100%', marginBottom: 8 }} />
                     {[{ label: 'In', value: a.in_time }, { label: 'Out', value: a.out_time }].map((t, ti) => (
                       <View key={ti} style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 3 }}>
                         <Text style={{ fontSize: 10, color: MUTED, fontWeight: '600' }}>{t.label}</Text>
                         <Text style={{ fontSize: 10, color: TEXT, fontWeight: '600' }}>{t.value || '--'}</Text>
                       </View>
                     ))}
-                    <View style={{ height: 1, backgroundColor: '#F0F0F0', width: '100%', marginVertical: 4 }} />
+                    <View style={{ height: 1, backgroundColor: COLORS.surfaceAlt, width: '100%', marginVertical: 4 }} />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
                       <Text style={{ fontSize: 10, color: LINK, fontWeight: '700' }}>Total</Text>
                       <Text style={{ fontSize: 10, color: LINK, fontWeight: '700' }}>{a.total || '--'}</Text>
@@ -440,7 +440,7 @@ const HomeScreen = () => {
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <TouchableOpacity
                   onPress={prevMonth}
-                  style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F0F4F8', justifyContent: 'center', alignItems: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="chevron-back" size={18} color={NAVY} />
@@ -450,7 +450,7 @@ const HomeScreen = () => {
                 </Text>
                 <TouchableOpacity
                   onPress={nextMonth}
-                  style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F0F4F8', justifyContent: 'center', alignItems: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="chevron-forward" size={18} color={NAVY} />
@@ -483,14 +483,14 @@ const HomeScreen = () => {
                           width: CAL_CELL, height: CAL_CELL + 14,
                           alignItems: 'center', justifyContent: 'center', marginBottom: 2,
                           borderRadius: 10,
-                          backgroundColor: isSelected ? NAVY : isToday ? '#EEF4FF' : 'transparent',
+                          backgroundColor: isSelected ? NAVY : isToday ? COLORS.linkBg : 'transparent',
                         }}
                         onPress={() => setSelectedDay(isSelected ? null : day)}
                         activeOpacity={0.7}
                       >
                         <Text style={{
                           fontSize: 13, fontWeight: isToday || isSelected ? '800' : '600',
-                          color: isSelected ? '#FFFFFF' : isToday ? NAVY : TEXT,
+                          color: isSelected ? COLORS.white : isToday ? NAVY : TEXT,
                         }}>
                           {day}
                         </Text>
@@ -498,7 +498,7 @@ const HomeScreen = () => {
                           fontSize: 9, fontWeight: '700', marginTop: 2,
                           color: isSelected
                             ? 'rgba(255,255,255,0.80)'
-                            : rec?.total && rec.total !== '00:00' ? '#2E7D32' : '#D0D5DD',
+                            : rec?.total && rec.total !== '00:00' ? COLORS.success : COLORS.divider,
                         }}>
                           {rec?.total ?? '00:00'}
                         </Text>
@@ -509,20 +509,20 @@ const HomeScreen = () => {
               )}
 
               {/* Legend */}
-              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F0F0F0' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#2E7D32' }}>08:30</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.success }}>08:30</Text>
                   <Text style={{ fontSize: 12, color: MUTED }}>= Present</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#D0D5DD' }}>00:00</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.divider }}>00:00</Text>
                   <Text style={{ fontSize: 12, color: MUTED }}>= Absent</Text>
                 </View>
               </View>
 
               {/* Selected Day Detail */}
               {selectedDay && (
-                <View style={{ marginTop: 14, backgroundColor: '#F8FAFF', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#E4EAF2' }}>
+                <View style={{ marginTop: 14, backgroundColor: COLORS.screenBg, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: COLORS.border }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 14, textAlign: 'center' }}>
                     {new Date(calYear, calMonth - 1, selectedDay)
                       .toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -537,9 +537,9 @@ const HomeScreen = () => {
                         <React.Fragment key={i}>
                           <View style={{ flex: 1, alignItems: 'center' }}>
                             <Text style={{ fontSize: 11, color: MUTED, fontWeight: '600', marginBottom: 4 }}>{item.label}</Text>
-                            <Text style={{ fontSize: 16, fontWeight: '800', color: item.accent ? '#2E7D32' : TEXT }}>{item.value || '--'}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: item.accent ? COLORS.success : TEXT }}>{item.value || '--'}</Text>
                           </View>
-                          {i < 2 && <View style={{ width: 1, height: 36, backgroundColor: '#E0E8F0' }} />}
+                          {i < 2 && <View style={{ width: 1, height: 36, backgroundColor: COLORS.border }} />}
                         </React.Fragment>
                       ))}
                     </View>
@@ -575,7 +575,7 @@ const HomeScreen = () => {
           {/* Sheet — position:absolute so it sits cleanly on top of backdrop */}
           <Animated.View style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
-            backgroundColor: '#fff',
+            backgroundColor: COLORS.white,
             borderTopLeftRadius: 28, borderTopRightRadius: 28,
             paddingHorizontal: 24, paddingBottom: 40,
             transform: [{ translateY: profileSheetY }],
@@ -586,14 +586,14 @@ const HomeScreen = () => {
               {...profilePanResponder.panHandlers}
               style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 16 }}
             >
-              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0' }} />
+              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.divider }} />
             </View>
 
             {/* Title */}
             <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginBottom: 20 }}>User Details</Text>
 
             {/* Details list */}
-            <View style={{ backgroundColor: '#F5F6FA', borderRadius: 16, overflow: 'hidden', marginBottom: 24 }}>
+            <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 16, overflow: 'hidden', marginBottom: 24 }}>
               {profileLoading ? (
                 <ActivityIndicator color={NAVY} style={{ marginVertical: 32 }} />
               ) : userDetails.map((item, i) => (
@@ -601,11 +601,11 @@ const HomeScreen = () => {
                   flexDirection: 'row', alignItems: 'center', gap: 14,
                   paddingHorizontal: 16, paddingVertical: 14,
                   borderBottomWidth: i < userDetails.length - 1 ? 1 : 0,
-                  borderBottomColor: '#E8ECF4',
+                  borderBottomColor: COLORS.surfaceAlt,
                 }}>
                   <View style={{
                     width: 40, height: 40, borderRadius: 12,
-                    backgroundColor: '#E8EEFF',
+                    backgroundColor: COLORS.linkBg,
                     justifyContent: 'center', alignItems: 'center', flexShrink: 0,
                   }}>
                     <Ionicons name={item.icon} size={20} color={LINK} />
@@ -628,12 +628,12 @@ const HomeScreen = () => {
               activeOpacity={0.85}
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-                backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA',
+                backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.errorBg,
                 borderRadius: 14, paddingVertical: 14,
               }}
             >
-              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Sign Out</Text>
+              <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.error }}>Sign Out</Text>
             </TouchableOpacity>
 
           </Animated.View>

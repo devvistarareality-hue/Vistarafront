@@ -16,13 +16,13 @@ async function authHeaders() {
 }
 
 const MENU = [
-  { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: '#3D5AFE', bg: '#EEF0FF',  adminOnly: false },
-  { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: '#2E7D32', bg: '#E8F5E9',  adminOnly: true  },
-  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: '#0097A7', bg: '#E0F7FA',  adminOnly: true  },
-  { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: '#7B1FA2', bg: '#F3E5F5',  adminOnly: true  },
-  { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: '#E65100', bg: '#FFF3E0',  adminOnly: true  },
-  { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: '#00796B', bg: '#E0F2F1',  adminOnly: true  },
-  { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: '#1565C0', bg: '#E3F2FD',  adminOnly: false },
+  { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false },
+  { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: true  },
+  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: COLORS.info, bg: COLORS.infoBg,  adminOnly: true  },
+  { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  },
+  { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: true  },
+  { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: COLORS.info, bg: COLORS.infoBg,  adminOnly: true  },
+  { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: COLORS.linkPressed, bg: COLORS.infoBg,  adminOnly: false },
 ];
 
 function getDesignationLabel(user) {
@@ -78,12 +78,12 @@ export default function SalesCRMScreen({ navigation }) {
   }
 
   const STAT_CARDS = [
-    { label: 'Total Leads',  value: stats?.total_leads    ?? '—', color: BLUE,      bg: '#EEF0FF' },
-    { label: 'New Today',    value: stats?.leads_today     ?? '—', color: '#2E7D32', bg: '#E8F5E9' },
-    { label: 'Unassigned',   value: stats?.new_leads       ?? '—', color: '#E65100', bg: '#FFF3E0' },
-    { label: 'Closures',     value: stats?.closures        ?? '—', color: '#EF4444', bg: '#FEE2E2' },
-    { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: '#7B1FA2', bg: '#F3E5F5' },
-    { label: 'Projects',     value: stats?.active_projects ?? '—', color: '#0097A7', bg: '#E0F7FA' },
+    { label: 'Total Leads',  value: stats?.total_leads    ?? '—', color: BLUE,      bg: COLORS.linkBg },
+    { label: 'New Today',    value: stats?.leads_today     ?? '—', color: COLORS.success, bg: COLORS.successBg },
+    { label: 'Unassigned',   value: stats?.new_leads       ?? '—', color: COLORS.warning, bg: COLORS.warningBg },
+    { label: 'Closures',     value: stats?.closures        ?? '—', color: COLORS.error, bg: COLORS.errorBg },
+    { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: COLORS.purple, bg: COLORS.purpleBg },
+    { label: 'Projects',     value: stats?.active_projects ?? '—', color: COLORS.info, bg: COLORS.infoBg },
   ];
 
   return (
@@ -91,12 +91,12 @@ export default function SalesCRMScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{screenTitle}</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{screenSub}</Text>
         </View>
-        <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: '#E0E6F0', borderRadius: 8 }}>
+        <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
       </View>

@@ -15,7 +15,7 @@ const PaymentScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Payments</Text>
           <View style={styles.headerRight} />
@@ -23,7 +23,7 @@ const PaymentScreen = () => {
 
         <View style={styles.comingSoonCard}>
           <View style={styles.iconCircle}>
-            <Ionicons name="card-outline" size={40} color="#2E7D32" />
+            <Ionicons name="card-outline" size={40} color={COLORS.success} />
           </View>
           <Text style={styles.comingSoonTitle}>Coming Soon</Text>
           <Text style={styles.comingSoonSub}>Payments module is under development</Text>

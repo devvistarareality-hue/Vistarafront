@@ -45,9 +45,9 @@ function PlotStats({ counts }) {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
         {[
           { label: 'Total',     val: total,     color: TEXT },
-          { label: 'Available', val: available,  color: '#2E7D32' },
-          { label: 'Hold',      val: hold,       color: '#E65100' },
-          { label: 'Sold',      val: sold,       color: '#EF4444' },
+          { label: 'Available', val: available,  color: COLORS.success },
+          { label: 'Hold',      val: hold,       color: COLORS.warning },
+          { label: 'Sold',      val: sold,       color: COLORS.error },
         ].map(s => (
           <View key={s.label} style={{ alignItems: 'center' }}>
             <Text style={{ fontSize: 14, fontWeight: '800', color: s.color }}>{s.val}</Text>
@@ -55,7 +55,7 @@ function PlotStats({ counts }) {
           </View>
         ))}
       </View>
-      <View style={{ height: 5, borderRadius: 4, backgroundColor: '#F0F3FA', overflow: 'hidden' }}>
+      <View style={{ height: 5, borderRadius: 4, backgroundColor: COLORS.surfaceAlt, overflow: 'hidden' }}>
         <View style={{ height: '100%', width: `${soldPct}%`, backgroundColor: BLUE, borderRadius: 4 }} />
       </View>
       <Text style={{ fontSize: 10, color: MUTED, textAlign: 'right', marginTop: 3 }}>{soldPct}% sold</Text>
@@ -69,12 +69,12 @@ function ProjectCard({ project, onEdit, onManage }) {
   return (
     <View style={[cardStyle, { marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' }]}>
       {/* Cover image with type + status badge overlaid */}
-      <View style={{ position: 'relative', height: 160, backgroundColor: '#EEF0F8' }}>
+      <View style={{ position: 'relative', height: 160, backgroundColor: COLORS.surfaceAlt }}>
         {project.cover_image_url ? (
           <Image source={{ uri: project.cover_image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         ) : (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="business-outline" size={36} color="#C0C8D8" />
+            <Ionicons name="business-outline" size={36} color={COLORS.shadow} />
           </View>
         )}
         <View style={{ position: 'absolute', top: 10, left: 12, right: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -83,8 +83,8 @@ function ProjectCard({ project, onEdit, onManage }) {
               <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED }}>{project.project_type}</Text>
             </View>
           ) : <View />}
-          <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, backgroundColor: project.is_active ? '#E8F5E9' : '#FEE2E2' }}>
-            <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? '#2E7D32' : '#EF4444' }}>
+          <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, backgroundColor: project.is_active ? COLORS.successBg : COLORS.errorBg }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? COLORS.success : COLORS.error }}>
               {project.is_active ? 'ACTIVE' : 'INACTIVE'}
             </Text>
           </View>
@@ -92,12 +92,12 @@ function ProjectCard({ project, onEdit, onManage }) {
       </View>
 
       {/* Content */}
-      <View style={{ padding: 14, borderTopWidth: 1.5, borderTopColor: '#EEF1F7' }}>
+      <View style={{ padding: 14, borderTopWidth: 1.5, borderTopColor: COLORS.surfaceAlt }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT, marginBottom: 2 }}>{project.name}</Text>
             {project.location ? <Text style={{ fontSize: 12, color: MUTED, marginBottom: 4 }}>📍 {project.location}</Text> : null}
-            {project.tagline ? <Text style={{ fontSize: 11, color: '#A0AABA', fontStyle: 'italic', marginBottom: 4 }} numberOfLines={1}>{project.tagline}</Text> : null}
+            {project.tagline ? <Text style={{ fontSize: 11, color: COLORS.textTertiary, fontStyle: 'italic', marginBottom: 4 }} numberOfLines={1}>{project.tagline}</Text> : null}
             {(project.total_area || project.price_range || project.possession) ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {project.total_area  && <View style={metaChip}><Text style={metaChipTxt}>{project.total_area}</Text></View>}
@@ -106,7 +106,7 @@ function ProjectCard({ project, onEdit, onManage }) {
               </View>
             ) : null}
           </View>
-          <TouchableOpacity onPress={() => onEdit(project)} style={{ padding: 8, borderRadius: 10, backgroundColor: '#F0F3FA', marginTop: 2 }}>
+          <TouchableOpacity onPress={() => onEdit(project)} style={{ padding: 8, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, marginTop: 2 }}>
             <Ionicons name="pencil-outline" size={16} color={MUTED} />
           </TouchableOpacity>
         </View>
@@ -119,7 +119,7 @@ function ProjectCard({ project, onEdit, onManage }) {
 
         <TouchableOpacity onPress={() => onManage(project)}
           style={{ marginTop: 12, paddingVertical: 10, backgroundColor: NAVY, borderRadius: 10, alignItems: 'center' }}>
-          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Manage Plots →</Text>
+          <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>Manage Plots →</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -128,7 +128,7 @@ function ProjectCard({ project, onEdit, onManage }) {
 
 /* ─── Field helpers ─── */
 const FieldLabel = ({ label }) => (
-  <Text style={{ fontSize: 10, fontWeight: '700', color: '#B0BAC9', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>{label}</Text>
+  <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>{label}</Text>
 );
 const Field = ({ label, children }) => (
   <View style={{ marginBottom: 14 }}>
@@ -136,7 +136,7 @@ const Field = ({ label, children }) => (
     {children}
   </View>
 );
-const inp = { borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: '#fff' };
+const inp = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white };
 
 function TypeDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -150,11 +150,11 @@ function TypeDropdown({ value, onChange }) {
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', paddingHorizontal: 40 }}
           activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: COLORS.white, borderRadius: 14, overflow: 'hidden' }}>
             {PROJECT_TYPES.map((t, i) => (
               <TouchableOpacity key={t} onPress={() => { onChange(t); setOpen(false); }}
-                style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: value === t ? '#F0F3FA' : '#fff',
-                  borderBottomWidth: i < PROJECT_TYPES.length - 1 ? 1 : 0, borderBottomColor: '#E0E6F0' }}>
+                style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: value === t ? COLORS.surfaceAlt : COLORS.white,
+                  borderBottomWidth: i < PROJECT_TYPES.length - 1 ? 1 : 0, borderBottomColor: COLORS.border }}>
                 <Text style={{ fontSize: 15, color: value === t ? NAVY : TEXT, fontWeight: value === t ? '700' : '400' }}>{t}</Text>
               </TouchableOpacity>
             ))}
@@ -179,9 +179,9 @@ function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTy
           {[['No', false], ['Yes', true]].map(([label, val]) => (
             <TouchableOpacity key={label} onPress={() => setHasTypes(val)}
               style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5,
-                borderColor: hasTypes === val ? (val ? BLUE : NAVY) : '#E0E6F0',
-                backgroundColor: hasTypes === val ? (val ? BLUE : NAVY) : '#fff' }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: hasTypes === val ? '#fff' : MUTED }}>{label}</Text>
+                borderColor: hasTypes === val ? (val ? BLUE : NAVY) : COLORS.border,
+                backgroundColor: hasTypes === val ? (val ? BLUE : NAVY) : COLORS.white }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: hasTypes === val ? COLORS.white : MUTED }}>{label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -193,7 +193,7 @@ function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTy
           <TextInput value={noTypePlots} onChangeText={setNoTypePlots} keyboardType="numeric"
             placeholder="e.g. 20" style={{ ...inp, maxWidth: 160 }} />
           {Number(noTypePlots) > 0 && (
-            <View style={{ marginTop: 8, padding: 10, backgroundColor: '#F0F3FF', borderRadius: 8 }}>
+            <View style={{ marginTop: 8, padding: 10, backgroundColor: COLORS.screenBg, borderRadius: 8 }}>
               <Text style={{ fontSize: 12, color: BLUE }}>Will create <Text style={{ fontWeight: '700' }}>{noTypePlots}</Text> plots numbered 1 to {noTypePlots}</Text>
             </View>
           )}
@@ -202,9 +202,9 @@ function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTy
         <View>
           {/* Column headers */}
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 6 }}>
-            <Text style={{ flex: 1, fontSize: 10, fontWeight: '700', color: '#B0BAC9', textTransform: 'uppercase' }}>Type Name</Text>
-            <Text style={{ width: 70, fontSize: 10, fontWeight: '700', color: '#B0BAC9', textTransform: 'uppercase' }}>From #</Text>
-            <Text style={{ width: 70, fontSize: 10, fontWeight: '700', color: '#B0BAC9', textTransform: 'uppercase' }}>To #</Text>
+            <Text style={{ flex: 1, fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase' }}>Type Name</Text>
+            <Text style={{ width: 70, fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase' }}>From #</Text>
+            <Text style={{ width: 70, fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase' }}>To #</Text>
             <View style={{ width: 28 }} />
           </View>
           {plotTypes.map((pt, i) => (
@@ -214,7 +214,7 @@ function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTy
               <TextInput value={pt.to}   onChangeText={v => updateType(i, 'to',   v)} keyboardType="numeric" placeholder="10" style={[inp, { width: 70 }]} />
               <TouchableOpacity onPress={() => removeType(i)} disabled={plotTypes.length === 1}
                 style={{ width: 28, alignItems: 'center' }}>
-                <Ionicons name="close-circle" size={20} color={plotTypes.length > 1 ? '#EF4444' : '#E0E6F0'} />
+                <Ionicons name="close-circle" size={20} color={plotTypes.length > 1 ? COLORS.error : COLORS.border} />
               </TouchableOpacity>
             </View>
           ))}
@@ -223,14 +223,14 @@ function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTy
             <Text style={{ fontSize: 13, fontWeight: '700', color: BLUE }}>+ Add Type</Text>
           </TouchableOpacity>
           {validTypes.length > 0 && (
-            <View style={{ padding: 12, backgroundColor: '#F8FAFD', borderRadius: 10, borderWidth: 1, borderColor: '#E8ECF4' }}>
+            <View style={{ padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, borderWidth: 1, borderColor: COLORS.surfaceAlt }}>
               {validTypes.map(pt => (
                 <Text key={pt.name} style={{ fontSize: 12, color: MUTED, marginBottom: 2 }}>
                   <Text style={{ fontWeight: '700', color: TEXT }}>{pt.name}</Text>{': '}{pt.name}{pt.from} → {pt.name}{pt.to}
                   {'  '}({Number(pt.to) - Number(pt.from) + 1} plots)
                 </Text>
               ))}
-              <Text style={{ fontSize: 12, fontWeight: '700', color: NAVY, marginTop: 6, borderTopWidth: 1, borderTopColor: '#E8ECF4', paddingTop: 6 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: NAVY, marginTop: 6, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingTop: 6 }}>
                 Total: {totalTypePlots} plots
               </Text>
             </View>
@@ -382,18 +382,18 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
       <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           {/* Header */}
-          <View style={{ backgroundColor: NAVY, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}>
+          <View style={{ backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
-                <Ionicons name="close" size={18} color="#fff" />
+              <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="close" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity onPress={save} disabled={saving}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', opacity: saving ? 0.6 : 1 }}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Save</Text>}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 10, opacity: saving ? 0.6 : 1 }}>
+                {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Save</Text>}
               </TouchableOpacity>
             </View>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{editing ? 'Edit Project' : 'New Project'}</Text>
-            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{editing ? 'Update project details' : 'Fill in the project details below'}</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{editing ? 'Edit Project' : 'New Project'}</Text>
+            <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>{editing ? 'Update project details' : 'Fill in the project details below'}</Text>
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -454,17 +454,17 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             <Field label="Cover Image">
               {form.cover_image_url ? (
                 <View>
-                  <Image source={{ uri: form.cover_image_url }} style={{ width: '100%', height: 160, borderRadius: 10, backgroundColor: '#EEF0F8' }} resizeMode="cover" />
+                  <Image source={{ uri: form.cover_image_url }} style={{ width: '100%', height: 160, borderRadius: 10, backgroundColor: COLORS.surfaceAlt }} resizeMode="cover" />
                   <TouchableOpacity onPress={() => set('cover_image_url', '')}
                     style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="close" size={16} color="#fff" />
+                    <Ionicons name="close" size={16} color={COLORS.white} />
                   </TouchableOpacity>
                 </View>
               ) : (
                 <TouchableOpacity onPress={async () => { const url = await pickAndUpload('erp/projects/covers', setUploadingCover); if (url) set('cover_image_url', url); }} disabled={uploadingCover}
-                  style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderStyle: 'dashed', borderRadius: 10, paddingVertical: 24, alignItems: 'center', backgroundColor: '#FAFBFF' }}>
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 10, paddingVertical: 24, alignItems: 'center', backgroundColor: COLORS.white }}>
                   {uploadingCover ? <ActivityIndicator color={BLUE} /> : <>
-                    <Ionicons name="image-outline" size={28} color="#C0C8D8" />
+                    <Ionicons name="image-outline" size={28} color={COLORS.shadow} />
                     <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Tap to upload cover image</Text>
                   </>}
                 </TouchableOpacity>
@@ -474,7 +474,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             {/* Master Plan */}
             <Field label="Master Plan">
               {form.master_plan_url ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: '#F8F9FE', borderRadius: 10, borderWidth: 1, borderColor: '#E0E6F0' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }}>
                   <Ionicons name="document-text-outline" size={22} color={BLUE} style={{ marginRight: 10 }} />
                   <Text style={{ flex: 1, fontSize: 12, color: BLUE, fontWeight: '600' }} numberOfLines={1}>Master plan uploaded ✓</Text>
                   <TouchableOpacity onPress={() => set('master_plan_url', '')}>
@@ -483,9 +483,9 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 </View>
               ) : (
                 <TouchableOpacity onPress={async () => { const url = await pickAndUpload('erp/projects/masterplans', setUploadingPlan); if (url) set('master_plan_url', url); }} disabled={uploadingPlan}
-                  style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderStyle: 'dashed', borderRadius: 10, paddingVertical: 20, alignItems: 'center', backgroundColor: '#FAFBFF' }}>
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 10, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.white }}>
                   {uploadingPlan ? <ActivityIndicator color={BLUE} /> : <>
-                    <Ionicons name="map-outline" size={28} color="#C0C8D8" />
+                    <Ionicons name="map-outline" size={28} color={COLORS.shadow} />
                     <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Upload master plan image</Text>
                   </>}
                 </TouchableOpacity>
@@ -493,16 +493,16 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             </Field>
 
             {/* Active toggle */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 10, padding: 14, borderWidth: 1.5, borderColor: '#E0E6F0', marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.white, borderRadius: 10, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 14 }}>
               <View>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Active</Text>
                 <Text style={{ fontSize: 11, color: MUTED }}>Visible to sales team</Text>
               </View>
-              <Switch value={form.is_active} onValueChange={v => set('is_active', v)} trackColor={{ false: '#E0E6F0', true: NAVY }} />
+              <Switch value={form.is_active} onValueChange={v => set('is_active', v)} trackColor={{ false: COLORS.border, true: NAVY }} />
             </View>
 
             {/* ── PLOT SETUP ── */}
-            <View style={{ borderTopWidth: 1.5, borderTopColor: '#F0F3FA', paddingTop: 16, marginBottom: 8 }}>
+            <View style={{ borderTopWidth: 1.5, borderTopColor: COLORS.surfaceAlt, paddingTop: 16, marginBottom: 8 }}>
               <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>
                 Plot Setup
               </Text>
@@ -522,23 +522,23 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                               style={{
                                 fontSize: 12, fontWeight: '700', paddingHorizontal: 14, paddingVertical: 6,
                                 borderRadius: 20, textAlign: 'center',
-                                backgroundColor: t.original !== t.current ? '#FFF7ED' : '#EDE7F6',
-                                color: t.original !== t.current ? '#C2410C' : '#673AB7',
+                                backgroundColor: t.original !== t.current ? COLORS.warningBg : COLORS.purpleBg,
+                                color: t.original !== t.current ? COLORS.warning : COLORS.purple,
                                 borderWidth: 1.5,
-                                borderColor: t.original !== t.current ? '#FED7AA' : '#C4B5E0',
+                                borderColor: t.original !== t.current ? COLORS.goldBg : COLORS.shadow,
                                 minWidth: 70,
                               }}
                             />
                             {t.original !== t.current && (
-                              <View style={{ position: 'absolute', top: -6, right: -4, backgroundColor: '#C2410C', borderRadius: 10, paddingHorizontal: 5, paddingVertical: 1 }}>
-                                <Text style={{ color: '#fff', fontSize: 8, fontWeight: '700' }}>renamed</Text>
+                              <View style={{ position: 'absolute', top: -6, right: -4, backgroundColor: COLORS.warning, borderRadius: 10, paddingHorizontal: 5, paddingVertical: 1 }}>
+                                <Text style={{ color: COLORS.white, fontSize: 8, fontWeight: '700' }}>renamed</Text>
                               </View>
                             )}
                           </View>
                         ))}
                       </View>
                       {editableTypes.some(t => t.original !== t.current) && (
-                        <Text style={{ fontSize: 11, color: '#C2410C', marginTop: 6 }}>⚠ Renaming will update all plots with that type name.</Text>
+                        <Text style={{ fontSize: 11, color: COLORS.warning, marginTop: 6 }}>⚠ Renaming will update all plots with that type name.</Text>
                       )}
                     </View>
                   )}
@@ -550,8 +550,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                   </View>
 
                   <TouchableOpacity onPress={() => setAddingMore(m => !m)}
-                    style={{ borderWidth: 1.5, borderColor: addingMore ? '#EF4444' : BLUE, borderStyle: 'dashed', borderRadius: 9, paddingVertical: 8, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: addingMore ? '#EF4444' : BLUE }}>
+                    style={{ borderWidth: 1.5, borderColor: addingMore ? COLORS.error : BLUE, borderStyle: 'dashed', borderRadius: 9, paddingVertical: 8, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: addingMore ? COLORS.error : BLUE }}>
                       {addingMore ? '✕ Cancel adding plots' : '+ Add More Plots'}
                     </Text>
                   </TouchableOpacity>
@@ -625,7 +625,7 @@ export default function ProjectsScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={NAVY} />
         </TouchableOpacity>
@@ -635,8 +635,8 @@ export default function ProjectsScreen() {
         </View>
         <TouchableOpacity onPress={openAdd}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: NAVY, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 }}>
-          <Ionicons name="add" size={18} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Add Project</Text>
+          <Ionicons name="add" size={18} color={COLORS.white} />
+          <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Add Project</Text>
         </TouchableOpacity>
       </View>
 
@@ -649,7 +649,7 @@ export default function ProjectsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 60 }}>
-            <Ionicons name="business-outline" size={52} color="#DDE3F0" />
+            <Ionicons name="business-outline" size={52} color={COLORS.divider} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: MUTED, marginTop: 12 }}>No projects yet</Text>
             <Text style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Tap "Add Project" to create one</Text>
           </View>
@@ -663,5 +663,5 @@ export default function ProjectsScreen() {
 }
 
 const cardStyle = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
-const metaChip  = { backgroundColor: '#F0F3F8', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 };
-const metaChipTxt = { fontSize: 11, fontWeight: '600', color: '#6B7A90' };
+const metaChip  = { backgroundColor: COLORS.surfaceAlt, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 };
+const metaChipTxt = { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary };

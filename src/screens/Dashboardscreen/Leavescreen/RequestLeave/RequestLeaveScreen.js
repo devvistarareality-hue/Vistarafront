@@ -155,7 +155,7 @@ const RequestLeaveScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Leave</Text>
         <View style={styles.headerRight} />
@@ -258,7 +258,7 @@ const RequestLeaveScreen = () => {
           <TextInput
             style={styles.descInput}
             placeholder="Enter Description"
-            placeholderTextColor="#AAAAAA"
+            placeholderTextColor={COLORS.textTertiary}
             multiline
             numberOfLines={6}
             textAlignVertical="top"
@@ -278,7 +278,7 @@ const RequestLeaveScreen = () => {
           disabled={requestLoading}
         >
           {requestLoading
-            ? <ActivityIndicator color="#FFFFFF" />
+            ? <ActivityIndicator color={COLORS.white} />
             : <Text style={styles.submitText}>Submit</Text>
           }
         </TouchableOpacity>

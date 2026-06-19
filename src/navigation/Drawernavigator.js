@@ -54,7 +54,7 @@ const CustomDrawerContent = (props) => {
             label={item.label}
             labelStyle={s.label}
             icon={() => (
-              <Ionicons name={item.icon} size={20} color="#B0C4DE" style={{ marginRight: -16 }} />
+              <Ionicons name={item.icon} size={20} color={COLORS.shadow} style={{ marginRight: -16 }} />
             )}
             onPress={() => navigation.navigate(item.screen, item.params)}
           />
@@ -70,8 +70,8 @@ const DrawerNavigator = () => {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: COLORS.navy },
-        headerTintColor: COLORS.white,
+        headerStyle: { backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
+        headerTintColor: COLORS.textPrimary,
         drawerStyle: {
           backgroundColor: COLORS.navy,
           width: 280,
@@ -109,7 +109,7 @@ const s = StyleSheet.create({
   drawerHeaderText: { color: COLORS.white, fontSize: 20, fontWeight: '800' },
   drawerHeaderSub: { color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '500', marginTop: 2 },
   menuSection: { paddingLeft: 8 },
-  label: { color: '#B0C4DE', fontSize: 15, fontWeight: '500' },
+  label: { color: COLORS.shadow, fontSize: 15, fontWeight: '500' },
 });
 
 export default DrawerNavigator;

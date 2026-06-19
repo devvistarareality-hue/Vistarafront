@@ -37,7 +37,7 @@ const BottomTabNavigator = () => {
           height: 64 + insets.bottom,
           paddingBottom: insets.bottom + 10,
           paddingTop: 6,
-          shadowColor: '#9DB2CE',
+          shadowColor: COLORS.textTertiary,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.12,
           shadowRadius: 16,

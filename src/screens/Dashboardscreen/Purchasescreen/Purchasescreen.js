@@ -15,7 +15,7 @@ const PurchaseScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Purchase</Text>
           <View style={styles.headerRight} />
@@ -23,7 +23,7 @@ const PurchaseScreen = () => {
 
         <View style={styles.comingSoonCard}>
           <View style={styles.iconCircle}>
-            <Ionicons name="cart-outline" size={40} color="#E65100" />
+            <Ionicons name="cart-outline" size={40} color={COLORS.warning} />
           </View>
           <Text style={styles.comingSoonTitle}>Coming Soon</Text>
           <Text style={styles.comingSoonSub}>Purchase module is under development</Text>

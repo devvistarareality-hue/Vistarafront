@@ -10,10 +10,10 @@ export default StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.screenBg },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
-    paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
+    paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt,
   },
-  backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   headerTitle:{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: TEXT },
   headerRight:{ width: 38 },
 
@@ -23,7 +23,7 @@ export default StyleSheet.create({
   },
 
   toggleCard: {
-    flexDirection: 'row', backgroundColor: '#EAECF2', borderRadius: 12,
+    flexDirection: 'row', backgroundColor: COLORS.surfaceAlt, borderRadius: 12,
     marginBottom: 16, padding: 4,
   },
   toggleBtn:       { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
@@ -36,7 +36,7 @@ export default StyleSheet.create({
     borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
     marginBottom: 14, ...CARD_SHADOW,
   },
-  dateText:     { fontSize: 14, color: '#C0CAD8' },
+  dateText:     { fontSize: 14, color: COLORS.shadow },
   dateTextFilled: { color: NAVY, fontWeight: '600' },
 
   descCard: {
@@ -68,12 +68,12 @@ export default StyleSheet.create({
     backgroundColor: COLORS.cardBg, borderTopLeftRadius: 28, borderTopRightRadius: 28,
     paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingTop: 12, elevation: 20,
   },
-  sheetHandle:        { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E6F0', marginBottom: 16 },
+  sheetHandle:        { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, marginBottom: 16 },
   sheetTitle:         { fontSize: 17, fontWeight: '800', color: TEXT, marginBottom: 16 },
-  sheetOption:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F5F6FA' },
+  sheetOption:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: COLORS.screenBg },
   sheetOptionText:    { fontSize: 15, color: MUTED, fontWeight: '500' },
   sheetOptionTextActive: { color: NAVY, fontWeight: '700' },
   sheetCheckDot:      { width: 10, height: 10, borderRadius: 5, backgroundColor: NAVY },
-  sheetCancelBtn:     { marginTop: 16, paddingVertical: 14, alignItems: 'center', backgroundColor: '#F5F6FA', borderRadius: 14 },
+  sheetCancelBtn:     { marginTop: 16, paddingVertical: 14, alignItems: 'center', backgroundColor: COLORS.screenBg, borderRadius: 14 },
   sheetCancelText:    { fontSize: 14, fontWeight: '600', color: MUTED },
 });

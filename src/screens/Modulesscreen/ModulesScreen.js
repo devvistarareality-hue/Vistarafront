@@ -126,7 +126,7 @@ const ModulesScreen = () => {
         {/* ── Modules Grid ── */}
         {userModules.length === 0 ? (
           <View style={{ alignItems: 'center', marginTop: 40, paddingHorizontal: 40 }}>
-            <Ionicons name="cube-outline" size={48} color="#DDE3F0" />
+            <Ionicons name="cube-outline" size={48} color={COLORS.divider} />
             <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginTop: 12, textAlign: 'center' }}>
               No modules assigned yet. Contact your administrator.
             </Text>
@@ -134,7 +134,7 @@ const ModulesScreen = () => {
         ) : (
           <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {userModules.map((mod) => {
-              const accent = mod.accent || { bg: '#E8EEFF', icon: '#3D5AFE' };
+              const accent = mod.accent || { bg: COLORS.linkBg, icon: COLORS.link };
               return (
                 <TouchableOpacity
                   key={mod.key}

@@ -26,7 +26,7 @@ const SettingScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Settings</Text>
           <View style={styles.headerRight} />
@@ -44,10 +44,10 @@ const SettingScreen = () => {
 
         <View style={styles.menuCard}>
           {[
-            { icon: 'person-outline', label: 'Profile', color: '#3D5AFE', bg: '#E8EEFF' },
-            { icon: 'notifications-outline', label: 'Notifications', color: '#F9A825', bg: '#FFF8E1' },
-            { icon: 'lock-closed-outline', label: 'Privacy & Security', color: '#2E7D32', bg: '#E8F5E9' },
-            { icon: 'information-circle-outline', label: 'About', color: '#0097A7', bg: '#E0F7FA' },
+            { icon: 'person-outline', label: 'Profile', color: COLORS.link, bg: COLORS.linkBg },
+            { icon: 'notifications-outline', label: 'Notifications', color: COLORS.warningAlt, bg: COLORS.warningBg },
+            { icon: 'lock-closed-outline', label: 'Privacy & Security', color: COLORS.success, bg: COLORS.successBg },
+            { icon: 'information-circle-outline', label: 'About', color: COLORS.info, bg: COLORS.infoBg },
           ].map((item, i) => (
             <TouchableOpacity key={i} style={styles.menuItem} activeOpacity={0.7}>
               <View style={[styles.menuIcon, { backgroundColor: item.bg }]}>
@@ -60,7 +60,7 @@ const SettingScreen = () => {
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-          <Ionicons name="log-out-outline" size={22} color="#EF4444" />
+          <Ionicons name="log-out-outline" size={22} color={COLORS.error} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>

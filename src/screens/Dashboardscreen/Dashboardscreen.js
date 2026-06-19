@@ -17,12 +17,12 @@ const DashboardScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.navy} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Dashboard</Text>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={18} color={COLORS.white} />
+            <Ionicons name="log-out-outline" size={18} color={COLORS.textPrimary} />
           </TouchableOpacity>
         </View>
 
@@ -30,7 +30,7 @@ const DashboardScreen = () => {
           <View style={styles.welcomeCard}>
             <View style={styles.welcomeIconRow}>
               <View style={styles.welcomeIcon}>
-                <Ionicons name="checkmark-circle" size={32} color="#2E7D32" />
+                <Ionicons name="checkmark-circle" size={32} color={COLORS.success} />
               </View>
             </View>
             <Text style={styles.welcomeTitle}>Welcome!</Text>

@@ -264,12 +264,12 @@ export default function SignInInternalScreen({ navigation }) {
 
   // ── Derived status ──────────────────────────────────────────────────
   const statusText  = signedOut ? 'Signed Out' : onBreak ? 'On Break' : signedIn ? 'Working' : 'Not Started';
-  const statusColor = signedOut ? COLORS.navy  : onBreak ? '#E65100' : signedIn ? COLORS.success : '#B9915E';
-  const statusBg    = signedOut ? '#E8EEFF'    : onBreak ? '#FFF3E0' : signedIn ? '#E8F5E9'      : '#FFF8E1';
+  const statusColor = signedOut ? COLORS.navy  : onBreak ? COLORS.warning : signedIn ? COLORS.success : COLORS.gold;
+  const statusBg    = signedOut ? COLORS.linkBg    : onBreak ? COLORS.warningBg : signedIn ? COLORS.successBg      : COLORS.warningBg;
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -287,8 +287,8 @@ export default function SignInInternalScreen({ navigation }) {
         {/* ── Stat cards ── */}
         <View style={s.statsRow}>
           <View style={s.statCard}>
-            <View style={[s.statIcon, { backgroundColor: '#E8EEFF' }]}>
-              <Ionicons name="time-outline" size={20} color="#3D5AFE" />
+            <View style={[s.statIcon, { backgroundColor: COLORS.linkBg }]}>
+              <Ionicons name="time-outline" size={20} color={COLORS.link} />
             </View>
             <Text style={s.statLabel}>WORK HOURS</Text>
             <Text style={s.statValue}>{workHours()}</Text>
@@ -312,8 +312,8 @@ export default function SignInInternalScreen({ navigation }) {
           </View>
 
           <View style={s.statCard}>
-            <View style={[s.statIcon, { backgroundColor: '#FFF8E1' }]}>
-              <Ionicons name="calendar-outline" size={20} color="#F9A825" />
+            <View style={[s.statIcon, { backgroundColor: COLORS.warningBg }]}>
+              <Ionicons name="calendar-outline" size={20} color={COLORS.warningAlt} />
             </View>
             <Text style={s.statLabel}>TODAY</Text>
             <Text style={[s.statValue, { fontSize: 12 }]}>
@@ -349,7 +349,7 @@ export default function SignInInternalScreen({ navigation }) {
               <Circle
                 center={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }}
                 radius={OFFICE.radius}
-                strokeColor={inGeofence ? '#2E7D32' : '#EF4444'}
+                strokeColor={inGeofence ? COLORS.success : COLORS.error}
                 strokeWidth={3}
                 fillColor={inGeofence ? 'rgba(46,125,50,0.22)' : 'rgba(239,68,68,0.18)'}
               />
@@ -385,16 +385,16 @@ export default function SignInInternalScreen({ navigation }) {
         <View style={s.card}>
           <View style={s.timeRow}>
             {/* In Time */}
-            <View style={[s.timeChip, { backgroundColor: '#E8F5E9' }]}>
-              <View style={[s.timeChipIcon, { backgroundColor: '#C8E6C9' }]}>
+            <View style={[s.timeChip, { backgroundColor: COLORS.successBg }]}>
+              <View style={[s.timeChipIcon, { backgroundColor: COLORS.shadow }]}>
                 <Ionicons name="log-in-outline" size={16} color={COLORS.success} />
               </View>
               <Text style={[s.timeChipLabel, { color: COLORS.success }]}>IN TIME</Text>
               <Text style={s.timeChipValue}>{fmt12h(inTime)}</Text>
             </View>
             {/* Out Time */}
-            <View style={[s.timeChip, { backgroundColor: '#FEF2F2' }]}>
-              <View style={[s.timeChipIcon, { backgroundColor: '#FECACA' }]}>
+            <View style={[s.timeChip, { backgroundColor: COLORS.screenBg }]}>
+              <View style={[s.timeChipIcon, { backgroundColor: COLORS.errorBg }]}>
                 <Ionicons name="log-out-outline" size={16} color={COLORS.error} />
               </View>
               <Text style={[s.timeChipLabel, { color: COLORS.error }]}>OUT TIME</Text>
@@ -405,8 +405,8 @@ export default function SignInInternalScreen({ navigation }) {
           <View style={s.divider} />
 
           <View style={s.fieldRow}>
-            <View style={[s.fieldIcon, { backgroundColor: '#FFF8E1' }]}>
-              <Ionicons name="calendar-outline" size={16} color="#F9A825" />
+            <View style={[s.fieldIcon, { backgroundColor: COLORS.warningBg }]}>
+              <Ionicons name="calendar-outline" size={16} color={COLORS.warningAlt} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.fieldRowLabel}>Date</Text>
@@ -419,8 +419,8 @@ export default function SignInInternalScreen({ navigation }) {
           <View style={s.divider} />
 
           <View style={s.fieldRow}>
-            <View style={[s.fieldIcon, { backgroundColor: '#E8EEFF' }]}>
-              <Ionicons name="chatbubble-ellipses-outline" size={16} color="#3D5AFE" />
+            <View style={[s.fieldIcon, { backgroundColor: COLORS.linkBg }]}>
+              <Ionicons name="chatbubble-ellipses-outline" size={16} color={COLORS.link} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.fieldRowLabel}>Remarks</Text>
@@ -448,10 +448,10 @@ export default function SignInInternalScreen({ navigation }) {
               activeOpacity={0.85}
             >
               {submitting ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={COLORS.white} />
               ) : (
                 <>
-                  <Ionicons name="log-in-outline" size={22} color="#fff" />
+                  <Ionicons name="log-in-outline" size={22} color={COLORS.white} />
                   <Text style={s.primaryBtnText}>
                     {locLoading ? 'Locating...' : !inGeofence ? 'Outside Zone' : 'Sign In'}
                   </Text>
@@ -469,7 +469,7 @@ export default function SignInInternalScreen({ navigation }) {
                 disabled={submitting}
                 activeOpacity={0.85}
               >
-                <Ionicons name="pause-circle-outline" size={22} color="#fff" />
+                <Ionicons name="pause-circle-outline" size={22} color={COLORS.white} />
                 <Text style={s.actionBtnText}>Check Out</Text>
                 <Text style={s.actionBtnSub}>Break</Text>
               </TouchableOpacity>
@@ -481,10 +481,10 @@ export default function SignInInternalScreen({ navigation }) {
                 activeOpacity={0.85}
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={COLORS.white} />
                 ) : (
                   <>
-                    <Ionicons name="exit-outline" size={22} color="#AFD2FA" />
+                    <Ionicons name="exit-outline" size={22} color={COLORS.powderBlue} />
                     <Text style={s.actionBtnText}>Sign Out</Text>
                     <Text style={s.actionBtnSub}>End Day</Text>
                   </>
@@ -497,7 +497,7 @@ export default function SignInInternalScreen({ navigation }) {
           {signedIn && onBreak && (
             <View style={s.breakBanner}>
               <View style={s.breakBannerLeft}>
-                <Ionicons name="pause-circle" size={28} color="#E65100" />
+                <Ionicons name="pause-circle" size={28} color={COLORS.warning} />
                 <View>
                   <Text style={s.breakBannerTitle}>On Break</Text>
                   <Text style={s.breakBannerSub}>Timer is paused</Text>
@@ -508,7 +508,7 @@ export default function SignInInternalScreen({ navigation }) {
                 onPress={handleBreakIn}
                 activeOpacity={0.85}
               >
-                <Ionicons name="play-circle-outline" size={20} color="#fff" />
+                <Ionicons name="play-circle-outline" size={20} color={COLORS.white} />
                 <Text style={s.resumeBtnText}>Check In</Text>
               </TouchableOpacity>
             </View>
@@ -535,8 +535,8 @@ export default function SignInInternalScreen({ navigation }) {
           <View style={s.modalSheet}>
             <View style={s.modalHeader}>
               <View style={s.modalHeaderLeft}>
-                <View style={[s.statIcon, { backgroundColor: '#E8EEFF', marginRight: 10 }]}>
-                  <Ionicons name="create-outline" size={18} color="#3D5AFE" />
+                <View style={[s.statIcon, { backgroundColor: COLORS.linkBg, marginRight: 10 }]}>
+                  <Ionicons name="create-outline" size={18} color={COLORS.link} />
                 </View>
                 <View>
                   <Text style={s.modalTitle}>Modify Attendance</Text>
@@ -552,8 +552,8 @@ export default function SignInInternalScreen({ navigation }) {
 
             <Text style={s.modFieldLabel}>DATE</Text>
             <TouchableOpacity style={s.modFieldRow} onPress={() => setPickerShowing('date')} activeOpacity={0.8}>
-              <View style={[s.fieldIcon, { backgroundColor: '#FFF8E1' }]}>
-                <Ionicons name="calendar-outline" size={16} color="#F9A825" />
+              <View style={[s.fieldIcon, { backgroundColor: COLORS.warningBg }]}>
+                <Ionicons name="calendar-outline" size={16} color={COLORS.warningAlt} />
               </View>
               <Text style={s.modFieldValue}>
                 {modDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -563,7 +563,7 @@ export default function SignInInternalScreen({ navigation }) {
 
             <Text style={s.modFieldLabel}>IN TIME</Text>
             <TouchableOpacity style={s.modFieldRow} onPress={() => setPickerShowing('in')} activeOpacity={0.8}>
-              <View style={[s.fieldIcon, { backgroundColor: '#E8F5E9' }]}>
+              <View style={[s.fieldIcon, { backgroundColor: COLORS.successBg }]}>
                 <Ionicons name="log-in-outline" size={16} color={COLORS.success} />
               </View>
               <Text style={s.modFieldValue}>{fmtHHMM(modInTime)}</Text>
@@ -572,7 +572,7 @@ export default function SignInInternalScreen({ navigation }) {
 
             <Text style={s.modFieldLabel}>OUT TIME</Text>
             <TouchableOpacity style={s.modFieldRow} onPress={() => setPickerShowing('out')} activeOpacity={0.8}>
-              <View style={[s.fieldIcon, { backgroundColor: '#FEF2F2' }]}>
+              <View style={[s.fieldIcon, { backgroundColor: COLORS.screenBg }]}>
                 <Ionicons name="log-out-outline" size={16} color={COLORS.error} />
               </View>
               <Text style={s.modFieldValue}>{fmtHHMM(modOutTime)}</Text>
@@ -585,7 +585,7 @@ export default function SignInInternalScreen({ navigation }) {
               disabled={modifying}
               activeOpacity={0.85}
             >
-              {modifying ? <ActivityIndicator size="small" color="#fff" /> : <Text style={s.saveBtnText}>Save Changes</Text>}
+              {modifying ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={s.saveBtnText}>Save Changes</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -608,89 +608,89 @@ export default function SignInInternalScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  screen:        { flex: 1, backgroundColor: '#F5F6FA' },
+  screen:        { flex: 1, backgroundColor: COLORS.screenBg },
   scrollContent: { paddingBottom: 40 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#EEF1F7' },
-  iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#1A1A2E' },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
   sectionLabel:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginTop: 20, marginBottom: 8 },
-  sectionLabelText: { fontSize: 11, fontWeight: '700', color: '#8492A6', letterSpacing: 0.8 },
+  sectionLabelText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8 },
 
   statsRow:  { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 16 },
-  statCard:  { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 12, alignItems: 'center', elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  statCard:  { flex: 1, backgroundColor: COLORS.white, borderRadius: 14, padding: 12, alignItems: 'center', elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
   statIcon:  { width: 38, height: 38, borderRadius: 11, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-  statLabel: { fontSize: 9, fontWeight: '700', color: '#8492A6', letterSpacing: 0.6, marginBottom: 4 },
-  statValue: { fontSize: 16, fontWeight: '800', color: '#1A1A2E', textAlign: 'center' },
+  statLabel: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 4 },
+  statValue: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
 
-  mapCard:       { marginHorizontal: 16, borderRadius: 14, overflow: 'hidden', backgroundColor: '#fff', elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  mapCard:       { marginHorizontal: 16, borderRadius: 14, overflow: 'hidden', backgroundColor: COLORS.white, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
   map:           { width: '100%', height: 210 },
-  mapLoader:     { height: 210, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: '#F5F6FA' },
-  mapLoaderText: { fontSize: 13, color: '#8492A6' },
+  mapLoader:     { height: 210, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: COLORS.screenBg },
+  mapLoaderText: { fontSize: 13, color: COLORS.textSecondary },
   geofenceBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, gap: 8, flexWrap: 'wrap' },
-  geofenceDot:   { width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' },
-  userDot:       { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(66,133,244,0.25)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#fff' },
-  userDotInner:  { width: 11, height: 11, borderRadius: 6, backgroundColor: '#4285F4' },
-  geofenceBadgeText: { color: '#fff', fontWeight: '700', fontSize: 12, flex: 1 },
+  geofenceDot:   { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.white },
+  userDot:       { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(66,133,244,0.25)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: COLORS.white },
+  userDotInner:  { width: 11, height: 11, borderRadius: 6, backgroundColor: COLORS.link },
+  geofenceBadgeText: { color: COLORS.white, fontWeight: '700', fontSize: 12, flex: 1 },
   geofenceCoords:    { color: 'rgba(255,255,255,0.75)', fontSize: 10 },
 
-  card:    { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 14, padding: 16, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
-  divider: { height: 1, backgroundColor: '#EEF1F7', marginVertical: 12 },
+  card:    { marginHorizontal: 16, backgroundColor: COLORS.white, borderRadius: 14, padding: 16, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  divider: { height: 1, backgroundColor: COLORS.surfaceAlt, marginVertical: 12 },
 
   timeRow:       { flexDirection: 'row', gap: 10, marginBottom: 4 },
   timeChip:      { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
   timeChipIcon:  { width: 30, height: 30, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
   timeChipLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, marginBottom: 4 },
-  timeChipValue: { fontSize: 13, fontWeight: '800', color: '#1A1A2E' },
+  timeChipValue: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
 
   fieldRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   fieldIcon:     { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
-  fieldRowLabel: { fontSize: 11, fontWeight: '600', color: '#8492A6', marginBottom: 3 },
-  fieldRowValue: { fontSize: 14, fontWeight: '600', color: '#1A1A2E' },
-  remarksInput:  { fontSize: 14, color: '#1A1A2E', paddingTop: 0, minHeight: 36 },
+  fieldRowLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 3 },
+  fieldRowValue: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  remarksInput:  { fontSize: 14, color: COLORS.textPrimary, paddingTop: 0, minHeight: 36 },
 
   // ── Button section ──
   btnSection: { marginHorizontal: 16, marginTop: 20 },
 
   // Sign In — full width
   primaryBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 14, paddingVertical: 17, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
-  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  signInBtn:      { backgroundColor: '#2E7D32', shadowColor: '#2E7D32' },
+  primaryBtnText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
+  signInBtn:      { backgroundColor: COLORS.success, shadowColor: COLORS.success },
 
   // Sign Out + Check Out — side by side
   actionRow:     { flexDirection: 'row', gap: 12 },
   actionBtn:     { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 16, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
-  breakBtn:      { backgroundColor: '#E65100', shadowColor: '#E65100' },
+  breakBtn:      { backgroundColor: COLORS.warning, shadowColor: COLORS.warning },
   signOutBtn:    { backgroundColor: COLORS.navy, shadowColor: COLORS.navy },
-  actionBtnText: { color: '#fff', fontSize: 14, fontWeight: '700', marginTop: 4 },
+  actionBtnText: { color: COLORS.white, fontSize: 14, fontWeight: '700', marginTop: 4 },
   actionBtnSub:  { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '500', marginTop: 2 },
 
   btnDisabled: { opacity: 0.40 },
 
   // Break banner
-  breakBanner:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF3E0', borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: '#FFB74D' },
+  breakBanner:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.warningBg, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: COLORS.warningAlt },
   breakBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  breakBannerTitle:{ fontSize: 15, fontWeight: '700', color: '#E65100' },
-  breakBannerSub:  { fontSize: 12, color: '#8492A6', marginTop: 2 },
-  resumeBtn:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#2E7D32', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  resumeBtnText:   { color: '#fff', fontSize: 13, fontWeight: '700' },
+  breakBannerTitle:{ fontSize: 15, fontWeight: '700', color: COLORS.warning },
+  breakBannerSub:  { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  resumeBtn:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.success, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  resumeBtnText:   { color: COLORS.white, fontSize: 13, fontWeight: '700' },
 
   // Day complete banner
-  completedBanner: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#E8F5E9', borderRadius: 14, padding: 18, borderWidth: 1.5, borderColor: '#A5D6A7' },
-  completedTitle:  { fontSize: 15, fontWeight: '700', color: '#2E7D32' },
-  completedSub:    { fontSize: 12, color: '#8492A6', marginTop: 2 },
+  completedBanner: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.successBg, borderRadius: 14, padding: 18, borderWidth: 1.5, borderColor: COLORS.textTertiary },
+  completedTitle:  { fontSize: 15, fontWeight: '700', color: COLORS.success },
+  completedSub:    { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 
   // Modify Modal
   modalOverlay:    { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.40)' },
-  modalSheet:      { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalSheet:      { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHeader:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   modalHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  modalTitle:      { fontSize: 16, fontWeight: '700', color: '#1A1A2E' },
-  modalSubtitle:   { fontSize: 12, color: '#8492A6', marginTop: 2 },
-  modFieldLabel:   { fontSize: 11, fontWeight: '700', color: '#8492A6', letterSpacing: 0.6, marginBottom: 6, marginTop: 14 },
-  modFieldRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F5F6FA', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
-  modFieldValue:   { flex: 1, fontSize: 15, fontWeight: '600', color: '#1A1A2E' },
+  modalTitle:      { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  modalSubtitle:   { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  modFieldLabel:   { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 6, marginTop: 14 },
+  modFieldRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.screenBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  modFieldValue:   { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
   saveBtn:         { marginTop: 24, backgroundColor: COLORS.navy, borderRadius: 14, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
-  saveBtnText:     { color: '#fff', fontSize: 15, fontWeight: '700' },
+  saveBtnText:     { color: COLORS.white, fontSize: 15, fontWeight: '700' },
 });

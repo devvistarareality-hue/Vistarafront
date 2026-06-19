@@ -32,13 +32,13 @@ function PerformanceTable({ title, data = [], columns }) {
   if (!data.length) return null;
   return (
     <View style={[CARD, { marginBottom: 16, overflow: 'hidden' }]}>
-      <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF' }}>
+      <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
         <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>{title}</Text>
       </View>
       {data.map((row, i) => (
-        <View key={i} style={{ flexDirection: 'row', padding: 12, borderBottomWidth: i < data.length - 1 ? 1 : 0, borderBottomColor: '#F0F3FA', alignItems: 'center' }}>
+        <View key={i} style={{ flexDirection: 'row', padding: 12, borderBottomWidth: i < data.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt, alignItems: 'center' }}>
           <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
-            <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>{i + 1}</Text>
+            <Text style={{ color: COLORS.white, fontSize: 11, fontWeight: '800' }}>{i + 1}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{row.name}</Text>
@@ -51,8 +51,8 @@ function PerformanceTable({ title, data = [], columns }) {
             </View>
           </View>
           {row.conversion_pct !== undefined && (
-            <View style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: '#E8F5E9' }}>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: '#2E7D32' }}>{row.conversion_pct}%</Text>
+            <View style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: COLORS.successBg }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.success }}>{row.conversion_pct}%</Text>
             </View>
           )}
         </View>
@@ -82,10 +82,10 @@ export default function SalesReportsScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Reports</Text>
-        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: '#E0E6F0', borderRadius: 8 }}>
+        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
       </View>
@@ -99,9 +99,9 @@ export default function SalesReportsScreen({ navigation }) {
           {/* Summary */}
           <SectionTitle title="Summary" />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-            <StatCard label="Site Visits"  value={data?.total_site_visits}  color="#3D5AFE" />
-            <StatCard label="Closures"     value={data?.total_closures}     color="#2E7D32" />
-            <StatCard label="Meta Leads"   value={data?.meta_leads}         color="#E65100" />
+            <StatCard label="Site Visits"  value={data?.total_site_visits}  color={COLORS.link} />
+            <StatCard label="Closures"     value={data?.total_closures}     color={COLORS.success} />
+            <StatCard label="Meta Leads"   value={data?.meta_leads}         color={COLORS.warning} />
           </View>
 
           {/* Campaign performance */}
@@ -111,8 +111,8 @@ export default function SalesReportsScreen({ navigation }) {
             data={data?.campaign_performance || []}
             columns={[
               { key: 'total_leads',  label: 'Leads',      color: BLUE },
-              { key: 'site_visits',  label: 'SV',         color: '#0097A7' },
-              { key: 'closed',       label: 'Closed',     color: '#2E7D32' },
+              { key: 'site_visits',  label: 'SV',         color: COLORS.info },
+              { key: 'closed',       label: 'Closed',     color: COLORS.success },
             ]}
           />
 
@@ -123,8 +123,8 @@ export default function SalesReportsScreen({ navigation }) {
             data={data?.telecaller_performance || []}
             columns={[
               { key: 'total_leads',    label: 'Leads',     color: BLUE },
-              { key: 'warm_leads',     label: 'Warm',      color: '#F9A825' },
-              { key: 'transferred',    label: 'Transferred', color: '#E65100' },
+              { key: 'warm_leads',     label: 'Warm',      color: COLORS.warningAlt },
+              { key: 'transferred',    label: 'Transferred', color: COLORS.warning },
             ]}
           />
 
@@ -135,9 +135,9 @@ export default function SalesReportsScreen({ navigation }) {
             data={data?.stm_performance || []}
             columns={[
               { key: 'total_leads',  label: 'Leads',     color: BLUE },
-              { key: 'hot_leads',    label: 'Hot',        color: '#E65100' },
-              { key: 'sv_done',      label: 'SV Done',    color: '#0097A7' },
-              { key: 'closed',       label: 'Closed',     color: '#2E7D32' },
+              { key: 'hot_leads',    label: 'Hot',        color: COLORS.warning },
+              { key: 'sv_done',      label: 'SV Done',    color: COLORS.info },
+              { key: 'closed',       label: 'Closed',     color: COLORS.success },
             ]}
           />
 
@@ -146,7 +146,7 @@ export default function SalesReportsScreen({ navigation }) {
             <SectionTitle title="Recent Closures" />
             <View style={[CARD, { marginBottom: 16, overflow: 'hidden' }]}>
               {data.recent_closures.map((c, i) => (
-                <View key={i} style={{ padding: 14, borderBottomWidth: i < data.recent_closures.length - 1 ? 1 : 0, borderBottomColor: '#F0F3FA' }}>
+                <View key={i} style={{ padding: 14, borderBottomWidth: i < data.recent_closures.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{c.lead_name}</Text>
@@ -155,7 +155,7 @@ export default function SalesReportsScreen({ navigation }) {
                       </Text>
                     </View>
                     {c.booking_amount ? (
-                      <Text style={{ fontSize: 13, fontWeight: '800', color: '#2E7D32' }}>₹{c.booking_amount}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.success }}>₹{c.booking_amount}</Text>
                     ) : null}
                   </View>
                   <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : ''}</Text>

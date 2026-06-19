@@ -17,16 +17,16 @@ const ROLES = ['All', 'Admin', 'Sales', 'HR', 'Exec'];
 
 const ROLE_AVATAR_COLOR = {
   Admin:       COLORS.navy,
-  Sales:       '#F9A825',
+  Sales:       COLORS.warningAlt,
   HR:          COLORS.link,
-  Exec:        '#7B1FA2',
+  Exec:        COLORS.purple,
 };
 
 const ROLE_BADGE_STYLE = {
-  Admin:  { bg: '#E8EEFF', text: COLORS.navy },
-  Sales:  { bg: '#FFF8E1', text: '#F9A825' },
-  HR:     { bg: '#EEF0FF', text: COLORS.link },
-  Exec:   { bg: '#F3E5F5', text: '#7B1FA2' },
+  Admin:  { bg: COLORS.linkBg, text: COLORS.navy },
+  Sales:  { bg: COLORS.warningBg, text: COLORS.warningAlt },
+  HR:     { bg: COLORS.linkBg, text: COLORS.link },
+  Exec:   { bg: COLORS.purpleBg, text: COLORS.purple },
 };
 
 export default function UserManagementScreen({ navigation }) {
@@ -84,14 +84,14 @@ export default function UserManagementScreen({ navigation }) {
           style={[s.iconBtn, { backgroundColor: COLORS.navy }]}
           onPress={() => navigation.navigate('CreateUser')}
         >
-          <Ionicons name="add" size={20} color="#fff" />
+          <Ionicons name="add" size={20} color={COLORS.white} />
         </TouchableOpacity>
       </View>
 
       {/* Stats strip */}
       <View style={s.statsStrip}>
-        <View style={s.statItem}><View style={[s.statDot, { backgroundColor: '#2E7D32' }]} /><Text style={s.statText}>{activeCount} Active</Text></View>
-        <View style={s.statItem}><View style={[s.statDot, { backgroundColor: '#EF4444' }]} /><Text style={s.statText}>{inactiveCount} Inactive</Text></View>
+        <View style={s.statItem}><View style={[s.statDot, { backgroundColor: COLORS.success }]} /><Text style={s.statText}>{activeCount} Active</Text></View>
+        <View style={s.statItem}><View style={[s.statDot, { backgroundColor: COLORS.error }]} /><Text style={s.statText}>{inactiveCount} Inactive</Text></View>
       </View>
 
       {/* Search */}
@@ -123,18 +123,18 @@ export default function UserManagementScreen({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.navy]} tintColor={COLORS.navy} />}
           renderItem={({ item }) => (
             <View style={s.card}>
-              <View style={[s.avatar, { backgroundColor: ROLE_AVATAR_COLOR[item.role] || '#8492A6' }]}>
+              <View style={[s.avatar, { backgroundColor: ROLE_AVATAR_COLOR[item.role] || COLORS.textSecondary }]}>
                 <Text style={s.avatarText}>{(item.name?.[0] || '?').toUpperCase()}</Text>
               </View>
               <View style={s.cardBody}>
                 <Text style={s.userName}>{item.name}</Text>
                 <Text style={s.userMeta}>{item.email || item.phone || '—'}</Text>
                 <View style={s.badgeRow}>
-                  <View style={[s.badge, { backgroundColor: (ROLE_BADGE_STYLE[item.role] || {}).bg || '#F5F6FA' }]}>
+                  <View style={[s.badge, { backgroundColor: (ROLE_BADGE_STYLE[item.role] || {}).bg || COLORS.screenBg }]}>
                     <Text style={[s.badgeText, { color: (ROLE_BADGE_STYLE[item.role] || {}).text || COLORS.textSecondary }]}>{item.role}</Text>
                   </View>
-                  <View style={[s.statusBadge, { backgroundColor: item.is_active ? '#E8F5E9' : '#FEE2E2' }]}>
-                    <Text style={[s.statusText, { color: item.is_active ? '#2E7D32' : '#EF4444' }]}>{item.is_active ? 'Active' : 'Inactive'}</Text>
+                  <View style={[s.statusBadge, { backgroundColor: item.is_active ? COLORS.successBg : COLORS.errorBg }]}>
+                    <Text style={[s.statusText, { color: item.is_active ? COLORS.success : COLORS.error }]}>{item.is_active ? 'Active' : 'Inactive'}</Text>
                   </View>
                 </View>
               </View>
@@ -143,10 +143,10 @@ export default function UserManagementScreen({ navigation }) {
                   <Ionicons name="pencil" size={16} color={COLORS.link} />
                 </TouchableOpacity>
                 <TouchableOpacity style={s.toggleBtn} onPress={() => handleToggle(item)}>
-                  <Ionicons name={item.is_active ? 'pause-circle' : 'checkmark-circle'} size={20} color={item.is_active ? '#E65100' : '#2E7D32'} />
+                  <Ionicons name={item.is_active ? 'pause-circle' : 'checkmark-circle'} size={20} color={item.is_active ? COLORS.warning : COLORS.success} />
                 </TouchableOpacity>
                 <TouchableOpacity style={s.deleteBtn} onPress={() => handleDelete(item)}>
-                  <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                  <Ionicons name="trash-outline" size={16} color={COLORS.error} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -163,11 +163,11 @@ export default function UserManagementScreen({ navigation }) {
 const s = StyleSheet.create({
   screen:      { flex: 1, backgroundColor: COLORS.screenBg },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' },
-  iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
-  statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.screenBg },
   statItem:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statDot:     { width: 7, height: 7, borderRadius: 4 },
   statText:    { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
@@ -177,14 +177,14 @@ const s = StyleSheet.create({
 
   tabsWrapper:  { height: 44, marginTop: 14 },
   tabsRow:      { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  tab:          { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: '#DDE3F0' },
+  tab:          { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
   tabActive:    { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
   tabText:      { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
-  tabTextActive:{ color: '#fff', fontWeight: '700' },
+  tabTextActive:{ color: COLORS.white, fontWeight: '700' },
 
   card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginTop: 10, ...CARD_SHADOW },
   avatar:      { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarText:  { fontSize: 18, fontWeight: '700', color: '#fff' },
+  avatarText:  { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardBody:    { flex: 1 },
   userName:    { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 2 },
   userMeta:    { fontSize: 12, color: COLORS.textSecondary, marginBottom: 6 },
@@ -195,7 +195,7 @@ const s = StyleSheet.create({
   statusText:  { fontSize: 10, fontWeight: '700' },
 
   actions:     { flexDirection: 'column', gap: 6, marginLeft: 8 },
-  editBtn:     { padding: 6, borderRadius: 8, backgroundColor: '#EEF1FF' },
+  editBtn:     { padding: 6, borderRadius: 8, backgroundColor: COLORS.linkBg },
   toggleBtn:   { padding: 2 },
-  deleteBtn:   { padding: 6, borderRadius: 8, backgroundColor: '#FEF2F2' },
+  deleteBtn:   { padding: 6, borderRadius: 8, backgroundColor: COLORS.screenBg },
 });

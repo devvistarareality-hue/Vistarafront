@@ -17,7 +17,7 @@ function ModuleDropdown({ value, onChange }) {
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)} activeOpacity={0.85}
-        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: meta.color || '#E0E6F0', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: meta.bg || '#F5F6FA', marginBottom: 16 }}>
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: meta.color || COLORS.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: meta.bg || COLORS.screenBg, marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <MaterialCommunityIcons name={meta.icon} size={18} color={meta.color} />
           <Text style={{ fontSize: 14, fontWeight: '700', color: meta.color }}>{value}</Text>
@@ -26,18 +26,18 @@ function ModuleDropdown({ value, onChange }) {
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E6F0', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A2E', paddingHorizontal: 16, paddingVertical: 12 }}>Select Module</Text>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>Select Module</Text>
             {ALL_MODULES.map(m => {
               const mt = MODULE_META[m];
               return (
                 <TouchableOpacity key={m} onPress={() => { onChange(m); setOpen(false); }}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6FA' }}>
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.screenBg }}>
                   <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: mt.bg, justifyContent: 'center', alignItems: 'center' }}>
                     <MaterialCommunityIcons name={mt.icon} size={18} color={mt.color} />
                   </View>
-                  <Text style={{ flex: 1, fontSize: 14, color: m === value ? COLORS.secondary : '#1A1A2E', fontWeight: m === value ? '700' : '400' }}>{m}</Text>
+                  <Text style={{ flex: 1, fontSize: 14, color: m === value ? COLORS.secondary : COLORS.textPrimary, fontWeight: m === value ? '700' : '400' }}>{m}</Text>
                   {m === value && <Ionicons name="checkmark" size={18} color={COLORS.secondary} />}
                 </TouchableOpacity>
               );
@@ -50,11 +50,11 @@ function ModuleDropdown({ value, onChange }) {
 }
 
 const MODULE_META = {
-  Sales:       { color: '#E6960A', bg: '#FFF8E1', icon: 'pencil-outline' },
-  HR:          { color: '#3D5AFE', bg: '#EEF0FF', icon: 'account-group-outline' },
-  Execution:   { color: '#2E7D32', bg: '#E8F5E9', icon: 'wrench-outline' },
-  Purchase:    { color: '#E65100', bg: '#FFF3E0', icon: 'cart-outline' },
-  Land:        { color: '#6A1B9A', bg: '#F3E5F5', icon: 'terrain' },
+  Sales:       { color: COLORS.warningAlt, bg: COLORS.warningBg, icon: 'pencil-outline' },
+  HR:          { color: COLORS.link, bg: COLORS.linkBg, icon: 'account-group-outline' },
+  Execution:   { color: COLORS.success, bg: COLORS.successBg, icon: 'wrench-outline' },
+  Purchase:    { color: COLORS.warning, bg: COLORS.warningBg, icon: 'cart-outline' },
+  Land:        { color: COLORS.purple, bg: COLORS.purpleBg, icon: 'terrain' },
 };
 
 export default function DesignationMasterScreen({ navigation }) {
@@ -139,9 +139,9 @@ export default function DesignationMasterScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Add form */}
         <View style={[s.card, { padding: 0, overflow: 'hidden' }]}>
-          <View style={{ backgroundColor: COLORS.navy, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16 }}>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: '#fff' }}>Add New Designation</Text>
-            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>Define designations for each module</Text>
+          <View style={{ backgroundColor: COLORS.surfaceAlt, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.textPrimary }}>Add New Designation</Text>
+            <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 2 }}>Define designations for each module</Text>
           </View>
           <View style={{ padding: 18 }}>
 
@@ -164,7 +164,7 @@ export default function DesignationMasterScreen({ navigation }) {
               disabled={saving}
             >
               {saving
-                ? <ActivityIndicator color="#fff" size="small" />
+                ? <ActivityIndicator color={COLORS.white} size="small" />
                 : <Text style={s.addBtnText}>Add</Text>}
             </TouchableOpacity>
           </View>
@@ -218,29 +218,29 @@ export default function DesignationMasterScreen({ navigation }) {
 
 const s = StyleSheet.create({
   screen:      { flex: 1, backgroundColor: COLORS.screenBg },
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: '#EEF1F7' },
-  iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
   card:        { backgroundColor: COLORS.cardBg, margin: 16, borderRadius: 16, padding: 18, ...CARD_SHADOW },
   cardTitle:   { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 14 },
   sectionLabel:{ fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 10 },
   pillRow:     { gap: 8, paddingBottom: 4 },
-  modPill:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#F0F3FA', borderWidth: 1.5, borderColor: '#DDE3F0' },
+  modPill:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.divider },
   modPillText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   inputRow:    { flexDirection: 'row', gap: 10 },
-  input:       { flex: 1, backgroundColor: '#F5F6FA', borderRadius: 10, borderWidth: 1.5, borderColor: '#E0E6F0', paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textPrimary },
+  input:       { flex: 1, backgroundColor: COLORS.screenBg, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textPrimary },
   addBtn:      { backgroundColor: COLORS.navy, paddingHorizontal: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  addBtnText:  { color: '#fff', fontWeight: '700', fontSize: 14 },
+  addBtnText:  { color: COLORS.white, fontWeight: '700', fontSize: 14 },
 
   groupsWrap:  { paddingHorizontal: 16, gap: 12 },
-  groupCard:   { backgroundColor: '#fff', borderRadius: 14, padding: 16, elevation: 1, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6 },
+  groupCard:   { backgroundColor: COLORS.white, borderRadius: 14, padding: 16, elevation: 1, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6 },
   groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   groupDot:    { width: 7, height: 7, borderRadius: 4 },
   groupName:   { flex: 1, fontSize: 13, fontWeight: '700' },
-  countBadge:  { backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
-  countText:   { fontSize: 11, fontWeight: '600', color: '#9CA3AF' },
-  emptyHint:   { fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' },
+  countBadge:  { backgroundColor: COLORS.screenBg, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  countText:   { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
+  emptyHint:   { fontSize: 12, color: COLORS.textSecondary, fontStyle: 'italic' },
   chipWrap:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip:        { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
   chipText:    { fontSize: 13, fontWeight: '600' },

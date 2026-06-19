@@ -7,15 +7,15 @@ export default StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
     paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: COLORS.surfaceAlt,
     justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: COLORS.white },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
   headerRight: { width: 36 },
 
   comingSoonCard: {
@@ -26,7 +26,7 @@ export default StyleSheet.create({
   },
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: COLORS.warningBg,
     justifyContent: 'center', alignItems: 'center', marginBottom: 20,
   },
   comingSoonTitle: {

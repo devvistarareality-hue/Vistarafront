@@ -15,7 +15,7 @@ const ProjectsScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Projects</Text>
           <View style={styles.headerRight} />
@@ -23,7 +23,7 @@ const ProjectsScreen = () => {
 
         <View style={styles.comingSoonCard}>
           <View style={styles.iconCircle}>
-            <Ionicons name="folder-open-outline" size={40} color="#2E7D32" />
+            <Ionicons name="folder-open-outline" size={40} color={COLORS.success} />
           </View>
           <Text style={styles.comingSoonTitle}>Coming Soon</Text>
           <Text style={styles.comingSoonSub}>Projects module is under development</Text>

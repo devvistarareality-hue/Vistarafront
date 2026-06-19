@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { COLORS } from '../../../../constants/theme';
 import {
   View,
   Text,
@@ -70,7 +71,7 @@ const LeaveCard = ({ item, onPress }) => (
           {item.status}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#D0D5DD" />
+      <Ionicons name="chevron-forward" size={18} color={COLORS.divider} />
     </View>
   </TouchableOpacity>
 );
@@ -148,7 +149,7 @@ const HistoryScreen = () => {
     if (!historyLoadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#1E4080" />
+        <ActivityIndicator size="small" color={COLORS.navyMedium} />
       </View>
     );
   };
@@ -156,7 +157,7 @@ const HistoryScreen = () => {
   if (historyLoading && historyData.length === 0) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1E4080" />
+        <ActivityIndicator size="large" color={COLORS.navyMedium} />
       </View>
     );
   }

@@ -15,7 +15,7 @@ const ClientScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Clients</Text>
           <View style={styles.headerRight} />
@@ -23,7 +23,7 @@ const ClientScreen = () => {
 
         <View style={styles.comingSoonCard}>
           <View style={styles.iconCircle}>
-            <Ionicons name="people-outline" size={40} color="#3D5AFE" />
+            <Ionicons name="people-outline" size={40} color={COLORS.link} />
           </View>
           <Text style={styles.comingSoonTitle}>Coming Soon</Text>
           <Text style={styles.comingSoonSub}>Clients module is under development</Text>

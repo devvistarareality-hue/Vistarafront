@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   statusLabel: {
-    color: '#AFD2FA',
+    color: COLORS.powderBlue,
     fontSize: 11,
     letterSpacing: 0.5,
     fontWeight: '700',
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   },
   timeBox: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: COLORS.surfaceAlt,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
@@ -131,13 +131,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: COLORS.surfaceAlt,
     marginVertical: 14,
   },
 
   remarksInput: {
     borderBottomWidth: 1,
-    borderBottomColor: '#E4E9F2',
+    borderBottomColor: COLORS.border,
     paddingVertical: 8,
     fontSize: 14,
     color: COLORS.textPrimary,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F0F4F8',
+    backgroundColor: COLORS.surfaceAlt,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.navy,
   },
   checkInBtn: {
-    backgroundColor: '#16803C',
+    backgroundColor: COLORS.success,
   },
   btnDisabled: {
     opacity: 0.45,

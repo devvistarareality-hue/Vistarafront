@@ -4,7 +4,7 @@ import { COLORS } from '../../../constants/theme';
 const { width } = Dimensions.get('window');
 
 const NAVY   = COLORS.navy;
-const ORANGE = '#D44B1A';
+const ORANGE = COLORS.warning;
 const BG     = COLORS.screenBg;
 
 // Calendar cell width: card has 16px padding each side, section has 12px each side
@@ -46,13 +46,13 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: '#2D5BA8',
+    backgroundColor: COLORS.navyMedium,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText:  { color: '#fff', fontSize: 38, fontWeight: '800' },
-  userName:    { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 4 },
-  userRole:    { color: '#A8C0E0', fontSize: 13, marginBottom: 12 },
+  avatarText:  { color: COLORS.white, fontSize: 38, fontWeight: '800' },
+  userName:    { color: COLORS.white, fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  userRole:    { color: COLORS.shadow, fontSize: 13, marginBottom: 12 },
   orgBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -62,8 +62,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 14,
   },
-  orgDot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CAF50', marginRight: 8 },
-  orgText: { color: '#fff', fontSize: 12, fontWeight: '500' },
+  orgDot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.successAlt, marginRight: 8 },
+  orgText: { color: COLORS.white, fontSize: 12, fontWeight: '500' },
 
   // ── Stat Cards ──
   statsGrid: {
@@ -75,11 +75,11 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: (width - 44) / 2,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderRadius: 18,
     padding: 16,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statIcon:  { fontSize: 22 },
-  statValue: { fontSize: 22, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
-  statLabel: { fontSize: 12, color: '#888', fontWeight: '500' },
+  statValue: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 2 },
+  statLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' },
 
   // ── Action Buttons ──
   actionRow: {
@@ -109,13 +109,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.18,
     shadowRadius: 6,
   },
-  actionIcon: { fontSize: 20, color: '#fff', marginBottom: 5 },
-  actionText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  actionIcon: { fontSize: 20, color: COLORS.white, marginBottom: 5 },
+  actionText: { color: COLORS.white, fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
 
   // ── Section ──
   section: { paddingHorizontal: 12, marginBottom: 16 },
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   // ── Tab Row ──
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: '#E4EAF2',
+    backgroundColor: COLORS.border,
     borderRadius: 12,
     padding: 4,
     marginBottom: 14,
@@ -136,23 +136,23 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabActive: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
-  tabText:       { fontSize: 13, color: '#888', fontWeight: '600' },
+  tabText:       { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
   tabTextActive: { color: NAVY, fontWeight: '700' },
 
   // ── Today View ──
   todayCard: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderRadius: 18,
     padding: 20,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -171,52 +171,52 @@ const styles = StyleSheet.create({
   },
   todayItem:      { flex: 1, alignItems: 'center' },
   todayItemIcon:  { fontSize: 28, marginBottom: 6 },
-  todayItemLabel: { fontSize: 11, color: '#999', fontWeight: '600', marginBottom: 4 },
-  todayItemValue: { fontSize: 18, fontWeight: '800', color: '#1A1A2E' },
-  todayDivider:   { width: 1, height: 50, backgroundColor: '#F0F0F0' },
+  todayItemLabel: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600', marginBottom: 4 },
+  todayItemValue: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
+  todayDivider:   { width: 1, height: 50, backgroundColor: COLORS.surfaceAlt },
   absentBox: {
     alignItems: 'center',
     paddingVertical: 24,
   },
   absentIcon: { fontSize: 40, marginBottom: 10 },
-  absentText: { fontSize: 14, color: '#999', fontWeight: '500' },
+  absentText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '500' },
 
   // ── Week View Day Cards ──
   dayCard: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 12,
     marginRight: 10,
     width: 90,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
     shadowRadius: 6,
     alignItems: 'center',
   },
   dayName:  { fontSize: 12, fontWeight: '800', color: NAVY, letterSpacing: 0.5 },
-  dayDate:  { fontSize: 11, color: '#888', marginBottom: 8, marginTop: 2 },
-  dayDivider: { height: 1, backgroundColor: '#F0F0F0', width: '100%', marginBottom: 8 },
+  dayDate:  { fontSize: 11, color: COLORS.textSecondary, marginBottom: 8, marginTop: 2 },
+  dayDivider: { height: 1, backgroundColor: COLORS.surfaceAlt, width: '100%', marginBottom: 8 },
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
     marginBottom: 4,
   },
-  timeLabel:      { fontSize: 10, color: '#999', fontWeight: '600' },
-  timeValue:      { fontSize: 10, color: '#333', fontWeight: '600' },
-  totalRowCard:   { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
+  timeLabel:      { fontSize: 10, color: COLORS.textSecondary, fontWeight: '600' },
+  timeValue:      { fontSize: 10, color: COLORS.textPrimary, fontWeight: '600' },
+  totalRowCard:   { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
   totalLabelCard: { fontSize: 10, color: ORANGE, fontWeight: '700' },
   totalValueCard: { fontSize: 10, color: ORANGE, fontWeight: '700' },
 
   // ── Month / Calendar View ──
   calendarCard: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderRadius: 18,
     padding: 16,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: COLORS.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 11,
     fontWeight: '700',
-    color: '#888',
+    color: COLORS.textSecondary,
   },
 
   calGrid: {
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   calCellToday: {
-    backgroundColor: '#EEF4FF',
+    backgroundColor: COLORS.linkBg,
     borderRadius: 10,
   },
   calCellSelected: {
@@ -272,13 +272,13 @@ const styles = StyleSheet.create({
   calDayNum: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#333',
+    color: COLORS.textPrimary,
   },
   calDayNumToday:    { color: NAVY, fontWeight: '800' },
-  calDayNumSelected: { color: '#fff', fontWeight: '800' },
+  calDayNumSelected: { color: COLORS.white, fontWeight: '800' },
   calHours:         { fontSize: 9, fontWeight: '700', marginTop: 2 },
-  calHoursPresent:  { color: '#27AE60' },
-  calHoursAbsent:   { color: '#CCC' },
+  calHoursPresent:  { color: COLORS.successAlt },
+  calHoursAbsent:   { color: COLORS.shadow },
   calHoursSelected: { color: 'rgba(255,255,255,0.85)' },
 
   calLegend: {
@@ -288,20 +288,20 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: COLORS.surfaceAlt,
   },
   legendItem:   { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendSample: { fontSize: 11, fontWeight: '800' },
-  legendText:   { fontSize: 12, color: '#888', fontWeight: '500' },
+  legendText:   { fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' },
 
   // ── Selected Day Detail ──
   calDetail: {
     marginTop: 14,
-    backgroundColor: '#F8FAFF',
+    backgroundColor: COLORS.screenBg,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E4EAF2',
+    borderColor: COLORS.border,
   },
   calDetailDate: {
     fontSize: 13,
@@ -316,18 +316,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   calDetailItem:   { flex: 1, alignItems: 'center' },
-  calDetailLabel:  { fontSize: 11, color: '#999', fontWeight: '600', marginBottom: 4 },
-  calDetailValue:  { fontSize: 16, fontWeight: '800', color: '#1A1A2E' },
-  calDetailSep:    { width: 1, height: 36, backgroundColor: '#E0E8F0' },
-  calDetailAbsent: { fontSize: 13, color: '#AAB', textAlign: 'center', paddingVertical: 6 },
+  calDetailLabel:  { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600', marginBottom: 4 },
+  calDetailValue:  { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  calDetailSep:    { width: 1, height: 36, backgroundColor: COLORS.border },
+  calDetailAbsent: { fontSize: 13, color: COLORS.textTertiary, textAlign: 'center', paddingVertical: 6 },
 
   // ── User Details Card ──
   detailCard: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderRadius: 18,
     paddingVertical: 4,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -342,14 +342,14 @@ const styles = StyleSheet.create({
   detailText:    { flex: 1 },
   detailLabel: {
     fontSize: 11,
-    color: '#999',
+    color: COLORS.textSecondary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 3,
   },
-  detailValue:   { fontSize: 14, color: '#1A1A2E', fontWeight: '600' },
-  detailDivider: { height: 1, backgroundColor: '#F5F5F5', marginHorizontal: 16 },
+  detailValue:   { fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' },
+  detailDivider: { height: 1, backgroundColor: COLORS.screenBg, marginHorizontal: 16 },
 });
 
 export default styles;

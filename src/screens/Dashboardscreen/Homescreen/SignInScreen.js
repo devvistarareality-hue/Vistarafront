@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { COLORS } from '../../../constants/theme';
 import {
   View, Text, ScrollView, TouchableOpacity,
   TextInput, Alert, ActivityIndicator,
@@ -32,12 +33,12 @@ const SignInScreen = () => {
       <View style={styles.locationCard}>
         {locLoading ? (
           <View style={styles.locLoadingRow}>
-            <ActivityIndicator size="small" color="#182350" />
+            <ActivityIndicator size="small" color={COLORS.navy} />
             <Text style={styles.locLoadingText}>Getting your location...</Text>
           </View>
         ) : (
           <View style={styles.locStatusRow}>
-            <View style={[styles.locDot, { backgroundColor: inGeofence ? '#2E7D32' : '#C62828' }]} />
+            <View style={[styles.locDot, { backgroundColor: inGeofence ? COLORS.success : COLORS.errorStrong }]} />
             <View style={{ flex: 1 }}>
               <Text style={styles.locStatusTitle}>
                 {inGeofence ? 'Inside Office Zone' : 'Outside Office Zone'}
@@ -51,7 +52,7 @@ const SignInScreen = () => {
             <Ionicons
               name={inGeofence ? 'checkmark-circle' : 'close-circle'}
               size={24}
-              color={inGeofence ? '#2E7D32' : '#C62828'}
+              color={inGeofence ? COLORS.success : COLORS.errorStrong}
             />
           </View>
         )}
@@ -85,7 +86,7 @@ const SignInScreen = () => {
         <Text style={styles.fieldLabel}>Date</Text>
         <View style={styles.dateRow}>
           <Text style={styles.dateText}>{formatDate(today)}</Text>
-          <Ionicons name="calendar-outline" size={22} color="#8492A6" />
+          <Ionicons name="calendar-outline" size={22} color={COLORS.textSecondary} />
         </View>
         <View style={styles.divider} />
 
@@ -104,7 +105,7 @@ const SignInScreen = () => {
         <TextInput
           style={styles.remarksInput}
           placeholder="Enter remarks..."
-          placeholderTextColor="#B0BAC9"
+          placeholderTextColor={COLORS.textTertiary}
           value={remarks}
           onChangeText={setRemarks}
           multiline
@@ -113,12 +114,12 @@ const SignInScreen = () => {
 
         <TouchableOpacity style={styles.expandBtn}>
           <Text style={styles.expandBtnText}>MODIFY ATTENDANCE</Text>
-          <Ionicons name="chevron-forward" size={18} color="#8492A6" />
+          <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.expandBtn} onPress={() => setMoreDetail(!moreDetail)}>
           <Text style={styles.expandBtnText}>MORE DETAIL</Text>
-          <Ionicons name={moreDetail ? 'chevron-up' : 'chevron-down'} size={18} color="#8492A6" />
+          <Ionicons name={moreDetail ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textSecondary} />
         </TouchableOpacity>
         {moreDetail && (
           <View style={styles.moreDetailContent}>
@@ -136,7 +137,7 @@ const SignInScreen = () => {
           disabled={!signedIn}
           activeOpacity={0.8}
         >
-          <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
+          <Ionicons name="log-out-outline" size={20} color={COLORS.white} />
           <Text style={styles.bottomBtnText}>SIGN OUT</Text>
         </TouchableOpacity>
 
@@ -146,7 +147,7 @@ const SignInScreen = () => {
           disabled={!inGeofence || signedIn}
           activeOpacity={0.8}
         >
-          <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+          <Ionicons name="log-in-outline" size={20} color={COLORS.white} />
           <Text style={styles.bottomBtnText}>
             {locLoading ? 'LOCATING...' : inGeofence ? 'CHECK IN' : 'OUT OF ZONE'}
           </Text>

@@ -9,8 +9,8 @@ import styles from './styles';
 const SECTIONS = [
   {
     title: 'IT ADMIN SETUP',
-    color: '#E67E22',
-    lightColor: '#FEF0E0',
+    color: COLORS.warningAlt,
+    lightColor: COLORS.warningBg,
     icon: 'shield-outline',
     groups: [
       {
@@ -37,8 +37,8 @@ const SECTIONS = [
   },
   {
     title: 'FINANCE SETUP',
-    color: '#00897B',
-    lightColor: '#E0F5F3',
+    color: COLORS.info,
+    lightColor: COLORS.infoBg,
     icon: 'cash-outline',
     groups: [
       {
@@ -54,8 +54,8 @@ const SECTIONS = [
   },
   {
     title: 'STATUTORY SETUP',
-    color: '#7B1FA2',
-    lightColor: '#F3E5F5',
+    color: COLORS.purple,
+    lightColor: COLORS.purpleBg,
     icon: 'document-text-outline',
     groups: [
       {
@@ -81,11 +81,11 @@ const AdminScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.navy} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Admin Setup</Text>
           <View style={styles.headerRight} />

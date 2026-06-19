@@ -5,15 +5,15 @@ export default StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.screenBg },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.navy,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
     paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: COLORS.surfaceAlt,
     justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: COLORS.white },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
   headerRight: { width: 36 },
 
   tabBar: {

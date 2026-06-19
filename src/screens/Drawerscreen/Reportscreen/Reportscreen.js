@@ -15,7 +15,7 @@ const ReportScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Reports</Text>
           <View style={styles.headerRight} />
@@ -23,7 +23,7 @@ const ReportScreen = () => {
 
         <View style={styles.comingSoonCard}>
           <View style={styles.iconCircle}>
-            <Ionicons name="bar-chart-outline" size={40} color="#2E7D32" />
+            <Ionicons name="bar-chart-outline" size={40} color={COLORS.success} />
           </View>
           <Text style={styles.comingSoonTitle}>Coming Soon</Text>
           <Text style={styles.comingSoonSub}>Reports module is under development</Text>

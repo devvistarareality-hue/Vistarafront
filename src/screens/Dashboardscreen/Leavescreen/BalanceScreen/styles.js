@@ -12,13 +12,13 @@ export default StyleSheet.create({
   tableHeader: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: '#E0E6F0',
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
     backgroundColor: COLORS.cardBg,
   },
   headerCell:  { fontSize: 12, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, backgroundColor: COLORS.cardBg },
-  separator: { height: 1, backgroundColor: '#F5F6FA', marginHorizontal: 16 },
+  separator: { height: 1, backgroundColor: COLORS.screenBg, marginHorizontal: 16 },
 
   dateCol:    { flex: 1 },
   changeCol:  { width: width * 0.2, textAlign: 'center' },
@@ -29,13 +29,13 @@ export default StyleSheet.create({
   descriptionText: { fontSize: 11, color: MUTED },
 
   changeCell: { fontSize: 14, fontWeight: '700' },
-  positive:   { color: '#2E7D32' },
-  negative:   { color: '#EF4444' },
+  positive:   { color: COLORS.success },
+  negative:   { color: COLORS.error },
 
   balanceCell: { fontSize: 14, fontWeight: '600', color: TEXT },
 
   centered:   { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: width * 0.1 },
-  errorText:  { fontSize: 13, color: '#EF4444', textAlign: 'center' },
+  errorText:  { fontSize: 13, color: COLORS.error, textAlign: 'center' },
   emptyText:  { fontSize: 13, color: MUTED, textAlign: 'center' },
   footerLoader: { paddingVertical: 20, alignItems: 'center' },
 });

@@ -10,14 +10,14 @@ import { logout } from '../../redux/actions/authActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const ADMIN_MODULES = [
-  { name: 'User Management',    icon: 'account-cog-outline',  color: COLORS.navy, iconBg: '#E8EEFF', screen: 'UserManagement',     params: undefined },
-  { name: 'Company Management', icon: 'domain',               color: '#0097A7', iconBg: '#E0F7FA', screen: 'CompanyManagement',  params: undefined },
-  { name: 'Designation Master', icon: 'tag-multiple-outline', color: '#E65100', iconBg: '#FFF3E0', screen: 'DesignationMaster',  params: undefined },
-  { name: 'Sales',              icon: 'storefront-outline',   color: '#F9A825', iconBg: '#FFF8E1', screen: 'SalesCRM',           params: undefined },
-  { name: 'HR',                 icon: 'account-group-outline',color: '#3D5AFE', iconBg: '#EEF0FF', screen: 'Placeholder',        params: { title: 'HR' } },
-  { name: 'Execution',          icon: 'wrench-outline',       color: '#2E7D32', iconBg: '#E8F5E9', screen: 'Placeholder',        params: { title: 'Execution' } },
-  { name: 'Purchase',           icon: 'cart-outline',         color: '#E65100', iconBg: '#FFF3E0', screen: 'Placeholder',        params: { title: 'Purchase' } },
-  { name: 'Land',               icon: 'terrain',              color: '#6A1B9A', iconBg: '#F3E5F5', screen: 'Placeholder',        params: { title: 'Land' } },
+  { name: 'User Management',    icon: 'account-cog-outline',  color: COLORS.navy, iconBg: COLORS.linkBg, screen: 'UserManagement',     params: undefined },
+  { name: 'Company Management', icon: 'domain',               color: COLORS.info, iconBg: COLORS.infoBg, screen: 'CompanyManagement',  params: undefined },
+  { name: 'Designation Master', icon: 'tag-multiple-outline', color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'DesignationMaster',  params: undefined },
+  { name: 'Sales',              icon: 'storefront-outline',   color: COLORS.warningAlt, iconBg: COLORS.warningBg, screen: 'SalesCRM',           params: undefined },
+  { name: 'HR',                 icon: 'account-group-outline',color: COLORS.link, iconBg: COLORS.linkBg, screen: 'Placeholder',        params: { title: 'HR' } },
+  { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'Placeholder',        params: { title: 'Execution' } },
+  { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'Placeholder',        params: { title: 'Purchase' } },
+  { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'Placeholder',        params: { title: 'Land' } },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
@@ -43,7 +43,7 @@ export default function AdminDashboardScreen({ navigation }) {
         </View>
         <View style={s.headerRight}>
           <View style={s.adminBadge}>
-            <Ionicons name="shield-checkmark" size={11} color="#F9A825" />
+            <Ionicons name="shield-checkmark" size={11} color={COLORS.warningAlt} />
             <Text style={s.adminBadgeText}>Administrator</Text>
           </View>
           <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
@@ -86,8 +86,8 @@ const s = StyleSheet.create({
   headerRight:  { alignItems: 'flex-end', gap: 10 },
 
   adminBadge:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(249,168,37,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(249,168,37,0.35)' },
-  adminBadgeText: { fontSize: 11, fontWeight: '700', color: '#F9A825' },
-  logoutBtn:      { padding: 8, borderRadius: 10, backgroundColor: '#F0F3FA' },
+  adminBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.warningAlt },
+  logoutBtn:      { padding: 8, borderRadius: 10, backgroundColor: COLORS.surfaceAlt },
 
   scrollContent: { padding: 20, paddingBottom: 40 },
   sectionTitle:  { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8, marginBottom: 16 },
