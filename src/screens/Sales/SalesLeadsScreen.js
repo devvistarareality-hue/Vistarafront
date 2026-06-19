@@ -731,7 +731,7 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
   );
 }
 
-const EMPTY_FILTERS = { project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false };
+const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false };
 const TC_STATUSES  = ['hot','warm','cold','not_interested','not_reachable','callback'];
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'];
 
@@ -804,6 +804,14 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
               placeholder="All STMs" />
           </View>
 
+          {/* Overall Status */}
+          <View>
+            <Text style={fsLbl}>OVERALL STATUS</Text>
+            <DropdownPicker value={local.status || ''} onChange={v => set('status', v)}
+              options={[{ value: '', label: 'All Statuses' }, ...STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))]}
+              placeholder="All Statuses" />
+          </View>
+
           {/* TC Status */}
           <View>
             <Text style={fsLbl}>TC STATUS</Text>
@@ -871,8 +879,8 @@ export default function SalesLeadsScreen({ navigation }) {
     try {
       const headers = await authHeaders();
       let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
-      if (search)                        url += `&search=${encodeURIComponent(search)}`;
-      if (statusFilter && statusFilter !== 'all') url += `&status=${statusFilter}`;
+      if (search)            url += `&search=${encodeURIComponent(search)}`;
+      if (filters.status)    url += `&status=${filters.status}`;
       if (filters.project_id)    url += `&project_id=${filters.project_id}`;
       if (filters.source_id)     url += `&source_id=${filters.source_id}`;
       if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
@@ -904,12 +912,12 @@ export default function SalesLeadsScreen({ navigation }) {
     setLoading(false); setLoadingMore(false); setRefreshing(false);
   }
 
-  useEffect(() => { loadData(true); }, [search, statusFilter, filters]);
+  useEffect(() => { loadData(true); }, [search, filters]);
 
   useEffect(() => {
     const id = setInterval(() => loadData(true), 30000);
     return () => clearInterval(id);
-  }, [search, statusFilter, filters]);
+  }, [search, filters]);
 
   function onLeadUpdated(updated) {
     if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
@@ -999,17 +1007,6 @@ export default function SalesLeadsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Status chips */}
-      <View style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#fff' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}>
-          {STATUSES.map(s => (
-            <TouchableOpacity key={s.key} onPress={() => setStatusFilter(s.key)}
-              style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: statusFilter === s.key ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: statusFilter === s.key ? NAVY : '#E0E6F0' }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: statusFilter === s.key ? '#fff' : MUTED }}>{s.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
 
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters}
