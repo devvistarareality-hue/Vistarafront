@@ -87,16 +87,16 @@ export default function SalesCRMScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#182350', borderBottomWidth: 0 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{screenTitle}</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>{screenSub}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff' }}>{screenTitle}</Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{screenSub}</Text>
         </View>
-        <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6 }}>
-          <Ionicons name="refresh-outline" size={20} color={refreshing ? MUTED : BLUE} />
+        <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: 8 }}>
+          <Ionicons name="refresh-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 

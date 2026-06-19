@@ -15,7 +15,7 @@ const DashboardScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
       
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Dashboard</Text>

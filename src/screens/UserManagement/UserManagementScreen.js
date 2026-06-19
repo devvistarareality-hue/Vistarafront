@@ -158,8 +158,6 @@ export default function UserManagementScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchUsers());
-      const interval = setInterval(() => dispatch(fetchUsers()), 30000);
-      return () => clearInterval(interval);
     }, [dispatch]),
   );
 
@@ -200,16 +198,16 @@ export default function UserManagementScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#182350" />
 
       {/* ── Header ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <Text style={s.headerTitle}>User Management</Text>
         <TouchableOpacity
-          style={[s.iconBtn, { backgroundColor: COLORS.secondary }]}
+          style={[s.iconBtn, { backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }]}
           onPress={() => navigation.navigate('CreateUser')}
         >
           <Ionicons name="add" size={20} color="#fff" />
@@ -305,9 +303,9 @@ export default function UserManagementScreen({ navigation }) {
 const s = StyleSheet.create({
   screen:      { flex: 1, backgroundColor: '#F5F6FA' },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#EEF1F7' },
-  iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#182350' },
+  iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: '#fff' },
 
   statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   statItem:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
