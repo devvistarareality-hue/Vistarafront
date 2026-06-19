@@ -353,9 +353,14 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
 
       // Bulk create plots
       if (plots.length > 0) {
-        await fetch(SALES_ENDPOINTS.plotsBulk, {
+        const bulkRes = await fetch(SALES_ENDPOINTS.plotsBulk, {
           method: 'POST', headers, body: JSON.stringify({ project_id: data.id, plots }),
         });
+        if (!bulkRes.ok) {
+          const e = await bulkRes.json().catch(() => ({}));
+          Alert.alert('Plot creation failed', JSON.stringify(e));
+          setSaving(false); return;
+        }
         const newTotal = editing ? totalPlots + plots.length : plots.length;
         await fetch(SALES_ENDPOINTS.project(data.id), {
           method: 'PATCH', headers, body: JSON.stringify({ total_plots: newTotal }),
