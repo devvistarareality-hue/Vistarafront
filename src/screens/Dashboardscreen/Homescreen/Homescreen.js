@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StatusBar, Alert, ActivityIndicator, Dimensions, RefreshControl,
-  Modal, Pressable,
+  Modal, Pressable, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -513,16 +513,17 @@ const HomeScreen = () => {
         animationType="slide"
         onRequestClose={() => setProfileVisible(false)}
       >
-        <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
-          onPress={() => setProfileVisible(false)}
-        />
-        <View style={{
-          backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
-          padding: 24, paddingBottom: 36,
-          shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.12, shadowRadius: 16, elevation: 20,
-        }}>
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.45)' }]}
+            onPress={() => setProfileVisible(false)}
+          />
+          <View style={{
+            backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+            padding: 24, paddingBottom: 36,
+            shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.12, shadowRadius: 16, elevation: 20,
+          }}>
           {/* Handle */}
           <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0', alignSelf: 'center', marginBottom: 20 }} />
 
@@ -575,6 +576,7 @@ const HomeScreen = () => {
             <Ionicons name="log-out-outline" size={20} color="#EF4444" />
             <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Sign Out</Text>
           </TouchableOpacity>
+        </View>
         </View>
       </Modal>
 
