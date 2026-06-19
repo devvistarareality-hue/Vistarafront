@@ -69,15 +69,14 @@ const HomeScreen = () => {
 
   const profilePanResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) => gs.dy > 5 && gs.dy > Math.abs(gs.dx),
+      onStartShouldSetPanResponder: () => true,
       onPanResponderGrant: () => { profileSheetY.stopAnimation(); },
       onPanResponderMove: (_, gs) => {
         if (gs.dy > 0) profileSheetY.setValue(gs.dy);
       },
       onPanResponderRelease: (_, gs) => {
-        if (gs.dy > 100 || gs.vy > 0.5) {
-          Animated.timing(profileSheetY, { toValue: 700, duration: 220, useNativeDriver: true }).start(() => {
+        if (gs.dy > 80 || gs.vy > 0.5) {
+          Animated.timing(profileSheetY, { toValue: 700, duration: 200, useNativeDriver: true }).start(() => {
             setProfileVisible(false);
             profileSheetY.setValue(0);
           });
@@ -130,6 +129,13 @@ const HomeScreen = () => {
       setSelectedDay(null);
     }
   }, [attendanceTab, calYear, calMonth]);
+
+  useEffect(() => {
+    if (profileVisible) {
+      profileSheetY.setValue(700);
+      Animated.spring(profileSheetY, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }).start();
+    }
+  }, [profileVisible]);
 
   const authenticateAndNavigate = async () => {
     try {
@@ -540,12 +546,12 @@ const HomeScreen = () => {
       <Modal
         visible={profileVisible}
         transparent
-        animationType="slide"
+        animationType="none"
         onRequestClose={closeProfileSheet}
       >
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
-            style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.45)' }]}
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
             onPress={closeProfileSheet}
           />
           <Animated.View
