@@ -731,6 +731,117 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
   );
 }
 
+const EMPTY_FILTERS = { project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false };
+const TC_STATUSES  = ['hot','warm','cold','not_interested','not_reachable','callback'];
+const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'];
+
+/* ── Filter Bottom Sheet ── */
+function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms }) {
+  const [local, setLocal] = useState(filters);
+  useEffect(() => { if (visible) setLocal(filters); }, [visible]);
+  const set = (k, v) => setLocal(f => ({ ...f, [k]: v }));
+  const localDate = (d) => d.toISOString().slice(0, 10);
+  const today = localDate(new Date());
+  const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
+  const activeCount = Object.entries(filters).filter(([k, v]) => v && v !== false && v !== '').length;
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Filters</Text>
+          <TouchableOpacity onPress={() => { setLocal(EMPTY_FILTERS); setFilters(EMPTY_FILTERS); onClose(); }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#EF4444' }}>Clear All</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+
+          {/* Quick date */}
+          <View>
+            <Text style={fsLbl}>DATE RANGE</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+              {[['Today', today, today], ['Week', daysAgo(6), today], ['Month', daysAgo(29), today]].map(([label, from, to]) => {
+                const active = local.date_from === from && local.date_to === to;
+                return (
+                  <TouchableOpacity key={label} onPress={() => { set('date_from', active ? '' : from); set('date_to', active ? '' : to); }}
+                    style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: active ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: active ? NAVY : '#E0E6F0' }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#fff' : MUTED }}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Project */}
+          <View>
+            <Text style={fsLbl}>PROJECT</Text>
+            <DropdownPicker value={local.project_id} onChange={v => set('project_id', v)}
+              options={[{ value: '', label: 'All Projects' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))]}
+              placeholder="All Projects" />
+          </View>
+
+          {/* Source */}
+          <View>
+            <Text style={fsLbl}>SOURCE</Text>
+            <DropdownPicker value={local.source_id} onChange={v => set('source_id', v)}
+              options={[{ value: '', label: 'All Sources' }, ...sources.map(s => ({ value: String(s.id), label: s.name }))]}
+              placeholder="All Sources" />
+          </View>
+
+          {/* Telecaller */}
+          <View>
+            <Text style={fsLbl}>TELECALLER</Text>
+            <DropdownPicker value={local.telecaller_id} onChange={v => set('telecaller_id', v)}
+              options={[{ value: '', label: 'All Telecallers' }, ...telecallers.map(u => ({ value: String(u.id), label: u.name }))]}
+              placeholder="All Telecallers" />
+          </View>
+
+          {/* STM */}
+          <View>
+            <Text style={fsLbl}>STM</Text>
+            <DropdownPicker value={local.stm_id} onChange={v => set('stm_id', v)}
+              options={[{ value: '', label: 'All STMs' }, ...stms.map(u => ({ value: String(u.id), label: u.name }))]}
+              placeholder="All STMs" />
+          </View>
+
+          {/* TC Status */}
+          <View>
+            <Text style={fsLbl}>TC STATUS</Text>
+            <DropdownPicker value={local.tc_status} onChange={v => set('tc_status', v)}
+              options={[{ value: '', label: 'All TC Statuses' }, ...TC_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              placeholder="All TC Statuses" />
+          </View>
+
+          {/* STM Status */}
+          <View>
+            <Text style={fsLbl}>STM STATUS</Text>
+            <DropdownPicker value={local.stm_status} onChange={v => set('stm_status', v)}
+              options={[{ value: '', label: 'All STM Statuses' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              placeholder="All STM Statuses" />
+          </View>
+
+          {/* Duplicates toggle */}
+          <TouchableOpacity onPress={() => set('is_duplicate', !local.is_duplicate)}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: local.is_duplicate ? '#DC2626' : '#E0E6F0', backgroundColor: local.is_duplicate ? '#FFF5F5' : '#FAFBFF' }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: local.is_duplicate ? '#DC2626' : TEXT }}>Duplicates Only</Text>
+            <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: local.is_duplicate ? '#DC2626' : '#E0E6F0', alignItems: 'center', justifyContent: 'center' }}>
+              {local.is_duplicate && <Ionicons name="checkmark" size={14} color="#fff" />}
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+
+        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#F0F3FA' }}>
+          <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
+            style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+const fsLbl = { fontSize: 10, fontWeight: '700', color: MUTED, letterSpacing: 0.8, marginBottom: 8 };
+
 /* ── Main Leads Screen ── */
 export default function SalesLeadsScreen({ navigation }) {
   const [leads,       setLeads]       = useState([]);
@@ -742,12 +853,16 @@ export default function SalesLeadsScreen({ navigation }) {
   const [refreshing,  setRefreshing]  = useState(false);
   const [search,      setSearch]      = useState('');
   const [statusFilter,setStatusFilter]= useState('all');
+  const [filters,     setFilters]     = useState(EMPTY_FILTERS);
+  const [filterSheet, setFilterSheet] = useState(false);
   const [page,        setPage]        = useState(1);
   const [hasMore,     setHasMore]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedLead,setSelectedLead]= useState(null);
   const [detailModal, setDetailModal] = useState(false);
   const [createModal, setCreateModal] = useState(false);
+
+  const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
   async function loadData(reset = false) {
     const p = reset ? 1 : page;
@@ -758,6 +873,15 @@ export default function SalesLeadsScreen({ navigation }) {
       let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
       if (search)                        url += `&search=${encodeURIComponent(search)}`;
       if (statusFilter && statusFilter !== 'all') url += `&status=${statusFilter}`;
+      if (filters.project_id)    url += `&project_id=${filters.project_id}`;
+      if (filters.source_id)     url += `&source_id=${filters.source_id}`;
+      if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
+      if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
+      if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
+      if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
+      if (filters.date_from)     url += `&date_from=${filters.date_from}`;
+      if (filters.date_to)       url += `&date_to=${filters.date_to}`;
+      if (filters.is_duplicate)  url += `&is_duplicate=true`;
       const [leadsRes, projRes, srcRes, tcRes, stmRes] = await Promise.all([
         fetch(url, { headers }),
         projects.length    ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.projects,    { headers }),
@@ -780,13 +904,12 @@ export default function SalesLeadsScreen({ navigation }) {
     setLoading(false); setLoadingMore(false); setRefreshing(false);
   }
 
-  useEffect(() => { loadData(true); }, [search, statusFilter]);
+  useEffect(() => { loadData(true); }, [search, statusFilter, filters]);
 
-  // Auto-refresh every 30 seconds to pick up new incoming leads
   useEffect(() => {
     const id = setInterval(() => loadData(true), 30000);
     return () => clearInterval(id);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, filters]);
 
   function onLeadUpdated(updated) {
     if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
@@ -858,16 +981,25 @@ export default function SalesLeadsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
+      {/* Search + Filter button */}
+      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
           <TextInput value={search} onChangeText={setSearch} placeholder="Search name, phone, email…" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
+        <TouchableOpacity onPress={() => setFilterSheet(true)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: activeFilterCount > 0 ? NAVY : '#F0F3FA', borderWidth: 1.5, borderColor: activeFilterCount > 0 ? NAVY : '#E0E6F0' }}>
+          <Ionicons name="options-outline" size={16} color={activeFilterCount > 0 ? '#fff' : MUTED} />
+          {activeFilterCount > 0 && (
+            <View style={{ backgroundColor: '#EF4444', borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{activeFilterCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
-      {/* Status filter */}
+      {/* Status chips */}
       <View style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#fff' }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}>
           {STATUSES.map(s => (
@@ -878,6 +1010,10 @@ export default function SalesLeadsScreen({ navigation }) {
           ))}
         </ScrollView>
       </View>
+
+      <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
+        filters={filters} setFilters={setFilters}
+        projects={projects} sources={sources} telecallers={telecallers} stms={stms} />
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
