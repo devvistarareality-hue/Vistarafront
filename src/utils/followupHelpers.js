@@ -1,3 +1,4 @@
+import { COLORS } from '../constants/theme';
 // Returns status info for a follow-up date string ('YYYY-MM-DD')
 export const getFollowupInfo = (dateStr) => {
   if (!dateStr) return null;
@@ -10,10 +11,10 @@ export const getFollowupInfo = (dateStr) => {
 
   const diff = Math.round((followup - today) / (1000 * 60 * 60 * 24));
 
-  if (diff < 0)   return { status: 'overdue',  color: '#C62828', bg: '#FFEBEE', label: `Overdue ${Math.abs(diff)}d` };
-  if (diff === 0) return { status: 'today',    color: '#E65100', bg: '#FFF3E0', label: 'Follow-up Today' };
-  if (diff <= 3)  return { status: 'soon',     color: '#F57F17', bg: '#FFF8E1', label: `In ${diff} day${diff > 1 ? 's' : ''}` };
-  return               { status: 'upcoming', color: '#2E7D32', bg: '#E8F5E9', label: `In ${diff} days` };
+  if (diff < 0)   return { status: 'overdue',  color: COLORS.errorStrong, bg: COLORS.errorBg, label: `Overdue ${Math.abs(diff)}d` };
+  if (diff === 0) return { status: 'today',    color: COLORS.warning, bg: COLORS.warningBg, label: 'Follow-up Today' };
+  if (diff <= 3)  return { status: 'soon',     color: COLORS.warningAlt, bg: COLORS.warningBg, label: `In ${diff} day${diff > 1 ? 's' : ''}` };
+  return               { status: 'upcoming', color: COLORS.success, bg: COLORS.successBg, label: `In ${diff} days` };
 };
 
 // Format 'YYYY-MM-DD' → '12 Jun 2026'

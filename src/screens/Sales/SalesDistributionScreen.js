@@ -7,18 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
-const NAVY = '#182350';
-const BLUE = '#3D5AFE';
-const BG   = '#F5F6FA';
-const TEXT = '#1A1A2E';
-const MUTED = '#8492A6';
-
-const CARD = {
-  backgroundColor: '#fff', borderRadius: 14,
-  shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, marginBottom: 16,
-};
+const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW, marginBottom: 16 };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -166,16 +158,16 @@ export default function SalesDistributionScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#182350', borderBottomWidth: 0 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="arrow-back" size={22} color={NAVY} />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: '#fff' }}>Lead Distribution</Text>
-        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: 8 }}>
-          <Ionicons name="refresh-outline" size={22} color="#fff" />
+        <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: TEXT }}>Lead Distribution</Text>
+        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
+          <Ionicons name="refresh-outline" size={22} color={NAVY} />
         </TouchableOpacity>
       </View>
 
@@ -196,7 +188,7 @@ export default function SalesDistributionScreen({ navigation }) {
               <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>⚙ Distribution Settings</Text>
               {settingsForm === null && (
                 <TouchableOpacity onPress={() => setSettingsForm({ ...settings })}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 8 }}>
+                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: TEXT }}>Edit</Text>
                 </TouchableOpacity>
               )}
@@ -210,12 +202,12 @@ export default function SalesDistributionScreen({ navigation }) {
                   { label: 'STM Sign-in',  key: 'stm_signin_time' },
                   { label: 'STM Sign-out', key: 'stm_signout_time' },
                 ].map(f => (
-                  <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                  <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                     <Text style={{ fontSize: 15, fontWeight: '600', color: TEXT }}>{f.label}</Text>
                     <TextInput
                       value={settingsForm[f.key] || ''} placeholder="HH:MM"
                       onChangeText={v => setSettingsForm(s => ({ ...s, [f.key]: v }))}
-                      style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, fontSize: 15, width: 100, textAlign: 'center', color: TEXT }}
+                      style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, fontSize: 15, width: 100, textAlign: 'center', color: TEXT }}
                     />
                   </View>
                 ))}
@@ -223,11 +215,11 @@ export default function SalesDistributionScreen({ navigation }) {
                   <TouchableOpacity onPress={saveSettings} disabled={savingSettings}
                     style={{ flex: 1, paddingVertical: 12, backgroundColor: NAVY, borderRadius: 9, alignItems: 'center', opacity: savingSettings ? 0.6 : 1 }}>
                     {savingSettings
-                      ? <ActivityIndicator color="#fff" size="small" />
-                      : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Save Settings</Text>}
+                      ? <ActivityIndicator color={COLORS.white} size="small" />
+                      : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>Save Settings</Text>}
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => setSettingsForm(null)}
-                    style={{ flex: 1, paddingVertical: 12, borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 9, alignItems: 'center' }}>
+                    style={{ flex: 1, paddingVertical: 12, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, alignItems: 'center' }}>
                     <Text style={{ fontWeight: '600', fontSize: 15, color: TEXT }}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
@@ -238,7 +230,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   { role: 'TELECALLER', signin: settings.tc_signin_time, signout: settings.tc_signout_time },
                   { role: 'STM',        signin: settings.stm_signin_time, signout: settings.stm_signout_time },
                 ].map(({ role, signin, signout }) => (
-                  <View key={role} style={{ flex: 1, backgroundColor: '#E8ECF2', borderRadius: 10, padding: 13 }}>
+                  <View key={role} style={{ flex: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 13 }}>
                     <SectionLabel>{role}</SectionLabel>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 9, marginBottom: 6 }}>
                       <Text style={{ fontSize: 13, color: MUTED }}>Sign-in</Text>
@@ -267,7 +259,7 @@ export default function SalesDistributionScreen({ navigation }) {
                     : allTc.map(a => (
                       <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
-                        <Text style={{ fontSize: 18, color: a.is_available ? '#22C55E' : '#CBD5E1', fontWeight: '800', width: 20 }}>
+                        <Text style={{ fontSize: 18, color: a.is_available ? COLORS.successAlt : COLORS.divider, fontWeight: '800', width: 20 }}>
                           {a.is_available ? '✓' : '✗'}
                         </Text>
                         <Text style={{ fontSize: 15, color: a.is_available ? TEXT : MUTED }} numberOfLines={1}>{a.name}</Text>
@@ -276,7 +268,7 @@ export default function SalesDistributionScreen({ navigation }) {
                 </View>
               </View>
 
-              <View style={{ width: 1, backgroundColor: '#F0F3FA' }} />
+              <View style={{ width: 1, backgroundColor: COLORS.surfaceAlt }} />
 
               <View style={{ flex: 1 }}>
                 <SectionLabel>STMs · {stmAvail.length}/{allStm.length} avail</SectionLabel>
@@ -286,7 +278,7 @@ export default function SalesDistributionScreen({ navigation }) {
                     : allStm.map(a => (
                       <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
-                        <Text style={{ fontSize: 18, color: a.is_available ? '#22C55E' : '#CBD5E1', fontWeight: '800', width: 20 }}>
+                        <Text style={{ fontSize: 18, color: a.is_available ? COLORS.successAlt : COLORS.divider, fontWeight: '800', width: 20 }}>
                           {a.is_available ? '✓' : '✗'}
                         </Text>
                         <Text style={{ fontSize: 15, color: a.is_available ? TEXT : MUTED }} numberOfLines={1}>{a.name}</Text>
@@ -308,8 +300,8 @@ export default function SalesDistributionScreen({ navigation }) {
                 <TouchableOpacity onPress={saveWeights} disabled={savingWeights || !weightsChanged}
                   style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 8, opacity: (!weightsChanged || savingWeights) ? 0.4 : 1 }}>
                   {savingWeights
-                    ? <ActivityIndicator size="small" color="#fff" />
-                    : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
+                    ? <ActivityIndicator size="small" color={COLORS.white} />
+                    : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
                 </TouchableOpacity>
               </View>
 
@@ -317,34 +309,34 @@ export default function SalesDistributionScreen({ navigation }) {
               {tcUsers.length > 0 && (() => {
                 const total = tcUsers.reduce((s, u) => s + (weights[u.user_id] ?? 1), 0);
                 return (
-                  <View style={{ marginHorizontal: 16, marginBottom: 10, borderWidth: 1.5, borderColor: '#BBF7D0', borderRadius: 12, padding: 14, backgroundColor: '#F0FDF4' }}>
+                  <View style={{ marginHorizontal: 16, marginBottom: 10, borderWidth: 1.5, borderColor: COLORS.divider, borderRadius: 12, padding: 14, backgroundColor: COLORS.screenBg }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: '#22C55E' }} />
-                      <SectionLabel color="#15803D">Telecallers</SectionLabel>
+                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.successAlt }} />
+                      <SectionLabel color={COLORS.success}>Telecallers</SectionLabel>
                     </View>
                     {tcUsers.map(u => {
                       const w   = weights[u.user_id] ?? 1;
                       const pct = total > 0 ? Math.round((w / total) * 100) : 0;
                       return (
-                        <View key={u.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#fff', borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: '#BBF7D0', marginBottom: 7 }}>
+                        <View key={u.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.white, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.divider, marginBottom: 7 }}>
                           <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{u.name}</Text>
-                          <WeightBar pct={pct} color="#22C55E" />
-                          <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803D', width: 36, textAlign: 'right' }}>{pct}%</Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#BBF7D0', borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
+                          <WeightBar pct={pct} color={COLORS.successAlt} />
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.success, width: 36, textAlign: 'right' }}>{pct}%</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.divider, borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
                             <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: Math.max(1, (prev[u.user_id] ?? 1) - 1) }))}
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#E8FFF0' }}>
-                              <Text style={{ color: '#15803D', fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
+                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.successBg }}>
+                              <Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
                             </TouchableOpacity>
                             <Text style={{ paddingHorizontal: 10, fontSize: 15, fontWeight: '700', color: TEXT }}>{w}</Text>
                             <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: (prev[u.user_id] ?? 1) + 1 }))}
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#E8FFF0' }}>
-                              <Text style={{ color: '#15803D', fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
+                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.successBg }}>
+                              <Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
                       );
                     })}
-                    <Text style={{ fontSize: 13, color: '#15803D', fontWeight: '600', marginTop: 5 }}>
+                    <Text style={{ fontSize: 13, color: COLORS.success, fontWeight: '600', marginTop: 5 }}>
                       Ratio: {tcUsers.map(u => weights[u.user_id] ?? 1).join(' : ')}
                     </Text>
                   </View>
@@ -355,34 +347,34 @@ export default function SalesDistributionScreen({ navigation }) {
               {stmUsers.length > 0 && (() => {
                 const total = stmUsers.reduce((s, u) => s + (weights[u.user_id] ?? 1), 0);
                 return (
-                  <View style={{ marginHorizontal: 16, marginBottom: 16, borderWidth: 1.5, borderColor: '#BFDBFE', borderRadius: 12, padding: 14, backgroundColor: '#EFF6FF' }}>
+                  <View style={{ marginHorizontal: 16, marginBottom: 16, borderWidth: 1.5, borderColor: COLORS.powderBlue, borderRadius: 12, padding: 14, backgroundColor: COLORS.screenBg }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: '#3B82F6' }} />
-                      <SectionLabel color="#1D4ED8">STMs</SectionLabel>
+                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.link }} />
+                      <SectionLabel color={COLORS.linkPressed}>STMs</SectionLabel>
                     </View>
                     {stmUsers.map(u => {
                       const w   = weights[u.user_id] ?? 1;
                       const pct = total > 0 ? Math.round((w / total) * 100) : 0;
                       return (
-                        <View key={u.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#fff', borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: '#BFDBFE', marginBottom: 7 }}>
+                        <View key={u.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.white, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.powderBlue, marginBottom: 7 }}>
                           <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{u.name}</Text>
-                          <WeightBar pct={pct} color="#3B82F6" />
-                          <Text style={{ fontSize: 13, fontWeight: '700', color: '#1D4ED8', width: 36, textAlign: 'right' }}>{pct}%</Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#BFDBFE', borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
+                          <WeightBar pct={pct} color={COLORS.link} />
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.linkPressed, width: 36, textAlign: 'right' }}>{pct}%</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.powderBlue, borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
                             <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: Math.max(1, (prev[u.user_id] ?? 1) - 1) }))}
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#E0EEFF' }}>
-                              <Text style={{ color: '#1D4ED8', fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
+                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.linkBg }}>
+                              <Text style={{ color: COLORS.linkPressed, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
                             </TouchableOpacity>
                             <Text style={{ paddingHorizontal: 10, fontSize: 15, fontWeight: '700', color: TEXT }}>{w}</Text>
                             <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: (prev[u.user_id] ?? 1) + 1 }))}
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#E0EEFF' }}>
-                              <Text style={{ color: '#1D4ED8', fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
+                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.linkBg }}>
+                              <Text style={{ color: COLORS.linkPressed, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
                       );
                     })}
-                    <Text style={{ fontSize: 13, color: '#1D4ED8', fontWeight: '600', marginTop: 5 }}>
+                    <Text style={{ fontSize: 13, color: COLORS.linkPressed, fontWeight: '600', marginTop: 5 }}>
                       Ratio: {stmUsers.map(u => weights[u.user_id] ?? 1).join(' : ')}
                     </Text>
                   </View>
@@ -398,30 +390,30 @@ export default function SalesDistributionScreen({ navigation }) {
               unassigned: stats?.unassigned ?? 0, avail: tcAvail.length,
               windowOpen: tcWindowOpen, afterSignout: tcAfterSignout,
               signin: settings.tc_signin_time, signout: settings.tc_signout_time,
-              borderOpen: '#BBF7D0', bgOpen: '#F0FDF4',
-              borderClose: '#FECACA', bgClose: '#FEF2F2',
-              badgeOpenBg: '#DCFCE7', badgeOpenColor: '#15803D',
-              badgeCloseBg: '#FEE2E2', badgeCloseColor: '#DC2626',
-              badgeWaitBg: '#F1F5F9', badgeWaitColor: '#64748B',
+              borderOpen: COLORS.divider, bgOpen: COLORS.screenBg,
+              borderClose: COLORS.errorBg, bgClose: COLORS.screenBg,
+              badgeOpenBg: COLORS.successBg, badgeOpenColor: COLORS.success,
+              badgeCloseBg: COLORS.errorBg, badgeCloseColor: COLORS.errorStrong,
+              badgeWaitBg: COLORS.screenBg, badgeWaitColor: COLORS.navyMedium,
             },
             {
               type: 'stm', label: 'STM Distribution',
               unassigned: stats?.sv_done ?? 0, avail: stmAvail.length,
               windowOpen: stmWindowOpen, afterSignout: stmAfterSignout,
               signin: settings.stm_signin_time, signout: settings.stm_signout_time,
-              borderOpen: '#BFDBFE', bgOpen: '#EFF6FF',
-              borderClose: '#FECACA', bgClose: '#FEF2F2',
-              badgeOpenBg: '#DBEAFE', badgeOpenColor: '#1D4ED8',
-              badgeCloseBg: '#FEE2E2', badgeCloseColor: '#DC2626',
-              badgeWaitBg: '#F1F5F9', badgeWaitColor: '#64748B',
+              borderOpen: COLORS.powderBlue, bgOpen: COLORS.screenBg,
+              borderClose: COLORS.errorBg, bgClose: COLORS.screenBg,
+              badgeOpenBg: COLORS.linkBg, badgeOpenColor: COLORS.linkPressed,
+              badgeCloseBg: COLORS.errorBg, badgeCloseColor: COLORS.errorStrong,
+              badgeWaitBg: COLORS.screenBg, badgeWaitColor: COLORS.navyMedium,
             },
           ].map(({ type, label, unassigned, avail, windowOpen, afterSignout, signin, signout,
                    borderOpen, bgOpen, borderClose, bgClose,
                    badgeOpenBg, badgeOpenColor, badgeCloseBg, badgeCloseColor, badgeWaitBg, badgeWaitColor }) => {
             const badgeBg    = windowOpen ? badgeOpenBg    : afterSignout ? badgeCloseBg    : badgeWaitBg;
             const badgeColor = windowOpen ? badgeOpenColor : afterSignout ? badgeCloseColor : badgeWaitColor;
-            const borderClr  = windowOpen ? borderOpen     : afterSignout ? borderClose     : '#E0E6F0';
-            const bgClr      = windowOpen ? bgOpen         : afterSignout ? bgClose         : '#fff';
+            const borderClr  = windowOpen ? borderOpen     : afterSignout ? borderClose     : COLORS.border;
+            const bgClr      = windowOpen ? bgOpen         : afterSignout ? bgClose         : COLORS.white;
             const disabled   = !!distributing || afterSignout || avail === 0;
             return (
               <View key={type} style={[CARD, { borderWidth: 2, borderColor: borderClr, backgroundColor: bgClr }]}>
@@ -441,7 +433,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   </View>
 
                   {afterSignout && (
-                    <Text style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>
+                    <Text style={{ fontSize: 13, color: COLORS.errorStrong, marginBottom: 12 }}>
                       Sign-out ({signout}) has passed. Leads remain unassigned until tomorrow.
                     </Text>
                   )}
@@ -449,8 +441,8 @@ export default function SalesDistributionScreen({ navigation }) {
                   <TouchableOpacity onPress={() => triggerDist(type)} disabled={disabled}
                     style={{ paddingVertical: 14, backgroundColor: NAVY, borderRadius: 10, alignItems: 'center', opacity: disabled ? 0.45 : 1 }}>
                     {distributing === type
-                      ? <ActivityIndicator color="#fff" size="small" />
-                      : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
+                      ? <ActivityIndicator color={COLORS.white} size="small" />
+                      : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>
                           ⚡ Distribute to {type === 'telecaller' ? 'Telecallers' : 'STMs'}
                         </Text>}
                   </TouchableOpacity>
@@ -467,25 +459,25 @@ export default function SalesDistributionScreen({ navigation }) {
 
           {/* ═══ 6. Distribution History ═══ */}
           <View style={CARD}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF', borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>🕐 Recent Distribution History</Text>
               {distLog.length > 0 && (
                 <TouchableOpacity onPress={clearLog}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Clear</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.error }}>Clear</Text>
                 </TouchableOpacity>
               )}
             </View>
             {distLog.length === 0
               ? <Text style={{ textAlign: 'center', color: MUTED, padding: 36, fontSize: 15 }}>No distributions run yet</Text>
               : distLog.slice(0, 10).map((log, i) => (
-                <View key={log.id || i} style={{ padding: 16, borderBottomWidth: i < Math.min(distLog.length, 10) - 1 ? 1 : 0, borderBottomColor: '#F0F3FA' }}>
+                <View key={log.id || i} style={{ padding: 16, borderBottomWidth: i < Math.min(distLog.length, 10) - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, backgroundColor: log.dist_type === 'telecaller' ? '#FFF8E1' : '#EFF6FF' }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: log.dist_type === 'telecaller' ? '#F9A825' : '#3B82F6' }}>
+                    <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, backgroundColor: log.dist_type === 'telecaller' ? COLORS.warningBg : COLORS.screenBg }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: log.dist_type === 'telecaller' ? COLORS.warningAlt : COLORS.link }}>
                         {log.dist_type === 'telecaller' ? 'Telecaller' : 'STM'}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#2E7D32' }}>{log.leads_distributed} leads</Text>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.success }}>{log.leads_distributed} leads</Text>
                   </View>
                   <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
                     By {log.triggered_by_name || '—'} · {log.created_at ? new Date(log.created_at).toLocaleDateString('en-IN') : ''}

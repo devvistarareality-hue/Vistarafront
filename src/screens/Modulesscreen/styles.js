@@ -1,50 +1,47 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { COLORS, SPACING, RADIUS, FONT_WEIGHT, SHADOWS } from '../../constants/theme';
 
 const { width } = Dimensions.get('window');
-const CARD = (width - 14 * 3) / 2;
+const CARD = (width - SPACING.lg * 3) / 2;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F2F5' },
-  scrollContent: { padding: 14, paddingBottom: 30 },
+  container: { flex: 1, backgroundColor: COLORS.screenBg },
+  scrollContent: { padding: SPACING.lg, paddingBottom: SPACING.xxxl },
 
   heading: {
     fontSize: width * 0.05,
-    fontWeight: '700',
-    color: '#1E4080',
-    marginBottom: 16,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.navy,
+    marginBottom: SPACING.lg,
   },
 
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 14,
+    gap: SPACING.lg,
   },
 
   moduleBtn: {
     width: CARD,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    paddingVertical: 22,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    paddingVertical: SPACING.xxl,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    ...SHADOWS.sm,
   },
 
   moduleIcon: {
     fontSize: width * 0.1,
-    marginBottom: 10,
+    marginBottom: SPACING.md,
   },
 
   moduleName: {
     fontSize: width * 0.035,
-    fontWeight: '600',
-    color: '#222',
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.textPrimary,
     textAlign: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: SPACING.sm,
   },
 });
 

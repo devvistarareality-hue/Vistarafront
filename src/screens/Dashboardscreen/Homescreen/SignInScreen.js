@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { COLORS } from '../../../constants/theme';
 import {
   View, Text, ScrollView, TouchableOpacity,
   TextInput, Alert, ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import useGeolocation from './hooks/useGeolocation';
 import useAttendance from './hooks/useAttendance';
 import { formatTime, formatDate } from './utils/timeUtils';
@@ -31,12 +33,12 @@ const SignInScreen = () => {
       <View style={styles.locationCard}>
         {locLoading ? (
           <View style={styles.locLoadingRow}>
-            <ActivityIndicator size="small" color="#1E4080" />
+            <ActivityIndicator size="small" color={COLORS.navy} />
             <Text style={styles.locLoadingText}>Getting your location...</Text>
           </View>
         ) : (
           <View style={styles.locStatusRow}>
-            <View style={[styles.locDot, { backgroundColor: inGeofence ? '#2E7D32' : '#C62828' }]} />
+            <View style={[styles.locDot, { backgroundColor: inGeofence ? COLORS.success : COLORS.errorStrong }]} />
             <View style={{ flex: 1 }}>
               <Text style={styles.locStatusTitle}>
                 {inGeofence ? 'Inside Office Zone' : 'Outside Office Zone'}
@@ -47,7 +49,11 @@ const SignInScreen = () => {
                 </Text>
               )}
             </View>
-            <Text style={styles.locIcon}>{inGeofence ? '✓' : '✗'}</Text>
+            <Ionicons
+              name={inGeofence ? 'checkmark-circle' : 'close-circle'}
+              size={24}
+              color={inGeofence ? COLORS.success : COLORS.errorStrong}
+            />
           </View>
         )}
       </View>
@@ -67,7 +73,7 @@ const SignInScreen = () => {
       {/* ── Details Card ── */}
       <View style={styles.card}>
         <View style={styles.timeRow}>
-          <View style={[styles.timeBox, { marginRight: 8 }]}>
+          <View style={styles.timeBox}>
             <Text style={styles.timeLabel}>IN TIME</Text>
             <Text style={styles.timeValue}>{inTime ? formatTime(inTime) : '00:00:00'}</Text>
           </View>
@@ -77,15 +83,15 @@ const SignInScreen = () => {
           </View>
         </View>
 
-        <Text style={styles.fieldLabel}>Date*</Text>
+        <Text style={styles.fieldLabel}>Date</Text>
         <View style={styles.dateRow}>
           <Text style={styles.dateText}>{formatDate(today)}</Text>
-          <Text style={styles.calIcon}>📅</Text>
+          <Ionicons name="calendar-outline" size={22} color={COLORS.textSecondary} />
         </View>
         <View style={styles.divider} />
 
         <View style={styles.timeRow}>
-          <View style={[styles.timeBox, { marginRight: 8 }]}>
+          <View style={styles.timeBox}>
             <Text style={styles.timeLabel}>DAILY STATUS</Text>
             <Text style={styles.timeValueMuted}>No</Text>
           </View>
@@ -99,7 +105,7 @@ const SignInScreen = () => {
         <TextInput
           style={styles.remarksInput}
           placeholder="Enter remarks..."
-          placeholderTextColor="#aaa"
+          placeholderTextColor={COLORS.textTertiary}
           value={remarks}
           onChangeText={setRemarks}
           multiline
@@ -108,12 +114,12 @@ const SignInScreen = () => {
 
         <TouchableOpacity style={styles.expandBtn}>
           <Text style={styles.expandBtnText}>MODIFY ATTENDANCE</Text>
-          <Text style={styles.expandBtnArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.expandBtn} onPress={() => setMoreDetail(!moreDetail)}>
           <Text style={styles.expandBtnText}>MORE DETAIL</Text>
-          <Text style={styles.expandBtnArrow}>{moreDetail ? '∧' : '∨'}</Text>
+          <Ionicons name={moreDetail ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textSecondary} />
         </TouchableOpacity>
         {moreDetail && (
           <View style={styles.moreDetailContent}>
@@ -131,6 +137,7 @@ const SignInScreen = () => {
           disabled={!signedIn}
           activeOpacity={0.8}
         >
+          <Ionicons name="log-out-outline" size={20} color={COLORS.white} />
           <Text style={styles.bottomBtnText}>SIGN OUT</Text>
         </TouchableOpacity>
 
@@ -140,6 +147,7 @@ const SignInScreen = () => {
           disabled={!inGeofence || signedIn}
           activeOpacity={0.8}
         >
+          <Ionicons name="log-in-outline" size={20} color={COLORS.white} />
           <Text style={styles.bottomBtnText}>
             {locLoading ? 'LOCATING...' : inGeofence ? 'CHECK IN' : 'OUT OF ZONE'}
           </Text>

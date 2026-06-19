@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { COLORS } from '../../../../constants/theme';
 import { View, Text, SectionList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchTeamLeaves } from '../../../../redux/actions/teamLeavesActions';
 import { updateLeaveStatus, resetLeaveAction } from '../../../../redux/actions/leaveActionActions';
 import Toast from '../../../../components/Toast';
-import images from '../../../../constants/images';
 import styles from '../HistoryScreen/styles';
 import LeaveDetailModal from '../HistoryScreen/LeaveDetailModal';
 
@@ -49,7 +50,7 @@ const LeaveCard = ({ item, onPress }) => (
       <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
         <Text style={[styles.statusText, getStatusTextStyle(item.status)]}>{item.status}</Text>
       </View>
-      <Image source={images.rightArrow} style={styles.chevronIcon} />
+      <Ionicons name="chevron-forward" size={18} color={COLORS.divider} />
     </View>
   </TouchableOpacity>
 );
@@ -94,7 +95,7 @@ const ApprovalsScreen = () => {
   };
 
   if (teamLoading && teamData.length === 0) {
-    return <View style={styles.centered}><ActivityIndicator size="large" color="#1E4080" /></View>;
+    return <View style={styles.centered}><ActivityIndicator size="large" color={COLORS.navyMedium} /></View>;
   }
   if (teamError) {
     return <View style={styles.centered}><Text style={styles.errorText}>{teamError}</Text></View>;
@@ -112,7 +113,7 @@ const ApprovalsScreen = () => {
         stickySectionHeadersEnabled={false}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.4}
-        ListFooterComponent={teamLoadingMore ? <View style={styles.footerLoader}><ActivityIndicator size="small" color="#1E4080" /></View> : null}
+        ListFooterComponent={teamLoadingMore ? <View style={styles.footerLoader}><ActivityIndicator size="small" color={COLORS.navyMedium} /></View> : null}
         ListEmptyComponent={<View style={styles.centered}><Text style={styles.emptyText}>No leave requests from your team.</Text></View>}
       />
 

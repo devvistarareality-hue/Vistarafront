@@ -24,9 +24,9 @@ const Row = ({ label, value }) => (
 
 const getStatusColor = (status) => {
   switch (status) {
-    case 'Approved': return { bg: '#DBEAFE', text: '#1D4ED8' };
-    case 'Rejected': return { bg: '#FEE2E2', text: '#B91C1C' };
-    default:         return { bg: '#FEF3C7', text: '#B45309' };
+    case 'Approved': return { bg: COLORS.linkBg, text: COLORS.linkPressed };
+    case 'Rejected': return { bg: COLORS.errorBg, text: COLORS.errorStrong };
+    default:         return { bg: COLORS.goldBg, text: COLORS.warning };
   }
 };
 
@@ -95,7 +95,7 @@ const LeaveDetailModal = ({ visible, leave, onClose, onApprove, onReject, action
               activeOpacity={0.8}
             >
               {actionLoading
-                ? <ActivityIndicator color="#fff" size="small" />
+                ? <ActivityIndicator color={COLORS.white} size="small" />
                 : <Text style={styles.btnText}>Reject</Text>
               }
             </TouchableOpacity>
@@ -107,7 +107,7 @@ const LeaveDetailModal = ({ visible, leave, onClose, onApprove, onReject, action
               activeOpacity={0.8}
             >
               {actionLoading
-                ? <ActivityIndicator color="#fff" size="small" />
+                ? <ActivityIndicator color={COLORS.white} size="small" />
                 : <Text style={styles.btnText}>Approve</Text>
               }
             </TouchableOpacity>
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   handle: {
     width: width * 0.12,
     height: width * 0.012,
-    backgroundColor: '#DDDDDD',
+    backgroundColor: COLORS.divider,
     borderRadius: width * 0.01,
     alignSelf: 'center',
     marginTop: width * 0.03,
@@ -172,11 +172,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: width * 0.025,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: COLORS.surfaceAlt,
   },
   label: {
     fontSize: width * 0.035,
-    color: '#888888',
+    color: COLORS.textSecondary,
     flex: 1,
   },
   value: {
@@ -199,10 +199,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   approveBtn: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: COLORS.success,
   },
   rejectBtn: {
-    backgroundColor: '#C62828',
+    backgroundColor: COLORS.errorStrong,
   },
   btnDisabled: {
     opacity: 0.4,

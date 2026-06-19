@@ -4,7 +4,9 @@
       "Read(//c/Users/Prince/Desktop/Vistara App ERP New/Vistararealtybackend/**)",
       "PowerShell(netsh advfirewall firewall add rule name=\"Expo Metro 8081\" dir=in action=allow protocol=TCP localport=8081)",
       "PowerShell(netsh advfirewall firewall add rule name=\"Django Backend 8000\" dir=in action=allow protocol=TCP localport=8000)",
-      "Bash(Test-Path \"C:\\\\Users\\\\Prince\\\\Desktop\\\\Vistara App ERP New\\\\Vistararealtybackend\\\\.env\")"
+      "Bash(Test-Path \"C:\\\\Users\\\\Prince\\\\Desktop\\\\Vistara App ERP New\\\\Vistararealtybackend\\\\.env\")",
+      "Bash(node -e ' *)",
+      "Bash(sort -t: -k2 -rn)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Prince\\Desktop\\Vistara App ERP New\\Vistararealtybackend\\vistararealtybackend",

@@ -8,6 +8,7 @@ import teamLeavesReducer    from './teamLeavesReducer';
 import leaveActionReducer   from './leaveActionReducer';
 import userManagementReducer from './userManagementReducer';
 import companiesReducer      from './companiesReducer';
+import adminFilterReducer     from './adminFilterReducer';
 
 const rootReducer = combineReducers({
   auth:           authReducer,
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   leaveAction:    leaveActionReducer,
   userManagement: userManagementReducer,
   companies:      companiesReducer,
+  adminFilter:    adminFilterReducer,
 });
 
 export default rootReducer;

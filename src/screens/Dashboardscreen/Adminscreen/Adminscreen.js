@@ -1,13 +1,17 @@
 import React from 'react';
 import { View, Text, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
-import { COLORS } from '../../../constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, CARD_SHADOW } from '../../../constants/theme';
 import styles from './styles';
 
 const SECTIONS = [
   {
     title: 'IT ADMIN SETUP',
-    color: '#E67E22',
-    lightColor: '#FEF0E0',
+    color: COLORS.warningAlt,
+    lightColor: COLORS.warningBg,
+    icon: 'shield-outline',
     groups: [
       {
         groupTitle: 'Permission',
@@ -33,8 +37,9 @@ const SECTIONS = [
   },
   {
     title: 'FINANCE SETUP',
-    color: '#00897B',
-    lightColor: '#E0F5F3',
+    color: COLORS.info,
+    lightColor: COLORS.infoBg,
+    icon: 'cash-outline',
     groups: [
       {
         groupTitle: null,
@@ -49,8 +54,9 @@ const SECTIONS = [
   },
   {
     title: 'STATUTORY SETUP',
-    color: '#7B1FA2',
-    lightColor: '#F3E5F5',
+    color: COLORS.purple,
+    lightColor: COLORS.purpleBg,
+    icon: 'document-text-outline',
     groups: [
       {
         groupTitle: null,
@@ -74,15 +80,24 @@ const AdminScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.pageTitle}>ERP ADMIN @ Strategic ERP</Text>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Admin Setup</Text>
+          <View style={styles.headerRight} />
+        </View>
 
         {SECTIONS.map((section) => (
           <View key={section.title} style={styles.sectionCard}>
             <View style={[styles.sectionHeader, { backgroundColor: section.color }]}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
+              <View style={styles.sectionHeaderRow}>
+                <Ionicons name={section.icon} size={16} color={COLORS.white} />
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+              </View>
             </View>
 
             {section.groups.map((group, gIdx) => (
@@ -111,7 +126,7 @@ const AdminScreen = ({ navigation }) => {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

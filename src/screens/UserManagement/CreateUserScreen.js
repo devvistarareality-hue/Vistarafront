@@ -43,7 +43,7 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
   return (
     <>
       <TouchableOpacity onPress={() => !disabled && setOpen(true)} activeOpacity={0.8}
-        style={[styles.inputWrap, { justifyContent: 'space-between' }, disabled && { opacity: 0.5, backgroundColor: '#F5F6FA' }]}>
+        style={[styles.inputWrap, { justifyContent: 'space-between' }, disabled && { opacity: 0.5, backgroundColor: COLORS.screenBg }]}>
         <Text style={{ flex: 1, fontSize: 14, color: selected ? COLORS.textPrimary : COLORS.textSecondary }}>
           {selected ? selected.label : placeholder}
         </Text>
@@ -51,12 +51,12 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E6F0', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>{label}</Text>
             {options.map(o => (
               <TouchableOpacity key={String(o.value)} onPress={() => { onChange(o.value); setOpen(false); }}
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6FA' }}>
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.screenBg }}>
                 <Text style={{ fontSize: 14, color: String(value) === String(o.value) ? COLORS.secondary : COLORS.textPrimary, fontWeight: String(value) === String(o.value) ? '700' : '400' }}>{o.label}</Text>
                 {String(value) === String(o.value) && <Ionicons name="checkmark" size={18} color={COLORS.secondary} />}
               </TouchableOpacity>
@@ -78,10 +78,10 @@ const MODULE_ICONS = {
 };
 
 const ROLE_AVATAR_COLOR = {
-  Admin:    '#182350',
-  Manager:  '#F9A825',
-  Employee: '#3D5AFE',
-  Intern:   '#7B1FA2',
+  Admin:    COLORS.navy,
+  Manager:  COLORS.warningAlt,
+  Employee: COLORS.link,
+  Intern:   COLORS.purple,
 };
 
 export default function CreateUserScreen({ navigation, route }) {
@@ -139,8 +139,17 @@ export default function CreateUserScreen({ navigation, route }) {
     if (isVRLAdmin && !isEdit) dispatch(fetchCompanies());
   }, []);
 
-  // Available designations based on selected modules
-  const availableDesignations = allDesignations.filter((d) => modules.includes(d.module));
+  // Available designations for the selected modules, scoped to the relevant company.
+  // (Platform admin now receives every company's designations, so filter by company + dedupe by name.)
+  const desigCompanyCode = isVRLAdmin
+    ? (isEdit ? editUser?.company_code : selectedCompany?.code)
+    : null;
+  const availableDesignations = (() => {
+    let list = allDesignations.filter((d) => modules.includes(d.module));
+    if (isVRLAdmin && desigCompanyCode) list = list.filter((d) => d.company_code === desigCompanyCode);
+    const seen = new Set();
+    return list.filter((d) => (seen.has(d.name) ? false : (seen.add(d.name), true)));
+  })();
 
   // Reset designation if its module is deselected — only after designations have loaded
   useEffect(() => {
@@ -202,18 +211,18 @@ export default function CreateUserScreen({ navigation, route }) {
   };
 
   const avatarInitial = name.trim() ? name.trim()[0].toUpperCase() : '?';
-  const avatarBg      = ROLE_AVATAR_COLOR[role] || '#8492A6';
+  const avatarBg      = ROLE_AVATAR_COLOR[role] || COLORS.textSecondary;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: '#182350', borderBottomWidth: 0 }]}>
-        <TouchableOpacity style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]} onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={22} color="#fff" />
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="close" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: '#fff' }]}>{isEdit ? 'Edit User' : 'New User'}</Text>
+        <Text style={styles.headerTitle}>{isEdit ? 'Edit User' : 'New User'}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -274,7 +283,7 @@ export default function CreateUserScreen({ navigation, route }) {
         {!isEdit && (
           <>
             <Text style={styles.label}>USER CODE PREFIX</Text>
-            <View style={[styles.inputWrap, { backgroundColor: '#F5F6FA' }]}>
+            <View style={[styles.inputWrap, { backgroundColor: COLORS.screenBg }]}>
               <Ionicons name="id-card-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
               <Text style={[styles.input, { color: COLORS.textPrimary, paddingVertical: 12 }]}>{userCodePrefix}</Text>
               <Text style={{ fontSize: 12, color: COLORS.textSecondary, paddingRight: 8 }}>auto</Text>
@@ -398,7 +407,7 @@ export default function CreateUserScreen({ navigation, route }) {
             const sel = modules.includes(mod);
             return (
               <TouchableOpacity key={mod} style={[styles.modulePill, sel && styles.modulePillActive]} onPress={() => toggleModule(mod)}>
-                <MaterialCommunityIcons name={MODULE_ICONS[mod] || 'circle'} size={13} color={sel ? '#fff' : COLORS.textSecondary} />
+                <MaterialCommunityIcons name={MODULE_ICONS[mod] || 'circle'} size={13} color={sel ? COLORS.white : COLORS.textSecondary} />
                 <Text style={[styles.modulePillText, sel && styles.modulePillTextActive]}>{mod}</Text>
               </TouchableOpacity>
             );
@@ -454,7 +463,7 @@ export default function CreateUserScreen({ navigation, route }) {
                 const isMgr = managerModules.includes(mod);
                 return (
                   <TouchableOpacity key={mod} style={[styles.managerPill, isMgr && styles.managerPillActive]} onPress={() => toggleManager(mod)}>
-                    <Ionicons name="shield-checkmark-outline" size={13} color={isMgr ? '#E6960A' : COLORS.textSecondary} />
+                    <Ionicons name="shield-checkmark-outline" size={13} color={isMgr ? COLORS.warningAlt : COLORS.textSecondary} />
                     <Text style={[styles.managerPillText, isMgr && styles.managerPillTextActive]}>{mod}</Text>
                   </TouchableOpacity>
                 );
@@ -466,10 +475,10 @@ export default function CreateUserScreen({ navigation, route }) {
         {/* Submit */}
         <TouchableOpacity style={[styles.submitBtn, busy && { opacity: 0.7 }]} onPress={handleSubmit} disabled={busy}>
           {busy ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={COLORS.white} />
           ) : (
             <>
-              <Ionicons name={isEdit ? 'checkmark-circle-outline' : 'person-add-outline'} size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Ionicons name={isEdit ? 'checkmark-circle-outline' : 'person-add-outline'} size={18} color={COLORS.white} style={{ marginRight: 8 }} />
               <Text style={styles.submitBtnText}>{isEdit ? 'Update User' : 'Create User'}</Text>
             </>
           )}
@@ -484,9 +493,9 @@ export default function CreateUserScreen({ navigation, route }) {
         onRequestClose={() => setShowManagerPicker(false)}
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '75%' }}>
+          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '75%' }}>
             {/* Modal header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#EEF1F7' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
               <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: COLORS.textPrimary }}>Select Reporting Manager</Text>
               <TouchableOpacity onPress={() => setShowManagerPicker(false)}>
                 <Ionicons name="close" size={22} color={COLORS.textPrimary} />
@@ -494,7 +503,7 @@ export default function CreateUserScreen({ navigation, route }) {
             </View>
 
             {/* Search */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', margin: 12, backgroundColor: '#F5F6FA', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', margin: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
               <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} style={{ marginRight: 8 }} />
               <TextInput
                 style={{ flex: 1, fontSize: 14, color: COLORS.textPrimary }}
@@ -533,12 +542,12 @@ export default function CreateUserScreen({ navigation, route }) {
                 const selected = reportingManager?.id === item.id;
                 return (
                   <TouchableOpacity
-                    style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: selected ? '#FFF8E7' : '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: selected ? COLORS.warningBg : COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}
                     onPress={() => { setReportingManager(item); setShowManagerPicker(false); }}
                     activeOpacity={0.7}
                   >
-                    <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: ROLE_AVATAR_COLOR[item.role] || '#8492A6', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff' }}>
+                    <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: ROLE_AVATAR_COLOR[item.role] || COLORS.textSecondary, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                      <Text style={{ fontSize: 16, fontWeight: '700', color: COLORS.white }}>
                         {item.name?.trim()?.[0]?.toUpperCase() || '?'}
                       </Text>
                     </View>
@@ -548,7 +557,7 @@ export default function CreateUserScreen({ navigation, route }) {
                         {item.user_code}  ·  {item.role}{item.designation ? `  ·  ${item.designation}` : ''}
                       </Text>
                     </View>
-                    {selected && <Ionicons name="checkmark-circle" size={20} color="#F9A825" />}
+                    {selected && <Ionicons name="checkmark-circle" size={20} color={COLORS.warningAlt} />}
                   </TouchableOpacity>
                 );
               }}

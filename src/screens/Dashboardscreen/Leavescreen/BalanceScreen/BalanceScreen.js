@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { COLORS } from '../../../../constants/theme';
 import {
   View,
   Text,
@@ -61,7 +62,7 @@ const BalanceScreen = () => {
     if (!balanceLoadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#1E4080" />
+        <ActivityIndicator size="small" color={COLORS.navyMedium} />
       </View>
     );
   };
@@ -69,7 +70,7 @@ const BalanceScreen = () => {
   if (balanceLoading && balanceData.length === 0) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1E4080" />
+        <ActivityIndicator size="large" color={COLORS.navyMedium} />
       </View>
     );
   }

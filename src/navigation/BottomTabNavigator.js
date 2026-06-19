@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../constants/theme';
 import HomeScreen from '../screens/Dashboardscreen/Homescreen/Homescreen';
 import ModulesScreen from '../screens/Modulesscreen/ModulesScreen';
 import SalesCRMScreen from '../screens/Sales/SalesCRMScreen';
@@ -31,19 +32,19 @@ const BottomTabNavigator = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: COLORS.cardBg,
           borderTopWidth: 0,
           height: 64 + insets.bottom,
           paddingBottom: insets.bottom + 10,
           paddingTop: 6,
-          shadowColor: '#9DB2CE',
+          shadowColor: COLORS.textTertiary,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.12,
           shadowRadius: 16,
           elevation: 16,
         },
-        tabBarActiveTintColor: '#3D5AFE',
-        tabBarInactiveTintColor: '#B0BAC9',
+        tabBarActiveTintColor: COLORS.link,
+        tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '700',

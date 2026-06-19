@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from 'react';
+import { COLORS } from '../constants/theme';
 import { Animated, Text, StyleSheet, View } from 'react-native';
 
 const BG = {
-  success: '#2E7D32',
-  error:   '#C62828',
-  info:    '#1565C0',
+  success: COLORS.success,
+  error:   COLORS.errorStrong,
+  info:    COLORS.linkPressed,
 };
 
 const Toast = ({ visible, message, type = 'success', duration = 2500, onHide }) => {
@@ -49,13 +50,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     zIndex:       999,
     elevation:    8,
-    shadowColor:  '#000',
+    shadowColor:  COLORS.black,
     shadowOpacity: 0.2,
     shadowOffset:  { width: 0, height: 2 },
     shadowRadius:  4,
   },
   message: {
-    color:      '#fff',
+    color:      COLORS.white,
     fontSize:   14,
     fontWeight: '600',
     textAlign:  'center',

@@ -7,16 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SALES_ENDPOINTS, RAILWAY_URL } from '../../constants/api';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FormSheet from '../../components/FormSheet';
 
-const NAVY = '#182350';
-const BLUE = '#3D5AFE';
-const GREEN = '#2E7D32';
-const BG = '#F5F6FA';
-const TEXT = '#1A1A2E';
-const MUTED = '#8492A6';
+const NAVY = COLORS.navy; const BLUE = COLORS.link; const GREEN = COLORS.success; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
 const PRESETS = ['Meta', 'Google', 'Referral', 'Walk-in', 'IVR', 'Portal', 'Other'];
-const SOURCE_COLORS = ['#3D5AFE','#2E7D32','#E65100','#0097A7','#7B1FA2','#F9A825','#EF4444','#00796B','#1565C0'];
+const SOURCE_COLORS = [COLORS.link, COLORS.success, COLORS.warning, COLORS.info, COLORS.purple, COLORS.warningAlt, COLORS.error, COLORS.gold, COLORS.linkPressed];
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -32,7 +29,7 @@ function CopyButton({ text, label = 'Copy' }) {
     setTimeout(() => setCopied(false), 2000);
   }
   return (
-    <TouchableOpacity onPress={copy} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: copied ? '#A5D6A7' : '#D0D8E8', backgroundColor: copied ? '#E8F5E9' : '#fff', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <TouchableOpacity onPress={copy} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: copied ? COLORS.textTertiary : COLORS.divider, backgroundColor: copied ? COLORS.successBg : COLORS.white, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={13} color={copied ? GREEN : MUTED} />
       <Text style={{ fontSize: 12, fontWeight: '700', color: copied ? GREEN : MUTED }}>{copied ? 'Copied' : label}</Text>
     </TouchableOpacity>
@@ -45,7 +42,7 @@ function SectionLabel({ children }) {
 
 function Card({ children, style }) {
   return (
-    <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 14, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, ...style }}>
+    <View style={{ backgroundColor: COLORS.white, borderRadius: 14, padding: 16, marginBottom: 14, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, ...style }}>
       {children}
     </View>
   );
@@ -64,24 +61,23 @@ const GUIDE_STEPS = [
 
 function SetupGuideModal({ visible, onClose }) {
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
+    <FormSheet visible={visible} onClose={onClose}>
         {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Setup Guide</Text>
             <Text style={{ fontSize: 12, color: MUTED, marginTop: 1 }}>Follow these steps to connect Meta Lead Ads</Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F0F3FA', alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={18} color={TEXT} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {GUIDE_STEPS.map(step => (
-            <View key={step.n} style={{ flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: '#FAFBFF', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#EAEEF8' }}>
+            <View key={step.n} style={{ flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: COLORS.white, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: COLORS.surfaceAlt }}>
               <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>{step.n}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.white }}>{step.n}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 4 }}>{step.title}</Text>
@@ -90,13 +86,12 @@ function SetupGuideModal({ visible, onClose }) {
             </View>
           ))}
 
-          <View style={{ padding: 14, borderRadius: 12, backgroundColor: '#FFF8E1', borderWidth: 1.5, borderColor: '#FFE082' }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: '#7A5000', marginBottom: 4 }}>⚠ Important</Text>
-            <Text style={{ fontSize: 12, color: '#7A5000', lineHeight: 18 }}>The webhook URL must be HTTPS and publicly accessible — localhost will not work. Your Railway deployment URL is used automatically.</Text>
+          <View style={{ padding: 14, borderRadius: 12, backgroundColor: COLORS.warningBg, borderWidth: 1.5, borderColor: COLORS.goldLight }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.goldDark, marginBottom: 4 }}>⚠ Important</Text>
+            <Text style={{ fontSize: 12, color: COLORS.goldDark, lineHeight: 18 }}>The webhook URL must be HTTPS and publicly accessible — localhost will not work. Your Railway deployment URL is used automatically.</Text>
           </View>
         </ScrollView>
-      </SafeAreaView>
-    </Modal>
+    </FormSheet>
   );
 }
 
@@ -214,8 +209,8 @@ function MetaTab() {
             <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>Meta Lead Ads</Text>
             <Text style={{ fontSize: 12, color: MUTED }}>Auto-capture leads from Facebook & Instagram ads</Text>
           </View>
-          <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: cfg?.is_active ? '#E8F5E9' : '#FFF3E0', borderWidth: 1.5, borderColor: cfg?.is_active ? '#A5D6A7' : '#FFB74D' }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: cfg?.is_active ? GREEN : '#E65100' }}>
+          <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: cfg?.is_active ? COLORS.successBg : COLORS.warningBg, borderWidth: 1.5, borderColor: cfg?.is_active ? COLORS.textTertiary : COLORS.warningAlt }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: cfg?.is_active ? GREEN : COLORS.warning }}>
               {cfg?.is_active ? '● Connected' : '○ Not Active'}
             </Text>
           </View>
@@ -232,7 +227,7 @@ function MetaTab() {
       <Card>
         <SectionLabel>Webhook URL</SectionLabel>
         <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>Paste this as Callback URL in Meta Developer Console</Text>
-        <View style={{ backgroundColor: BG, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#E0E6F0', marginBottom: 8 }}>
+        <View style={{ backgroundColor: BG, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8 }}>
           <Text style={{ fontSize: 11, color: BLUE, flexWrap: 'wrap' }} selectable>{webhookUrl}</Text>
         </View>
         <CopyButton text={webhookUrl} label="Copy Webhook URL" />
@@ -242,14 +237,14 @@ function MetaTab() {
       <Card>
         <SectionLabel>Verify Token</SectionLabel>
         <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>Paste this in Meta Developer Console → Webhooks → Verify Token</Text>
-        <View style={{ backgroundColor: BG, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#E0E6F0', marginBottom: 8 }}>
+        <View style={{ backgroundColor: BG, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8 }}>
           <Text style={{ fontSize: 12, color: TEXT }} selectable>{cfg?.verify_token || '—'}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           <CopyButton text={cfg?.verify_token} label="Copy Token" />
-          <TouchableOpacity onPress={regenToken} disabled={regen} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#FFE082', backgroundColor: '#FFF8E1', flexDirection: 'row', alignItems: 'center', gap: 4, opacity: regen ? 0.6 : 1 }}>
-            {regen ? <ActivityIndicator size={12} color="#F9A825" /> : <Ionicons name="refresh-outline" size={13} color="#F9A825" />}
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#7A5000' }}>Regenerate</Text>
+          <TouchableOpacity onPress={regenToken} disabled={regen} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.goldLight, backgroundColor: COLORS.warningBg, flexDirection: 'row', alignItems: 'center', gap: 4, opacity: regen ? 0.6 : 1 }}>
+            {regen ? <ActivityIndicator size={12} color={COLORS.warningAlt} /> : <Ionicons name="refresh-outline" size={13} color={COLORS.warningAlt} />}
+            <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.goldDark }}>Regenerate</Text>
           </TouchableOpacity>
         </View>
       </Card>
@@ -264,14 +259,14 @@ function MetaTab() {
           placeholder="EAA…your token here…"
           multiline
           numberOfLines={3}
-          style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, padding: 12, fontSize: 12, color: TEXT, backgroundColor: BG, minHeight: 70, textAlignVertical: 'top' }}
+          style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, fontSize: 12, color: TEXT, backgroundColor: BG, minHeight: 70, textAlignVertical: 'top' }}
         />
         <TouchableOpacity onPress={saveConfig} disabled={saving} style={{ marginTop: 12, backgroundColor: NAVY, borderRadius: 10, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: saving ? 0.7 : 1 }}>
-          {saving ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="save-outline" size={16} color="#fff" />}
-          <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>Save Configuration</Text>
+          {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="save-outline" size={16} color={COLORS.white} />}
+          <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.white }}>Save Configuration</Text>
         </TouchableOpacity>
         {!!msg && (
-          <Text style={{ marginTop: 8, textAlign: 'center', fontSize: 12, fontWeight: '700', color: msg.includes('Error') || msg.includes('Network') ? '#D32F2F' : GREEN }}>{msg}</Text>
+          <Text style={{ marginTop: 8, textAlign: 'center', fontSize: 12, fontWeight: '700', color: msg.includes('Error') || msg.includes('Network') ? COLORS.errorStrong : GREEN }}>{msg}</Text>
         )}
       </Card>
 
@@ -284,14 +279,14 @@ function MetaTab() {
             mappings.forEach(m => { mappingMap[m.form_id] = m; });
             const isOpen = !!expandedPages[pg.page_id];
             return (
-              <View key={pg.page_id} style={{ borderRadius: 10, borderWidth: 1.5, borderColor: '#E4E8F0', overflow: 'hidden', marginBottom: 8 }}>
+              <View key={pg.page_id} style={{ borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, overflow: 'hidden', marginBottom: 8 }}>
                 <TouchableOpacity
                   onPress={() => setExpandedPages(prev => ({ ...prev, [pg.page_id]: !prev[pg.page_id] }))}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, backgroundColor: '#F5F7FC' }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, backgroundColor: COLORS.screenBg }}
                   activeOpacity={0.7}>
                   <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: GREEN }} />
                   <Text style={{ flex: 1, fontSize: 13, fontWeight: '700', color: NAVY }}>{pg.page_name}</Text>
-                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: '#E8EEFF' }}>
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: COLORS.linkBg }}>
                     <Text style={{ fontSize: 11, color: MUTED }}>{pg.forms.length} forms</Text>
                   </View>
                   <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={14} color={MUTED} />
@@ -301,14 +296,14 @@ function MetaTab() {
                     {pg.forms.map(f => {
                       const mapped = mappingMap[f.id];
                       return (
-                        <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 8, backgroundColor: mapped ? '#F0FFF4' : '#FAFAFA' }}>
+                        <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 8, backgroundColor: mapped ? COLORS.screenBg : COLORS.screenBg }}>
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }} numberOfLines={1}>{f.name || 'Unnamed'}</Text>
-                            <Text style={{ fontSize: 10, color: '#B0BAC9', fontFamily: 'monospace' }}>{f.id}</Text>
+                            <Text style={{ fontSize: 10, color: COLORS.textTertiary, fontFamily: 'monospace' }}>{f.id}</Text>
                           </View>
                           <CopyButton text={f.id} label="ID" />
-                          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: mapped ? '#D1FAE5' : '#F3F4F6' }}>
-                            <Text style={{ fontSize: 10, fontWeight: '700', color: mapped ? '#065F46' : '#9CA3AF' }}>
+                          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: mapped ? COLORS.successBg : COLORS.screenBg }}>
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: mapped ? COLORS.success : COLORS.textSecondary }}>
                               {mapped ? mapped.project_name : 'No project'}
                             </Text>
                           </View>
@@ -335,9 +330,9 @@ function MetaTab() {
 
         {/* Existing mappings */}
         {mappings.length > 0 && (
-          <View style={{ borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#E0E6F0', marginBottom: 14 }}>
+          <View style={{ borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border, marginBottom: 14 }}>
             {mappings.map((m, i) => (
-              <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: i < mappings.length - 1 ? 1 : 0, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF' }}>
+              <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: i < mappings.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{m.form_name || m.form_id}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
@@ -351,7 +346,7 @@ function MetaTab() {
                   </View>
                 </View>
                 <TouchableOpacity onPress={() => deleteMapping(m.id)} style={{ padding: 8 }}>
-                  <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                  <Ionicons name="trash-outline" size={16} color={COLORS.error} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -364,25 +359,25 @@ function MetaTab() {
           onChangeText={setMapFormId}
           placeholder="Form ID (e.g. 1234567890)"
           keyboardType="numeric"
-          style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, padding: 11, fontSize: 13, color: TEXT, backgroundColor: BG, marginBottom: 10 }}
+          style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 11, fontSize: 13, color: TEXT, backgroundColor: BG, marginBottom: 10 }}
         />
         <TextInput
           value={mapFormName}
           onChangeText={setMapFormName}
           placeholder="Form label (e.g. Kalrav Form)"
-          style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, padding: 11, fontSize: 13, color: TEXT, backgroundColor: BG, marginBottom: 10 }}
+          style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 11, fontSize: 13, color: TEXT, backgroundColor: BG, marginBottom: 10 }}
         />
 
         {/* Project picker */}
-        <TouchableOpacity onPress={() => setProjOpen(v => !v)} style={{ borderWidth: 1.5, borderColor: projOpen ? NAVY : '#E0E6F0', borderRadius: 10, padding: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: BG, marginBottom: projOpen ? 0 : 10 }}>
+        <TouchableOpacity onPress={() => setProjOpen(v => !v)} style={{ borderWidth: 1.5, borderColor: projOpen ? NAVY : COLORS.border, borderRadius: 10, padding: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: BG, marginBottom: projOpen ? 0 : 10 }}>
           <Text style={{ fontSize: 13, color: selectedProj ? TEXT : MUTED }}>{selectedProj ? selectedProj.name : '— Select Project —'}</Text>
           <Ionicons name={projOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
         </TouchableOpacity>
         {projOpen && (
-          <View style={{ borderWidth: 1.5, borderTopWidth: 0, borderColor: NAVY, borderBottomLeftRadius: 10, borderBottomRightRadius: 10, backgroundColor: '#fff', marginBottom: 10, overflow: 'hidden' }}>
+          <View style={{ borderWidth: 1.5, borderTopWidth: 0, borderColor: NAVY, borderBottomLeftRadius: 10, borderBottomRightRadius: 10, backgroundColor: COLORS.white, marginBottom: 10, overflow: 'hidden' }}>
             {projects.map((p, i) => (
               <TouchableOpacity key={p.id} onPress={() => { setMapProject(String(p.id)); setProjOpen(false); }}
-                style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: '#F0F3FA', backgroundColor: String(mapProject) === String(p.id) ? '#EEF0FF' : '#fff' }}>
+                style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt, backgroundColor: String(mapProject) === String(p.id) ? COLORS.linkBg : COLORS.white }}>
                 <Text style={{ fontSize: 13, color: String(mapProject) === String(p.id) ? BLUE : TEXT, fontWeight: String(mapProject) === String(p.id) ? '700' : '400' }}>{p.name}</Text>
               </TouchableOpacity>
             ))}
@@ -391,13 +386,13 @@ function MetaTab() {
 
         <TouchableOpacity onPress={addMapping} disabled={mapSaving || !mapFormId.trim() || !mapProject}
           style={{ backgroundColor: NAVY, borderRadius: 10, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: (!mapFormId.trim() || !mapProject) ? 0.5 : 1 }}>
-          {mapSaving ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="add-circle-outline" size={16} color="#fff" />}
-          <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>+ Add Mapping</Text>
+          {mapSaving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="add-circle-outline" size={16} color={COLORS.white} />}
+          <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.white }}>+ Add Mapping</Text>
         </TouchableOpacity>
 
-        <View style={{ marginTop: 12, padding: 12, borderRadius: 10, backgroundColor: '#F0F7FF', borderWidth: 1, borderColor: '#C7DAFF' }}>
+        <View style={{ marginTop: 12, padding: 12, borderRadius: 10, backgroundColor: COLORS.screenBg, borderWidth: 1, borderColor: COLORS.powderBlue }}>
           <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, marginBottom: 4 }}>How to find your Form ID</Text>
-          <Text style={{ fontSize: 11, color: '#2A4A8A', lineHeight: 17 }}>
+          <Text style={{ fontSize: 11, color: COLORS.navyMedium, lineHeight: 17 }}>
             Go to <Text style={{ fontWeight: '700' }}>Meta Ads Manager → Lead Ads Forms → your form → Preview</Text>. The ID appears in the URL after <Text style={{ fontWeight: '700' }}>form_id=</Text>
           </Text>
         </View>
@@ -465,11 +460,11 @@ function SourcesTab() {
         <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT, marginBottom: 12 }}>Add Custom Source</Text>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TextInput value={newName} onChangeText={setNewName} placeholder="e.g. Newspaper, Events…"
-            style={{ flex: 1, borderWidth: 1.5, borderColor: '#E0E6F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: BG }}
+            style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: BG }}
             onSubmitEditing={() => addSource(newName)} returnKeyType="done" />
           <TouchableOpacity onPress={() => addSource(newName)} disabled={adding || !newName.trim()}
             style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: NAVY, borderRadius: 10, justifyContent: 'center', opacity: !newName.trim() ? 0.5 : 1 }}>
-            {adding ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="add" size={20} color="#fff" />}
+            {adding ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="add" size={20} color={COLORS.white} />}
           </TouchableOpacity>
         </View>
       </Card>
@@ -481,8 +476,8 @@ function SourcesTab() {
             const exists = existingNames.has(name.toLowerCase());
             return (
               <TouchableOpacity key={name} onPress={() => !exists && addSource(name)} disabled={exists}
-                style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, backgroundColor: exists ? '#F0F3FA' : NAVY, borderWidth: 1.5, borderColor: exists ? '#E0E6F0' : NAVY, opacity: exists ? 0.5 : 1 }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: exists ? MUTED : '#fff' }}>{exists ? '✓ ' : '+ '}{name}</Text>
+                style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, backgroundColor: exists ? COLORS.surfaceAlt : NAVY, borderWidth: 1.5, borderColor: exists ? COLORS.border : NAVY, opacity: exists ? 0.5 : 1 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: exists ? MUTED : COLORS.white }}>{exists ? '✓ ' : '+ '}{name}</Text>
               </TouchableOpacity>
             );
           })}
@@ -515,28 +510,28 @@ export default function SalesSourcesScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#182350" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       <SetupGuideModal visible={guideVisible} onClose={() => setGuideVisible(false)} />
 
-      <View style={{ backgroundColor: '#182350', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 0 }}>
+      <View style={{ backgroundColor: COLORS.white, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 0, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="arrow-back" size={20} color={NAVY} />
           </TouchableOpacity>
-          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#fff' }}>Lead Setup</Text>
+          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Lead Setup</Text>
           <TouchableOpacity onPress={() => setGuideVisible(true)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>
-            <Ionicons name="help-circle-outline" size={16} color="#fff" />
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>Guide</Text>
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: NAVY }}>
+            <Ionicons name="help-circle-outline" size={16} color={COLORS.white} />
+            <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.white }}>Guide</Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ flexDirection: 'row' }}>
-          {[{ key: 'meta', label: '🔗 Meta Integration' }, { key: 'sources', label: '📋 Lead Sources' }].map(t => (
+          {[{ key: 'meta', label: 'Meta Integration' }, { key: 'sources', label: 'Lead Sources' }].map(t => (
             <TouchableOpacity key={t.key} onPress={() => setTab(t.key)}
-              style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: tab === t.key ? '#fff' : 'transparent' }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: tab === t.key ? '#fff' : 'rgba(255,255,255,0.5)' }}>{t.label}</Text>
+              style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: tab === t.key ? NAVY : 'transparent' }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: tab === t.key ? NAVY : MUTED }}>{t.label}</Text>
             </TouchableOpacity>
           ))}
         </View>

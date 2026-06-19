@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { COLORS } from '../../constants/theme';
 import {
   View, Text, TextInput, TouchableOpacity, StatusBar,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image,
@@ -38,11 +39,11 @@ const HomeScreen = () => {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <StatusBar barStyle="light-content" backgroundColor="#050D1A" />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
       {/* Deep space gradient background */}
       <LinearGradient
-        colors={['#050D1A', '#0C1E3C', '#112240']}
+        colors={[COLORS.black, COLORS.navyDark, COLORS.navyDark]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -97,11 +98,11 @@ const HomeScreen = () => {
 
           <Text style={s.fieldLabel}>COMPANY CODE</Text>
           <View style={s.inputRow}>
-            <Ionicons name="business-outline" size={20} color="#6B7A99" style={{ marginRight: 12 }} />
+            <Ionicons name="business-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
             <TextInput
               style={s.input}
               placeholder="e.g. VISTARA01"
-              placeholderTextColor="#B0BAD0"
+              placeholderTextColor={COLORS.textTertiary}
               value={companyCode}
               onChangeText={setCompanyCode}
               autoCapitalize="characters"
@@ -117,17 +118,17 @@ const HomeScreen = () => {
             style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
           >
             <LinearGradient
-              colors={canSubmit ? ['#1A3A6E', '#112240'] : ['#B0BAC9', '#9AA3B2']}
+              colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={s.btn}
             >
               {companyLoading
-                ? <ActivityIndicator color="#FFFFFF" />
+                ? <ActivityIndicator color={COLORS.white} />
                 : (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={s.btnText}>Continue</Text>
-                    <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                    <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
                   </View>
                 )
               }
@@ -135,7 +136,7 @@ const HomeScreen = () => {
           </TouchableOpacity>
 
           <View style={s.secureRow}>
-            <Ionicons name="shield-checkmark-outline" size={14} color="#A0AABB" />
+            <Ionicons name="shield-checkmark-outline" size={14} color={COLORS.textTertiary} />
             <Text style={s.secureText}>Secured & encrypted connection</Text>
           </View>
         </View>
@@ -144,7 +145,7 @@ const HomeScreen = () => {
   );
 };
 
-const GOLD = '#FF6B2B';
+const GOLD = COLORS.error;
 
 const s = StyleSheet.create({
   // ── Decorative blobs ──
@@ -189,9 +190,9 @@ const s = StyleSheet.create({
   },
   logoCircle: {
     width: 78, height: 78, borderRadius: 39,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#FF6B2B', shadowOffset: { width: 0, height: 4 },
+    shadowColor: COLORS.error, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 14, elevation: 10,
   },
   logoImg: {
@@ -208,7 +209,7 @@ const s = StyleSheet.create({
 
   // ── Text ──
   brandName: {
-    fontSize: 36, fontWeight: '800', color: '#FFFFFF',
+    fontSize: 36, fontWeight: '800', color: COLORS.white,
     letterSpacing: 1, marginBottom: 6,
   },
   brandTag: {
@@ -223,14 +224,14 @@ const s = StyleSheet.create({
   // ── Card ──
   card: {
     flex: 1,
-    backgroundColor: '#F7F8FC',
+    backgroundColor: COLORS.screenBg,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingHorizontal: 24,
     paddingTop: 32,
     paddingBottom: 48,
     minHeight: height * 0.50,
-    shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+    shadowColor: COLORS.black, shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.12, shadowRadius: 20, elevation: 10,
     overflow: 'hidden',
   },
@@ -239,27 +240,27 @@ const s = StyleSheet.create({
     backgroundColor: GOLD, borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
   },
   cardTitle: {
-    fontSize: 26, fontWeight: '800', color: '#0C1E3C', marginBottom: 6, marginTop: 8,
+    fontSize: 26, fontWeight: '800', color: COLORS.navyDark, marginBottom: 6, marginTop: 8,
   },
   cardSub: {
-    fontSize: 13, color: '#8492A6', fontWeight: '500', marginBottom: 28,
+    fontSize: 13, color: COLORS.textSecondary, fontWeight: '500', marginBottom: 28,
   },
 
   // ── Field ──
   fieldLabel: {
-    fontSize: 11, fontWeight: '700', color: '#6B7A99',
+    fontSize: 11, fontWeight: '700', color: COLORS.textSecondary,
     letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10,
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 16,
+    backgroundColor: COLORS.white, borderRadius: 16,
     paddingHorizontal: 16, height: 56, marginBottom: 24,
-    borderWidth: 1.5, borderColor: '#E4E9F2',
-    shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+    borderWidth: 1.5, borderColor: COLORS.border,
+    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12, shadowRadius: 10, elevation: 3,
   },
   input: {
-    flex: 1, fontSize: 15, color: '#0C1E3C', fontWeight: '600',
+    flex: 1, fontSize: 15, color: COLORS.navyDark, fontWeight: '600',
     letterSpacing: 1,
   },
 
@@ -269,7 +270,7 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   btnText: {
-    color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.5,
+    color: COLORS.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5,
   },
 
   // ── Secure row ──
@@ -277,7 +278,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', marginTop: 20, gap: 6,
   },
-  secureText: { fontSize: 12, color: '#A0AABB', fontWeight: '500' },
+  secureText: { fontSize: 12, color: COLORS.textTertiary, fontWeight: '500' },
 });
 
 export default HomeScreen;
