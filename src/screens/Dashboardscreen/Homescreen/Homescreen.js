@@ -69,7 +69,11 @@ const HomeScreen = () => {
 
   const profilePanResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponderCapture: (_, gs) =>
+        gs.dy > 12 && gs.dy > Math.abs(gs.dx) * 1.5,
       onPanResponderGrant: () => { profileSheetY.stopAnimation(); },
       onPanResponderMove: (_, gs) => {
         if (gs.dy > 0) profileSheetY.setValue(gs.dy);
@@ -81,7 +85,10 @@ const HomeScreen = () => {
             profileSheetY.setValue(0);
           });
         } else {
-          Animated.spring(profileSheetY, { toValue: 0, useNativeDriver: true }).start();
+          Animated.spring(profileSheetY, {
+            toValue: 0, useNativeDriver: true,
+            tension: 120, friction: 14, overshootClamping: true,
+          }).start();
         }
       },
     })
@@ -551,10 +558,11 @@ const HomeScreen = () => {
       >
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.45)' }]}
             onPress={closeProfileSheet}
           />
           <Animated.View
+            {...profilePanResponder.panHandlers}
             style={{
               backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
               padding: 24, paddingBottom: 36,
@@ -563,11 +571,8 @@ const HomeScreen = () => {
               transform: [{ translateY: profileSheetY }],
             }}
           >
-          {/* Drag handle — swipe down to close */}
-          <View
-            {...profilePanResponder.panHandlers}
-            style={{ alignItems: 'center', paddingVertical: 8, marginBottom: 12 }}
-          >
+          {/* Drag handle indicator */}
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDE3F0' }} />
           </View>
 
