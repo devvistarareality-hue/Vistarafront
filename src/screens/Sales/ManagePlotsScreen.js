@@ -60,6 +60,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
   const [editType, setEditType] = useState('');
   const [saving,   setSaving]   = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
+  const [unitOpen, setUnitOpen] = useState(false);
 
   useEffect(() => {
     if (plot) {
@@ -107,19 +108,27 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
             <TextInput value={sizeVal} onChangeText={setSizeVal} placeholder="e.g. 5000" keyboardType="numeric"
               style={[inpS, { flex: 1 }]} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxWidth: 200 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
+            <TouchableOpacity onPress={() => setUnitOpen(true)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: '#673AB7', borderRadius: 10, paddingHorizontal: 12, backgroundColor: '#F3EFF8' }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#673AB7' }}>{unit}</Text>
+              <Ionicons name="chevron-down" size={14} color="#673AB7" />
+            </TouchableOpacity>
+          </View>
+          <Modal visible={unitOpen} transparent animationType="slide" onRequestClose={() => setUnitOpen(false)}>
+            <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setUnitOpen(false)}>
+              <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+                <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E6F0', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, paddingHorizontal: 16, paddingVertical: 12 }}>Select Unit</Text>
                 {UNITS.map(u => (
-                  <TouchableOpacity key={u} onPress={() => setUnit(u)}
-                    style={{ paddingHorizontal: 10, paddingVertical: 10, borderRadius: 10,
-                      backgroundColor: unit === u ? '#673AB7' : '#F0F3FA',
-                      borderWidth: 1.5, borderColor: unit === u ? '#673AB7' : '#E0E6F0' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: unit === u ? '#fff' : MUTED }}>{u}</Text>
+                  <TouchableOpacity key={u} onPress={() => { setUnit(u); setUnitOpen(false); }}
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6FA' }}>
+                    <Text style={{ fontSize: 14, color: unit === u ? '#673AB7' : TEXT, fontWeight: unit === u ? '700' : '400' }}>{u}</Text>
+                    {unit === u && <Ionicons name="checkmark" size={18} color="#673AB7" />}
                   </TouchableOpacity>
                 ))}
               </View>
-            </ScrollView>
-          </View>
+            </TouchableOpacity>
+          </Modal>
 
           {/* Cluster/Type + Number */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>

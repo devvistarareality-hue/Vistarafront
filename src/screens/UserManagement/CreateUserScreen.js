@@ -36,6 +36,37 @@ function generateUserCodePrefix(companyCode) {
 }
 
 const ROLES   = ['Admin', 'Manager', 'Employee', 'Intern'];
+
+function AppDropdown({ label, value, options, onChange, placeholder = 'Select…', disabled = false }) {
+  const [open, setOpen] = React.useState(false);
+  const selected = options.find(o => String(o.value) === String(value));
+  return (
+    <>
+      <TouchableOpacity onPress={() => !disabled && setOpen(true)} activeOpacity={0.8}
+        style={[styles.inputWrap, { justifyContent: 'space-between' }, disabled && { opacity: 0.5, backgroundColor: '#F5F6FA' }]}>
+        <Text style={{ flex: 1, fontSize: 14, color: selected ? COLORS.textPrimary : COLORS.textSecondary }}>
+          {selected ? selected.label : placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color={COLORS.textSecondary} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E6F0', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>{label}</Text>
+            {options.map(o => (
+              <TouchableOpacity key={String(o.value)} onPress={() => { onChange(o.value); setOpen(false); }}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#F5F6FA' }}>
+                <Text style={{ fontSize: 14, color: String(value) === String(o.value) ? COLORS.secondary : COLORS.textPrimary, fontWeight: String(value) === String(o.value) ? '700' : '400' }}>{o.label}</Text>
+                {String(value) === String(o.value) && <Ionicons name="checkmark" size={18} color={COLORS.secondary} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
 const MODULES = ['Sales', 'HR', 'Execution', 'Purchase', 'Land'];
 
 const MODULE_ICONS = {
@@ -211,19 +242,13 @@ export default function CreateUserScreen({ navigation, route }) {
         {isVRLAdmin && !isEdit && (
           <>
             <Text style={styles.label}>COMPANY</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
-              {companies.map((c) => (
-                <TouchableOpacity
-                  key={c.id}
-                  style={[styles.pill, selectedCompany?.id === c.id && styles.pillActive]}
-                  onPress={() => setSelectedCompany(c)}
-                >
-                  <Text style={[styles.pillText, selectedCompany?.id === c.id && styles.pillTextActive]}>
-                    {c.code} — {c.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            <AppDropdown
+              label="Select Company"
+              value={selectedCompany?.id}
+              options={companies.map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))}
+              onChange={v => setSelectedCompany(companies.find(c => c.id === v) || null)}
+              placeholder="Select a company…"
+            />
             {selectedCompany && (
               <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginBottom: 12, marginLeft: 2 }}>
                 Creating user for: {selectedCompany.name}
@@ -358,13 +383,13 @@ export default function CreateUserScreen({ navigation, route }) {
 
         {/* Role */}
         <Text style={styles.label}>ROLE</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
-          {ROLES.map((r) => (
-            <TouchableOpacity key={r} style={[styles.pill, role === r && styles.pillActive]} onPress={() => setRole(r)}>
-              <Text style={[styles.pillText, role === r && styles.pillTextActive]}>{r}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <AppDropdown
+          label="Select Role"
+          value={role}
+          options={ROLES.map(r => ({ value: r, label: r }))}
+          onChange={setRole}
+          placeholder="Select a role…"
+        />
 
         {/* Module Access */}
         <Text style={styles.label}>MODULE ACCESS</Text>
@@ -382,39 +407,17 @@ export default function CreateUserScreen({ navigation, route }) {
 
         {/* Designation — shown after module selection */}
         <Text style={styles.label}>DESIGNATION</Text>
-        {availableDesignations.length === 0 ? (
-          <View style={[styles.inputWrap, { backgroundColor: '#F5F6FA' }]}>
-            <Ionicons name="briefcase-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
-            <Text style={[styles.input, { color: COLORS.textSecondary, paddingVertical: 12 }]}>
-              {modules.length === 0 ? 'Select modules to see designations' : 'No designations for selected modules'}
-            </Text>
-          </View>
-        ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
-            <TouchableOpacity
-              style={[styles.pill, !designation && styles.pillActive]}
-              onPress={() => setDesignation('')}
-            >
-              <Text style={[styles.pillText, !designation && styles.pillTextActive]}>None</Text>
-            </TouchableOpacity>
-            {availableDesignations.map((d) => (
-              <TouchableOpacity
-                key={d.id}
-                style={[styles.pill, designation === d.name && styles.pillActive]}
-                onPress={() => setDesignation(d.name)}
-              >
-                <Text style={[styles.pillText, designation === d.name && styles.pillTextActive]}>
-                  {d.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-        {designation ? (
-          <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginBottom: 8, marginLeft: 2 }}>
-            Selected: {designation}
-          </Text>
-        ) : null}
+        <AppDropdown
+          label="Select Designation"
+          value={designation}
+          options={[
+            { value: '', label: 'None' },
+            ...availableDesignations.map(d => ({ value: d.name, label: d.name })),
+          ]}
+          onChange={setDesignation}
+          placeholder={modules.length === 0 ? 'Select modules first' : availableDesignations.length === 0 ? 'No designations for selected modules' : 'Select designation…'}
+          disabled={availableDesignations.length === 0 && modules.length === 0}
+        />
 
         {/* Reporting Manager */}
         <Text style={styles.label}>REPORTING MANAGER</Text>
