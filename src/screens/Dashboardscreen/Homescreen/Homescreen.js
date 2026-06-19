@@ -46,6 +46,7 @@ const HomeScreen = () => {
   const dispatch   = useDispatch();
   const { loading, user, stats, weeklyAttendance, monthlyAttendance, monthlyLoading } =
     useSelector(s => s.dashboard);
+  const authUser = useSelector(s => s.auth.user);  // carries is_approver
 
   const today = new Date();
 
@@ -295,6 +296,10 @@ const HomeScreen = () => {
             { label: 'Sign In',     icon: 'log-in-outline',   color: '#2E7D32', action: authenticateAndNavigate },
             { label: 'Sign Out',    icon: 'log-out-outline',  color: '#EF4444', action: authenticateAndNavigate },
             { label: 'Apply Leave', icon: 'calendar-outline', color: '#3D5AFE', action: () => navigation.navigate('Leave') },
+            ...(authUser?.is_approver ? [{
+              label: 'Approvals', icon: 'checkmark-done-outline', color: '#7C3AED',
+              action: () => navigation.navigate('Leave', { initialTab: 'approvals' }),
+            }] : []),
           ].map((a, i) => (
             <TouchableOpacity
               key={i}

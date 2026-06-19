@@ -30,7 +30,7 @@ const getStatusColor = (status) => {
   }
 };
 
-const LeaveDetailModal = ({ visible, leave, onClose, onApprove, onReject, actionLoading }) => {
+const LeaveDetailModal = ({ visible, leave, onClose, onApprove, onReject, actionLoading, canAct = false }) => {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
 
   useEffect(() => {
@@ -85,32 +85,34 @@ const LeaveDetailModal = ({ visible, leave, onClose, onApprove, onReject, action
           {leave.description ? <Row label="Reason" value={leave.description} /> : null}
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.btn, styles.rejectBtn, (!isPending || actionLoading) && styles.btnDisabled]}
-            onPress={onReject}
-            disabled={!isPending || actionLoading}
-            activeOpacity={0.8}
-          >
-            {actionLoading
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.btnText}>Reject</Text>
-            }
-          </TouchableOpacity>
+        {/* Action Buttons — only an authorized approver sees these */}
+        {canAct && (
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.btn, styles.rejectBtn, (!isPending || actionLoading) && styles.btnDisabled]}
+              onPress={onReject}
+              disabled={!isPending || actionLoading}
+              activeOpacity={0.8}
+            >
+              {actionLoading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.btnText}>Reject</Text>
+              }
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.btn, styles.approveBtn, (!isPending || actionLoading) && styles.btnDisabled]}
-            onPress={onApprove}
-            disabled={!isPending || actionLoading}
-            activeOpacity={0.8}
-          >
-            {actionLoading
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.btnText}>Approve</Text>
-            }
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[styles.btn, styles.approveBtn, (!isPending || actionLoading) && styles.btnDisabled]}
+              onPress={onApprove}
+              disabled={!isPending || actionLoading}
+              activeOpacity={0.8}
+            >
+              {actionLoading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.btnText}>Approve</Text>
+              }
+            </TouchableOpacity>
+          </View>
+        )}
       </Animated.View>
     </Modal>
   );

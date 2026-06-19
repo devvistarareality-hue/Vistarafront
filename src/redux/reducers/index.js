@@ -4,6 +4,7 @@ import dashboardReducer     from './dashboardReducer';
 import requestLeaveReducer  from './requestLeaveReducer';
 import leaveBalanceReducer  from './leaveBalanceReducer';
 import leaveHistoryReducer  from './leaveHistoryReducer';
+import teamLeavesReducer    from './teamLeavesReducer';
 import leaveActionReducer   from './leaveActionReducer';
 import userManagementReducer from './userManagementReducer';
 import companiesReducer      from './companiesReducer';
@@ -14,6 +15,7 @@ const rootReducer = combineReducers({
   requestLeave:   requestLeaveReducer,
   leaveBalance:   leaveBalanceReducer,
   leaveHistory:   leaveHistoryReducer,
+  teamLeaves:     teamLeavesReducer,
   leaveAction:    leaveActionReducer,
   userManagement: userManagementReducer,
   companies:      companiesReducer,
