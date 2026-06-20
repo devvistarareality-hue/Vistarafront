@@ -941,8 +941,10 @@ export default function SalesLeadsScreen({ navigation }) {
 
   useEffect(() => { loadData(true); }, [search, filters, companyId]);
 
-  // Client-side company filter (mirrors user management pattern)
-  const visibleLeads = companyId ? leads.filter(l => l.company_id === companyId) : leads;
+  // Client-side company filter (mirrors user management pattern).
+  // Only filters if leads actually carry company_id (requires updated backend).
+  const leadsHaveCompany = leads.length > 0 && leads[0].company_id != null;
+  const visibleLeads = (companyId && leadsHaveCompany) ? leads.filter(l => l.company_id === companyId) : leads;
 
   function onLeadUpdated(updated) {
     if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
