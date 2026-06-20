@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { discoverServer } from '../../utils/serverDiscovery';
 import { setBaseUrl, RAILWAY_URL } from '../../constants/api';
 import { loadUser } from '../../redux/actions/authActions';
+import { restoreAdminFilter } from '../../redux/reducers/adminFilterReducer';
 
 const ORANGE = COLORS.error;
 
@@ -19,7 +20,10 @@ const SplashScreen = ({ onFinish }) => {
       .then((url) => { if (url) setBaseUrl(url); })
       .catch(() => {})
       // Refresh the cached user (picks up is_approver, role changes, etc.)
-      .finally(() => dispatch(loadUser()));
+      .finally(() => {
+        dispatch(restoreAdminFilter());
+        dispatch(loadUser());
+      });
 
     Animated.parallel([
       Animated.timing(fadeAnim, {
