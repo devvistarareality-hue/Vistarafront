@@ -182,7 +182,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
   // Followup form
   const defaultPickerDate = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
-  const [fuForm,   setFuForm]   = useState({ role_context: 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
+  const [fuForm,   setFuForm]   = useState({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [savingFu, setSavingFu] = useState(false);
@@ -251,7 +251,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       if (res.ok) {
         const newFu = await res.json();
         setDetail(d => ({ ...d, follow_ups: [newFu, ...(d?.follow_ups || [])] }));
-        setFuForm({ role_context: 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
+        setFuForm({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
       } else {
         setFuErr('Could not save follow-up.');
       }
@@ -527,15 +527,20 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               {/* Add form */}
               <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 12, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 20 }}>
                 <Text style={[lblS, { marginBottom: 10 }]}>Schedule Follow-up</Text>
-                <Text style={lblS}>Role</Text>
-                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-                  {['telecaller','stm'].map(r => (
-                    <TouchableOpacity key={r} onPress={() => setFuForm(f => ({ ...f, role_context: r }))}
-                      style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: fuForm.role_context === r ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: fuForm.role_context === r ? NAVY : COLORS.border, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: fuForm.role_context === r ? COLORS.white : MUTED }}>{r.toUpperCase()}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                {/* Role picker only for admins/managers — telecaller/STM portals auto-set their own role */}
+                {canAssign && (
+                  <>
+                    <Text style={lblS}>Role</Text>
+                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                      {['telecaller','stm'].map(r => (
+                        <TouchableOpacity key={r} onPress={() => setFuForm(f => ({ ...f, role_context: r }))}
+                          style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: fuForm.role_context === r ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: fuForm.role_context === r ? NAVY : COLORS.border, alignItems: 'center' }}>
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: fuForm.role_context === r ? COLORS.white : MUTED }}>{r.toUpperCase()}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </>
+                )}
                 <Text style={lblS}>Date & Time</Text>
                 {/* Date button */}
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
@@ -923,6 +928,15 @@ export default function SalesLeadsScreen({ navigation }) {
   const [createModal, setCreateModal] = useState(false);
 
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const user      = useSelector((s) => s.auth.user);
+
+  // Telecaller / STM portals get a "To Call" vs "Called" split so they can tell
+  // which of their assigned leads are still pending vs already actioned.
+  const _desig = (user?.designation || '').toLowerCase();
+  const isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
+  const isStm        = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
+  const isCaller     = isTelecaller || isStm;
+  const [workTab, setWorkTab] = useState('pending'); // 'pending' | 'called' (callers only)
 
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
@@ -963,6 +977,12 @@ export default function SalesLeadsScreen({ navigation }) {
 
   function buildLeadsUrl(p) {
     let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
+    if (isCaller) {
+      url += `&work=${workTab}`;
+      // Pending = oldest-first (FIFO) so new leads queue at the bottom and never
+      // bury the lead being worked; Called = most recently actioned first.
+      url += `&ordering=${workTab === 'pending' ? 'created_at' : '-updated_at'}`;
+    }
     if (companyId)             url += `&company_id=${companyId}`;
     if (search)                url += `&search=${encodeURIComponent(search)}`;
     if (filters.status)        url += `&status=${filters.status}`;
@@ -976,6 +996,19 @@ export default function SalesLeadsScreen({ navigation }) {
     if (filters.date_to)       url += `&date_to=${filters.date_to}`;
     if (filters.is_duplicate)  url += `&is_duplicate=true`;
     return url;
+  }
+
+  // Records the newest assigned lead id as the baseline for the new-leads banner.
+  // Used in caller mode where the visible list is ordered oldest-first (FIFO).
+  async function syncNewestBaseline() {
+    try {
+      const res = await apiFetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=1&ordering=-created_at`);
+      if (!res.ok) return;
+      const d = await res.json();
+      const results = Array.isArray(d) ? d : (d.results || []);
+      lastLeadIdRef.current = results.length ? results[0].id : 0;
+      setNewLeadCount(0);
+    } catch (_) {}
   }
 
   async function loadData(reset = false) {
@@ -1009,9 +1042,16 @@ export default function SalesLeadsScreen({ navigation }) {
         setHasMore(results.length === 25 && (p * 25) < (d.count ?? Infinity));
         pageRef.current = p + 1;
         setPage(p + 1);
-        if (reset && results.length) {
-          lastLeadIdRef.current = results[0].id;
-          setNewLeadCount(0);
+        if (reset) {
+          // Baseline for the "new leads arrived" banner = newest assigned lead id.
+          // The pending tab is ordered oldest-first, so results[0] is NOT the newest
+          // there — derive the newest separately in caller mode.
+          if (isCaller) {
+            syncNewestBaseline();
+          } else if (results.length) {
+            lastLeadIdRef.current = results[0].id;
+            setNewLeadCount(0);
+          }
         }
       }
       if (projRes?.ok)  setProjects(await projRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
@@ -1029,7 +1069,7 @@ export default function SalesLeadsScreen({ navigation }) {
   loadDataRef.current = loadData;
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { leadsLengthRef.current = leads.length; }, [leads.length]);
-  useEffect(() => { loadData(true); }, [search, filters, companyId]);
+  useEffect(() => { loadData(true); }, [search, filters, companyId, workTab]);
 
   // Client-side company filter (mirrors user management pattern).
   // Only filters if leads actually carry company_id (requires updated backend).
@@ -1037,8 +1077,15 @@ export default function SalesLeadsScreen({ navigation }) {
   const visibleLeads = (companyId && leadsHaveCompany) ? leads.filter(l => l.company_id === companyId) : leads;
 
   function onLeadUpdated(updated) {
-    if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
-    else setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
+    if (!updated) { setLeads(prev => prev.filter(l => l.id !== selectedLead?.id)); return; }
+    // In the "To Call" list, once the caller has set their status the lead has been
+    // actioned — drop it from the pending list (it now lives under "Called").
+    const actioned = isTelecaller ? !!updated.telecaller_status : isStm ? !!updated.stm_status : false;
+    if (isCaller && workTab === 'pending' && actioned) {
+      setLeads(prev => prev.filter(l => l.id !== updated.id));
+    } else {
+      setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
+    }
   }
 
   const LeadCard = useCallback(({ item }) => {
@@ -1116,6 +1163,21 @@ export default function SalesLeadsScreen({ navigation }) {
           <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>Add</Text>
         </TouchableOpacity>
       </View>
+
+      {/* To Call / Called split — telecaller & STM portals only */}
+      {isCaller && (
+        <View style={{ flexDirection: 'row', backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+          {[['pending', 'To Call'], ['called', 'Called']].map(([key, label]) => {
+            const active = workTab === key;
+            return (
+              <TouchableOpacity key={key} onPress={() => setWorkTab(key)}
+                style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: active ? BLUE : 'transparent' }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: active ? BLUE : MUTED }}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       {/* New leads notification banner */}
       {newLeadCount > 0 && (
