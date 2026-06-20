@@ -34,21 +34,6 @@ import SalesDistributionScreen from '../screens/Sales/SalesDistributionScreen';
 import SalesReportsScreen      from '../screens/Sales/SalesReportsScreen';
 import SalesImportScreen       from '../screens/Sales/SalesImportScreen';
 
-// ERP screens
-import ERPDashboardScreen       from '../screens/ERP/ERPDashboardScreen';
-import ExecutionDashboardScreen from '../screens/ERP/ExecutionDashboardScreen';
-import PurchaseDashboardScreen  from '../screens/ERP/PurchaseDashboardScreen';
-import CreatePRScreen           from '../screens/ERP/CreatePRScreen';
-import CreatePOScreen           from '../screens/ERP/CreatePOScreen';
-import ERPPRListScreen          from '../screens/ERP/ERPPRListScreen';
-import ERPPOListScreen          from '../screens/ERP/ERPPOListScreen';
-import ERPGRNListScreen         from '../screens/ERP/ERPGRNListScreen';
-import ERPStockScreen           from '../screens/ERP/ERPStockScreen';
-import ERPMBListScreen          from '../screens/ERP/ERPMBListScreen';
-import ERPInvoiceListScreen     from '../screens/ERP/ERPInvoiceListScreen';
-import ERPVendorListScreen      from '../screens/ERP/ERPVendorListScreen';
-import ERPProjectListScreen     from '../screens/ERP/ERPProjectListScreen';
-
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
 import PostSignOutScreen  from '../screens/PostSignOut/PostSignOutScreen';
@@ -88,20 +73,6 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
             <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
             <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
-            {/* ERP */}
-            <Stack.Screen name="ERPDashboard"        component={ERPDashboardScreen} />
-            <Stack.Screen name="ExecutionDashboard"  component={ExecutionDashboardScreen} />
-            <Stack.Screen name="PurchaseDashboard"   component={PurchaseDashboardScreen} />
-            <Stack.Screen name="CreatePR"            component={CreatePRScreen} />
-            <Stack.Screen name="CreatePO"            component={CreatePOScreen} />
-            <Stack.Screen name="ERPPRList"           component={ERPPRListScreen} />
-            <Stack.Screen name="ERPPOList"           component={ERPPOListScreen} />
-            <Stack.Screen name="ERPGRNList"          component={ERPGRNListScreen} />
-            <Stack.Screen name="ERPStock"            component={ERPStockScreen} />
-            <Stack.Screen name="ERPMBList"           component={ERPMBListScreen} />
-            <Stack.Screen name="ERPInvoiceList"      component={ERPInvoiceListScreen} />
-            <Stack.Screen name="ERPVendorList"       component={ERPVendorListScreen} />
-            <Stack.Screen name="ERPProjectList"      component={ERPProjectListScreen} />
             <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
           </>
 
