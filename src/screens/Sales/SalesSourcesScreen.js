@@ -113,15 +113,17 @@ function MetaTab() {
   const [mapSaving,    setMapSaving]   = useState(false);
   const [projOpen,     setProjOpen]    = useState(false);
   const [expandedPages,setExpandedPages] = useState({});
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   const webhookUrl = `${RAILWAY_URL}/api/sales/webhooks/meta/`;
 
   async function load(refresh = false) {
     if (refresh) setRefreshing(true);
+    const cq = companyId ? `?company_id=${companyId}` : '';
     try {
       const [cfgRes, mapRes] = await Promise.all([
-        apiFetch(SALES_ENDPOINTS.metaWebhookConfig),
-        apiFetch(SALES_ENDPOINTS.metaMappings),
+        apiFetch(`${SALES_ENDPOINTS.metaWebhookConfig}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.metaMappings}${cq}`),
       ]);
       if (cfgRes.ok) { const d = await cfgRes.json(); setCfg(d); setPat(d.page_access_token || ''); }
       if (mapRes.ok) { const d = await mapRes.json(); setMappings(Array.isArray(d) ? d : []); }
@@ -129,14 +131,14 @@ function MetaTab() {
     setLoading(false); setRefreshing(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [companyId]);
 
   async function saveConfig() {
     setSaving(true); setMsg('');
     try {
       const res = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
         method: 'POST',
-        body: JSON.stringify({ action: 'save', page_access_token: pat }),
+        body: JSON.stringify({ action: 'save', page_access_token: pat, ...(companyId ? { company_id: companyId } : {}) }),
       });
       const d = await res.json();
       if (res.ok) { setCfg(prev => ({ ...prev, is_active: d.is_active, page_access_token: pat })); setMsg('Saved!'); }
@@ -151,7 +153,7 @@ function MetaTab() {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
         method: 'POST',
-        body: JSON.stringify({ action: 'regenerate_token' }),
+        body: JSON.stringify({ action: 'regenerate_token', ...(companyId ? { company_id: companyId } : {}) }),
       });
       const d = await res.json();
       if (res.ok) setCfg(prev => ({ ...prev, verify_token: d.verify_token }));
@@ -167,7 +169,7 @@ function MetaTab() {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.metaMappings, {
         method: 'POST',
-        body: JSON.stringify({ form_id: mapFormId.trim(), form_name: mapFormName.trim(), project_id: mapProject }),
+        body: JSON.stringify({ form_id: mapFormId.trim(), form_name: mapFormName.trim(), project_id: mapProject, ...(companyId ? { company_id: companyId } : {}) }),
       });
       const d = await res.json();
       if (res.ok) {
@@ -182,7 +184,7 @@ function MetaTab() {
     Alert.alert('Remove mapping?', 'This form will no longer auto-route leads.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: async () => {
-        await apiFetch(SALES_ENDPOINTS.metaMappings, { method: 'DELETE', body: JSON.stringify({ id }) });
+        await apiFetch(SALES_ENDPOINTS.metaMappings, { method: 'DELETE', body: JSON.stringify({ id, ...(companyId ? { company_id: companyId } : {}) }) });
         setMappings(prev => prev.filter(m => m.id !== id));
       }},
     ]);

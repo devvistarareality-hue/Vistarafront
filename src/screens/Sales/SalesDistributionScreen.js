@@ -60,14 +60,13 @@ export default function SalesDistributionScreen({ navigation }) {
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
-      const statsUrl = companyId ? `${SALES_ENDPOINTS.stats}?company_id=${companyId}` : SALES_ENDPOINTS.stats;
-      const logUrl   = companyId ? `${SALES_ENDPOINTS.distLog}?company_id=${companyId}` : SALES_ENDPOINTS.distLog;
+      const cq = companyId ? `?company_id=${companyId}` : '';
       const [sRes, aRes, wRes, lRes, stRes] = await Promise.all([
-        apiFetch(SALES_ENDPOINTS.distSettings),
-        apiFetch(SALES_ENDPOINTS.availability),
-        apiFetch(SALES_ENDPOINTS.distWeight),
-        apiFetch(logUrl),
-        apiFetch(statsUrl),
+        apiFetch(`${SALES_ENDPOINTS.distSettings}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.availability}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.distWeight}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.distLog}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.stats}${cq}`),
       ]);
       if (sRes.ok)  { const d = await sRes.json(); if (!d.detail) setSettings(d); }
       if (aRes.ok)  { const d = await aRes.json(); setAvailability(Array.isArray(d) ? d : (d.results || [])); }
@@ -106,14 +105,14 @@ export default function SalesDistributionScreen({ navigation }) {
 
   async function toggleAvailability(userId, current) {
     const res = await apiFetch(SALES_ENDPOINTS.availability, {
-      method: 'POST', body: JSON.stringify({ user_id: userId, is_available: !current }),
+      method: 'POST', body: JSON.stringify({ user_id: userId, is_available: !current, ...(companyId ? { company_id: companyId } : {}) }),
     });
     if (res.ok) setAvailability(prev => prev.map(a => String(a.user_id) === String(userId) ? { ...a, is_available: !current } : a));
   }
 
   async function saveSettings() {
     setSavingSettings(true);
-    await apiFetch(SALES_ENDPOINTS.distSettings, { method: 'PUT', body: JSON.stringify(settingsForm) });
+    await apiFetch(SALES_ENDPOINTS.distSettings, { method: 'PUT', body: JSON.stringify({ ...settingsForm, ...(companyId ? { company_id: companyId } : {}) }) });
     setSettings(settingsForm);
     setSettingsForm(null);
     setSavingSettings(false);
@@ -123,7 +122,7 @@ export default function SalesDistributionScreen({ navigation }) {
   async function saveWeights() {
     setSavingWeights(true);
     const updates = Object.entries(weights).map(([user_id, weight]) => ({ user_id: parseInt(user_id), weight: parseInt(weight) || 1 }));
-    const res = await apiFetch(SALES_ENDPOINTS.distWeight, { method: 'PATCH', body: JSON.stringify({ updates }) });
+    const res = await apiFetch(SALES_ENDPOINTS.distWeight, { method: 'PATCH', body: JSON.stringify({ updates, ...(companyId ? { company_id: companyId } : {}) }) });
     if (res.ok) setSavedWeights({ ...weights });
     setSavingWeights(false);
     Alert.alert('Saved', 'Distribution weights updated.');
@@ -132,7 +131,7 @@ export default function SalesDistributionScreen({ navigation }) {
   async function triggerDist(type) {
     setDistributing(type);
     try {
-      const res = await apiFetch(SALES_ENDPOINTS.distribute, { method: 'POST', body: JSON.stringify({ dist_type: type }) });
+      const res = await apiFetch(SALES_ENDPOINTS.distribute, { method: 'POST', body: JSON.stringify({ dist_type: type, ...(companyId ? { company_id: companyId } : {}) }) });
       if (res.ok) {
         const d = await res.json();
         Alert.alert('Distribution Complete', d.message || `${d.distributed || 0} leads distributed.`);
@@ -149,7 +148,8 @@ export default function SalesDistributionScreen({ navigation }) {
     Alert.alert('Clear history?', 'This will delete all distribution logs.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Clear', style: 'destructive', onPress: async () => {
-        await apiFetch(SALES_ENDPOINTS.distLog, { method: 'DELETE' });
+        const cq = companyId ? `?company_id=${companyId}` : '';
+        await apiFetch(`${SALES_ENDPOINTS.distLog}${cq}`, { method: 'DELETE' });
         setDistLog([]);
       }},
     ]);
