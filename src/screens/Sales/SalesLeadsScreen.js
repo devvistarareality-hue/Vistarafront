@@ -29,6 +29,10 @@ const STATUSES = [
   { key: 'contacted',        label: 'Contacted'       },
   { key: 'not_reachable',    label: 'Not Reachable'   },
   { key: 'warm_transferred', label: 'Warm Transferred' },
+  { key: 'hot',              label: 'Hot'             },
+  { key: 'warm',             label: 'Warm'            },
+  { key: 'cold',             label: 'Cold'            },
+  { key: 'not_interested',   label: 'Not Interested'  },
   { key: 'sv_scheduled',     label: 'SV Scheduled'    },
   { key: 'sv_done',          label: 'SV Done'         },
   { key: 'closed',           label: 'Closed'          },
@@ -41,6 +45,10 @@ const STATUS_COLOR = {
   contacted:        { bg: COLORS.infoBg, text: COLORS.info },
   not_reachable:    { bg: COLORS.errorBg, text: COLORS.error },
   warm_transferred: { bg: COLORS.warningBg, text: COLORS.warning },
+  hot:              { bg: COLORS.errorBg, text: COLORS.error },
+  warm:             { bg: COLORS.warningBg, text: COLORS.warning },
+  cold:             { bg: COLORS.linkBg, text: COLORS.link },
+  not_interested:   { bg: COLORS.screenBg, text: COLORS.textSecondary },
   sv_scheduled:     { bg: COLORS.warningBg, text: COLORS.warningAlt },
   sv_done:          { bg: COLORS.successBg, text: COLORS.success },
   closed:           { bg: COLORS.successBg, text: COLORS.success },
@@ -123,18 +131,26 @@ function UserPickerDropdown({ users, value, onChange, placeholder = '— Select 
 }
 
 const HISTORY_LABEL = {
+  created:           'Lead Created',
   status:            'Overall Status',
   telecaller_status: 'TC Status',
   stm_status:        'STM Status',
   telecaller:        'Telecaller Assigned',
   stm:               'STM Assigned',
+  warm_transfer:     'Transferred to STM',
+  site_visit:        'Site Visit',
+  closure:           'Closure',
 };
 const HISTORY_COLOR = {
+  created:           COLORS.textSecondary,
   status:            COLORS.link,
   telecaller_status: COLORS.info,
   stm_status:        COLORS.error,
   telecaller:        COLORS.purple,
   stm:               COLORS.success,
+  warm_transfer:     COLORS.error,
+  site_visit:        COLORS.warningAlt,
+  closure:           COLORS.success,
 };
 const FU_STATUS_COLOR = { pending: COLORS.warningAlt, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
 
@@ -147,6 +163,17 @@ function fmtDateTime(iso) {
 
 /* ── Lead Detail Modal ── */
 function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated }) {
+  const user = useSelector((s) => s.auth.user);
+  // Only admins/managers may (re)assign telecaller / STM. Telecaller & Sales Executive
+  // portals can update status & remarks but cannot reassign leads.
+  const _desig = (user?.designation || '').toLowerCase();
+  const _isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
+  const _isStm = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
+  const canAssign = !(_isTelecaller || _isStm);
+  // Telecallers see only the Telecaller (TC) section; Sales Executives (STM) see only the STM section.
+  // Admins/managers see both.
+  const showTC  = canAssign || _isTelecaller;
+  const showStm = canAssign || _isStm;
   const [form, setForm]   = useState({});
   const [saving, setSaving] = useState(false);
   const [tab, setTab]     = useState('detail');
@@ -330,10 +357,19 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <View style={row2}>
                 <View style={half}>
                   <Text style={lblS}>Overall Status</Text>
-                  <PickerDropdown
-                    items={STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))}
-                    value={form.status} onChange={v => set('status', v)}
-                    placeholder="Status" title="Overall Status" />
+                  {canAssign ? (
+                    <PickerDropdown
+                      items={STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))}
+                      value={form.status} onChange={v => set('status', v)}
+                      placeholder="Status" title="Overall Status" />
+                  ) : (
+                    // Auto-derived from the workflow — read-only for telecallers / STMs.
+                    <View style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.screenBg, marginBottom: 8 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, textTransform: 'capitalize' }}>
+                        {(STATUSES.find(s => s.key === form.status)?.label) || '—'}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <View style={half}>
                   <Text style={lblS}>Source</Text>
@@ -351,21 +387,24 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 value={form.project} onChange={v => set('project', v)}
                 placeholder="Select Project" title="Project" />
 
+              {showTC && (<>
               <View style={divider} />
 
               {/* Telecaller section */}
               <Text style={secH}>Telecaller (Pre-Sales)</Text>
 
-              {/* Row 5: Assign Telecaller | TC Status */}
+              {/* Row 5: Assign Telecaller | TC Status (assign hidden for telecaller/STM portals) */}
               <View style={row2}>
+                {canAssign && (
                 <View style={half}>
                   <Text style={lblS}>Assign</Text>
                   <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="Telecaller" title="Assign Telecaller" />
                 </View>
+                )}
                 <View style={half}>
                   <Text style={lblS}>TC Status</Text>
                   <PickerDropdown
-                    items={['hot','warm','cold','not_interested','not_reachable','callback'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
+                    items={['warm','cold','not_interested','not_reachable','callback'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
                     value={form.telecaller_status} onChange={v => set('telecaller_status', v)}
                     placeholder="Status" title="TC Status" />
                 </View>
@@ -375,18 +414,22 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
                 multiline placeholder="Call notes…" placeholderTextColor={COLORS.shadow}
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
+              </>)}
 
+              {showStm && (<>
               <View style={divider} />
 
               {/* STM section */}
               <Text style={secH}>STM (Sales)</Text>
 
-              {/* Row 6: Assign STM | STM Status */}
+              {/* Row 6: Assign STM | STM Status (assign hidden for telecaller/STM portals) */}
               <View style={row2}>
+                {canAssign && (
                 <View style={half}>
                   <Text style={lblS}>Assign</Text>
                   <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="STM" title="Assign STM" />
                 </View>
+                )}
                 <View style={half}>
                   <Text style={lblS}>STM Status</Text>
                   <PickerDropdown
@@ -400,6 +443,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
                 multiline placeholder="Notes…" placeholderTextColor={COLORS.shadow}
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
+              </>)}
 
               {/* Meta Ads Info */}
               {(lead.meta_campaign_name || lead.meta_adset_name || lead.meta_ad_name) && (
@@ -411,9 +455,12 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
               )}
 
+              {/* Only admins/managers may delete leads — telecallers & STMs cannot. */}
+              {canAssign && (
               <TouchableOpacity onPress={deleteLead} style={{ marginTop: 14, paddingVertical: 11, borderRadius: 12, backgroundColor: COLORS.errorBg, alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.goldLight }}>
                 <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>Delete Lead</Text>
               </TouchableOpacity>
+              )}
             </>}
 
             {/* ── HISTORY TAB ── */}
@@ -437,12 +484,19 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               {detail && (!detail.history || detail.history.length === 0) && (
                 <Text style={{ fontSize: 13, color: COLORS.textTertiary, textAlign: 'center', marginTop: 24 }}>No changes recorded yet.</Text>
               )}
-              {detail?.history?.map((h, idx) => {
-                const isLast = idx === detail.history.length - 1;
+              {(detail?.history || []).filter(h => h.field_changed !== 'created').map((h, idx, arr) => {
+                const isLast = idx === arr.length - 1;
                 const color  = HISTORY_COLOR[h.field_changed] || MUTED;
-                const icon   = h.field_changed === 'telecaller' ? '👤'
-                             : h.field_changed === 'stm'        ? '🏢'
+                const icon   = h.field_changed === 'created'       ? '📥'
+                             : h.field_changed === 'warm_transfer' ? '🔥'
+                             : h.field_changed === 'telecaller'    ? '👤'
+                             : h.field_changed === 'stm'           ? '🏢'
+                             : h.field_changed === 'site_visit'    ? '🏠'
+                             : h.field_changed === 'closure'       ? '✅'
                              : '🔄';
+                const singleValue = ['created', 'warm_transfer', 'closure'].includes(h.field_changed) || !h.old_value;
+                const byLabel = h.changed_by_name
+                  || (['created', 'telecaller', 'stm'].includes(h.field_changed) ? 'System (auto)' : null);
                 return (
                   <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                     <View style={{ alignItems: 'center' }}>
@@ -454,11 +508,17 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                     <View style={{ flex: 1, paddingBottom: isLast ? 0 : 16 }}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{HISTORY_LABEL[h.field_changed] || h.field_changed}</Text>
                       <Text style={{ fontSize: 12, color: TEXT, marginTop: 2 }}>
-                        <Text style={{ color: MUTED }}>{h.old_value || '—'}</Text>
-                        <Text> → </Text>
-                        <Text style={{ color, fontWeight: '700' }}>{h.new_value || '—'}</Text>
+                        {singleValue ? (
+                          <Text style={{ color, fontWeight: '700' }}>{h.new_value || '—'}</Text>
+                        ) : (
+                          <>
+                            <Text style={{ color: MUTED }}>{h.old_value || '—'}</Text>
+                            <Text> → </Text>
+                            <Text style={{ color, fontWeight: '700' }}>{h.new_value || '—'}</Text>
+                          </>
+                        )}
                       </Text>
-                      {!!h.changed_by_name && <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>by {h.changed_by_name}</Text>}
+                      {!!byLabel && <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>by {byLabel}</Text>}
                       <Text style={{ fontSize: 11, color: COLORS.textTertiary, marginTop: 2 }}>{fmtDateTime(h.created_at)}</Text>
                     </View>
                   </View>
@@ -731,7 +791,7 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
 }
 
 const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false };
-const TC_STATUSES  = ['hot','warm','cold','not_interested','not_reachable','callback'];
+const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback'];
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'];
 
 /* ── Filter Bottom Sheet ── */

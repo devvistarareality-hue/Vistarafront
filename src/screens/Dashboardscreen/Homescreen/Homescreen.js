@@ -12,7 +12,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { fetchDashboard, fetchMonthlyAttendance } from '../../../redux/actions/dashboardActions';
 import { logout } from '../../../redux/actions/authActions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getBaseUrl } from '../../../constants/api';
+import { getBaseUrl, SALES_ENDPOINTS } from '../../../constants/api';
 import { COLORS, CARD_SHADOW as THEME_SHADOW } from '../../../constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -55,6 +55,49 @@ const HomeScreen = () => {
   const [profileVisible,  setProfileVisible]  = useState(false);
   const [profileUser,     setProfileUser]     = useState(null);
   const [profileLoading,  setProfileLoading]  = useState(false);
+
+  // Telecaller / STM self-availability (auto-resets after 12h; reflected in Sales admin Distribution).
+  const _desig = (user?.designation || authUser?.designation || '').toLowerCase();
+  const isTcOrStm = _desig.includes('telecaller') || _desig.includes('tele caller')
+    || _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
+  const [avail,     setAvail]     = useState(null);   // { is_available, expires_at }
+  const [availBusy, setAvailBusy] = useState(false);
+
+  const fetchAvailability = useCallback(async () => {
+    if (!isTcOrStm) return;
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const res = await fetch(SALES_ENDPOINTS.availabilityMe, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setAvail(await res.json());
+    } catch (_) {}
+  }, [isTcOrStm]);
+
+  useEffect(() => { fetchAvailability(); }, [fetchAvailability]);
+
+  async function toggleAvailability(makeAvailable) {
+    setAvailBusy(true);
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const res = await fetch(SALES_ENDPOINTS.availabilityMe, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ is_available: makeAvailable }),
+      });
+      if (res.ok) setAvail(await res.json());
+    } catch (_) {}
+    setAvailBusy(false);
+  }
+
+  function availResetsLabel() {
+    if (!avail?.expires_at) return '';
+    const ms = new Date(avail.expires_at) - new Date();
+    if (ms <= 0) return '';
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    return h > 0 ? `resets in ${h}h ${m}m` : `resets in ${m}m`;
+  }
 
   const profileSheetY = useRef(new Animated.Value(0)).current;
 
@@ -116,8 +159,9 @@ const HomeScreen = () => {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     dispatch(fetchDashboard());
+    fetchAvailability();
     if (attendanceTab === 'month') dispatch(fetchMonthlyAttendance(calYear, calMonth));
-  }, [dispatch, attendanceTab, calYear, calMonth]);
+  }, [dispatch, attendanceTab, calYear, calMonth, fetchAvailability]);
 
   useEffect(() => {
     if (attendanceTab === 'month') {
@@ -327,6 +371,67 @@ const HomeScreen = () => {
             ))}
           </View>
         </View>
+
+        {/* ── Availability (Telecaller / STM) ── */}
+        {isTcOrStm && (
+          <View style={{
+            marginHorizontal: 20, marginBottom: 28, padding: 16,
+            backgroundColor: COLORS.white, borderRadius: 20,
+            shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>Availability</Text>
+              {avail?.is_available && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.successBg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 }}>
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.success }} />
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.success }}>Available today</Text>
+                </View>
+              )}
+            </View>
+
+            {avail?.is_available ? (
+              <>
+                <Text style={{ fontSize: 12, color: MUTED, fontWeight: '500', marginBottom: 14 }}>
+                  You're in today's lead distribution pool{availResetsLabel() ? ` · ${availResetsLabel()}` : ''}.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => toggleAvailability(false)}
+                  disabled={availBusy}
+                  activeOpacity={0.85}
+                  style={{
+                    alignSelf: 'flex-start',
+                    flexDirection: 'row', alignItems: 'center', gap: 6,
+                    backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.border,
+                    borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14,
+                  }}
+                >
+                  <Ionicons name="close-circle-outline" size={16} color={MUTED} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>{availBusy ? 'Updating…' : 'Mark Unavailable'}</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={{ fontSize: 12, color: MUTED, fontWeight: '500', marginBottom: 14 }}>
+                  Mark yourself available to receive leads today. Resets automatically after 12 hours.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => toggleAvailability(true)}
+                  disabled={availBusy}
+                  activeOpacity={0.85}
+                  style={{
+                    alignSelf: 'flex-start',
+                    flexDirection: 'row', alignItems: 'center', gap: 6,
+                    backgroundColor: COLORS.success, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 16,
+                  }}
+                >
+                  <Ionicons name="checkmark-circle" size={16} color={COLORS.white} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>{availBusy ? 'Saving…' : 'Mark Available Today'}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
 
         {/* ── Attendance Section ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 28 }}>

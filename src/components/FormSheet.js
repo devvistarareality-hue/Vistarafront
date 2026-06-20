@@ -42,6 +42,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     overflow: 'hidden',
+    // Allow the sheet to shrink to the kav's maxHeight so a tall inner ScrollView
+    // (flexShrink:1) gets a bounded height and can actually scroll.
+    flexShrink: 1,
   },
   handle: {
     alignSelf: 'center',
