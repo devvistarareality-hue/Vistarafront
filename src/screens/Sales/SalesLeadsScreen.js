@@ -917,6 +917,7 @@ export default function SalesLeadsScreen({ navigation }) {
   const [loading,     setLoading]     = useState(true);
   const [refreshing,  setRefreshing]  = useState(false);
   const [search,      setSearch]      = useState('');
+  const [searchText,  setSearchText]  = useState(''); // instant input value; debounced into `search`
   const [statusFilter,setStatusFilter]= useState('all');
   const [filters,     setFilters]     = useState(EMPTY_FILTERS);
   const [filterSheet, setFilterSheet] = useState(false);
@@ -1032,8 +1033,8 @@ export default function SalesLeadsScreen({ navigation }) {
         apiFetch(buildLeadsUrl(p)),
         projects.length    ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.projects),
         sources.length     ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.sources),
-        telecallers.length ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers),
-        stms.length        ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms),
+        (isCaller || telecallers.length) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers),
+        (isCaller || stms.length)        ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms),
       ]);
       if (leadsRes.ok) {
         const d = await leadsRes.json();
@@ -1069,6 +1070,12 @@ export default function SalesLeadsScreen({ navigation }) {
   loadDataRef.current = loadData;
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { leadsLengthRef.current = leads.length; }, [leads.length]);
+  // Debounce: typing only triggers a reload (the effect below) 400ms after the user
+  // stops, instead of firing a request on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchText), 400);
+    return () => clearTimeout(t);
+  }, [searchText]);
   useEffect(() => { loadData(true); }, [search, filters, companyId, workTab]);
 
   // Client-side company filter (mirrors user management pattern).
@@ -1203,8 +1210,8 @@ export default function SalesLeadsScreen({ navigation }) {
       <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
-          <TextInput value={search} onChangeText={setSearch} placeholder="Search name, phone, email…" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
-          {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
+          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
+          {searchText ? <TouchableOpacity onPress={() => { setSearchText(''); setSearch(''); }}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
         <TouchableOpacity onPress={() => setFilterSheet(true)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: activeFilterCount > 0 ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: activeFilterCount > 0 ? NAVY : COLORS.border }}>
