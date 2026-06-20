@@ -1240,6 +1240,10 @@ export default function SalesLeadsScreen({ navigation }) {
           renderItem={LeadCard}
           contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(true); }} colors={[NAVY]} tintColor={NAVY} />}
           onViewableItemsChanged={onViewableItemsChanged.current}
           viewabilityConfig={viewabilityConfig.current}
