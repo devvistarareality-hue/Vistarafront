@@ -11,188 +11,66 @@ import {
   fetchUsers, deleteUser,
   updateUser, resetUpdateUser,
 } from '../../redux/actions/userManagementActions';
-import { COLORS } from '../../constants/theme';
-
-const ROLES = ['All', 'Admin', 'Sales', 'HR', 'Exec'];
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FilterSelect from '../../components/FilterSelect';
 
 const ROLE_AVATAR_COLOR = {
-  Admin:       '#182350',
-  Sales:       '#F9A825',
-  HR:          '#3D5AFE',
-  Exec:        '#7B1FA2',
+  Admin:       COLORS.navy,
+  Sales:       COLORS.warningAlt,
+  HR:          COLORS.link,
+  Exec:        COLORS.purple,
 };
 
 const ROLE_BADGE_STYLE = {
-  Admin:       { bg: '#E8EEFF', text: '#3D5AFE' },
-  Sales:       { bg: '#FFF8E1', text: '#E6960A' },
-  HR:          { bg: '#E8EEFF', text: '#3D5AFE' },
-  Exec:        { bg: '#F3E5F5', text: '#7B1FA2' },
+  Admin:  { bg: COLORS.linkBg, text: COLORS.navy },
+  Sales:  { bg: COLORS.warningBg, text: COLORS.warningAlt },
+  HR:     { bg: COLORS.linkBg, text: COLORS.link },
+  Exec:   { bg: COLORS.purpleBg, text: COLORS.purple },
 };
-
-function UserCard({ user, onDelete, onEdit, onDeactivate, onActivate }) {
-  const initials = user.name ? user.name[0].toUpperCase() : '?';
-  const avatarBg = user.is_active
-    ? (ROLE_AVATAR_COLOR[user.role] || '#8492A6')
-    : '#9CA3AF';
-  const badge    = ROLE_BADGE_STYLE[user.role] || { bg: '#F0F0F0', text: '#555' };
-
-  const confirmDelete = () =>
-    Alert.alert(
-      'Delete User',
-      `Permanently delete ${user.name}? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => onDelete(user.id) },
-      ],
-    );
-
-  const confirmDeactivate = () =>
-    Alert.alert(
-      'Deactivate User',
-      `Deactivate ${user.name}? They will no longer be able to log in.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Deactivate', style: 'destructive', onPress: () => onDeactivate(user.id) },
-      ],
-    );
-
-  const confirmActivate = () =>
-    Alert.alert(
-      'Reactivate User',
-      `Reactivate ${user.name}? They will regain access to the system.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Activate', onPress: () => onActivate(user.id) },
-      ],
-    );
-
-  return (
-    <TouchableOpacity
-      style={[s.card, !user.is_active && s.cardInactive]}
-      activeOpacity={0.85}
-      onPress={onEdit}
-    >
-      {/* Avatar */}
-      <View style={[s.avatar, { backgroundColor: avatarBg }]}>
-        <Text style={s.avatarText}>{initials}</Text>
-      </View>
-
-      {/* Info */}
-      <View style={s.cardBody}>
-        <Text style={[s.userName, !user.is_active && { color: '#9CA3AF' }]}>{user.name}</Text>
-        <Text style={s.userEmail} numberOfLines={1}>{user.email}</Text>
-        <View style={s.tagRow}>
-          <View style={[s.roleBadge, { backgroundColor: user.is_active ? badge.bg : '#F3F4F6' }]}>
-            <Text style={[s.roleBadgeText, { color: user.is_active ? badge.text : '#9CA3AF' }]}>
-              {user.role}
-            </Text>
-          </View>
-          {user.is_manager && user.is_active && (
-            <View style={s.managerBadge}>
-              <Ionicons name="shield-checkmark" size={11} color="#E6960A" />
-              <Text style={s.managerBadgeText}>Manager</Text>
-            </View>
-          )}
-          {!user.is_active && (
-            <View style={s.inactiveBadge}>
-              <Ionicons name="ban" size={10} color="#9CA3AF" />
-              <Text style={s.inactiveBadgeText}>Inactive</Text>
-            </View>
-          )}
-          <Text style={s.moduleCount}>
-            {user.module_count} {user.module_count === 1 ? 'module' : 'modules'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Action buttons */}
-      <View style={{ gap: 6, alignItems: 'center' }}>
-        <TouchableOpacity
-          style={s.editBtn}
-          onPress={onEdit}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-        >
-          <Ionicons name="pencil-outline" size={15} color={COLORS.secondary} />
-        </TouchableOpacity>
-
-        {user.is_active
-          ? (
-            <TouchableOpacity
-              style={s.deactBtn}
-              onPress={confirmDeactivate}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            >
-              <Ionicons name="ban-outline" size={15} color="#EA580C" />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={s.activateBtn}
-              onPress={confirmActivate}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            >
-              <Ionicons name="checkmark-circle-outline" size={15} color="#15803D" />
-            </TouchableOpacity>
-          )
-        }
-
-        <TouchableOpacity
-          style={s.deleteBtn}
-          onPress={confirmDelete}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-        >
-          <Ionicons name="trash-outline" size={15} color="#DC2626" />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-}
 
 export default function UserManagementScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { users, loading, error, updating, updateSuccess, updateError } =
-    useSelector((s) => s.userManagement);
-  const [search,     setSearch]     = useState('');
-  const [activeRole, setActiveRole] = useState('All');
+  const { users, loading, error } = useSelector((s) => s.userManagement);
+  const [search, setSearch] = useState('');
+  const [dept, setDept] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const companyId = useSelector((s) => s.adminFilter.companyId);
+  const { companies: allCompanies } = useSelector((s) => s.companies);
 
-  useFocusEffect(
-    useCallback(() => {
-      dispatch(fetchUsers());
-      const interval = setInterval(() => dispatch(fetchUsers()), 30000);
-      return () => clearInterval(interval);
-    }, [dispatch]),
-  );
+  useFocusEffect(useCallback(() => { dispatch(fetchUsers()); }, [dispatch]));
+  useEffect(() => { if (error) Alert.alert('Error', error); }, [error]);
 
-  useEffect(() => {
-    if (!loading) setRefreshing(false);
-  }, [loading]);
-
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    dispatch(fetchUsers());
+    await dispatch(fetchUsers());
+    setRefreshing(false);
   }, [dispatch]);
 
-  useEffect(() => {
-    if (updateSuccess) {
-      dispatch(resetUpdateUser());
-      // user list updates automatically via USER_UPDATE_SUCCESS in reducer
-    }
-    if (updateError) {
-      Alert.alert('Error', updateError);
-      dispatch(resetUpdateUser());
-    }
-  }, [updateSuccess, updateError]);
+  const handleToggle = (user) => {
+    dispatch(updateUser({ id: user.id, is_active: !user.is_active }));
+  };
 
-  const handleDelete     = useCallback((id) => dispatch(deleteUser(id)), [dispatch]);
-  const handleDeactivate = useCallback((id) => dispatch(updateUser(id, { is_active: false })), [dispatch]);
-  const handleActivate   = useCallback((id) => dispatch(updateUser(id, { is_active: true  })), [dispatch]);
+  const handleDelete = (user) => {
+    Alert.alert('Delete User', `Delete ${user.name}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => dispatch(deleteUser(user.id)) },
+    ]);
+  };
+
+  const departments = [...new Set(users.flatMap((u) => u.modules || []))].sort();
+  const selectedCompany = allCompanies.find((c) => c.id === companyId) || null;
 
   const filtered = users.filter((u) => {
-    const matchRole   = activeRole === 'All' || u.role === activeRole;
-    const matchSearch = !search ||
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    return matchRole && matchSearch;
+    const matchDept = !dept
+      || (dept === '__admin__' ? u.role === 'Admin' : (u.modules || []).includes(dept));
+    const matchCompany = !selectedCompany || (u.company_code || '') === selectedCompany.code;
+    const matchSearch = !search.trim() ||
+      u.name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase()) ||
+      u.user_code?.toLowerCase().includes(search.toLowerCase()) ||
+      u.phone?.toLowerCase().includes(search.toLowerCase()) ||
+      u.designation?.toLowerCase().includes(search.toLowerCase());
+    return matchDept && matchCompany && matchSearch;
   });
 
   const activeCount   = users.filter((u) => u.is_active).length;
@@ -200,7 +78,7 @@ export default function UserManagementScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -209,92 +87,81 @@ export default function UserManagementScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={s.headerTitle}>User Management</Text>
         <TouchableOpacity
-          style={[s.iconBtn, { backgroundColor: COLORS.secondary }]}
+          style={[s.iconBtn, { backgroundColor: COLORS.navy }]}
           onPress={() => navigation.navigate('CreateUser')}
         >
-          <Ionicons name="add" size={20} color="#fff" />
+          <Ionicons name="add" size={20} color={COLORS.white} />
         </TouchableOpacity>
       </View>
 
-      {/* ── Stats strip ── */}
+      {/* Stats strip */}
       <View style={s.statsStrip}>
-        <View style={s.statItem}>
-          <View style={[s.statDot, { backgroundColor: '#22C55E' }]} />
-          <Text style={s.statText}>{activeCount} active</Text>
-        </View>
-        {inactiveCount > 0 && (
-          <View style={s.statItem}>
-            <View style={[s.statDot, { backgroundColor: '#9CA3AF' }]} />
-            <Text style={s.statText}>{inactiveCount} inactive</Text>
-          </View>
-        )}
+        <View style={s.statItem}><View style={[s.statDot, { backgroundColor: COLORS.success }]} /><Text style={s.statText}>{activeCount} Active</Text></View>
+        <View style={s.statItem}><View style={[s.statDot, { backgroundColor: COLORS.error }]} /><Text style={s.statText}>{inactiveCount} Inactive</Text></View>
       </View>
 
-      {/* ── Search ── */}
+      {/* Search */}
       <View style={s.searchRow}>
-        <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} />
-        <TextInput
-          style={s.searchInput}
-          placeholder="Search by name or email..."
-          placeholderTextColor={COLORS.textSecondary}
-          value={search}
-          onChangeText={setSearch}
+        <Ionicons name="search-outline" size={18} color={COLORS.textSecondary} />
+        <TextInput style={s.searchInput} placeholder="Search users…" value={search} onChangeText={setSearch} />
+        {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={18} color={COLORS.textSecondary} /></TouchableOpacity> : null}
+      </View>
+
+      {/* Department / Company filters */}
+      <View style={s.filterRow}>
+        <FilterSelect
+          label="Department"
+          value={dept}
+          onChange={setDept}
+          options={[
+            { value: '', label: 'All Departments' },
+            { value: '__admin__', label: 'Admin' },
+            ...departments.map((d) => ({ value: d, label: d })),
+          ]}
         />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={16} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        )}
       </View>
 
-      {/* ── Role filter tabs ── */}
-      <View style={s.tabsWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabsRow}>
-          {ROLES.map((r) => (
-            <TouchableOpacity
-              key={r}
-              style={[s.tab, activeRole === r && s.tabActive]}
-              onPress={() => setActiveRole(r)}
-            >
-              <Text style={[s.tabText, activeRole === r && s.tabTextActive]}>{r}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* ── Count ── */}
-      <Text style={s.countLabel}>
-        {loading ? '' : `${filtered.length} ${filtered.length === 1 ? 'user' : 'users'}`}
-      </Text>
-
-      {/* ── Content ── */}
-      {loading && users.length === 0 ? (
-        <ActivityIndicator size="large" color={COLORS.secondary} style={{ marginTop: 40 }} />
-      ) : error ? (
-        <Text style={s.errorText}>{error}</Text>
+      {/* List */}
+      {loading ? (
+        <ActivityIndicator size="large" color={COLORS.navy} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={(u) => String(u.id)}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.navy]} tintColor={COLORS.navy} />}
           renderItem={({ item }) => (
-            <UserCard
-              user={item}
-              onDelete={handleDelete}
-              onDeactivate={handleDeactivate}
-              onActivate={handleActivate}
-              onEdit={() => navigation.navigate('CreateUser', { user: item })}
-            />
+            <View style={s.card}>
+              <View style={[s.avatar, { backgroundColor: ROLE_AVATAR_COLOR[item.role] || COLORS.textSecondary }]}>
+                <Text style={s.avatarText}>{(item.name?.[0] || '?').toUpperCase()}</Text>
+              </View>
+              <View style={s.cardBody}>
+                <Text style={s.userName}>{item.name}</Text>
+                <Text style={s.userMeta}>{item.email || item.phone || '—'}</Text>
+                <View style={s.badgeRow}>
+                  <View style={[s.badge, { backgroundColor: (ROLE_BADGE_STYLE[item.role] || {}).bg || COLORS.screenBg }]}>
+                    <Text style={[s.badgeText, { color: (ROLE_BADGE_STYLE[item.role] || {}).text || COLORS.textSecondary }]}>{item.role}</Text>
+                  </View>
+                  <View style={[s.statusBadge, { backgroundColor: item.is_active ? COLORS.successBg : COLORS.errorBg }]}>
+                    <Text style={[s.statusText, { color: item.is_active ? COLORS.success : COLORS.error }]}>{item.is_active ? 'Active' : 'Inactive'}</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={s.actions}>
+                <TouchableOpacity style={s.editBtn} onPress={() => navigation.navigate('CreateUser', { user: item })}>
+                  <Ionicons name="pencil" size={16} color={COLORS.link} />
+                </TouchableOpacity>
+                <TouchableOpacity style={s.toggleBtn} onPress={() => handleToggle(item)}>
+                  <Ionicons name={item.is_active ? 'pause-circle' : 'checkmark-circle'} size={20} color={item.is_active ? COLORS.warning : COLORS.success} />
+                </TouchableOpacity>
+                <TouchableOpacity style={s.deleteBtn} onPress={() => handleDelete(item)}>
+                  <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<Text style={s.emptyText}>No users found.</Text>}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[COLORS.secondary]}
-              tintColor={COLORS.secondary}
-            />
+          ListEmptyComponent={
+            !loading && <Text style={{ textAlign: 'center', marginTop: 40, color: COLORS.textSecondary }}>No users found</Text>
           }
         />
       )}
@@ -303,51 +170,36 @@ export default function UserManagementScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: '#F5F6FA' },
+  screen:      { flex: 1, backgroundColor: COLORS.screenBg },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#EEF1F7' },
-  iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F0F3FA', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
-  statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.screenBg },
   statItem:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statDot:     { width: 7, height: 7, borderRadius: 4 },
-  statText:    { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  statText:    { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 6 },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
-  tabsWrapper:  { height: 44, marginTop: 14 },
-  tabsRow:      { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  tab:          { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#DDE3F0' },
-  tabActive:    { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
-  tabText:      { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
-  tabTextActive:{ color: '#fff', fontWeight: '700' },
+  filterRow:    { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 14 },
 
-  countLabel:   { marginHorizontal: 16, marginTop: 12, marginBottom: 4, fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
-
-  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, elevation: 2, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
-  cardInactive:{ backgroundColor: '#F9FAFB', opacity: 0.85 },
+  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginTop: 10, ...CARD_SHADOW },
   avatar:      { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarText:  { fontSize: 18, fontWeight: '700', color: '#fff' },
+  avatarText:  { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardBody:    { flex: 1 },
-  userName:    { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 2 },
-  userEmail:   { fontSize: 12, color: COLORS.textSecondary, marginBottom: 6 },
+  userName:    { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 2 },
+  userMeta:    { fontSize: 12, color: COLORS.textSecondary, marginBottom: 6 },
+  badgeRow:    { flexDirection: 'row', gap: 6 },
+  badge:       { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badgeText:   { fontSize: 10, fontWeight: '700' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  statusText:  { fontSize: 10, fontWeight: '700' },
 
-  tagRow:           { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  roleBadge:        { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
-  roleBadgeText:    { fontSize: 11, fontWeight: '600' },
-  managerBadge:     { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, borderWidth: 1, borderColor: '#F9A825', backgroundColor: '#FFFBF0' },
-  managerBadgeText: { fontSize: 11, fontWeight: '600', color: '#E6960A' },
-  inactiveBadge:    { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: '#F3F4F6' },
-  inactiveBadgeText:{ fontSize: 11, fontWeight: '600', color: '#9CA3AF' },
-  moduleCount:      { fontSize: 11, color: COLORS.textSecondary },
-
-  editBtn:     { padding: 6, borderRadius: 8, backgroundColor: '#EEF1FF' },
-  deactBtn:    { padding: 6, borderRadius: 8, backgroundColor: '#FFF7ED' },
-  activateBtn: { padding: 6, borderRadius: 8, backgroundColor: '#F0FDF4' },
-  deleteBtn:   { padding: 6, borderRadius: 8, backgroundColor: '#FEF2F2' },
-
-  errorText:   { textAlign: 'center', marginTop: 40, color: COLORS.error, fontSize: 14 },
-  emptyText:   { textAlign: 'center', marginTop: 40, color: COLORS.textSecondary, fontSize: 14 },
+  actions:     { flexDirection: 'column', gap: 6, marginLeft: 8 },
+  editBtn:     { padding: 6, borderRadius: 8, backgroundColor: COLORS.linkBg },
+  toggleBtn:   { padding: 2 },
+  deleteBtn:   { padding: 6, borderRadius: 8, backgroundColor: COLORS.screenBg },
 });

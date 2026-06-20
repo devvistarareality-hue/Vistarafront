@@ -21,8 +21,6 @@ export const fetchLeaveHistory = (page = 1) => async (dispatch) => {
     });
     const data = await response.json();
     if (response.ok) {
-      console.log('✅ Leave History Fetch Success');
-      console.log('📥 Response received:', JSON.stringify(data, null, 2));
       dispatch({ type: LEAVE_HISTORY_SUCCESS, payload: data, meta: { page } });
     } else {
       dispatch({ type: LEAVE_HISTORY_FAILURE, payload: data.detail || JSON.stringify(data) });

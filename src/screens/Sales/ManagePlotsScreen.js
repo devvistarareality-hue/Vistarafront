@@ -14,17 +14,14 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { uploadToSupabase } from '../../utils/supabaseStorage';
 
 const { width: SW } = Dimensions.get('window');
-const NAVY  = '#182350';
-const BLUE  = '#3D5AFE';
-const BG    = '#F5F6FA';
-const TEXT  = '#1A1A2E';
-const MUTED = '#8492A6';
-const CARD  = { backgroundColor: '#fff', borderRadius: 14, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.18, shadowRadius: 10, elevation: 4 };
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
+const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 const STATUS_CFG = {
-  available: { label: 'Available', color: '#2E7D32', bg: '#E8F5E9', border: '#2E7D32', zone: '#22c55e' },
-  hold:      { label: 'Hold',      color: '#E65100', bg: '#FFF3E0', border: '#E65100', zone: '#f59e0b' },
-  sold:      { label: 'Sold',      color: '#EF4444', bg: '#FEE2E2', border: '#EF4444', zone: '#ef4444' },
+  available: { label: 'Available', color: COLORS.success, bg: COLORS.successBg, border: COLORS.success, zone: COLORS.successAlt },
+  hold:      { label: 'Hold',      color: COLORS.warning, bg: COLORS.warningBg, border: COLORS.warning, zone: COLORS.warningAlt },
+  sold:      { label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg, border: COLORS.error, zone: COLORS.error },
 };
 
 const UNITS  = ['sqft', 'sqmtr', 'sqyrds', 'bigha'];
@@ -60,6 +57,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
   const [editType, setEditType] = useState('');
   const [saving,   setSaving]   = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
+  const [unitOpen, setUnitOpen] = useState(false);
 
   useEffect(() => {
     if (plot) {
@@ -92,14 +90,14 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
     finally { setSaving(false); }
   }
 
-  const inpS = { borderWidth: 1.5, borderColor: '#C8B4E8', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: '#fff' };
-  const lblS = { fontSize: 10, fontWeight: '700', color: '#B0BAC9', textTransform: 'uppercase', marginBottom: 5 };
+  const inpS = { borderWidth: 1.5, borderColor: COLORS.shadow, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white };
+  const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 5 };
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: BG, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 }}>
-          <View style={{ width: 40, height: 4, backgroundColor: '#DDE3F0', borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />
+          <View style={{ width: 40, height: 4, backgroundColor: COLORS.divider, borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />
           <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT, marginBottom: 18 }}>Edit Plot Info</Text>
 
           {/* Size */}
@@ -107,19 +105,27 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
             <TextInput value={sizeVal} onChangeText={setSizeVal} placeholder="e.g. 5000" keyboardType="numeric"
               style={[inpS, { flex: 1 }]} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxWidth: 200 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
+            <TouchableOpacity onPress={() => setUnitOpen(true)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: COLORS.purple, borderRadius: 10, paddingHorizontal: 12, backgroundColor: COLORS.surfaceAlt }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.purple }}>{unit}</Text>
+              <Ionicons name="chevron-down" size={14} color={COLORS.purple} />
+            </TouchableOpacity>
+          </View>
+          <Modal visible={unitOpen} transparent animationType="slide" onRequestClose={() => setUnitOpen(false)}>
+            <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setUnitOpen(false)}>
+              <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+                <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, paddingHorizontal: 16, paddingVertical: 12 }}>Select Unit</Text>
                 {UNITS.map(u => (
-                  <TouchableOpacity key={u} onPress={() => setUnit(u)}
-                    style={{ paddingHorizontal: 10, paddingVertical: 10, borderRadius: 10,
-                      backgroundColor: unit === u ? '#673AB7' : '#F0F3FA',
-                      borderWidth: 1.5, borderColor: unit === u ? '#673AB7' : '#E0E6F0' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: unit === u ? '#fff' : MUTED }}>{u}</Text>
+                  <TouchableOpacity key={u} onPress={() => { setUnit(u); setUnitOpen(false); }}
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.screenBg }}>
+                    <Text style={{ fontSize: 14, color: unit === u ? COLORS.purple : TEXT, fontWeight: unit === u ? '700' : '400' }}>{u}</Text>
+                    {unit === u && <Ionicons name="checkmark" size={18} color={COLORS.purple} />}
                   </TouchableOpacity>
                 ))}
               </View>
-            </ScrollView>
-          </View>
+            </TouchableOpacity>
+          </Modal>
 
           {/* Cluster/Type + Number */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
@@ -140,10 +146,10 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity onPress={save} disabled={saving}
               style={{ flex: 1, paddingVertical: 13, backgroundColor: NAVY, borderRadius: 12, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
-              {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Save</Text>}
+              {saving ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14 }}>Save</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={onClose}
-              style={{ paddingHorizontal: 20, paddingVertical: 13, backgroundColor: '#F0F3FA', borderRadius: 12 }}>
+              style={{ paddingHorizontal: 20, paddingVertical: 13, backgroundColor: COLORS.surfaceAlt, borderRadius: 12 }}>
               <Text style={{ color: MUTED, fontWeight: '600', fontSize: 14 }}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -154,12 +160,12 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
       <Modal visible={typeOpen} transparent animationType="fade" onRequestClose={() => setTypeOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', paddingHorizontal: 40 }}
           activeOpacity={1} onPress={() => setTypeOpen(false)}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: COLORS.white, borderRadius: 14, overflow: 'hidden' }}>
             {['', ...clusterTypes].map((t, i) => (
               <TouchableOpacity key={i} onPress={() => { setEditType(t); setTypeOpen(false); }}
-                style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: editType === t ? '#F0EBF8' : '#fff',
-                  borderBottomWidth: i < clusterTypes.length ? 1 : 0, borderBottomColor: '#F0F3FA' }}>
-                <Text style={{ fontSize: 14, color: editType === t ? '#673AB7' : TEXT, fontWeight: editType === t ? '700' : '400' }}>
+                style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: editType === t ? COLORS.surfaceAlt : COLORS.white,
+                  borderBottomWidth: i < clusterTypes.length ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
+                <Text style={{ fontSize: 14, color: editType === t ? COLORS.purple : TEXT, fontWeight: editType === t ? '700' : '400' }}>
                   {t || '— None —'}
                 </Text>
               </TouchableOpacity>
@@ -195,11 +201,11 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
   return (
     <View style={[CARD, { width: cardW, margin: 6, overflow: 'hidden', opacity: saving ? 0.7 : 1 }]}>
       {/* Header row: #number + type badge + status badge + edit */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, padding: 10, backgroundColor: '#FAFBFF', borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexWrap: 'wrap' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, padding: 10, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexWrap: 'wrap' }}>
         <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>#{displayNum}</Text>
         {plot.cluster_type ? (
-          <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 20, backgroundColor: '#EDE7F6' }}>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: '#673AB7' }}>{plot.cluster_type}</Text>
+          <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 20, backgroundColor: COLORS.purpleBg }}>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: COLORS.purple }}>{plot.cluster_type}</Text>
           </View>
         ) : null}
         <View style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -213,8 +219,8 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
       </View>
 
       {/* Size row — always rendered */}
-      <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', minHeight: 24 }}>
-        <Text style={{ fontSize: 10, color: plot.size ? MUTED : '#D1D5DB', fontStyle: plot.size ? 'normal' : 'italic' }} numberOfLines={1}>
+      <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, minHeight: 24 }}>
+        <Text style={{ fontSize: 10, color: plot.size ? MUTED : COLORS.divider, fontStyle: plot.size ? 'normal' : 'italic' }} numberOfLines={1}>
           {plot.size || 'Area not set'}
         </Text>
       </View>
@@ -224,8 +230,8 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
         {Object.entries(STATUS_CFG).map(([s, c]) => (
           <TouchableOpacity key={s} onPress={() => setStatus(s)} disabled={plot.status === s || saving}
             style={{ flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center',
-              backgroundColor: plot.status === s ? c.bg : '#fff',
-              borderWidth: 1.5, borderColor: plot.status === s ? c.border + '80' : '#E0E6F0' }}>
+              backgroundColor: plot.status === s ? c.bg : COLORS.white,
+              borderWidth: 1.5, borderColor: plot.status === s ? c.border + '80' : COLORS.border }}>
             <Text style={{ fontSize: 9, fontWeight: '700', color: plot.status === s ? c.color : MUTED }}>{c.label}</Text>
           </TouchableOpacity>
         ))}
@@ -311,7 +317,7 @@ function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
 
   return (
     <View style={[CARD, { marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
         <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6 }}>Plot Type Floor Plans</Text>
         {saving && <ActivityIndicator size="small" color={BLUE} />}
       </View>
@@ -324,10 +330,10 @@ function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
             return (
               <TouchableOpacity key={i} onPress={() => setActiveType(i)}
                 style={{ paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, alignItems: 'center', minWidth: 100,
-                  backgroundColor: active ? '#F0EBF8' : '#fff',
-                  borderWidth: 2, borderColor: active ? '#C4B5E0' : '#E8ECF4' }}>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: active ? '#5E35B1' : TEXT, marginBottom: 2 }}>{t.name}</Text>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: active ? '#9C6FD6' : MUTED }}>
+                  backgroundColor: active ? COLORS.surfaceAlt : COLORS.white,
+                  borderWidth: 2, borderColor: active ? COLORS.shadow : COLORS.surfaceAlt }}>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: active ? COLORS.purple : TEXT, marginBottom: 2 }}>{t.name}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '600', color: active ? COLORS.textSecondary : MUTED }}>
                   {t.floor_plans.length > 0 ? `${t.floor_plans.length} plan${t.floor_plans.length > 1 ? 's' : ''}` : 'No plans yet'}
                 </Text>
               </TouchableOpacity>
@@ -337,9 +343,9 @@ function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <TextInput autoFocus value={newTypeName} onChangeText={setNewTypeName}
                 onSubmitEditing={addType}
-                placeholder="Type name" style={{ borderWidth: 1.5, borderColor: '#673AB7', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, width: 130, color: TEXT }} />
-              <TouchableOpacity onPress={addType} style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#673AB7', borderRadius: 10 }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Add</Text>
+                placeholder="Type name" style={{ borderWidth: 1.5, borderColor: COLORS.purple, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, width: 130, color: TEXT }} />
+              <TouchableOpacity onPress={addType} style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.purple, borderRadius: 10 }}>
+                <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Add</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => { setAddingType(false); setNewTypeName(''); }} style={{ padding: 8 }}>
                 <Ionicons name="close" size={18} color={MUTED} />
@@ -348,15 +354,15 @@ function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
           ) : (
             <TouchableOpacity onPress={() => setAddingType(true)}
               style={{ paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, alignItems: 'center', minWidth: 100,
-                borderWidth: 2, borderColor: '#C4B5E0', borderStyle: 'dashed', backgroundColor: '#FAF8FF' }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#9C6FD6' }}>+ Add Type</Text>
+                borderWidth: 2, borderColor: COLORS.shadow, borderStyle: 'dashed', backgroundColor: COLORS.screenBg }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.textSecondary }}>+ Add Type</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
 
         {plans.length === 0 && (
           <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-            <Ionicons name="images-outline" size={36} color="#DDE3F0" />
+            <Ionicons name="images-outline" size={36} color={COLORS.divider} />
             <Text style={{ fontSize: 13, color: MUTED, marginTop: 8 }}>No plot types yet. Add a type to upload floor plans.</Text>
           </View>
         )}
@@ -371,28 +377,28 @@ function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.4 }}>{fp.label}</Text>
                       <TouchableOpacity onPress={() => removeFloor(activeType, fi)}>
-                        <Ionicons name="close-circle" size={16} color="#EF4444" />
+                        <Ionicons name="close-circle" size={16} color={COLORS.error} />
                       </TouchableOpacity>
                     </View>
-                    <Image source={{ uri: fp.url }} style={{ width: '100%', aspectRatio: 4/3, borderRadius: 10, backgroundColor: '#F4F6FB' }} resizeMode="contain" />
+                    <Image source={{ uri: fp.url }} style={{ width: '100%', aspectRatio: 4/3, borderRadius: 10, backgroundColor: COLORS.screenBg }} resizeMode="contain" />
                   </View>
                 ))}
               </View>
             )}
 
             {/* Upload section */}
-            <View style={{ backgroundColor: '#F8F9FF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#EAE4F8' }}>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: '#9C6FD6', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+            <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: COLORS.purpleBg }}>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
                 Add Floor Plan to "{current.name}"
               </Text>
               <TextInput value={newFloorLabel} onChangeText={setNewFloorLabel}
                 placeholder="Floor label (e.g. Ground Floor, 1st Floor…)"
-                style={{ borderWidth: 1.5, borderColor: '#DDD6F3', borderRadius: 9, paddingHorizontal: 12, paddingVertical: 9, fontSize: 13, color: TEXT, backgroundColor: '#fff', marginBottom: 10 }} />
+                style={{ borderWidth: 1.5, borderColor: COLORS.divider, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 9, fontSize: 13, color: TEXT, backgroundColor: COLORS.white, marginBottom: 10 }} />
               <TouchableOpacity onPress={addFloor} disabled={uploading}
-                style={{ borderWidth: 1.5, borderColor: '#C4B5E0', borderStyle: 'dashed', borderRadius: 10, paddingVertical: 20, alignItems: 'center', backgroundColor: '#FAFBFF' }}>
-                {uploading ? <ActivityIndicator color="#673AB7" /> : <>
-                  <Ionicons name="image-outline" size={26} color="#C4B5E0" />
-                  <Text style={{ fontSize: 13, color: '#9C6FD6', marginTop: 6 }}>Upload floor plan image</Text>
+                style={{ borderWidth: 1.5, borderColor: COLORS.shadow, borderStyle: 'dashed', borderRadius: 10, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.white }}>
+                {uploading ? <ActivityIndicator color={COLORS.purple} /> : <>
+                  <Ionicons name="image-outline" size={26} color={COLORS.shadow} />
+                  <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 6 }}>Upload floor plan image</Text>
                 </>}
               </TouchableOpacity>
             </View>
@@ -522,8 +528,8 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
 
   function getZoneColor(plotNumber) {
     const pl = plots.find(p => String(p.number) === String(plotNumber));
-    if (!pl) return '#B8960C';
-    return STATUS_CFG[pl.status]?.zone || '#B8960C';
+    if (!pl) return COLORS.goldDark;
+    return STATUS_CFG[pl.status]?.zone || COLORS.goldDark;
   }
 
   /* Convert percent coords to pixel for SVG (viewBox=0 0 100 100 preserveAspectRatio=none) */
@@ -531,7 +537,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
   return (
     <View style={[CARD, { marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' }]}>
       {/* Header */}
-      <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FAFBFF' }}>
+      <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.white }}>
         <View>
           <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6 }}>Interactive Site Map</Text>
           <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
@@ -540,8 +546,8 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
         </View>
         {siteMapImage && totalPlots > 0 ? (
           <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
-            backgroundColor: mappedCount === totalPlots ? '#E8F5E9' : '#F0F3FF' }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: mappedCount === totalPlots ? '#2E7D32' : BLUE }}>
+            backgroundColor: mappedCount === totalPlots ? COLORS.successBg : COLORS.screenBg }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: mappedCount === totalPlots ? COLORS.success : BLUE }}>
               {Math.round(mappedCount / totalPlots * 100)}%
             </Text>
           </View>
@@ -552,9 +558,9 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
         {/* No image — upload button */}
         {!siteMapImage && (
           <TouchableOpacity onPress={uploadSiteMapImage} disabled={uploading}
-            style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderStyle: 'dashed', borderRadius: 10, paddingVertical: 28, alignItems: 'center', backgroundColor: '#FAFBFF' }}>
+            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 10, paddingVertical: 28, alignItems: 'center', backgroundColor: COLORS.white }}>
             {uploading ? <ActivityIndicator color={BLUE} /> : <>
-              <Ionicons name="map-outline" size={32} color="#C0C8D8" />
+              <Ionicons name="map-outline" size={32} color={COLORS.shadow} />
               <Text style={{ fontSize: 13, color: MUTED, marginTop: 8 }}>
                 {project.master_plan_url ? 'Upload site plan image' : 'Upload master plan first'}
               </Text>
@@ -573,17 +579,17 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
               ].map(m => (
                 <TouchableOpacity key={m.id} onPress={() => { setDrawMode(m.id); cancelDraw(); }}
                   style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
-                    paddingVertical: 9, borderRadius: 10, backgroundColor: drawMode === m.id ? NAVY : '#F0F3FA',
-                    borderWidth: 1.5, borderColor: drawMode === m.id ? NAVY : '#E0E6F0' }}>
-                  <Ionicons name={m.icon} size={14} color={drawMode === m.id ? '#fff' : MUTED} />
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: drawMode === m.id ? '#fff' : MUTED }}>{m.label}</Text>
+                    paddingVertical: 9, borderRadius: 10, backgroundColor: drawMode === m.id ? NAVY : COLORS.surfaceAlt,
+                    borderWidth: 1.5, borderColor: drawMode === m.id ? NAVY : COLORS.border }}>
+                  <Ionicons name={m.icon} size={14} color={drawMode === m.id ? COLORS.white : MUTED} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: drawMode === m.id ? COLORS.white : MUTED }}>{m.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Instruction */}
-            <View style={{ padding: 10, backgroundColor: '#F8F9FF', borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#E0E6F0' }}>
-              <Text style={{ fontSize: 11, color: '#5C6BC0' }}>
+            <View style={{ padding: 10, backgroundColor: COLORS.screenBg, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border }}>
+              <Text style={{ fontSize: 11, color: COLORS.navyMedium }}>
                 {drawMode === 'rect'
                   ? 'Drag on the image to draw a rectangle over a plot, then enter its plot number.'
                   : `Tap each corner of the plot to add vertices.${polyPoints.length >= 3 ? ' Tap "Done" to close the shape.' : ''}`}
@@ -596,10 +602,10 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                 <TouchableOpacity onPress={finishPolygon}
                   style={{ flex: 1, paddingVertical: 9, backgroundColor: NAVY, borderRadius: 10, alignItems: 'center' }}>
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>✓ Done ({polyPoints.length} pts)</Text>
+                  <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>✓ Done ({polyPoints.length} pts)</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={cancelDraw}
-                  style={{ paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#F0F3FA', borderRadius: 10 }}>
+                  style={{ paddingHorizontal: 16, paddingVertical: 9, backgroundColor: COLORS.surfaceAlt, borderRadius: 10 }}>
                   <Text style={{ color: MUTED, fontWeight: '600', fontSize: 12 }}>Cancel</Text>
                 </TouchableOpacity>
               </View>
@@ -608,7 +614,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
             {/* Map image with SVG overlay */}
             <View
               ref={imgContainerRef}
-              style={{ width: '100%', borderRadius: 10, overflow: 'hidden', backgroundColor: '#000' }}
+              style={{ width: '100%', borderRadius: 10, overflow: 'hidden', backgroundColor: COLORS.black }}
               onLayout={e => setImgLayout({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
               {...touchHandlers}
               onStartShouldSetResponder={drawMode === 'polygon' && !pendingZone ? () => true : touchHandlers.onStartShouldSetResponder}
@@ -634,7 +640,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
                         ? <Polygon points={zone.points.map(p => `${p.x},${p.y}`).join(' ')} fill={color + '55'} stroke={color} strokeWidth="0.6" />
                         : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} fill={color + '55'} stroke={color} strokeWidth="0.6" rx="0.3" />
                       }
-                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="3" fontWeight="bold" fill="#fff">{zone.plotNumber}</SvgText>
+                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="3" fontWeight="bold" fill={COLORS.white}>{zone.plotNumber}</SvgText>
                     </React.Fragment>
                   );
                 })}
@@ -644,7 +650,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
                   <Polyline points={polyPoints.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke={BLUE} strokeWidth="0.6" strokeDasharray="2,1.2" />
                 )}
                 {polyPoints.map((pt, i) => (
-                  <Circle key={i} cx={pt.x} cy={pt.y} r="1.5" fill={BLUE} stroke="#fff" strokeWidth="0.4" />
+                  <Circle key={i} cx={pt.x} cy={pt.y} r="1.5" fill={BLUE} stroke={COLORS.white} strokeWidth="0.4" />
                 ))}
 
                 {/* Live rectangle */}
@@ -668,14 +674,14 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
 
             {/* Plot number input after drawing */}
             {pendingZone && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, padding: 12, backgroundColor: '#F0F3FF', borderRadius: 10, borderWidth: 1.5, borderColor: BLUE + '40' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, borderWidth: 1.5, borderColor: BLUE + '40' }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>Plot No.:</Text>
                 <TextInput value={plotInput} onChangeText={setPlotInput} placeholder="e.g. D-1"
                   onSubmitEditing={confirmZone}
-                  style={{ flex: 1, borderWidth: 1.5, borderColor: BLUE + '60', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 14, fontWeight: '700', color: TEXT, backgroundColor: '#fff' }} />
+                  style={{ flex: 1, borderWidth: 1.5, borderColor: BLUE + '60', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 14, fontWeight: '700', color: TEXT, backgroundColor: COLORS.white }} />
                 <TouchableOpacity onPress={confirmZone}
                   style={{ paddingHorizontal: 14, paddingVertical: 9, backgroundColor: NAVY, borderRadius: 9 }}>
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Save</Text>
+                  <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>Save</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={cancelDraw} style={{ padding: 6 }}>
                   <Ionicons name="close" size={18} color={MUTED} />
@@ -693,7 +699,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
                       { text: 'Cancel', style: 'cancel' },
                       { text: 'Clear', style: 'destructive', onPress: () => persistZones([]) },
                     ])}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#EF4444' }}>Clear all</Text>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.error }}>Clear all</Text>
                     </TouchableOpacity>
                   }
                 </View>
@@ -748,7 +754,7 @@ function MasterPlanSection({ project, onProjectUpdate }) {
 
   return (
     <View style={[CARD, { marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: '#F0F3FA', backgroundColor: '#FAFBFF' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
         <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6 }}>Master Plan</Text>
         {project.master_plan_url ? (
           <TouchableOpacity onPress={upload} disabled={uploading}>
@@ -759,18 +765,18 @@ function MasterPlanSection({ project, onProjectUpdate }) {
       <View style={{ padding: 14 }}>
         {project.master_plan_url ? (
           isImg(project.master_plan_url) ? (
-            <Image source={{ uri: project.master_plan_url }} style={{ width: '100%', height: 220, borderRadius: 10, backgroundColor: '#EEF0F8' }} resizeMode="contain" />
+            <Image source={{ uri: project.master_plan_url }} style={{ width: '100%', height: 220, borderRadius: 10, backgroundColor: COLORS.surfaceAlt }} resizeMode="contain" />
           ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: '#F8F9FE', borderRadius: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: COLORS.screenBg, borderRadius: 10 }}>
               <Ionicons name="document-text-outline" size={24} color={BLUE} style={{ marginRight: 10 }} />
               <Text style={{ fontSize: 13, color: BLUE, fontWeight: '600' }}>PDF uploaded — view on web</Text>
             </View>
           )
         ) : (
           <TouchableOpacity onPress={upload} disabled={uploading}
-            style={{ borderWidth: 1.5, borderColor: '#E0E6F0', borderStyle: 'dashed', borderRadius: 10, paddingVertical: 24, alignItems: 'center', backgroundColor: '#FAFBFF' }}>
+            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 10, paddingVertical: 24, alignItems: 'center', backgroundColor: COLORS.white }}>
             {uploading ? <ActivityIndicator color={BLUE} /> : <>
-              <Ionicons name="map-outline" size={28} color="#C0C8D8" />
+              <Ionicons name="map-outline" size={28} color={COLORS.shadow} />
               <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Upload master plan</Text>
             </>}
           </TouchableOpacity>
@@ -853,19 +859,19 @@ export default function ManagePlotsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={22} color={TEXT} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color={NAVY} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }} numberOfLines={1}>{project.name}</Text>
           {project.location ? <Text style={{ fontSize: 11, color: MUTED }}>{project.location}</Text> : null}
         </View>
-        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: project.is_active ? '#E8F5E9' : '#FEE2E2' }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? '#2E7D32' : '#EF4444' }}>
+        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: project.is_active ? 'rgba(46,125,50,0.3)' : 'rgba(239,68,68,0.3)', borderWidth: 1, borderColor: project.is_active ? 'rgba(165,214,167,0.5)' : 'rgba(254,202,202,0.5)' }}>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: project.is_active ? COLORS.textTertiary : COLORS.errorBg }}>
             {project.is_active ? 'ACTIVE' : 'INACTIVE'}
           </Text>
         </View>
@@ -884,9 +890,9 @@ export default function ManagePlotsScreen({ route, navigation }) {
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
               {[
                 { label: 'Total',     val: plots.length,   color: TEXT },
-                { label: 'Available', val: counts.available, color: '#2E7D32' },
-                { label: 'On Hold',   val: counts.hold,      color: '#E65100' },
-                { label: 'Sold',      val: counts.sold,      color: '#EF4444' },
+                { label: 'Available', val: counts.available, color: COLORS.success },
+                { label: 'On Hold',   val: counts.hold,      color: COLORS.warning },
+                { label: 'Sold',      val: counts.sold,      color: COLORS.error },
               ].map(s => (
                 <View key={s.label} style={[CARD, { flex: 1, padding: 10, alignItems: 'center' }]}>
                   <Text style={{ fontSize: 20, fontWeight: '800', color: s.color }}>{s.val}</Text>
@@ -902,7 +908,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
                   <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>Sales Progress</Text>
                   <Text style={{ fontSize: 12, color: MUTED }}>{soldPct}% sold</Text>
                 </View>
-                <View style={{ height: 8, borderRadius: 6, backgroundColor: '#F0F3FA', overflow: 'hidden' }}>
+                <View style={{ height: 8, borderRadius: 6, backgroundColor: COLORS.surfaceAlt, overflow: 'hidden' }}>
                   <View style={{ height: '100%', width: `${soldPct}%`, backgroundColor: BLUE, borderRadius: 6 }} />
                 </View>
               </View>
@@ -917,24 +923,45 @@ export default function ManagePlotsScreen({ route, navigation }) {
             {/* Plot Type Floor Plans */}
             <PlotTypePlansEditor project={project} plots={plots} onProjectUpdate={setProject} />
 
-            {/* Filter tabs */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 12, gap: 8, flexDirection: 'row' }}>
-              {[
-                { key: 'all',       label: 'All',       color: TEXT,      bg: '#F0F3FF' },
-                { key: 'available', label: 'Available', color: '#2E7D32', bg: '#E8F5E9' },
-                { key: 'hold',      label: 'Hold',      color: '#E65100', bg: '#FFF3E0' },
-                { key: 'sold',      label: 'Sold',      color: '#EF4444', bg: '#FEE2E2' },
-              ].map(({ key, label, color, bg }) => (
-                <TouchableOpacity key={key} onPress={() => setFilter(key)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
-                    backgroundColor: filter === key ? bg : '#fff',
-                    borderWidth: 1.5, borderColor: filter === key ? color + '60' : '#E0E6F0' }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: filter === key ? color : MUTED }}>
-                    {label} ({counts[key]})
-                  </Text>
+            {/* Filter tabs + Delete All */}
+            <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, flexDirection: 'row', marginBottom: plots.length > 0 ? 10 : 0 }}>
+                {[
+                  { key: 'all',       label: 'All',       color: TEXT,      bg: COLORS.screenBg },
+                  { key: 'available', label: 'Available', color: COLORS.success, bg: COLORS.successBg },
+                  { key: 'hold',      label: 'Hold',      color: COLORS.warning, bg: COLORS.warningBg },
+                  { key: 'sold',      label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg },
+                ].map(({ key, label, color, bg }) => (
+                  <TouchableOpacity key={key} onPress={() => setFilter(key)}
+                    style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+                      backgroundColor: filter === key ? bg : COLORS.white,
+                      borderWidth: 1.5, borderColor: filter === key ? color + '60' : COLORS.border }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: filter === key ? color : MUTED }}>
+                      {label} ({counts[key]})
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              {plots.length > 0 && (
+                <TouchableOpacity onPress={async () => {
+                  Alert.alert('Delete All Plots', `Delete all ${plots.length} plots for this project? This cannot be undone.`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete All', style: 'destructive', onPress: async () => {
+                      const headers = await authHeaders();
+                      const res = await fetch(SALES_ENDPOINTS.plotsBulkDelete, {
+                        method: 'DELETE', headers, body: JSON.stringify({ project_id: project.id }),
+                      });
+                      if (res.ok) { setPlots([]); Alert.alert('Done', 'All plots deleted.'); }
+                      else { const e = await res.json(); Alert.alert('Error', e.detail || 'Failed to delete plots'); }
+                    }},
+                  ]);
+                }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.errorBg }}>
+                  <Ionicons name="trash-outline" size={15} color={COLORS.errorStrong} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.errorStrong }}>Delete All Plots</Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+            </View>
           </View>
         )}
         renderItem={({ item }) => (
@@ -947,7 +974,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
         key="plots-grid"
         ListEmptyComponent={
           <View style={{ alignItems: 'center', padding: 40 }}>
-            <Ionicons name="grid-outline" size={40} color="#DDE3F0" />
+            <Ionicons name="grid-outline" size={40} color={COLORS.divider} />
             <Text style={{ color: MUTED, marginTop: 12, fontWeight: '600' }}>No plots with this status.</Text>
           </View>
         }

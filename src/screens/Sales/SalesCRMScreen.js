@@ -5,9 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
-const NAVY = '#182350'; const BLUE = '#3D5AFE'; const BG = '#F5F6FA'; const TEXT = '#1A1A2E'; const MUTED = '#8492A6';
-const CARD = { backgroundColor: '#fff', borderRadius: 16, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 4 };
+const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -15,13 +16,13 @@ async function authHeaders() {
 }
 
 const MENU = [
-  { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: '#3D5AFE', bg: '#EEF0FF',  adminOnly: false },
-  { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: '#2E7D32', bg: '#E8F5E9',  adminOnly: true  },
-  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: '#0097A7', bg: '#E0F7FA',  adminOnly: true  },
-  { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: '#7B1FA2', bg: '#F3E5F5',  adminOnly: true  },
-  { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: '#E65100', bg: '#FFF3E0',  adminOnly: true  },
-  { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: '#00796B', bg: '#E0F2F1',  adminOnly: true  },
-  { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: '#1565C0', bg: '#E3F2FD',  adminOnly: false },
+  { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false },
+  { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: true  },
+  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: COLORS.info, bg: COLORS.infoBg,  adminOnly: true  },
+  { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  },
+  { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: true  },
+  { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: COLORS.info, bg: COLORS.infoBg,  adminOnly: true  },
+  { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: COLORS.linkPressed, bg: COLORS.infoBg,  adminOnly: false },
 ];
 
 function getDesignationLabel(user) {
@@ -32,8 +33,9 @@ function getDesignationLabel(user) {
 }
 
 export default function SalesCRMScreen({ navigation }) {
-  const user     = useSelector((s) => s.auth.user);
-  const isAdmin  = user?.role === 'Admin' || user?.is_staff;
+  const user      = useSelector((s) => s.auth.user);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const isAdmin   = user?.role === 'Admin' || user?.is_staff;
   const visibleMenu = MENU.filter(m => !m.adminOnly || isAdmin);
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
@@ -41,10 +43,11 @@ export default function SalesCRMScreen({ navigation }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { loadStats(); }, []);
-
-  const STATS_CACHE_KEY = '@vistara_sales_stats';
+  // Cache key is per-company so switching company never shows stale data from another company
+  const STATS_CACHE_KEY = `@vistara_sales_stats_${companyId || 'all'}`;
   const STATS_TTL_MS    = 2 * 60 * 1000; // 2 minutes
+
+  useEffect(() => { loadStats(); }, [companyId]);
 
   async function loadStats(refresh = false) {
     // Always show cached data immediately (even if stale) — no spinner on repeat visits
@@ -65,7 +68,10 @@ export default function SalesCRMScreen({ navigation }) {
 
     try {
       const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.stats, { headers });
+      const url = companyId
+        ? `${SALES_ENDPOINTS.stats}?company_id=${companyId}`
+        : SALES_ENDPOINTS.stats;
+      const res = await fetch(url, { headers });
       if (res.ok) {
         const data = await res.json();
         setStats(data);
@@ -77,26 +83,31 @@ export default function SalesCRMScreen({ navigation }) {
   }
 
   const STAT_CARDS = [
-    { label: 'Total Leads',  value: stats?.total_leads    ?? '—', color: BLUE,      bg: '#EEF0FF' },
-    { label: 'New Today',    value: stats?.leads_today     ?? '—', color: '#2E7D32', bg: '#E8F5E9' },
-    { label: 'Unassigned',   value: stats?.new_leads       ?? '—', color: '#E65100', bg: '#FFF3E0' },
-    { label: 'Closures',     value: stats?.closures        ?? '—', color: '#EF4444', bg: '#FEE2E2' },
-    { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: '#7B1FA2', bg: '#F3E5F5' },
-    { label: 'Projects',     value: stats?.active_projects ?? '—', color: '#0097A7', bg: '#E0F7FA' },
+    { label: 'Total Leads',  value: stats?.total_leads    ?? '—', color: BLUE,      bg: COLORS.linkBg },
+    { label: 'New Today',    value: stats?.leads_today     ?? '—', color: COLORS.success, bg: COLORS.successBg },
+    { label: 'Unassigned',   value: stats?.new_leads       ?? '—', color: COLORS.warning, bg: COLORS.warningBg },
+    { label: 'Closures',     value: stats?.closures        ?? '—', color: COLORS.error, bg: COLORS.errorBg },
+    { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: COLORS.purple, bg: COLORS.purpleBg },
+    { label: 'Projects',     value: stats?.active_projects ?? '—', color: COLORS.info, bg: COLORS.infoBg },
   ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        {navigation.canGoBack() && (
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="arrow-back" size={20} color={NAVY} />
+          </TouchableOpacity>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{screenTitle}</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>{screenSub}</Text>
+          <Text style={{ fontSize: 13, color: MUTED }}>{screenSub}</Text>
         </View>
-        <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6 }}>
-          <Ionicons name="refresh-outline" size={20} color={refreshing ? MUTED : BLUE} />
+        <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
+          <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
       </View>
 

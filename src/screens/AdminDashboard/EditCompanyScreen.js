@@ -68,7 +68,7 @@ export default function EditCompanyScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -181,7 +181,7 @@ export default function EditCompanyScreen({ navigation, route }) {
         {/* Warning — only on edit */}
         {isEdit && (
           <View style={warnStyle.box}>
-            <Ionicons name="warning-outline" size={16} color="#E65100" style={{ marginRight: 8, marginTop: 1 }} />
+            <Ionicons name="warning-outline" size={16} color={COLORS.warning} style={{ marginRight: 8, marginTop: 1 }} />
             <Text style={warnStyle.text}>
               Changing the company code will update the login code for all users of this company.
             </Text>
@@ -195,13 +195,13 @@ export default function EditCompanyScreen({ navigation, route }) {
           disabled={busy}
         >
           {busy ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={COLORS.white} />
           ) : (
             <>
               <Ionicons
                 name={isEdit ? 'checkmark-circle-outline' : 'business-outline'}
                 size={18}
-                color="#fff"
+                color={COLORS.white}
                 style={{ marginRight: 8 }}
               />
               <Text style={styles.submitBtnText}>{isEdit ? 'Update Company' : 'Create Company'}</Text>
@@ -217,7 +217,7 @@ const warnStyle = {
   box: {
     flexDirection:   'row',
     alignItems:      'flex-start',
-    backgroundColor: '#FFF3E0',
+    backgroundColor: COLORS.warningBg,
     borderRadius:    10,
     padding:         12,
     marginTop:       20,
@@ -226,7 +226,7 @@ const warnStyle = {
   text: {
     flex:       1,
     fontSize:   12,
-    color:      '#E65100',
+    color:      COLORS.warning,
     lineHeight: 18,
   },
 };

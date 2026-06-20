@@ -1,18 +1,19 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { COLORS } from '../../constants/theme';
 
 const { width, height } = Dimensions.get('window');
-const NAVY = '#182350';
-const TEXT = '#1A1A2E';
-const MUTED = '#8492A6';
+const NAVY = COLORS.navy;
+const TEXT = COLORS.textPrimary;
+const MUTED = COLORS.textSecondary;
 const CARD_SHADOW = {
-  shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+  shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.18, shadowRadius: 12, elevation: 4,
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: COLORS.screenBg,
   },
   scrollContent: {
     flexGrow: 1,
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     height: 54,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: 16,
     paddingHorizontal: 16,
     fontSize: 15,
@@ -74,11 +75,11 @@ const styles = StyleSheet.create({
     ...CARD_SHADOW,
   },
   submitButtonDisabled: {
-    backgroundColor: '#B0BAC9',
+    backgroundColor: COLORS.textTertiary,
     elevation: 0,
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontSize: 16,
     fontWeight: '700',
   },

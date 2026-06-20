@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { COLORS } from '../../constants/theme';
 import {
   View, Text, TextInput, TouchableOpacity, StatusBar,
   KeyboardAvoidingView, Platform, ScrollView,
@@ -12,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { login } from '../../redux/actions/authActions';
 
 const { height } = Dimensions.get('window');
-const ORANGE = '#FF6B2B';
+const ORANGE = COLORS.error;
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -46,10 +47,10 @@ const LoginScreen = () => {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <StatusBar barStyle="light-content" backgroundColor="#050D1A" />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
       {/* Deep space gradient */}
-      <LinearGradient colors={['#050D1A', '#0C1E3C', '#112240']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[COLORS.black, COLORS.navyDark, COLORS.navyDark]} style={StyleSheet.absoluteFill} />
 
       {/* Decorative blobs */}
       <View style={s.blobTopRight} />
@@ -100,11 +101,11 @@ const LoginScreen = () => {
             {/* User ID */}
             <Text style={s.fieldLabel}>USER ID</Text>
             <View style={s.inputRow}>
-              <Ionicons name="person-outline" size={20} color="#6B7A99" style={{ marginRight: 12 }} />
+              <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
               <TextInput
                 style={s.input}
                 placeholder="Enter your user ID"
-                placeholderTextColor="#B0BAD0"
+                placeholderTextColor={COLORS.textTertiary}
                 value={userCode}
                 onChangeText={setUserCode}
                 autoCapitalize="none"
@@ -116,11 +117,11 @@ const LoginScreen = () => {
             {/* Password */}
             <Text style={s.fieldLabel}>PASSWORD</Text>
             <View style={s.inputRow}>
-              <Ionicons name="lock-closed-outline" size={20} color="#6B7A99" style={{ marginRight: 12 }} />
+              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
               <TextInput
                 style={[s.input, { flex: 1 }]}
                 placeholder="Enter your password"
-                placeholderTextColor="#B0BAD0"
+                placeholderTextColor={COLORS.textTertiary}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -129,7 +130,7 @@ const LoginScreen = () => {
                 editable={!loginLoading}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 6 }}>
-                <Ionicons name={showPassword ? 'eye' : 'eye-outline'} size={20} color="#6B7A99" />
+                <Ionicons name={showPassword ? 'eye' : 'eye-outline'} size={20} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -141,17 +142,17 @@ const LoginScreen = () => {
               style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
             >
               <LinearGradient
-                colors={canLogin ? ['#1A3A6E', '#112240'] : ['#B0BAC9', '#9AA3B2']}
+                colors={canLogin ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={s.btn}
               >
                 {loginLoading
-                  ? <ActivityIndicator color="#FFFFFF" />
+                  ? <ActivityIndicator color={COLORS.white} />
                   : (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Text style={s.btnText}>Sign In</Text>
-                      <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                      <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
                     </View>
                   )
                 }
@@ -165,12 +166,12 @@ const LoginScreen = () => {
               activeOpacity={0.7}
               disabled={loginLoading}
             >
-              <Ionicons name="arrow-back" size={16} color="#8492A6" style={{ marginRight: 6 }} />
+              <Ionicons name="arrow-back" size={16} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
               <Text style={s.backText}>Back to Company Code</Text>
             </TouchableOpacity>
 
             <View style={s.secureRow}>
-              <Ionicons name="shield-checkmark-outline" size={14} color="#A0AABB" />
+              <Ionicons name="shield-checkmark-outline" size={14} color={COLORS.textTertiary} />
               <Text style={s.secureText}>Secured & encrypted connection</Text>
             </View>
           </View>
@@ -220,7 +221,7 @@ const s = StyleSheet.create({
   },
   logoCircle: {
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     justifyContent: 'center', alignItems: 'center',
     shadowColor: ORANGE, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45, shadowRadius: 12, elevation: 8,
@@ -234,13 +235,13 @@ const s = StyleSheet.create({
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,107,43,0.35)' },
   dividerDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: ORANGE, marginHorizontal: 8 },
 
-  brandName: { fontSize: 34, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1, marginBottom: 6 },
+  brandName: { fontSize: 34, fontWeight: '800', color: COLORS.white, letterSpacing: 1, marginBottom: 6 },
   brandTag:  { fontSize: 11, fontWeight: '700', color: ORANGE, letterSpacing: 4, marginBottom: 8, textTransform: 'uppercase' },
   brandSub:  { fontSize: 13, color: 'rgba(255,255,255,0.45)', fontWeight: '400', letterSpacing: 0.3 },
 
   card: {
     flex: 1,
-    backgroundColor: '#F7F8FC',
+    backgroundColor: COLORS.screenBg,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingHorizontal: 24,
@@ -253,40 +254,40 @@ const s = StyleSheet.create({
     position: 'absolute', top: 0, left: 48, right: 48, height: 3,
     backgroundColor: ORANGE, borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
   },
-  cardTitle: { fontSize: 26, fontWeight: '800', color: '#0C1E3C', marginBottom: 6, marginTop: 8 },
-  cardSub:   { fontSize: 13, color: '#8492A6', fontWeight: '500', marginBottom: 28 },
+  cardTitle: { fontSize: 26, fontWeight: '800', color: COLORS.navyDark, marginBottom: 6, marginTop: 8 },
+  cardSub:   { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500', marginBottom: 28 },
 
   fieldLabel: {
-    fontSize: 11, fontWeight: '700', color: '#6B7A99',
+    fontSize: 11, fontWeight: '700', color: COLORS.textSecondary,
     letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10,
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 16,
+    backgroundColor: COLORS.white, borderRadius: 16,
     paddingHorizontal: 16, height: 56, marginBottom: 22,
-    borderWidth: 1.5, borderColor: '#E4E9F2',
-    shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
+    borderWidth: 1.5, borderColor: COLORS.border,
+    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12, shadowRadius: 10, elevation: 3,
   },
-  input: { flex: 1, fontSize: 15, color: '#0C1E3C', fontWeight: '600' },
+  input: { flex: 1, fontSize: 15, color: COLORS.navyDark, fontWeight: '600' },
 
   btn: {
     height: 56, borderRadius: 16,
     justifyContent: 'center', alignItems: 'center',
   },
-  btnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+  btnText: { color: COLORS.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
 
   backBtn: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', marginTop: 20, paddingVertical: 8,
   },
-  backText: { fontSize: 13, color: '#8492A6', fontWeight: '500' },
+  backText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
 
   secureRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', marginTop: 16, gap: 6,
   },
-  secureText: { fontSize: 12, color: '#A0AABB', fontWeight: '500' },
+  secureText: { fontSize: 12, color: COLORS.textTertiary, fontWeight: '500' },
 });
 
 export default LoginScreen;

@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
-const NAVY = '#182350'; const BLUE = '#3D5AFE'; const BG = '#F5F6FA'; const TEXT = '#1A1A2E'; const MUTED = '#8492A6';
-const CARD = { backgroundColor: '#fff', borderRadius: 14, shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3 };
+const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -14,17 +15,17 @@ async function authHeaders() {
 }
 
 const DESIG_COLORS = {
-  TELECALLER:         { bg: '#FFF8E1', text: '#F9A825' },
-  STM:                { bg: '#E8EEFF', text: '#3D5AFE' },
-  'MARKETING COORDINATOR': { bg: '#E0F7FA', text: '#0097A7' },
-  CMO:                { bg: '#F3E5F5', text: '#7B1FA2' },
-  'SALES CLUSTER HEAD': { bg: '#E8F5E9', text: '#2E7D32' },
-  'CP CLUSTER HEAD':  { bg: '#FFF3E0', text: '#E65100' },
-  'REGIONAL HEAD':    { bg: '#E8F5E9', text: '#1B5E20' },
+  TELECALLER:         { bg: COLORS.warningBg, text: COLORS.warningAlt },
+  STM:                { bg: COLORS.linkBg, text: COLORS.link },
+  'MARKETING COORDINATOR': { bg: COLORS.infoBg, text: COLORS.info },
+  CMO:                { bg: COLORS.purpleBg, text: COLORS.purple },
+  'SALES CLUSTER HEAD': { bg: COLORS.successBg, text: COLORS.success },
+  'CP CLUSTER HEAD':  { bg: COLORS.warningBg, text: COLORS.warning },
+  'REGIONAL HEAD':    { bg: COLORS.successBg, text: COLORS.success },
 };
 
 function DesigBadge({ desig }) {
-  const c = DESIG_COLORS[desig?.toUpperCase()] || { bg: '#F5F5F5', text: MUTED };
+  const c = DESIG_COLORS[desig?.toUpperCase()] || { bg: COLORS.screenBg, text: MUTED };
   return (
     <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20, backgroundColor: c.bg }}>
       <Text style={{ fontSize: 10, fontWeight: '700', color: c.text }}>{desig || 'Member'}</Text>
@@ -75,27 +76,27 @@ export default function SalesTeamScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={22} color={TEXT} /></TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Sales Team</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>{members.length} team members</Text>
+          <Text style={{ fontSize: 13, color: MUTED }}>{members.length} team members</Text>
         </View>
-        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6 }}>
-          <Ionicons name="refresh-outline" size={20} color={refreshing ? MUTED : BLUE} />
+        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
+          <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
       </View>
 
       {/* Designation counts */}
       {!loading && (
-        <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+        <View style={{ backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
           <FlatList horizontal showsHorizontalScrollIndicator={false} data={Object.entries(desigCounts)}
             keyExtractor={([k]) => k}
             contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 8 }}
             renderItem={({ item: [desig, count] }) => {
-              const c = DESIG_COLORS[desig?.toUpperCase()] || { bg: '#F5F5F5', text: MUTED };
+              const c = DESIG_COLORS[desig?.toUpperCase()] || { bg: COLORS.screenBg, text: MUTED };
               return (
                 <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: c.bg }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: c.text }}>{desig.toUpperCase()}: {count}</Text>
@@ -106,7 +107,7 @@ export default function SalesTeamScreen({ navigation }) {
       )}
 
       {/* Search */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
           <TextInput value={search} onChangeText={setSearch} placeholder="Search by name, user code, designation…" style={{ flex: 1, fontSize: 14, color: TEXT }} />
@@ -126,7 +127,7 @@ export default function SalesTeamScreen({ navigation }) {
           renderItem={({ item: m }) => (
             <View style={[CARD, { flexDirection: 'row', alignItems: 'center', padding: 14, marginBottom: 10 }]}>
               <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>{initials(m.name)}</Text>
+                <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{initials(m.name)}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -143,9 +144,9 @@ export default function SalesTeamScreen({ navigation }) {
           )}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 20 }}>
-              <Ionicons name="people-outline" size={48} color="#DDE3F0" />
+              <Ionicons name="people-outline" size={48} color={COLORS.divider} />
               <Text style={{ fontSize: 15, fontWeight: '700', color: MUTED, marginTop: 12 }}>No team members found</Text>
-              {fetchError ? <Text style={{ fontSize: 11, color: '#EF4444', marginTop: 8, textAlign: 'center' }}>{fetchError}</Text> : null}
+              {fetchError ? <Text style={{ fontSize: 11, color: COLORS.error, marginTop: 8, textAlign: 'center' }}>{fetchError}</Text> : null}
             </View>
           }
         />

@@ -1,27 +1,37 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { COLORS, CARD_SHADOW } from '../../../constants/theme';
 
 const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
-  container:     { flex: 1, backgroundColor: '#F5F6FA' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
+  container:     { flex: 1, backgroundColor: COLORS.screenBg },
+  scrollContent: { paddingBottom: 32 },
 
-  pageTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', marginBottom: 20 },
+  header: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8,
+  },
+  backBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: COLORS.surfaceAlt,
+    justifyContent: 'center', alignItems: 'center', marginRight: 12,
+  },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
+  headerRight: { width: 36 },
 
   sectionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.cardBg,
     borderRadius: 18,
+    marginHorizontal: 20,
     marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#B8C4D6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 4,
+    ...CARD_SHADOW,
   },
   sectionHeader: { paddingHorizontal: 18, paddingVertical: 14 },
-  sectionTitle:  {
-    fontSize: 12, fontWeight: '800', color: '#FFFFFF',
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionTitle: {
+    fontSize: 12, fontWeight: '800', color: COLORS.white,
     letterSpacing: 0.8, textTransform: 'uppercase',
   },
 
@@ -39,7 +49,7 @@ const styles = StyleSheet.create({
     minWidth: (width - 40 - 28 - 8) / 3,
     alignItems: 'center',
   },
-  buttonText: { fontSize: 11, fontWeight: '600', color: '#1A1A2E', textAlign: 'center' },
+  buttonText: { fontSize: 11, fontWeight: '600', color: COLORS.textPrimary, textAlign: 'center' },
 });
 
 export default styles;
