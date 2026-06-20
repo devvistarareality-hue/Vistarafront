@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -208,8 +209,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       setDetail(null);
       async function loadDetail() {
         try {
-          const headers = await authHeaders();
-          const res = await fetch(SALES_ENDPOINTS.lead(lead.id), { headers });
+          const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id));
           if (res.ok) setDetail(await res.json());
         } catch (_) {}
       }
@@ -222,8 +222,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   async function save() {
     setSaving(true);
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', headers, body: JSON.stringify(form) });
+      const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(form) });
       if (res.ok) { onUpdated(await res.json()); onClose(); }
       else { Alert.alert('Error', 'Could not save lead.'); }
     } catch (e) { Alert.alert('Network error', e.message); }
@@ -238,9 +237,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     setFuErr('');
     setSavingFu(true);
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.followUps, {
-        method: 'POST', headers,
+      const res = await apiFetch(SALES_ENDPOINTS.followUps, {
+        method: 'POST',
         body: JSON.stringify({
           lead: lead.id,
           assigned_to: assignedTo,
@@ -263,9 +261,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
   async function markFollowupDone(fuId) {
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.followUp(fuId), {
-        method: 'PATCH', headers,
+      const res = await apiFetch(SALES_ENDPOINTS.followUp(fuId), {
+        method: 'PATCH',
         body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString() }),
       });
       if (res.ok) {
@@ -279,8 +276,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     Alert.alert('Delete lead?', `Delete ${lead?.name}?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        const headers = await authHeaders();
-        const res = await fetch(SALES_ENDPOINTS.lead(lead.id), { method: 'DELETE', headers });
+        const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'DELETE' });
         if (res.ok || res.status === 204) { onUpdated(null); onClose(); }
       }},
     ]);
@@ -739,8 +735,7 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
     setSaving(true);
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.leads, { method: 'POST', headers, body: JSON.stringify(form) });
+      const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
       if (res.ok) { onCreated(await res.json()); onClose(); setForm({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new' }); }
       else { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); }
     } catch (e) { Alert.alert('Network error', e.message); }
@@ -931,7 +926,20 @@ export default function SalesLeadsScreen({ navigation }) {
 
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
-  const lastLeadIdRef   = useRef(null);
+  const lastLeadIdRef    = useRef(null);
+  const loadingMoreRef   = useRef(false);
+  const pageRef          = useRef(1);
+  const hasMoreRef       = useRef(true);
+  const leadsLengthRef   = useRef(0);
+  const loadDataRef      = useRef(null);
+  const viewabilityConfig   = useRef({ itemVisiblePercentThreshold: 10 });
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (!viewableItems.length || !hasMoreRef.current || loadingMoreRef.current) return;
+    const lastVisibleIndex = viewableItems[viewableItems.length - 1].index;
+    if (lastVisibleIndex >= leadsLengthRef.current - 10) {
+      loadDataRef.current?.(false);
+    }
+  });
   const [newLeadCount, setNewLeadCount] = useState(0);
 
   // On screen focus: silently check if new leads arrived since last load
@@ -939,8 +947,7 @@ export default function SalesLeadsScreen({ navigation }) {
     if (lastLeadIdRef.current === null) return;
     (async () => {
       try {
-        const headers = await authHeaders();
-        const res  = await fetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=5`, { headers });
+        const res  = await apiFetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=5`);
         if (!res.ok) return;
         const d       = await res.json();
         const results = Array.isArray(d) ? d : (d.results || []);
@@ -954,37 +961,53 @@ export default function SalesLeadsScreen({ navigation }) {
     })();
   }, []));
 
+  function buildLeadsUrl(p) {
+    let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
+    if (companyId)             url += `&company_id=${companyId}`;
+    if (search)                url += `&search=${encodeURIComponent(search)}`;
+    if (filters.status)        url += `&status=${filters.status}`;
+    if (filters.project_id)    url += `&project_id=${filters.project_id}`;
+    if (filters.source_id)     url += `&source_id=${filters.source_id}`;
+    if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
+    if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
+    if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
+    if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
+    if (filters.date_from)     url += `&date_from=${filters.date_from}`;
+    if (filters.date_to)       url += `&date_to=${filters.date_to}`;
+    if (filters.is_duplicate)  url += `&is_duplicate=true`;
+    return url;
+  }
+
   async function loadData(reset = false) {
-    const p = reset ? 1 : page;
-    if (!reset && !hasMore) return;
-    if (reset) { setLoading(true); setPage(1); } else setLoadingMore(true);
+    if (!reset && (!hasMore || loadingMoreRef.current)) return;
+
+    const p = reset ? 1 : pageRef.current;
+
+    if (reset) {
+      setLoading(true);
+      setLeads([]);
+      setHasMore(true);
+      pageRef.current = 1;
+      setPage(1);
+    } else {
+      loadingMoreRef.current = true;
+      setLoadingMore(true);
+    }
+
     try {
-      const headers = await authHeaders();
-      let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
-      if (companyId)         url += `&company_id=${companyId}`;
-      if (search)            url += `&search=${encodeURIComponent(search)}`;
-      if (filters.status)    url += `&status=${filters.status}`;
-      if (filters.project_id)    url += `&project_id=${filters.project_id}`;
-      if (filters.source_id)     url += `&source_id=${filters.source_id}`;
-      if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
-      if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
-      if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
-      if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
-      if (filters.date_from)     url += `&date_from=${filters.date_from}`;
-      if (filters.date_to)       url += `&date_to=${filters.date_to}`;
-      if (filters.is_duplicate)  url += `&is_duplicate=true`;
       const [leadsRes, projRes, srcRes, tcRes, stmRes] = await Promise.all([
-        fetch(url, { headers }),
-        projects.length    ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.projects,    { headers }),
-        sources.length     ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.sources,     { headers }),
-        telecallers.length ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.telecallers, { headers }),
-        stms.length        ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.stms,        { headers }),
+        apiFetch(buildLeadsUrl(p)),
+        projects.length    ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.projects),
+        sources.length     ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.sources),
+        telecallers.length ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers),
+        stms.length        ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms),
       ]);
       if (leadsRes.ok) {
         const d = await leadsRes.json();
         const results = Array.isArray(d) ? d : (d.results || []);
         setLeads(prev => reset ? results : [...prev, ...results]);
-        setHasMore(!!d.next);
+        setHasMore(results.length === 25 && (p * 25) < (d.count ?? Infinity));
+        pageRef.current = p + 1;
         setPage(p + 1);
         if (reset && results.length) {
           lastLeadIdRef.current = results[0].id;
@@ -996,9 +1019,16 @@ export default function SalesLeadsScreen({ navigation }) {
       if (tcRes?.ok)    setTelecallers(await tcRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
       if (stmRes?.ok)   setStms(await stmRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
     } catch (_) {}
-    setLoading(false); setLoadingMore(false); setRefreshing(false);
+
+    setLoading(false);
+    setLoadingMore(false);
+    setRefreshing(false);
+    loadingMoreRef.current = false;
   }
 
+  loadDataRef.current = loadData;
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
+  useEffect(() => { leadsLengthRef.current = leads.length; }, [leads.length]);
   useEffect(() => { loadData(true); }, [search, filters, companyId]);
 
   // Client-side company filter (mirrors user management pattern).
@@ -1138,12 +1168,12 @@ export default function SalesLeadsScreen({ navigation }) {
         <FlatList
           data={visibleLeads}
           keyExtractor={l => String(l.id)}
-          renderItem={({ item }) => <LeadCard item={item} />}
+          renderItem={LeadCard}
           contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(true); }} colors={[NAVY]} tintColor={NAVY} />}
-          onEndReached={() => loadData(false)}
-          onEndReachedThreshold={0.4}
+          onViewableItemsChanged={onViewableItemsChanged.current}
+          viewabilityConfig={viewabilityConfig.current}
           ListFooterComponent={loadingMore ? <ActivityIndicator color={NAVY} style={{ marginVertical: 16 }} /> : null}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>

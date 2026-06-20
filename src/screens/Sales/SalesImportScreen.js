@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Sta
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import * as DocumentPicker from 'expo-document-picker';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -26,10 +27,9 @@ export default function SalesImportScreen({ navigation }) {
 
   useEffect(() => {
     (async () => {
-      const headers = await authHeaders();
       const [pRes, sRes] = await Promise.all([
-        fetch(SALES_ENDPOINTS.projects, { headers: { ...headers, 'Content-Type': 'application/json' } }),
-        fetch(SALES_ENDPOINTS.sources,  { headers: { ...headers, 'Content-Type': 'application/json' } }),
+        apiFetch(SALES_ENDPOINTS.projects),
+        apiFetch(SALES_ENDPOINTS.sources),
       ]);
       if (pRes.ok) { const d = await pRes.json(); setProjects(Array.isArray(d) ? d : (d.results || [])); }
       if (sRes.ok) { const d = await sRes.json(); setSources(Array.isArray(d) ? d : (d.results || [])); }

@@ -6,6 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
+import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
@@ -75,17 +77,18 @@ export default function SalesDistributionScreen({ navigation }) {
   const [loading,        setLoading]        = useState(true);
   const [distributing,   setDistributing]   = useState('');
   const [refreshing,     setRefreshing]     = useState(false);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
-      const headers = await authHeaders();
+      const cq = companyId ? `?company_id=${companyId}` : '';
       const [sRes, aRes, wRes, lRes, stRes] = await Promise.all([
-        fetch(SALES_ENDPOINTS.distSettings, { headers }),
-        fetch(SALES_ENDPOINTS.availability, { headers }),
-        fetch(SALES_ENDPOINTS.distWeight,   { headers }),
-        fetch(SALES_ENDPOINTS.distLog,      { headers }),
-        fetch(SALES_ENDPOINTS.stats,        { headers }),
+        apiFetch(`${SALES_ENDPOINTS.distSettings}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.availability}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.distWeight}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.distLog}${cq}`),
+        apiFetch(`${SALES_ENDPOINTS.stats}${cq}`),
       ]);
       if (sRes.ok)  { const d = await sRes.json(); if (!d.detail) setSettings(d); }
       if (aRes.ok)  { const d = await aRes.json(); setAvailability(Array.isArray(d) ? d : (d.results || [])); }
@@ -103,7 +106,7 @@ export default function SalesDistributionScreen({ navigation }) {
     } catch (_) {}
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [companyId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -123,17 +126,15 @@ export default function SalesDistributionScreen({ navigation }) {
   const weightsChanged = Object.keys(weights).some(id => weights[id] !== savedWeights[id]);
 
   async function toggleAvailability(userId, current) {
-    const headers = await authHeaders();
-    const res = await fetch(SALES_ENDPOINTS.availability, {
-      method: 'POST', headers, body: JSON.stringify({ user_id: userId, is_available: !current }),
+    const res = await apiFetch(SALES_ENDPOINTS.availability, {
+      method: 'POST', body: JSON.stringify({ user_id: userId, is_available: !current, ...(companyId ? { company_id: companyId } : {}) }),
     });
     if (res.ok) setAvailability(prev => prev.map(a => String(a.user_id) === String(userId) ? { ...a, is_available: !current } : a));
   }
 
   async function saveSettings() {
     setSavingSettings(true);
-    const headers = await authHeaders();
-    await fetch(SALES_ENDPOINTS.distSettings, { method: 'PUT', headers, body: JSON.stringify(settingsForm) });
+    await apiFetch(SALES_ENDPOINTS.distSettings, { method: 'PUT', body: JSON.stringify({ ...settingsForm, ...(companyId ? { company_id: companyId } : {}) }) });
     setSettings(settingsForm);
     setSettingsForm(null);
     setSavingSettings(false);
@@ -142,9 +143,8 @@ export default function SalesDistributionScreen({ navigation }) {
 
   async function saveWeights() {
     setSavingWeights(true);
-    const headers = await authHeaders();
     const updates = Object.entries(weights).map(([user_id, weight]) => ({ user_id: parseInt(user_id), weight: parseInt(weight) || 1 }));
-    const res = await fetch(SALES_ENDPOINTS.distWeight, { method: 'PATCH', headers, body: JSON.stringify({ updates }) });
+    const res = await apiFetch(SALES_ENDPOINTS.distWeight, { method: 'PATCH', body: JSON.stringify({ updates, ...(companyId ? { company_id: companyId } : {}) }) });
     if (res.ok) setSavedWeights({ ...weights });
     setSavingWeights(false);
     Alert.alert('Saved', 'Distribution weights updated.');
@@ -153,8 +153,7 @@ export default function SalesDistributionScreen({ navigation }) {
   async function triggerDist(type) {
     setDistributing(type);
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.distribute, { method: 'POST', headers, body: JSON.stringify({ type }) });
+      const res = await apiFetch(SALES_ENDPOINTS.distribute, { method: 'POST', body: JSON.stringify({ dist_type: type, ...(companyId ? { company_id: companyId } : {}) }) });
       if (res.ok) {
         const d = await res.json();
         Alert.alert('Distribution Complete', d.message || `${d.distributed || 0} leads distributed.`);
@@ -171,8 +170,8 @@ export default function SalesDistributionScreen({ navigation }) {
     Alert.alert('Clear history?', 'This will delete all distribution logs.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Clear', style: 'destructive', onPress: async () => {
-        const headers = await authHeaders();
-        await fetch(SALES_ENDPOINTS.distLog, { method: 'DELETE', headers });
+        const cq = companyId ? `?company_id=${companyId}` : '';
+        await apiFetch(`${SALES_ENDPOINTS.distLog}${cq}`, { method: 'DELETE' });
         setDistLog([]);
       }},
     ]);
