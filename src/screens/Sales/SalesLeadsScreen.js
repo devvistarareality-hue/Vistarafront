@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -866,6 +867,8 @@ export default function SalesLeadsScreen({ navigation }) {
   const [detailModal, setDetailModal] = useState(false);
   const [createModal, setCreateModal] = useState(false);
 
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
+
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
   const lastLeadIdRef   = useRef(null);
@@ -898,6 +901,7 @@ export default function SalesLeadsScreen({ navigation }) {
     try {
       const headers = await authHeaders();
       let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
+      if (companyId)         url += `&company_id=${companyId}`;
       if (search)            url += `&search=${encodeURIComponent(search)}`;
       if (filters.status)    url += `&status=${filters.status}`;
       if (filters.project_id)    url += `&project_id=${filters.project_id}`;
@@ -935,7 +939,12 @@ export default function SalesLeadsScreen({ navigation }) {
     setLoading(false); setLoadingMore(false); setRefreshing(false);
   }
 
-  useEffect(() => { loadData(true); }, [search, filters]);
+  useEffect(() => { loadData(true); }, [search, filters, companyId]);
+
+  // Client-side company filter (mirrors user management pattern).
+  // Only filters if leads actually carry company_id (requires updated backend).
+  const leadsHaveCompany = leads.length > 0 && leads[0].company_id != null;
+  const visibleLeads = (companyId && leadsHaveCompany) ? leads.filter(l => l.company_id === companyId) : leads;
 
   function onLeadUpdated(updated) {
     if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
@@ -1067,7 +1076,7 @@ export default function SalesLeadsScreen({ navigation }) {
         </View>
       ) : (
         <FlatList
-          data={leads}
+          data={visibleLeads}
           keyExtractor={l => String(l.id)}
           renderItem={({ item }) => <LeadCard item={item} />}
           contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 }}
