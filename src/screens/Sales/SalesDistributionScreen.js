@@ -39,6 +39,28 @@ function SectionLabel({ children, color }) {
   );
 }
 
+// Format an ISO timestamp to a local time like "5:04 PM".
+function fmtTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+// Assigned-project chips shown under each availability name.
+function ProjectTags({ projects }) {
+  if (!projects || projects.length === 0) {
+    return <Text style={{ fontSize: 11, color: COLORS.textTertiary, marginTop: 2 }}>No project assigned</Text>;
+  }
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+      {projects.map((p, i) => (
+        <Text key={i} style={{ fontSize: 10, fontWeight: '700', color: COLORS.link, backgroundColor: COLORS.linkBg, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, overflow: 'hidden' }}>
+          {p}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 export default function SalesDistributionScreen({ navigation }) {
   const [settings,       setSettings]       = useState({ tc_signin_time: '10:20', tc_signout_time: '22:00', stm_signin_time: '10:20', stm_signout_time: '22:00' });
   const [settingsForm,   setSettingsForm]   = useState(null);
@@ -132,7 +154,7 @@ export default function SalesDistributionScreen({ navigation }) {
     setDistributing(type);
     try {
       const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.distribute, { method: 'POST', headers, body: JSON.stringify({ dist_type: type }) });
+      const res = await fetch(SALES_ENDPOINTS.distribute, { method: 'POST', headers, body: JSON.stringify({ type }) });
       if (res.ok) {
         const d = await res.json();
         Alert.alert('Distribution Complete', d.message || `${d.distributed || 0} leads distributed.`);
@@ -258,11 +280,21 @@ export default function SalesDistributionScreen({ navigation }) {
                     ? <Text style={{ fontSize: 14, color: MUTED }}>No telecallers</Text>
                     : allTc.map(a => (
                       <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
+                        style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 }}>
                         <Text style={{ fontSize: 18, color: a.is_available ? COLORS.successAlt : COLORS.divider, fontWeight: '800', width: 20 }}>
                           {a.is_available ? '✓' : '✗'}
                         </Text>
-                        <Text style={{ fontSize: 15, color: a.is_available ? TEXT : MUTED }} numberOfLines={1}>{a.name}</Text>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Text style={{ fontSize: 15, color: a.is_available ? TEXT : MUTED, flexShrink: 1 }} numberOfLines={1}>{a.name}</Text>
+                            {a.is_available && !!a.checked_in_at && (
+                              <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.success, backgroundColor: COLORS.successBg, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, overflow: 'hidden' }}>
+                                ⏱ {fmtTime(a.checked_in_at)}
+                              </Text>
+                            )}
+                          </View>
+                          <ProjectTags projects={a.projects} />
+                        </View>
                       </TouchableOpacity>
                     ))}
                 </View>
@@ -277,11 +309,21 @@ export default function SalesDistributionScreen({ navigation }) {
                     ? <Text style={{ fontSize: 14, color: MUTED }}>No STMs</Text>
                     : allStm.map(a => (
                       <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
+                        style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 }}>
                         <Text style={{ fontSize: 18, color: a.is_available ? COLORS.successAlt : COLORS.divider, fontWeight: '800', width: 20 }}>
                           {a.is_available ? '✓' : '✗'}
                         </Text>
-                        <Text style={{ fontSize: 15, color: a.is_available ? TEXT : MUTED }} numberOfLines={1}>{a.name}</Text>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Text style={{ fontSize: 15, color: a.is_available ? TEXT : MUTED, flexShrink: 1 }} numberOfLines={1}>{a.name}</Text>
+                            {a.is_available && !!a.checked_in_at && (
+                              <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.success, backgroundColor: COLORS.successBg, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, overflow: 'hidden' }}>
+                                ⏱ {fmtTime(a.checked_in_at)}
+                              </Text>
+                            )}
+                          </View>
+                          <ProjectTags projects={a.projects} />
+                        </View>
                       </TouchableOpacity>
                     ))}
                 </View>
