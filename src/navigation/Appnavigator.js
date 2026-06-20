@@ -13,6 +13,7 @@ import BottomTabNavigator from './BottomTabNavigator';
 // Shared stack screens
 import SignInInternalScreen from '../screens/Dashboardscreen/Homescreen/SignInInternalscreen/SignInInternalScreen';
 import LeaveScreen         from '../screens/Dashboardscreen/Leavescreen/LeaveScreen';
+import LeaveApprovalsScreen from '../screens/Dashboardscreen/Leavescreen/LeaveApprovalsScreen';
 import RequestLeaveScreen  from '../screens/Dashboardscreen/Leavescreen/RequestLeave/RequestLeaveScreen';
 
 // Admin-only screens
@@ -83,6 +84,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SignIn"        component={SignInInternalScreen} />
             <Stack.Screen name="PostSignOut"   component={PostSignOutScreen} />
             <Stack.Screen name="Leave"         component={LeaveScreen} />
+            <Stack.Screen name="LeaveApprovals" component={LeaveApprovalsScreen} options={{ animation: 'none' }} />
             <Stack.Screen name="RequestLeave"  component={RequestLeaveScreen} />
             <Stack.Screen name="Placeholder"   component={PlaceholderScreen} />
           </>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { COLORS } from '../../../../constants/theme';
 import {
   View,
   Text,
@@ -8,11 +9,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchLeaveHistory } from '../../../../redux/actions/leaveHistoryActions';
 import { updateLeaveStatus, resetLeaveAction } from '../../../../redux/actions/leaveActionActions';
 import { triggerBalanceRefresh } from '../../../../redux/actions/leaveBalanceActions';
 import Toast from '../../../../components/Toast';
-import images from '../../../../constants/images';
 import styles from './styles';
 import LeaveDetailModal from './LeaveDetailModal';
 
@@ -70,7 +71,7 @@ const LeaveCard = ({ item, onPress }) => (
           {item.status}
         </Text>
       </View>
-      <Image source={images.rightArrow} style={styles.chevronIcon} />
+      <Ionicons name="chevron-forward" size={18} color={COLORS.divider} />
     </View>
   </TouchableOpacity>
 );
@@ -148,7 +149,7 @@ const HistoryScreen = () => {
     if (!historyLoadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#1E4080" />
+        <ActivityIndicator size="small" color={COLORS.navyMedium} />
       </View>
     );
   };
@@ -156,7 +157,7 @@ const HistoryScreen = () => {
   if (historyLoading && historyData.length === 0) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1E4080" />
+        <ActivityIndicator size="large" color={COLORS.navyMedium} />
       </View>
     );
   }

@@ -1,23 +1,24 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { COLORS } from '../../../../constants/theme';
 
 const { width } = Dimensions.get('window');
-const NAVY  = '#182350';
-const TEXT  = '#1A1A2E';
-const MUTED = '#8492A6';
+const NAVY  = COLORS.navy;
+const TEXT  = COLORS.textPrimary;
+const MUTED = COLORS.textSecondary;
 
 export default StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F6FA' },
+  container: { flex: 1, backgroundColor: COLORS.screenBg },
 
   tableHeader: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: '#E0E6F0',
-    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.cardBg,
   },
   headerCell:  { fontSize: 12, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, backgroundColor: '#FFFFFF' },
-  separator: { height: 1, backgroundColor: '#F5F6FA', marginHorizontal: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, backgroundColor: COLORS.cardBg },
+  separator: { height: 1, backgroundColor: COLORS.screenBg, marginHorizontal: 16 },
 
   dateCol:    { flex: 1 },
   changeCol:  { width: width * 0.2, textAlign: 'center' },
@@ -28,13 +29,13 @@ export default StyleSheet.create({
   descriptionText: { fontSize: 11, color: MUTED },
 
   changeCell: { fontSize: 14, fontWeight: '700' },
-  positive:   { color: '#2E7D32' },
-  negative:   { color: '#EF4444' },
+  positive:   { color: COLORS.success },
+  negative:   { color: COLORS.error },
 
   balanceCell: { fontSize: 14, fontWeight: '600', color: TEXT },
 
   centered:   { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: width * 0.1 },
-  errorText:  { fontSize: 13, color: '#EF4444', textAlign: 'center' },
+  errorText:  { fontSize: 13, color: COLORS.error, textAlign: 'center' },
   emptyText:  { fontSize: 13, color: MUTED, textAlign: 'center' },
   footerLoader: { paddingVertical: 20, alignItems: 'center' },
 });

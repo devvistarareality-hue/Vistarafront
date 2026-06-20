@@ -1,81 +1,52 @@
-import { StyleSheet, Dimensions } from 'react-native';
-
-const { width, height } = Dimensions.get('window');
-const NAVY = '#182350';
-const TEXT = '#1A1A2E';
-const MUTED = '#8492A6';
-const CARD_SHADOW = {
-  shadowColor: '#B8C4D6', shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.18, shadowRadius: 12, elevation: 4,
-};
+import { StyleSheet } from 'react-native';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, LINE_HEIGHT, SHADOWS } from '../../constants/theme';
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F6FA',
-  },
+  container: { flex: 1, backgroundColor: COLORS.screenBg },
   header: {
-    backgroundColor: '#F5F6FA',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md + 2,
   },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: TEXT,
+  headerTitle: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.heavy, color: COLORS.textPrimary },
+  logoutBtn: {
+    width: 36, height: 36, borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.surfaceAlt,
+    justifyContent: 'center', alignItems: 'center',
   },
-  logoutButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    ...CARD_SHADOW,
-  },
-  logoutText: {
-    color: TEXT,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
+  content: { flex: 1, padding: SPACING.xl },
   welcomeCard: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 18,
-    marginBottom: 16,
-    ...CARD_SHADOW,
+    backgroundColor: COLORS.surface,
+    padding: SPACING.xxl,
+    borderRadius: RADIUS.xl,
+    marginBottom: SPACING.lg,
+    alignItems: 'center',
+    ...SHADOWS.md,
   },
-  welcomeTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: TEXT,
-    marginBottom: 12,
+  welcomeIconRow: { marginBottom: SPACING.md },
+  welcomeIcon: {
+    width: 64, height: 64, borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.successBg,
+    justifyContent: 'center', alignItems: 'center',
   },
-  infoText: {
-    fontSize: 14,
-    color: MUTED,
-    marginBottom: 6,
-  },
-  infoValue: {
-    fontWeight: '700',
-    color: TEXT,
-  },
+  welcomeTitle: { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.heavy, color: COLORS.textPrimary, marginBottom: SPACING.md },
+  infoText: { fontSize: FONT_SIZE.md, color: COLORS.textSecondary, marginBottom: SPACING.xs + 2 },
+  infoValue: { fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary },
   infoBox: {
-    backgroundColor: NAVY,
-    padding: 20,
-    borderRadius: 18,
-    ...CARD_SHADOW,
+    backgroundColor: COLORS.navy,
+    padding: SPACING.xl,
+    borderRadius: RADIUS.xl,
+    alignItems: 'center',
+    ...SHADOWS.md,
   },
   infoBoxText: {
-    fontSize: 14,
-    color: '#FFFFFF',
+    fontSize: FONT_SIZE.md,
+    color: COLORS.textInverse,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: LINE_HEIGHT.normal,
   },
 });
 

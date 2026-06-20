@@ -21,9 +21,6 @@ export const requestLeave = (payload) => async (dispatch) => {
     });
     const data = await response.json();
     if (response.ok) {
-      console.log('✅ Request Leave Success');
-      console.log('📤 Payload sent:', JSON.stringify(payload, null, 2));
-      console.log('📥 Response received:', JSON.stringify(data, null, 2));
       dispatch({ type: REQUEST_LEAVE_SUCCESS, payload: data });
     } else {
       dispatch({ type: REQUEST_LEAVE_FAILURE, payload: data.detail || JSON.stringify(data) });
