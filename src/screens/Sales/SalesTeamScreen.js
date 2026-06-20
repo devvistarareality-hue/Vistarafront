@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, S
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -48,10 +49,9 @@ export default function SalesTeamScreen({ navigation }) {
     if (refresh) setRefreshing(true); else setLoading(true);
     setFetchError('');
     try {
-      const headers = await authHeaders();
       let url = SALES_ENDPOINTS.usersSlim;
       if (companyId) url += `?company_id=${companyId}`;
-      const res = await fetch(url, { headers });
+      const res = await apiFetch(url);
       if (res.ok) {
         const d = await res.json();
         const dataArray = Array.isArray(d) ? d : (d.results || []);

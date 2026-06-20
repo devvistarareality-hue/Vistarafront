@@ -18,8 +18,33 @@ export const loadUser = () => async (dispatch) => {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
-      const data = await res.json();
-      dispatch({ type: LOGIN_SUCCESS, payload: data });
+      dispatch({ type: LOGIN_SUCCESS, payload: await res.json() });
+      return;
+    }
+    if (res.status !== 401) return;
+
+    // Access token expired — try to refresh
+    const refresh = await AsyncStorage.getItem('refresh_token');
+    if (!refresh) { dispatch({ type: LOGOUT }); return; }
+
+    const refreshRes = await fetch(`${getBaseUrl()}/api/auth/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    });
+
+    if (refreshRes.ok) {
+      const tokens = await refreshRes.json();
+      await AsyncStorage.setItem('access_token', tokens.access);
+      if (tokens.refresh) await AsyncStorage.setItem('refresh_token', tokens.refresh);
+      const retryRes = await fetch(`${getBaseUrl()}/api/auth/me/`, {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
+      if (retryRes.ok) dispatch({ type: LOGIN_SUCCESS, payload: await retryRes.json() });
+      else dispatch({ type: LOGOUT });
+    } else {
+      await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
+      dispatch({ type: LOGOUT });
     }
   } catch (_) {}
 };

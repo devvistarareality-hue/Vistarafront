@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS, RAILWAY_URL } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -118,10 +119,9 @@ function MetaTab() {
   async function load(refresh = false) {
     if (refresh) setRefreshing(true);
     try {
-      const h = await authHeaders();
       const [cfgRes, mapRes] = await Promise.all([
-        fetch(SALES_ENDPOINTS.metaWebhookConfig, { headers: h }),
-        fetch(SALES_ENDPOINTS.metaMappings,      { headers: h }),
+        apiFetch(SALES_ENDPOINTS.metaWebhookConfig),
+        apiFetch(SALES_ENDPOINTS.metaMappings),
       ]);
       if (cfgRes.ok) { const d = await cfgRes.json(); setCfg(d); setPat(d.page_access_token || ''); }
       if (mapRes.ok) { const d = await mapRes.json(); setMappings(Array.isArray(d) ? d : []); }
@@ -134,9 +134,8 @@ function MetaTab() {
   async function saveConfig() {
     setSaving(true); setMsg('');
     try {
-      const h = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.metaWebhookConfig, {
-        method: 'POST', headers: h,
+      const res = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
+        method: 'POST',
         body: JSON.stringify({ action: 'save', page_access_token: pat }),
       });
       const d = await res.json();
@@ -150,9 +149,8 @@ function MetaTab() {
   async function regenToken() {
     setRegen(true);
     try {
-      const h = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.metaWebhookConfig, {
-        method: 'POST', headers: h,
+      const res = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
+        method: 'POST',
         body: JSON.stringify({ action: 'regenerate_token' }),
       });
       const d = await res.json();
@@ -167,9 +165,8 @@ function MetaTab() {
     }
     setMapSaving(true);
     try {
-      const h = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.metaMappings, {
-        method: 'POST', headers: h,
+      const res = await apiFetch(SALES_ENDPOINTS.metaMappings, {
+        method: 'POST',
         body: JSON.stringify({ form_id: mapFormId.trim(), form_name: mapFormName.trim(), project_id: mapProject }),
       });
       const d = await res.json();
@@ -185,8 +182,7 @@ function MetaTab() {
     Alert.alert('Remove mapping?', 'This form will no longer auto-route leads.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: async () => {
-        const h = await authHeaders();
-        await fetch(SALES_ENDPOINTS.metaMappings, { method: 'DELETE', headers: h, body: JSON.stringify({ id }) });
+        await apiFetch(SALES_ENDPOINTS.metaMappings, { method: 'DELETE', body: JSON.stringify({ id }) });
         setMappings(prev => prev.filter(m => m.id !== id));
       }},
     ]);
@@ -415,10 +411,9 @@ function SourcesTab() {
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
-      const h = await authHeaders();
       let url = SALES_ENDPOINTS.sources;
       if (companyId) url += `?company_id=${companyId}`;
-      const res = await fetch(url, { headers: h });
+      const res = await apiFetch(url);
       if (res.ok) { const d = await res.json(); setSources(Array.isArray(d) ? d : (d.results || [])); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
@@ -434,8 +429,7 @@ function SourcesTab() {
     }
     setAdding(true);
     try {
-      const h = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.sources, { method: 'POST', headers: h, body: JSON.stringify({ name: n }) });
+      const res = await apiFetch(SALES_ENDPOINTS.sources, { method: 'POST', body: JSON.stringify({ name: n }) });
       if (res.ok) { const d = await res.json(); setSources(prev => [...prev, d]); setNewName(''); }
     } catch (_) {}
     setAdding(false);
@@ -445,8 +439,7 @@ function SourcesTab() {
     Alert.alert('Delete source?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        const h = await authHeaders();
-        const res = await fetch(SALES_ENDPOINTS.source(id), { method: 'DELETE', headers: h });
+        const res = await apiFetch(SALES_ENDPOINTS.source(id), { method: 'DELETE' });
         if (res.ok || res.status === 204) setSources(prev => prev.filter(s => s.id !== id));
       }},
     ]);

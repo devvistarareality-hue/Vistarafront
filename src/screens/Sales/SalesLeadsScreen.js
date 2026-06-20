@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -181,8 +182,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       setDetail(null);
       async function loadDetail() {
         try {
-          const headers = await authHeaders();
-          const res = await fetch(SALES_ENDPOINTS.lead(lead.id), { headers });
+          const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id));
           if (res.ok) setDetail(await res.json());
         } catch (_) {}
       }
@@ -195,8 +195,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   async function save() {
     setSaving(true);
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', headers, body: JSON.stringify(form) });
+      const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(form) });
       if (res.ok) { onUpdated(await res.json()); onClose(); }
       else { Alert.alert('Error', 'Could not save lead.'); }
     } catch (e) { Alert.alert('Network error', e.message); }
@@ -211,9 +210,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     setFuErr('');
     setSavingFu(true);
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.followUps, {
-        method: 'POST', headers,
+      const res = await apiFetch(SALES_ENDPOINTS.followUps, {
+        method: 'POST',
         body: JSON.stringify({
           lead: lead.id,
           assigned_to: assignedTo,
@@ -236,9 +234,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
   async function markFollowupDone(fuId) {
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.followUp(fuId), {
-        method: 'PATCH', headers,
+      const res = await apiFetch(SALES_ENDPOINTS.followUp(fuId), {
+        method: 'PATCH',
         body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString() }),
       });
       if (res.ok) {
@@ -252,8 +249,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     Alert.alert('Delete lead?', `Delete ${lead?.name}?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        const headers = await authHeaders();
-        const res = await fetch(SALES_ENDPOINTS.lead(lead.id), { method: 'DELETE', headers });
+        const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'DELETE' });
         if (res.ok || res.status === 204) { onUpdated(null); onClose(); }
       }},
     ]);
@@ -679,8 +675,7 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
     setSaving(true);
     try {
-      const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.leads, { method: 'POST', headers, body: JSON.stringify(form) });
+      const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
       if (res.ok) { onCreated(await res.json()); onClose(); setForm({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new' }); }
       else { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); }
     } catch (e) { Alert.alert('Network error', e.message); }
@@ -879,8 +874,7 @@ export default function SalesLeadsScreen({ navigation }) {
     if (lastLeadIdRef.current === null) return;
     (async () => {
       try {
-        const headers = await authHeaders();
-        const res  = await fetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=5`, { headers });
+        const res  = await apiFetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=5`);
         if (!res.ok) return;
         const d       = await res.json();
         const results = Array.isArray(d) ? d : (d.results || []);
@@ -899,7 +893,6 @@ export default function SalesLeadsScreen({ navigation }) {
     if (!reset && !hasMore) return;
     if (reset) { setLoading(true); setPage(1); } else setLoadingMore(true);
     try {
-      const headers = await authHeaders();
       let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
       if (companyId)         url += `&company_id=${companyId}`;
       if (search)            url += `&search=${encodeURIComponent(search)}`;
@@ -914,11 +907,11 @@ export default function SalesLeadsScreen({ navigation }) {
       if (filters.date_to)       url += `&date_to=${filters.date_to}`;
       if (filters.is_duplicate)  url += `&is_duplicate=true`;
       const [leadsRes, projRes, srcRes, tcRes, stmRes] = await Promise.all([
-        fetch(url, { headers }),
-        projects.length    ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.projects,    { headers }),
-        sources.length     ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.sources,     { headers }),
-        telecallers.length ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.telecallers, { headers }),
-        stms.length        ? Promise.resolve(null) : fetch(SALES_ENDPOINTS.stms,        { headers }),
+        apiFetch(url),
+        projects.length    ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.projects),
+        sources.length     ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.sources),
+        telecallers.length ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers),
+        stms.length        ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms),
       ]);
       if (leadsRes.ok) {
         const d = await leadsRes.json();

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -71,10 +72,9 @@ export default function SalesReportsScreen({ navigation }) {
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
-      const headers = await authHeaders();
       let url = SALES_ENDPOINTS.reports;
       if (companyId) url += `?company_id=${companyId}`;
-      const res = await fetch(url, { headers });
+      const res = await apiFetch(url);
       if (res.ok) setData(await res.json());
     } catch (_) {}
     setLoading(false); setRefreshing(false);

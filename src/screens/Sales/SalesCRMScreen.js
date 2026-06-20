@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -67,11 +68,10 @@ export default function SalesCRMScreen({ navigation }) {
     else if (!stats) setLoading(true);
 
     try {
-      const headers = await authHeaders();
       const url = companyId
         ? `${SALES_ENDPOINTS.stats}?company_id=${companyId}`
         : SALES_ENDPOINTS.stats;
-      const res = await fetch(url, { headers });
+      const res = await apiFetch(url);
       if (res.ok) {
         const data = await res.json();
         setStats(data);

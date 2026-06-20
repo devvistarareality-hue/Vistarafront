@@ -8,6 +8,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -318,7 +319,6 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     if (!form.name.trim()) { Alert.alert('Required', 'Project name is required.'); return; }
     setSaving(true);
     try {
-      const headers = await authHeaders();
       const plots      = (!editing || addingMore) ? buildPlots() : [];
       const totalPlots = editing ? (form.total_plots ? parseInt(form.total_plots) : 0) : plots.length;
 
@@ -326,7 +326,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
       const body = { ...form, total_plots: editing ? totalPlots : 0 };
       const url    = editing ? SALES_ENDPOINTS.project(project.id) : SALES_ENDPOINTS.projects;
       const method = editing ? 'PATCH' : 'POST';
-      const res    = await fetch(url, { method, headers, body: JSON.stringify(body) });
+      const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
       if (!res.ok) { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); setSaving(false); return; }
       const data = await res.json();
 
@@ -334,8 +334,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
       if (editing) {
         const renames = editableTypes.filter(t => t.original !== t.current && t.current.trim());
         for (const r of renames) {
-          await fetch(SALES_ENDPOINTS.plotsRenameType, {
-            method: 'POST', headers,
+          await apiFetch(SALES_ENDPOINTS.plotsRenameType, {
+            method: 'POST',
             body: JSON.stringify({ project_id: data.id, old_name: r.original, new_name: r.current.trim() }),
           });
         }
@@ -344,16 +344,16 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             const rename = renames.find(r => r.original === pt.name);
             return rename ? { ...pt, name: rename.current.trim() } : pt;
           });
-          await fetch(SALES_ENDPOINTS.project(data.id), {
-            method: 'PATCH', headers, body: JSON.stringify({ plot_type_plans: updatedPlans }),
+          await apiFetch(SALES_ENDPOINTS.project(data.id), {
+            method: 'PATCH', body: JSON.stringify({ plot_type_plans: updatedPlans }),
           });
         }
       }
 
       // Bulk create plots
       if (plots.length > 0) {
-        const bulkRes = await fetch(SALES_ENDPOINTS.plotsBulk, {
-          method: 'POST', headers, body: JSON.stringify({ project_id: data.id, plots }),
+        const bulkRes = await apiFetch(SALES_ENDPOINTS.plotsBulk, {
+          method: 'POST', body: JSON.stringify({ project_id: data.id, plots }),
         });
         if (!bulkRes.ok) {
           const e = await bulkRes.json().catch(() => ({}));
@@ -361,15 +361,15 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           setSaving(false); return;
         }
         const newTotal = editing ? totalPlots + plots.length : plots.length;
-        await fetch(SALES_ENDPOINTS.project(data.id), {
-          method: 'PATCH', headers, body: JSON.stringify({ total_plots: newTotal }),
+        await apiFetch(SALES_ENDPOINTS.project(data.id), {
+          method: 'PATCH', body: JSON.stringify({ total_plots: newTotal }),
         });
       }
 
       // Fetch fresh data
       let finalData = data;
       try {
-        const r = await fetch(SALES_ENDPOINTS.project(data.id), { headers });
+        const r = await apiFetch(SALES_ENDPOINTS.project(data.id));
         if (r.ok) finalData = await r.json();
       } catch { /* use data */ }
 
@@ -590,10 +590,9 @@ export default function ProjectsScreen() {
     if (refresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const headers = await authHeaders();
       let url = SALES_ENDPOINTS.projects;
       if (companyId) url += `?company_id=${companyId}`;
-      const res = await fetch(url, { headers });
+      const res = await apiFetch(url);
       if (res.ok) {
         const data = await res.json();
         setProjects(Array.isArray(data) ? data : (data.results || []));

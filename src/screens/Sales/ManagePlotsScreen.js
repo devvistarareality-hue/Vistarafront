@@ -8,6 +8,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../../utils/apiFetch';
 import Svg, { Rect, Polygon, Circle, Text as SvgText, Polyline } from 'react-native-svg';
 import * as ImagePicker from 'expo-image-picker';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -76,12 +77,11 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
   async function save() {
     setSaving(true);
     try {
-      const headers  = await authHeaders();
       const combined = sizeVal ? `${sizeVal} ${unit}` : '';
       // Rebuild the full number: type prefix + number
       const fullNumber = editType ? `${editType}${plotNo}` : plotNo;
-      const res = await fetch(SALES_ENDPOINTS.plot(plot.id), {
-        method: 'PATCH', headers,
+      const res = await apiFetch(SALES_ENDPOINTS.plot(plot.id), {
+        method: 'PATCH',
         body: JSON.stringify({ number: fullNumber, size: combined, cluster_type: editType }),
       });
       if (res.ok) { onSaved(await res.json()); onClose(); }
@@ -261,9 +261,8 @@ function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
 
   async function persist(updated) {
     setSaving(true);
-    const headers = await authHeaders();
-    const res = await fetch(SALES_ENDPOINTS.project(project.id), {
-      method: 'PATCH', headers, body: JSON.stringify({ plot_type_plans: updated }),
+    const res = await apiFetch(SALES_ENDPOINTS.project(project.id), {
+      method: 'PATCH', body: JSON.stringify({ plot_type_plans: updated }),
     });
     if (res.ok) onProjectUpdate(await res.json());
     setSaving(false);
@@ -436,9 +435,8 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
 
   async function persistZones(newZones) {
     setSaving(true);
-    const headers = await authHeaders();
-    const res = await fetch(SALES_ENDPOINTS.project(project.id), {
-      method: 'PATCH', headers, body: JSON.stringify({ site_map_zones: newZones }),
+    const res = await apiFetch(SALES_ENDPOINTS.project(project.id), {
+      method: 'PATCH', body: JSON.stringify({ site_map_zones: newZones }),
     });
     if (res.ok) onProjectUpdate(await res.json());
     setSaving(false);
@@ -453,9 +451,8 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
     try {
       const asset = result.assets[0];
       const url   = await uploadToSupabase(asset.uri, asset.mimeType || 'image/jpeg', 'erp/projects/sitemaps');
-      const headers = await authHeaders();
-      const res   = await fetch(SALES_ENDPOINTS.project(project.id), {
-        method: 'PATCH', headers, body: JSON.stringify({ site_map_image_url: url, site_map_zones: [] }),
+      const res   = await apiFetch(SALES_ENDPOINTS.project(project.id), {
+        method: 'PATCH', body: JSON.stringify({ site_map_image_url: url, site_map_zones: [] }),
       });
       if (res.ok) onProjectUpdate(await res.json());
     } catch (e) { Alert.alert('Upload failed', e.message); }
@@ -741,9 +738,8 @@ function MasterPlanSection({ project, onProjectUpdate }) {
     try {
       const asset   = result.assets[0];
       const url     = await uploadToSupabase(asset.uri, asset.mimeType || 'image/jpeg', 'erp/projects/masterplans');
-      const headers = await authHeaders();
-      const res     = await fetch(SALES_ENDPOINTS.project(project.id), {
-        method: 'PATCH', headers, body: JSON.stringify({ master_plan_url: url }),
+      const res     = await apiFetch(SALES_ENDPOINTS.project(project.id), {
+        method: 'PATCH', body: JSON.stringify({ master_plan_url: url }),
       });
       if (res.ok) onProjectUpdate(await res.json());
     } catch (e) { Alert.alert('Upload failed', e.message); }
@@ -801,11 +797,10 @@ export default function ManagePlotsScreen({ route, navigation }) {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const headers = await authHeaders();
       try {
         const [projRes, plotsRes] = await Promise.all([
-          fetch(SALES_ENDPOINTS.project(projectId), { headers }),
-          fetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`, { headers }),
+          apiFetch(SALES_ENDPOINTS.project(projectId)),
+          apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`),
         ]);
         if (projRes.ok)  setProject(await projRes.json());
         if (plotsRes.ok) {
@@ -818,9 +813,8 @@ export default function ManagePlotsScreen({ route, navigation }) {
   }, [projectId]);
 
   const handleStatusChange = useCallback(async (plotId, newStatus) => {
-    const headers = await authHeaders();
-    const res = await fetch(SALES_ENDPOINTS.plot(plotId), {
-      method: 'PATCH', headers, body: JSON.stringify({ status: newStatus }),
+    const res = await apiFetch(SALES_ENDPOINTS.plot(plotId), {
+      method: 'PATCH', body: JSON.stringify({ status: newStatus }),
     });
     if (res.ok) { const u = await res.json(); setPlots(prev => prev.map(p => p.id === plotId ? u : p)); }
   }, []);
@@ -947,9 +941,8 @@ export default function ManagePlotsScreen({ route, navigation }) {
                   Alert.alert('Delete All Plots', `Delete all ${plots.length} plots for this project? This cannot be undone.`, [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Delete All', style: 'destructive', onPress: async () => {
-                      const headers = await authHeaders();
-                      const res = await fetch(SALES_ENDPOINTS.plotsBulkDelete, {
-                        method: 'DELETE', headers, body: JSON.stringify({ project_id: project.id }),
+                      const res = await apiFetch(SALES_ENDPOINTS.plotsBulkDelete, {
+                        method: 'DELETE', body: JSON.stringify({ project_id: project.id }),
                       });
                       if (res.ok) { setPlots([]); Alert.alert('Done', 'All plots deleted.'); }
                       else { const e = await res.json(); Alert.alert('Error', e.detail || 'Failed to delete plots'); }
