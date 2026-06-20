@@ -33,8 +33,9 @@ function getDesignationLabel(user) {
 }
 
 export default function SalesCRMScreen({ navigation }) {
-  const user     = useSelector((s) => s.auth.user);
-  const isAdmin  = user?.role === 'Admin' || user?.is_staff;
+  const user      = useSelector((s) => s.auth.user);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const isAdmin   = user?.role === 'Admin' || user?.is_staff;
   const visibleMenu = MENU.filter(m => !m.adminOnly || isAdmin);
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
@@ -42,10 +43,11 @@ export default function SalesCRMScreen({ navigation }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { loadStats(); }, []);
-
-  const STATS_CACHE_KEY = '@vistara_sales_stats';
+  // Cache key is per-company so switching company never shows stale data from another company
+  const STATS_CACHE_KEY = `@vistara_sales_stats_${companyId || 'all'}`;
   const STATS_TTL_MS    = 2 * 60 * 1000; // 2 minutes
+
+  useEffect(() => { loadStats(); }, [companyId]);
 
   async function loadStats(refresh = false) {
     // Always show cached data immediately (even if stale) — no spinner on repeat visits
@@ -66,7 +68,10 @@ export default function SalesCRMScreen({ navigation }) {
 
     try {
       const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.stats, { headers });
+      const url = companyId
+        ? `${SALES_ENDPOINTS.stats}?company_id=${companyId}`
+        : SALES_ENDPOINTS.stats;
+      const res = await fetch(url, { headers });
       if (res.ok) {
         const data = await res.json();
         setStats(data);
