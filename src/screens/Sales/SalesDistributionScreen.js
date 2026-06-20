@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
@@ -53,17 +54,20 @@ export default function SalesDistributionScreen({ navigation }) {
   const [loading,        setLoading]        = useState(true);
   const [distributing,   setDistributing]   = useState('');
   const [refreshing,     setRefreshing]     = useState(false);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
       const headers = await authHeaders();
+      const statsUrl = companyId ? `${SALES_ENDPOINTS.stats}?company_id=${companyId}` : SALES_ENDPOINTS.stats;
+      const logUrl   = companyId ? `${SALES_ENDPOINTS.distLog}?company_id=${companyId}` : SALES_ENDPOINTS.distLog;
       const [sRes, aRes, wRes, lRes, stRes] = await Promise.all([
         fetch(SALES_ENDPOINTS.distSettings, { headers }),
         fetch(SALES_ENDPOINTS.availability, { headers }),
         fetch(SALES_ENDPOINTS.distWeight,   { headers }),
-        fetch(SALES_ENDPOINTS.distLog,      { headers }),
-        fetch(SALES_ENDPOINTS.stats,        { headers }),
+        fetch(logUrl,                        { headers }),
+        fetch(statsUrl,                      { headers }),
       ]);
       if (sRes.ok)  { const d = await sRes.json(); if (!d.detail) setSettings(d); }
       if (aRes.ok)  { const d = await aRes.json(); setAvailability(Array.isArray(d) ? d : (d.results || [])); }
@@ -81,7 +85,7 @@ export default function SalesDistributionScreen({ navigation }) {
     } catch (_) {}
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [companyId]);
 
   useEffect(() => { load(); }, [load]);
 

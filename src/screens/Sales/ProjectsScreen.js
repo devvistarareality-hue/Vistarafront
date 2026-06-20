@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { uploadToSupabase } from '../../utils/supabaseStorage';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -583,20 +584,23 @@ export default function ProjectsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editProject,  setEditProject]  = useState(null);
   const navigation = require('@react-navigation/native').useNavigation();
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
     else setLoading(true);
     try {
       const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.projects, { headers });
+      let url = SALES_ENDPOINTS.projects;
+      if (companyId) url += `?company_id=${companyId}`;
+      const res = await fetch(url, { headers });
       if (res.ok) {
         const data = await res.json();
         setProjects(Array.isArray(data) ? data : (data.results || []));
       }
     } catch (e) { console.warn(e); }
     finally { setLoading(false); setRefreshing(false); }
-  }, []);
+  }, [companyId]);
 
   useEffect(() => { load(); }, [load]);
 

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
@@ -65,18 +66,21 @@ export default function SalesReportsScreen({ navigation }) {
   const [data,       setData]       = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
       const headers = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.reports, { headers });
+      let url = SALES_ENDPOINTS.reports;
+      if (companyId) url += `?company_id=${companyId}`;
+      const res = await fetch(url, { headers });
       if (res.ok) setData(await res.json());
     } catch (_) {}
     setLoading(false); setRefreshing(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [companyId]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>

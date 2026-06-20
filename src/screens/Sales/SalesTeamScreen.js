@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, S
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
@@ -41,13 +42,15 @@ export default function SalesTeamScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [search,     setSearch]     = useState('');
   const [fetchError, setFetchError] = useState('');
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     setFetchError('');
     try {
       const headers = await authHeaders();
-      const url = SALES_ENDPOINTS.usersSlim;
+      let url = SALES_ENDPOINTS.usersSlim;
+      if (companyId) url += `?company_id=${companyId}`;
       const res = await fetch(url, { headers });
       if (res.ok) {
         const d = await res.json();
@@ -64,7 +67,7 @@ export default function SalesTeamScreen({ navigation }) {
     setLoading(false); setRefreshing(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [companyId]);
 
   const filtered = search.trim()
     ? members.filter(m => [m.name, m.user_code, m.designation].join(' ').toLowerCase().includes(search.toLowerCase()))

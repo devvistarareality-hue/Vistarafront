@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS, RAILWAY_URL } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
@@ -409,18 +410,21 @@ function SourcesTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [newName,    setNewName]    = useState('');
   const [adding,     setAdding]     = useState(false);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
       const h = await authHeaders();
-      const res = await fetch(SALES_ENDPOINTS.sources, { headers: h });
+      let url = SALES_ENDPOINTS.sources;
+      if (companyId) url += `?company_id=${companyId}`;
+      const res = await fetch(url, { headers: h });
       if (res.ok) { const d = await res.json(); setSources(Array.isArray(d) ? d : (d.results || [])); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [companyId]);
 
   async function addSource(name) {
     const n = name.trim();
