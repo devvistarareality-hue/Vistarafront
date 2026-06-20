@@ -941,6 +941,9 @@ export default function SalesLeadsScreen({ navigation }) {
 
   useEffect(() => { loadData(true); }, [search, filters, companyId]);
 
+  // Client-side company filter (mirrors user management pattern)
+  const visibleLeads = companyId ? leads.filter(l => l.company_id === companyId) : leads;
+
   function onLeadUpdated(updated) {
     if (!updated) setLeads(prev => prev.filter(l => l.id !== selectedLead?.id));
     else setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
@@ -1071,7 +1074,7 @@ export default function SalesLeadsScreen({ navigation }) {
         </View>
       ) : (
         <FlatList
-          data={leads}
+          data={visibleLeads}
           keyExtractor={l => String(l.id)}
           renderItem={({ item }) => <LeadCard item={item} />}
           contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 }}
