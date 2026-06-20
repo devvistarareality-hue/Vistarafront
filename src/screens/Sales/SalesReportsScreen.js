@@ -2,18 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
-const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const NAVY = COLORS.navy;
+const BLUE = COLORS.link;
+const BG   = COLORS.screenBg;
+const TEXT = COLORS.textPrimary;
+const MUTED = COLORS.textSecondary;
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
-async function authHeaders() {
-  const token = await AsyncStorage.getItem('access_token');
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+function fmt(n) {
+  if (!n) return '₹0';
+  if (n >= 1e7) return `₹${(n / 1e7).toFixed(2)} Cr`;
+  if (n >= 1e5) return `₹${(n / 1e5).toFixed(2)} L`;
+  return `₹${Number(n).toLocaleString('en-IN')}`;
 }
 
 function SectionTitle({ title }) {
@@ -30,8 +35,13 @@ function StatCard({ label, value, sub, color = BLUE }) {
   );
 }
 
-function PerformanceTable({ title, data = [], columns }) {
-  if (!data.length) return null;
+function PerformanceTable({ title, data = [], columns, nameKey = 'name' }) {
+  if (!data.length) return (
+    <View style={[CARD, { marginBottom: 16, padding: 14 }]}>
+      <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 8 }}>{title}</Text>
+      <Text style={{ fontSize: 12, color: MUTED, textAlign: 'center', paddingVertical: 12 }}>No data yet</Text>
+    </View>
+  );
   return (
     <View style={[CARD, { marginBottom: 16, overflow: 'hidden' }]}>
       <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
@@ -43,7 +53,7 @@ function PerformanceTable({ title, data = [], columns }) {
             <Text style={{ color: COLORS.white, fontSize: 11, fontWeight: '800' }}>{i + 1}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{row.name}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{row[nameKey] || '—'}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
               {columns.map(col => (
                 <Text key={col.key} style={{ fontSize: 11, color: MUTED }}>
@@ -82,12 +92,20 @@ export default function SalesReportsScreen({ navigation }) {
 
   useEffect(() => { load(); }, [companyId]);
 
+  const summary   = data?.summary   || {};
+  const campaigns = data?.campaigns  || [];
+  const telecallers = data?.telecallers || [];
+  const stms      = data?.stms       || [];
+  const closures  = data?.closures   || [];
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color={NAVY} />
+        </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Reports</Text>
         <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
@@ -95,28 +113,33 @@ export default function SalesReportsScreen({ navigation }) {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color={NAVY} /></View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={NAVY} />
+        </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
+        <ScrollView
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
           {/* Summary */}
           <SectionTitle title="Summary" />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-            <StatCard label="Site Visits"  value={data?.total_site_visits}  color={COLORS.link} />
-            <StatCard label="Closures"     value={data?.total_closures}     color={COLORS.success} />
-            <StatCard label="Meta Leads"   value={data?.meta_leads}         color={COLORS.warning} />
+            <StatCard label="Site Visits"  value={summary.total_sv}       color={BLUE} />
+            <StatCard label="Closures"     value={summary.total_closures}  color={COLORS.success} />
+            <StatCard label="Meta Leads"   value={summary.meta_leads}      color={COLORS.warning} />
           </View>
 
           {/* Campaign performance */}
           <SectionTitle title="Campaign Performance" />
           <PerformanceTable
             title="Meta / Ad Campaigns"
-            data={data?.campaign_performance || []}
+            data={campaigns}
+            nameKey="meta_campaign_name"
             columns={[
-              { key: 'total_leads',  label: 'Leads',      color: BLUE },
-              { key: 'site_visits',  label: 'SV',         color: COLORS.info },
-              { key: 'closed',       label: 'Closed',     color: COLORS.success },
+              { key: 'total', label: 'Leads',  color: BLUE },
+              { key: 'sv',    label: 'SV',     color: COLORS.info },
+              { key: 'closed', label: 'Closed', color: COLORS.success },
             ]}
           />
 
@@ -124,11 +147,12 @@ export default function SalesReportsScreen({ navigation }) {
           <SectionTitle title="Telecaller Performance" />
           <PerformanceTable
             title="Pre-sales"
-            data={data?.telecaller_performance || []}
+            data={telecallers}
+            nameKey="telecaller__name"
             columns={[
-              { key: 'total_leads',    label: 'Leads',     color: BLUE },
-              { key: 'warm_leads',     label: 'Warm',      color: COLORS.warningAlt },
-              { key: 'transferred',    label: 'Transferred', color: COLORS.warning },
+              { key: 'total',       label: 'Leads',       color: BLUE },
+              { key: 'warm',        label: 'Warm',        color: COLORS.warningAlt },
+              { key: 'transferred', label: 'Transferred', color: COLORS.warning },
             ]}
           />
 
@@ -136,39 +160,46 @@ export default function SalesReportsScreen({ navigation }) {
           <SectionTitle title="STM Performance" />
           <PerformanceTable
             title="Sales"
-            data={data?.stm_performance || []}
+            data={stms}
+            nameKey="stm__name"
             columns={[
-              { key: 'total_leads',  label: 'Leads',     color: BLUE },
-              { key: 'hot_leads',    label: 'Hot',        color: COLORS.warning },
-              { key: 'sv_done',      label: 'SV Done',    color: COLORS.info },
-              { key: 'closed',       label: 'Closed',     color: COLORS.success },
+              { key: 'total',   label: 'Leads',   color: BLUE },
+              { key: 'hot',     label: 'Hot',     color: COLORS.warning },
+              { key: 'sv_done', label: 'SV Done', color: COLORS.info },
+              { key: 'closed',  label: 'Closed',  color: COLORS.success },
             ]}
           />
 
           {/* Recent closures */}
-          {(data?.recent_closures || []).length > 0 && <>
-            <SectionTitle title="Recent Closures" />
-            <View style={[CARD, { marginBottom: 16, overflow: 'hidden' }]}>
-              {data.recent_closures.map((c, i) => (
-                <View key={i} style={{ padding: 14, borderBottomWidth: i < data.recent_closures.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{c.lead_name}</Text>
-                      <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-                        {c.project_name} {c.stm_name ? `· STM: ${c.stm_name}` : ''}
-                      </Text>
+          {closures.length > 0 && (
+            <>
+              <SectionTitle title="Recent Closures" />
+              <View style={[CARD, { marginBottom: 16, overflow: 'hidden' }]}>
+                {closures.map((c, i) => (
+                  <View key={i} style={{ padding: 14, borderBottomWidth: i < closures.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{c.lead_name || '—'}</Text>
+                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+                          {c.project_name}{c.stm_name ? ` · STM: ${c.stm_name}` : ''}
+                        </Text>
+                      </View>
+                      {c.booking_amount ? (
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.success }}>{fmt(c.booking_amount)}</Text>
+                      ) : null}
                     </View>
-                    {c.booking_amount ? (
-                      <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.success }}>₹{c.booking_amount}</Text>
-                    ) : null}
+                    <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>
+                      {c.closure_date ? new Date(c.closure_date).toLocaleDateString('en-IN') : ''}
+                    </Text>
                   </View>
-                  <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : ''}</Text>
-                </View>
-              ))}
-            </View>
-          </>}
+                ))}
+              </View>
+            </>
+          )}
 
-          {!data && <Text style={{ color: MUTED, textAlign: 'center', marginTop: 40 }}>No report data available.</Text>}
+          {!data && (
+            <Text style={{ color: MUTED, textAlign: 'center', marginTop: 40 }}>No report data available.</Text>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
