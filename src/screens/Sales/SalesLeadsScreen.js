@@ -866,7 +866,20 @@ export default function SalesLeadsScreen({ navigation }) {
 
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
-  const lastLeadIdRef   = useRef(null);
+  const lastLeadIdRef    = useRef(null);
+  const loadingMoreRef   = useRef(false);
+  const pageRef          = useRef(1);
+  const hasMoreRef       = useRef(true);
+  const leadsLengthRef   = useRef(0);
+  const loadDataRef      = useRef(null);
+  const viewabilityConfig   = useRef({ itemVisiblePercentThreshold: 10 });
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (!viewableItems.length || !hasMoreRef.current || loadingMoreRef.current) return;
+    const lastVisibleIndex = viewableItems[viewableItems.length - 1].index;
+    if (lastVisibleIndex >= leadsLengthRef.current - 10) {
+      loadDataRef.current?.(false);
+    }
+  });
   const [newLeadCount, setNewLeadCount] = useState(0);
 
   // On screen focus: silently check if new leads arrived since last load
@@ -888,26 +901,42 @@ export default function SalesLeadsScreen({ navigation }) {
     })();
   }, []));
 
+  function buildLeadsUrl(p) {
+    let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
+    if (companyId)             url += `&company_id=${companyId}`;
+    if (search)                url += `&search=${encodeURIComponent(search)}`;
+    if (filters.status)        url += `&status=${filters.status}`;
+    if (filters.project_id)    url += `&project_id=${filters.project_id}`;
+    if (filters.source_id)     url += `&source_id=${filters.source_id}`;
+    if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
+    if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
+    if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
+    if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
+    if (filters.date_from)     url += `&date_from=${filters.date_from}`;
+    if (filters.date_to)       url += `&date_to=${filters.date_to}`;
+    if (filters.is_duplicate)  url += `&is_duplicate=true`;
+    return url;
+  }
+
   async function loadData(reset = false) {
-    const p = reset ? 1 : page;
-    if (!reset && !hasMore) return;
-    if (reset) { setLoading(true); setPage(1); } else setLoadingMore(true);
+    if (!reset && (!hasMore || loadingMoreRef.current)) return;
+
+    const p = reset ? 1 : pageRef.current;
+
+    if (reset) {
+      setLoading(true);
+      setLeads([]);
+      setHasMore(true);
+      pageRef.current = 1;
+      setPage(1);
+    } else {
+      loadingMoreRef.current = true;
+      setLoadingMore(true);
+    }
+
     try {
-      let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
-      if (companyId)         url += `&company_id=${companyId}`;
-      if (search)            url += `&search=${encodeURIComponent(search)}`;
-      if (filters.status)    url += `&status=${filters.status}`;
-      if (filters.project_id)    url += `&project_id=${filters.project_id}`;
-      if (filters.source_id)     url += `&source_id=${filters.source_id}`;
-      if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
-      if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
-      if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
-      if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
-      if (filters.date_from)     url += `&date_from=${filters.date_from}`;
-      if (filters.date_to)       url += `&date_to=${filters.date_to}`;
-      if (filters.is_duplicate)  url += `&is_duplicate=true`;
       const [leadsRes, projRes, srcRes, tcRes, stmRes] = await Promise.all([
-        apiFetch(url),
+        apiFetch(buildLeadsUrl(p)),
         projects.length    ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.projects),
         sources.length     ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.sources),
         telecallers.length ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers),
@@ -917,7 +946,8 @@ export default function SalesLeadsScreen({ navigation }) {
         const d = await leadsRes.json();
         const results = Array.isArray(d) ? d : (d.results || []);
         setLeads(prev => reset ? results : [...prev, ...results]);
-        setHasMore(!!d.next);
+        setHasMore(results.length === 25 && (p * 25) < (d.count ?? Infinity));
+        pageRef.current = p + 1;
         setPage(p + 1);
         if (reset && results.length) {
           lastLeadIdRef.current = results[0].id;
@@ -929,9 +959,16 @@ export default function SalesLeadsScreen({ navigation }) {
       if (tcRes?.ok)    setTelecallers(await tcRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
       if (stmRes?.ok)   setStms(await stmRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
     } catch (_) {}
-    setLoading(false); setLoadingMore(false); setRefreshing(false);
+
+    setLoading(false);
+    setLoadingMore(false);
+    setRefreshing(false);
+    loadingMoreRef.current = false;
   }
 
+  loadDataRef.current = loadData;
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
+  useEffect(() => { leadsLengthRef.current = leads.length; }, [leads.length]);
   useEffect(() => { loadData(true); }, [search, filters, companyId]);
 
   // Client-side company filter (mirrors user management pattern).
@@ -1071,12 +1108,12 @@ export default function SalesLeadsScreen({ navigation }) {
         <FlatList
           data={visibleLeads}
           keyExtractor={l => String(l.id)}
-          renderItem={({ item }) => <LeadCard item={item} />}
+          renderItem={LeadCard}
           contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(true); }} colors={[NAVY]} tintColor={NAVY} />}
-          onEndReached={() => loadData(false)}
-          onEndReachedThreshold={0.4}
+          onViewableItemsChanged={onViewableItemsChanged.current}
+          viewabilityConfig={viewabilityConfig.current}
           ListFooterComponent={loadingMore ? <ActivityIndicator color={NAVY} style={{ marginVertical: 16 }} /> : null}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
