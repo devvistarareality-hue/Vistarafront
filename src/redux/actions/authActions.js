@@ -1,6 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { OneSignal } from 'react-native-onesignal';
 import { getBaseUrl } from '../../constants/api';
+
+// react-native-onesignal is a native module absent in Expo Go; load it lazily
+// so auth still works there. Push identity (login/logout) only runs in real builds.
+let OneSignal = null;
+try {
+  OneSignal = require('react-native-onesignal').OneSignal;
+} catch (e) {
+  OneSignal = null;
+}
 import {
   COMPANY_VERIFY_REQUEST,
   COMPANY_VERIFY_SUCCESS,
@@ -88,7 +96,7 @@ export const login = (companyCode, userCode, password) => async (dispatch) => {
       await AsyncStorage.setItem('access_token', data.tokens.access);
       await AsyncStorage.setItem('refresh_token', data.tokens.refresh);
       dispatch({ type: LOGIN_SUCCESS, payload: data.user });
-      OneSignal.login(data.user.user_code);
+      try { OneSignal?.login(data.user.user_code); } catch (e) {}
     } else {
       dispatch({ type: LOGIN_FAILURE, payload: data.detail || 'Invalid credentials.' });
     }
@@ -101,6 +109,6 @@ export const login = (companyCode, userCode, password) => async (dispatch) => {
 export const logout = () => async (dispatch) => {
   await AsyncStorage.removeItem('access_token');
   await AsyncStorage.removeItem('refresh_token');
-  OneSignal.logout();
+  try { OneSignal?.logout(); } catch (e) {}
   dispatch({ type: LOGOUT });
 };
