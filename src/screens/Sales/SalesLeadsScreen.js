@@ -399,7 +399,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
                 <View style={half}>
                   <Text style={lblS}>Alt Phone</Text>
-                  <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate" placeholderTextColor={COLORS.shadow} />
+                  <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate" placeholderTextColor="#666666" />
                 </View>
               </View>
 
@@ -480,7 +480,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
               <Text style={lblS}>TC Remarks</Text>
               <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
-                multiline placeholder="Call notes…" placeholderTextColor={COLORS.shadow}
+                multiline placeholder="Call notes…" placeholderTextColor="#666666"
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
               </>)}
 
@@ -509,7 +509,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
               <Text style={lblS}>STM Remarks</Text>
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
-                multiline placeholder="Notes…" placeholderTextColor={COLORS.shadow}
+                multiline placeholder="Notes…" placeholderTextColor="#666666"
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
 
               {/* Inline site-visit scheduling when STM picks "sv_scheduled" */}
@@ -854,7 +854,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 )}
                 <Text style={lblS}>Remarks</Text>
                 <TextInput value={fuForm.remarks} onChangeText={v => setFuForm(f => ({ ...f, remarks: v }))}
-                  placeholder="Call notes, instructions…" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+                  placeholder="Call notes, instructions…" placeholderTextColor="#666666" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
                 {!!fuErr && <Text style={{ color: COLORS.error, fontSize: 12, marginBottom: 8 }}>{fuErr}</Text>}
                 <TouchableOpacity onPress={addFollowup} disabled={savingFu}
                   style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', opacity: savingFu ? 0.6 : 1 }}>
@@ -1414,7 +1414,7 @@ export default function SalesLeadsScreen({ navigation }) {
       <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
-          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
+          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" placeholderTextColor="#666666" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {searchText ? <TouchableOpacity onPress={() => { setSearchText(''); setSearch(''); }}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
         <TouchableOpacity onPress={() => setFilterSheet(true)}

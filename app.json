@@ -13,6 +13,7 @@
     "userInterfaceStyle": "light",
     "plugins": [
       "@react-native-community/datetimepicker",
+      ["onesignal-expo-plugin", { "mode": "development" }],
       [
         "expo-location",
         {
@@ -24,7 +25,7 @@
         {
           "faceIDPermission": "Allow Vistararealty to use Face ID for authentication."
         }
-      ]
+      ],
     ],
     "ios": {
       "supportsTablet": true,
@@ -36,6 +37,7 @@
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "com.vistararealty.app",
+      "googleServicesFile": "./android/app/google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",

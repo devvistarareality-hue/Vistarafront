@@ -226,7 +226,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                     <Text style={{ fontSize: 15, fontWeight: '600', color: TEXT }}>{f.label}</Text>
                     <TextInput
-                      value={settingsForm[f.key] || ''} placeholder="HH:MM"
+                      value={settingsForm[f.key] || ''} placeholder="HH:MM" placeholderTextColor="#666666"
                       onChangeText={v => setSettingsForm(s => ({ ...s, [f.key]: v }))}
                       style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, fontSize: 15, width: 100, textAlign: 'center', color: TEXT }}
                     />
