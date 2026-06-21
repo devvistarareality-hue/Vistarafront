@@ -22,7 +22,10 @@ export async function registerForPushNotifications() {
     status = asked;
   }
 
-  if (status !== 'granted') return null;
+  if (status !== 'granted') {
+    console.warn('Push notification permission not granted');
+    return null;
+  }
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -33,16 +36,21 @@ export async function registerForPushNotifications() {
     });
   }
 
-  const token = (await Notifications.getExpoPushTokenAsync()).data;
+  // Use native FCM device token (works directly with Firebase Admin SDK)
+  const { data: token } = await Notifications.getDevicePushTokenAsync();
+  console.log('FCM device token:', token);
   return token;
 }
 
 export async function savePushToken(token) {
   if (!token) return;
   try {
-    await apiFetch('/api/auth/notifications/token/', {
+    const res = await apiFetch('/api/auth/notifications/token/', {
       method: 'POST',
       body: JSON.stringify({ token, platform: Platform.OS }),
     });
-  } catch (_) {}
+    console.log('Push token saved, status:', res?.status);
+  } catch (e) {
+    console.error('Failed to save push token:', e);
+  }
 }
