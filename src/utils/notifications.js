@@ -40,7 +40,7 @@ export async function registerForPushNotifications() {
 export async function savePushToken(token) {
   if (!token) return;
   try {
-    await apiFetch('/api/notifications/token/', {
+    await apiFetch('/api/auth/notifications/token/', {
       method: 'POST',
       body: JSON.stringify({ token, platform: Platform.OS }),
     });
