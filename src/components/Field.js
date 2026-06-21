@@ -32,7 +32,7 @@ export function Field({ label, required, children, style }) {
 export function TextField({ label, required, style, ...props }) {
   return (
     <Field label={label} required={required}>
-      <TextInput placeholderTextColor={COLORS.textTertiary} style={[inputStyle, style]} {...props} />
+      <TextInput placeholderTextColor="#666666" style={[inputStyle, style]} {...props} />
     </Field>
   );
 }
