@@ -51,6 +51,8 @@ function StatCard({ label, value, color, bg }) {
 
 export default function SalesMyConversionsScreen({ navigation }) {
   const user = useSelector((s) => s.auth.user);
+  const des = (user?.designation || '').toLowerCase();
+  const isStm = des.includes('stm') || des.includes('sales team') || des.includes('sales executive');
   const [tab, setTab] = useState('sv');
   const [visits, setVisits] = useState([]);
   const [closures, setClosures] = useState([]);
@@ -86,7 +88,7 @@ export default function SalesMyConversionsScreen({ navigation }) {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>My Conversions</Text>
-          <Text style={{ fontSize: 13, color: MUTED }}>Track SV & closures from your leads</Text>
+          <Text style={{ fontSize: 13, color: MUTED }}>{isStm ? 'Track all your SV & closures' : 'Track SV & closures from your leads'}</Text>
         </View>
         <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
@@ -124,7 +126,7 @@ export default function SalesMyConversionsScreen({ navigation }) {
             visits.length === 0 ? (
               <View style={{ padding: 40, alignItems: 'center' }}>
                 <Ionicons name="location-outline" size={40} color={MUTED} />
-                <Text style={{ fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>No site visits from your referred leads yet.</Text>
+                <Text style={{ fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>{isStm ? 'No site visits recorded yet.' : 'No site visits from your referred leads yet.'}</Text>
               </View>
             ) : (
               <View style={{ paddingHorizontal: 16 }}>
@@ -147,10 +149,10 @@ export default function SalesMyConversionsScreen({ navigation }) {
                         <Text style={{ fontSize: 13, color: TEXT, marginTop: 2 }}>{fmtDate(v.visited_at || v.scheduled_at)}</Text>
                       </View>
                     </View>
-                    {v.stm_name ? (
+                    {(isStm ? v.referred_by_telecaller_name : v.stm_name) ? (
                       <View style={{ marginTop: 6 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>STM</Text>
-                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{v.stm_name}</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>{isStm ? 'Telecaller' : 'STM'}</Text>
+                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{isStm ? v.referred_by_telecaller_name : v.stm_name}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -161,7 +163,7 @@ export default function SalesMyConversionsScreen({ navigation }) {
             closures.length === 0 ? (
               <View style={{ padding: 40, alignItems: 'center' }}>
                 <Ionicons name="checkmark-circle-outline" size={40} color={MUTED} />
-                <Text style={{ fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>No closures from your referred leads yet.</Text>
+                <Text style={{ fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>{isStm ? 'No closures recorded yet.' : 'No closures from your referred leads yet.'}</Text>
               </View>
             ) : (
               <View style={{ paddingHorizontal: 16 }}>
