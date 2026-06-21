@@ -163,7 +163,7 @@ function fmtDateTime(iso) {
 }
 
 /* ── Lead Detail Modal ── */
-function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated, initialTab }) {
+function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated }) {
   const user = useSelector((s) => s.auth.user);
   // Only admins/managers may (re)assign telecaller / STM. Telecaller & Sales Executive
   // portals can update status & remarks but cannot reassign leads.
@@ -211,7 +211,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         stm_status:        lead.stm_status      || '',
         stm_remarks:       lead.stm_remarks     || '',
       });
-      setTab(initialTab || 'detail');
+      setTab('detail');
       setDetail(null);
       async function loadDetail() {
         try {
@@ -1021,7 +1021,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
 const fsLbl = { fontSize: 10, fontWeight: '700', color: MUTED, letterSpacing: 0.8, marginBottom: 8 };
 
 /* ── Main Leads Screen ── */
-export default function SalesLeadsScreen({ navigation, route }) {
+export default function SalesLeadsScreen({ navigation }) {
   const [leads,       setLeads]       = useState([]);
   const [projects,    setProjects]    = useState([]);
   const [sources,     setSources]     = useState([]);
@@ -1039,7 +1039,6 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedLead,setSelectedLead]= useState(null);
   const [detailModal, setDetailModal] = useState(false);
-  const [detailTab,   setDetailTab]   = useState('detail');
   const [createModal, setCreateModal] = useState(false);
 
   const companyId = useSelector((s) => s.adminFilter?.companyId);
@@ -1052,24 +1051,6 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const isStm        = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
   const isCaller     = isTelecaller || isStm;
   const [workTab, setWorkTab] = useState('pending'); // 'pending' | 'called' (callers only)
-
-  // Deep-link from My Conversions: open a specific lead's detail on the History tab.
-  useFocusEffect(useCallback(() => {
-    const openLeadId = route?.params?.openLeadId;
-    if (!openLeadId) return;
-    const wantTab = route?.params?.initialTab || 'history';
-    navigation.setParams({ openLeadId: undefined, initialTab: undefined });
-    (async () => {
-      try {
-        const res = await apiFetch(SALES_ENDPOINTS.lead(openLeadId));
-        if (res.ok) {
-          setDetailTab(wantTab);
-          setSelectedLead(await res.json());
-          setDetailModal(true);
-        }
-      } catch (_) {}
-    })();
-  }, [route?.params?.openLeadId]));
 
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
@@ -1235,7 +1216,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     return (
       <TouchableOpacity
         style={[CARD, { marginHorizontal: 16, marginBottom: 10, padding: 14, borderLeftWidth: item.is_duplicate ? 3 : 0, borderLeftColor: COLORS.errorStrong, backgroundColor: item.is_duplicate ? COLORS.white : COLORS.white }]}
-        onPress={() => { setDetailTab('detail'); setSelectedLead(item); setDetailModal(true); }} activeOpacity={0.8}>
+        onPress={() => { setSelectedLead(item); setDetailModal(true); }} activeOpacity={0.8}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: item.is_duplicate ? COLORS.errorStrong : NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12, flexShrink: 0 }}>
             <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 14 }}>{initials(item.name)}</Text>
@@ -1390,7 +1371,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
       )}
 
       <LeadDetailModal lead={selectedLead} projects={projects} sources={sources} telecallers={telecallers} stms={stms}
-        visible={detailModal} initialTab={detailTab} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} />
+        visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} />
       <CreateLeadModal projects={projects} sources={sources}
         visible={createModal} onClose={() => setCreateModal(false)} onCreated={l => setLeads(prev => [l, ...prev])} />
     </SafeAreaView>
