@@ -20,7 +20,7 @@ const MENU = [
   { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false },
   { key: 'SalesFollowUps',    label: 'Follow-Ups',   icon: 'calendar-outline',        color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: false },
   { key: 'SalesSiteVisits',   label: 'Site Visits',  icon: 'location-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, stmOnly: true },
-  { key: 'SalesMyConversions', label: 'My Conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, tcOnly: true },
+  { key: 'SalesMyConversions', label: 'My Conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, tcStmOnly: true },
   { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: true  },
   { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: COLORS.info, bg: COLORS.infoBg,  adminOnly: true  },
   { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  },
@@ -43,7 +43,7 @@ export default function SalesCRMScreen({ navigation }) {
   const _des = (user?.designation || '').toLowerCase();
   const isStm = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive');
   const isTelecaller = _des.includes('telecaller') || _des.includes('tele caller');
-  const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.stmOnly || isAdmin || isStm) && (!m.tcOnly || isAdmin || isTelecaller));
+  const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.stmOnly || isAdmin || isStm) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm));
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
   const [stats,      setStats]      = useState(null);
