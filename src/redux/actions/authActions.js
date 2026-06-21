@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import OneSignal from 'react-native-onesignal';
 import { getBaseUrl } from '../../constants/api';
 import {
   COMPANY_VERIFY_REQUEST,
@@ -87,6 +88,7 @@ export const login = (companyCode, userCode, password) => async (dispatch) => {
       await AsyncStorage.setItem('access_token', data.tokens.access);
       await AsyncStorage.setItem('refresh_token', data.tokens.refresh);
       dispatch({ type: LOGIN_SUCCESS, payload: data.user });
+      OneSignal.login(data.user.user_code);
     } else {
       dispatch({ type: LOGIN_FAILURE, payload: data.detail || 'Invalid credentials.' });
     }
@@ -99,5 +101,6 @@ export const login = (companyCode, userCode, password) => async (dispatch) => {
 export const logout = () => async (dispatch) => {
   await AsyncStorage.removeItem('access_token');
   await AsyncStorage.removeItem('refresh_token');
+  OneSignal.logout();
   dispatch({ type: LOGOUT });
 };
