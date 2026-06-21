@@ -131,7 +131,9 @@ export default function SalesMyConversionsScreen({ navigation }) {
             ) : (
               <View style={{ paddingHorizontal: 16 }}>
                 {visits.map(v => (
-                  <View key={v.id} style={[CARD, { padding: 14, marginBottom: 10 }]}>
+                  <TouchableOpacity key={v.id} activeOpacity={0.7}
+                    onPress={() => v.lead && navigation.navigate('SalesLeads', { openLeadId: v.lead, initialTab: 'history' })}
+                    style={[CARD, { padding: 14, marginBottom: 10 }]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{v.lead_name || '—'}</Text>
@@ -155,7 +157,7 @@ export default function SalesMyConversionsScreen({ navigation }) {
                         <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{isStm ? v.referred_by_telecaller_name : v.stm_name}</Text>
                       </View>
                     ) : null}
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             )
@@ -168,7 +170,9 @@ export default function SalesMyConversionsScreen({ navigation }) {
             ) : (
               <View style={{ paddingHorizontal: 16 }}>
                 {closures.map(c => (
-                  <View key={c.id} style={[CARD, { padding: 14, marginBottom: 10 }]}>
+                  <TouchableOpacity key={c.id} activeOpacity={0.7}
+                    onPress={() => c.lead && navigation.navigate('SalesLeads', { openLeadId: c.lead, initialTab: 'history' })}
+                    style={[CARD, { padding: 14, marginBottom: 10 }]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{c.lead_name || '—'}</Text>
@@ -197,7 +201,7 @@ export default function SalesMyConversionsScreen({ navigation }) {
                         </Text>
                       </View>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             )
