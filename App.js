@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
-import OneSignal from 'react-native-onesignal';
+import { OneSignal } from 'react-native-onesignal';
 import store from './src/redux/store';
 import SplashScreen from './src/screens/Splashscreen/Splashscreen';
 import AppNavigator from './src/navigation/Appnavigator';

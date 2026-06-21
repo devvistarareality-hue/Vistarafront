@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import OneSignal from 'react-native-onesignal';
+import { OneSignal } from 'react-native-onesignal';
 import { getBaseUrl } from '../../constants/api';
 import {
   COMPANY_VERIFY_REQUEST,
