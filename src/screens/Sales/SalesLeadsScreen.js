@@ -187,9 +187,15 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [savingFu, setSavingFu] = useState(false);
   const [fuErr,    setFuErr]    = useState('');
+  // Inline "schedule site visit" when STM sets stm_status = sv_scheduled
+  const [svAt,       setSvAt]       = useState(null);   // Date | null
+  const [svRemarks,  setSvRemarks]  = useState('');
+  const [showSvDate, setShowSvDate] = useState(false);
+  const [showSvTime, setShowSvTime] = useState(false);
 
   useEffect(() => {
     if (lead) {
+      setSvAt(null); setSvRemarks('');
       setForm({
         name:              lead.name            || '',
         phone:             lead.phone           || '',
@@ -223,7 +229,49 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     setSaving(true);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(form) });
-      if (res.ok) { onUpdated(await res.json()); onClose(); }
+      if (res.ok) {
+        const updated = await res.json();
+
+        // STM scheduled a visit → auto-create the site-visit entry
+        if (form.stm_status === 'sv_scheduled' && svAt instanceof Date) {
+          try {
+            await apiFetch(SALES_ENDPOINTS.siteVisits, {
+              method: 'POST',
+              body: JSON.stringify({
+                lead: lead.id, project: form.project || null,
+                scheduled_at: svAt.toISOString(), status: 'scheduled',
+                stm: form.stm || user?.id, referred_by_telecaller: form.telecaller || null,
+                remarks: svRemarks || '',
+              }),
+            });
+          } catch (_) {}
+        }
+
+        // STM marked sv_done → complete the latest pending visit (or create a completed one)
+        if (form.stm_status === 'sv_done') {
+          try {
+            const svRes = await apiFetch(`${SALES_ENDPOINTS.siteVisits}?lead_id=${lead.id}`);
+            const list = svRes.ok ? await svRes.json() : [];
+            const pending = (Array.isArray(list) ? list : []).filter(v => v.status === 'scheduled')
+              .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))[0];
+            const nowIso = new Date().toISOString();
+            if (pending) {
+              await apiFetch(SALES_ENDPOINTS.siteVisit(pending.id), { method: 'PATCH', body: JSON.stringify({ status: 'completed', visited_at: nowIso }) });
+            } else {
+              await apiFetch(SALES_ENDPOINTS.siteVisits, {
+                method: 'POST',
+                body: JSON.stringify({
+                  lead: lead.id, project: form.project || null,
+                  scheduled_at: nowIso, visited_at: nowIso, status: 'completed',
+                  stm: form.stm || user?.id, referred_by_telecaller: form.telecaller || null,
+                }),
+              });
+            }
+          } catch (_) {}
+        }
+
+        onUpdated(updated); onClose();
+      }
       else { Alert.alert('Error', 'Could not save lead.'); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
@@ -439,6 +487,71 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
                 multiline placeholder="Notes…" placeholderTextColor={COLORS.shadow}
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
+
+              {/* Inline site-visit scheduling when STM picks "sv_scheduled" */}
+              {form.stm_status === 'sv_scheduled' && (
+                <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <Ionicons name="location-outline" size={14} color="#15803D" />
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 }}>SCHEDULE SITE VISIT</Text>
+                  </View>
+                  <Text style={[lblS, { color: '#166534' }]}>Date & Time *</Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity onPress={() => setShowSvDate(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                      <Ionicons name="calendar-outline" size={16} color={BLUE} />
+                      <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{svAt instanceof Date ? svAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Pick Date'}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowSvTime(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                      <Ionicons name="time-outline" size={16} color={BLUE} />
+                      <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{svAt instanceof Date ? svAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Pick Time'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={[lblS, { color: '#166534', marginTop: 8 }]}>Visit Remarks</Text>
+                  <TextInput value={svRemarks} onChangeText={setSvRemarks} placeholder="Location, notes…" placeholderTextColor={COLORS.shadow} style={inpS} />
+                  {!svAt && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Set a date & time to create a site visit entry automatically on save.</Text>}
+
+                  {/* iOS pickers */}
+                  {Platform.OS === 'ios' && showSvDate && (
+                    <Modal transparent animationType="slide" onRequestClose={() => setShowSvDate(false)}>
+                      <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowSvDate(false)}>
+                        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                            <TouchableOpacity onPress={() => setShowSvDate(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                            <Text style={{ fontWeight: '700', color: TEXT }}>Pick Date</Text>
+                            <TouchableOpacity onPress={() => setShowSvDate(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                          </View>
+                          <DateTimePicker value={svAt instanceof Date ? svAt : defaultPickerDate()} mode="date" display="spinner" textColor={TEXT}
+                            onChange={(_, d) => { if (d) { const cur = svAt instanceof Date ? svAt : defaultPickerDate(); const m = new Date(d); m.setHours(cur.getHours(), cur.getMinutes(), 0, 0); setSvAt(m); } }} />
+                        </View>
+                      </TouchableOpacity>
+                    </Modal>
+                  )}
+                  {Platform.OS === 'ios' && showSvTime && (
+                    <Modal transparent animationType="slide" onRequestClose={() => setShowSvTime(false)}>
+                      <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowSvTime(false)}>
+                        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                            <TouchableOpacity onPress={() => setShowSvTime(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                            <Text style={{ fontWeight: '700', color: TEXT }}>Pick Time</Text>
+                            <TouchableOpacity onPress={() => setShowSvTime(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                          </View>
+                          <DateTimePicker value={svAt instanceof Date ? svAt : defaultPickerDate()} mode="time" display="spinner" textColor={TEXT}
+                            onChange={(_, d) => { if (d) { const cur = svAt instanceof Date ? svAt : defaultPickerDate(); const m = new Date(cur); m.setHours(d.getHours(), d.getMinutes(), 0, 0); setSvAt(m); } }} />
+                        </View>
+                      </TouchableOpacity>
+                    </Modal>
+                  )}
+                  {/* Android pickers */}
+                  {Platform.OS === 'android' && showSvDate && (
+                    <DateTimePicker value={svAt instanceof Date ? svAt : defaultPickerDate()} mode="date" display="default"
+                      onChange={(e, d) => { setShowSvDate(false); if (e.type === 'dismissed') return; if (d) { const cur = svAt instanceof Date ? svAt : defaultPickerDate(); const m = new Date(d); m.setHours(cur.getHours(), cur.getMinutes(), 0, 0); setSvAt(m); setShowSvTime(true); } }} />
+                  )}
+                  {Platform.OS === 'android' && showSvTime && (
+                    <DateTimePicker value={svAt instanceof Date ? svAt : defaultPickerDate()} mode="time" display="default" is24Hour={false}
+                      onChange={(e, d) => { setShowSvTime(false); if (e.type === 'dismissed') return; if (d) { const cur = svAt instanceof Date ? svAt : defaultPickerDate(); const m = new Date(cur); m.setHours(d.getHours(), d.getMinutes(), 0, 0); setSvAt(m); } }} />
+                  )}
+                </View>
+              )}
               </>)}
 
               {/* Meta Ads Info */}
