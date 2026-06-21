@@ -25,14 +25,6 @@
           "faceIDPermission": "Allow Vistararealty to use Face ID for authentication."
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#050D1A",
-          "sounds": []
-        }
-      ]
     ],
     "ios": {
       "supportsTablet": true,
@@ -44,7 +36,6 @@
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "com.vistararealty.app",
-      "googleServicesFile": "./android/app/google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",

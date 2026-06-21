@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseUrl } from '../../constants/api';
-import { registerForPushNotifications, savePushToken } from '../../utils/notifications';
 import {
   COMPANY_VERIFY_REQUEST,
   COMPANY_VERIFY_SUCCESS,
@@ -88,7 +87,6 @@ export const login = (companyCode, userCode, password) => async (dispatch) => {
       await AsyncStorage.setItem('access_token', data.tokens.access);
       await AsyncStorage.setItem('refresh_token', data.tokens.refresh);
       dispatch({ type: LOGIN_SUCCESS, payload: data.user });
-      registerForPushNotifications().then(savePushToken);
     } else {
       dispatch({ type: LOGIN_FAILURE, payload: data.detail || 'Invalid credentials.' });
     }
