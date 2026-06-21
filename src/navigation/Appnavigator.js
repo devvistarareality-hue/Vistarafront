@@ -29,6 +29,7 @@ import SalesCRMScreen          from '../screens/Sales/SalesCRMScreen';
 import SalesLeadsScreen        from '../screens/Sales/SalesLeadsScreen';
 import SalesFollowUpsScreen    from '../screens/Sales/SalesFollowUpsScreen';
 import SalesSiteVisitsScreen   from '../screens/Sales/SalesSiteVisitsScreen';
+import SalesMyConversionsScreen from '../screens/Sales/SalesMyConversionsScreen';
 import ProjectsScreen          from '../screens/Sales/ProjectsScreen';
 import ManagePlotsScreen       from '../screens/Sales/ManagePlotsScreen';
 import SalesSourcesScreen      from '../screens/Sales/SalesSourcesScreen';
@@ -71,6 +72,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
             <Stack.Screen name="SalesFollowUps"      component={SalesFollowUpsScreen} />
             <Stack.Screen name="SalesSiteVisits"     component={SalesSiteVisitsScreen} />
+            <Stack.Screen name="SalesMyConversions"  component={SalesMyConversionsScreen} />
             <Stack.Screen name="SalesProjects"       component={ProjectsScreen} />
             <Stack.Screen name="ManagePlots"         component={ManagePlotsScreen} />
             <Stack.Screen name="SalesSources"        component={SalesSourcesScreen} />

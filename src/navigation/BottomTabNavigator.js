@@ -10,6 +10,7 @@ import SalesCRMScreen from '../screens/Sales/SalesCRMScreen';
 import SalesLeadsScreen from '../screens/Sales/SalesLeadsScreen';
 import SalesFollowUpsScreen from '../screens/Sales/SalesFollowUpsScreen';
 import SalesSiteVisitsScreen from '../screens/Sales/SalesSiteVisitsScreen';
+import SalesMyConversionsScreen from '../screens/Sales/SalesMyConversionsScreen';
 import SalesReportsScreen from '../screens/Sales/SalesReportsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -23,6 +24,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="SalesLeads"    component={SalesLeadsScreen} />
       <ModulesStack.Screen name="SalesFollowUps" component={SalesFollowUpsScreen} />
       <ModulesStack.Screen name="SalesSiteVisits" component={SalesSiteVisitsScreen} />
+      <ModulesStack.Screen name="SalesMyConversions" component={SalesMyConversionsScreen} />
       <ModulesStack.Screen name="SalesReports"  component={SalesReportsScreen} />
     </ModulesStack.Navigator>
   );
