@@ -6,19 +6,33 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
-import { OneSignal } from 'react-native-onesignal';
 import store from './src/redux/store';
 import SplashScreen from './src/screens/Splashscreen/Splashscreen';
 import AppNavigator from './src/navigation/Appnavigator';
 
 const ONESIGNAL_APP_ID = '6904b4e0-0e22-4685-a609-a38038a4082a';
 
+// react-native-onesignal is a native module; it isn't present in Expo Go.
+// Load it lazily so the app still runs in Expo Go — push notifications only
+// activate in a real dev/production build where the native module is linked.
+let OneSignal = null;
+try {
+  OneSignal = require('react-native-onesignal').OneSignal;
+} catch (e) {
+  OneSignal = null;
+}
+
 function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    OneSignal.initialize(ONESIGNAL_APP_ID);
-    OneSignal.Notifications.requestPermission(true);
+    if (!OneSignal) return; // Expo Go / native module unavailable
+    try {
+      OneSignal.initialize(ONESIGNAL_APP_ID);
+      OneSignal.Notifications.requestPermission(true);
+    } catch (e) {
+      console.warn('OneSignal init skipped:', e?.message);
+    }
   }, []);
 
   const handleSplashFinish = () => {
