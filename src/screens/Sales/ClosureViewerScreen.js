@@ -245,7 +245,12 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed })
     closure_date: new Date(), unit_no: String(plot.number), unit_type: plot.cluster_type || '',
     booking_amount: '', total_amount: '', remarks: '',
   });
-  const [lead, setLead] = useState({ name: '', phone: '', source: '' }); // direct-booking lead
+  const [lead, setLead] = useState({ name: '', phone: '', source: '' }); // new-lead fields
+  const [bookMode, setBookMode] = useState('existing'); // 'existing' | 'new'
+  const [leadSearch, setLeadSearch] = useState('');
+  const [leadResults, setLeadResults] = useState([]);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err,    setErr]    = useState('');
 
@@ -254,19 +259,46 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed })
     else Linking.openURL(url).catch(() => {});
   }
 
+  // Debounced lead search by name / phone.
+  useEffect(() => {
+    if (!booking || bookMode !== 'existing' || selectedLead) return;
+    const q = leadSearch.trim();
+    if (!q) { setLeadResults([]); return; }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await apiFetch(`${SALES_ENDPOINTS.leads}?search=${encodeURIComponent(q)}`);
+        const d = await res.json();
+        setLeadResults((Array.isArray(d) ? d : (d.results || [])).slice(0, 8));
+      } catch { setLeadResults([]); }
+      setSearching(false);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [leadSearch, bookMode, selectedLead, booking]);
+
   async function recordBooking() {
-    if (!lead.name.trim() || !lead.phone.trim()) { setErr('Customer name and phone are required.'); return; }
+    let leadId = selectedLead?.id;
+    if (bookMode === 'existing') {
+      if (!selectedLead) { setErr('Search and select a lead.'); return; }
+    } else if (!lead.name.trim() || !lead.phone.trim()) {
+      setErr('Customer name and phone are required.'); return;
+    }
     if (!cForm.booking_amount) { setErr('Booking amount is required.'); return; }
     setSaving(true); setErr('');
     try {
-      const leadRes = await apiFetch(SALES_ENDPOINTS.leads, {
-        method: 'POST',
-        body: JSON.stringify({ name: lead.name.trim(), phone: lead.phone.trim(), project: project.id, source: lead.source || null, status: 'new' }),
-      });
-      const leadData = await leadRes.json();
-      if (!leadRes.ok) { setErr(JSON.stringify(leadData)); setSaving(false); return; }
-      const leadId = leadData.id;
-      await apiFetch(SALES_ENDPOINTS.lead(leadId), { method: 'PATCH', body: JSON.stringify({ stm: user?.id, stm_status: 'closed' }) }).catch(() => {});
+      if (bookMode === 'new') {
+        const leadRes = await apiFetch(SALES_ENDPOINTS.leads, {
+          method: 'POST',
+          body: JSON.stringify({ name: lead.name.trim(), phone: lead.phone.trim(), project: project.id, source: lead.source || null, status: 'new' }),
+        });
+        const leadData = await leadRes.json();
+        if (!leadRes.ok) { setErr(JSON.stringify(leadData)); setSaving(false); return; }
+        leadId = leadData.id;
+      }
+      await apiFetch(SALES_ENDPOINTS.lead(leadId), {
+        method: 'PATCH',
+        body: JSON.stringify({ stm: user?.id, stm_status: 'closed', ...(bookMode === 'existing' ? { project: project.id } : {}) }),
+      }).catch(() => {});
       const cRes = await apiFetch(SALES_ENDPOINTS.closures, {
         method: 'POST',
         body: JSON.stringify({
@@ -365,25 +397,70 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed })
               </TouchableOpacity>
             ) : booking ? (
               <View style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingTop: 14 }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.5, color: MUTED, marginBottom: 6 }}>CUSTOMER</Text>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <View style={{ flex: 1 }}><Text style={lblS}>Name *</Text>
-                    <TextInput value={lead.name} onChangeText={t => setLead({ ...lead, name: t })} placeholder="Customer name" style={inpS} /></View>
-                  <View style={{ flex: 1 }}><Text style={lblS}>Phone *</Text>
-                    <TextInput value={lead.phone} onChangeText={t => setLead({ ...lead, phone: t })} keyboardType="phone-pad" placeholder="+91…" style={inpS} /></View>
-                </View>
-                <Text style={lblS}>Source</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
-                  {sources.map(s => {
-                    const active = String(lead.source) === String(s.id);
+                {/* Existing lead or new */}
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                  {[['existing', 'Existing Lead'], ['new', 'New Lead']].map(([m, label]) => {
+                    const active = bookMode === m;
                     return (
-                      <TouchableOpacity key={s.id} onPress={() => setLead({ ...lead, source: active ? '' : s.id })}
-                        style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? COLORS.linkBg : COLORS.white }}>
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>{s.name}</Text>
+                      <TouchableOpacity key={m} onPress={() => { setBookMode(m); setErr(''); setSelectedLead(null); }}
+                        style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', borderWidth: 1.5, borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? BLUE : COLORS.white }}>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : MUTED }}>{label}</Text>
                       </TouchableOpacity>
                     );
                   })}
-                </ScrollView>
+                </View>
+
+                {bookMode === 'existing' ? (
+                  selectedLead ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, backgroundColor: COLORS.successBg, borderWidth: 1.5, borderColor: COLORS.success, marginBottom: 12 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{selectedLead.name}</Text>
+                        <Text style={{ fontSize: 12, color: MUTED }}>{selectedLead.phone}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => { setSelectedLead(null); setLeadSearch(''); }} style={{ paddingHorizontal: 12, paddingVertical: 7, backgroundColor: COLORS.screenBg, borderRadius: 8 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Change</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={{ marginBottom: 12 }}>
+                      <Text style={lblS}>Search lead by name or phone</Text>
+                      <TextInput value={leadSearch} onChangeText={setLeadSearch} placeholder="Type a name or number…" style={inpS} />
+                      {searching && <Text style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>Searching…</Text>}
+                      {!searching && leadResults.map(l => (
+                        <TouchableOpacity key={l.id} onPress={() => { setSelectedLead(l); setLeadResults([]); }}
+                          style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 10, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                          <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{l.name}</Text>
+                          <Text style={{ fontSize: 12, color: MUTED }}>{l.phone}</Text>
+                        </TouchableOpacity>
+                      ))}
+                      {!searching && !!leadSearch.trim() && leadResults.length === 0 && (
+                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>No leads found. Switch to New Lead to create one.</Text>
+                      )}
+                    </View>
+                  )
+                ) : (
+                  <>
+                    <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.5, color: MUTED, marginBottom: 6 }}>CUSTOMER</Text>
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <View style={{ flex: 1 }}><Text style={lblS}>Name *</Text>
+                        <TextInput value={lead.name} onChangeText={t => setLead({ ...lead, name: t })} placeholder="Customer name" style={inpS} /></View>
+                      <View style={{ flex: 1 }}><Text style={lblS}>Phone *</Text>
+                        <TextInput value={lead.phone} onChangeText={t => setLead({ ...lead, phone: t })} keyboardType="phone-pad" placeholder="+91…" style={inpS} /></View>
+                    </View>
+                    <Text style={lblS}>Source</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+                      {sources.map(s => {
+                        const active = String(lead.source) === String(s.id);
+                        return (
+                          <TouchableOpacity key={s.id} onPress={() => setLead({ ...lead, source: active ? '' : s.id })}
+                            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? COLORS.linkBg : COLORS.white }}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>{s.name}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </>
+                )}
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
                   <View style={{ flex: 1 }}><Text style={lblS}>Project</Text>
                     <View style={[inpS, { justifyContent: 'center', backgroundColor: COLORS.screenBg }]}><Text style={{ fontSize: 13, color: TEXT }} numberOfLines={1}>{project.name}</Text></View></View>
