@@ -246,7 +246,7 @@ export default function SalesSiteVisitsScreen({ navigation }) {
                 </View>
               )}
               {sv.status === 'completed' && (
-                <TouchableOpacity onPress={() => { setErr(''); setCForm({ closure_date: new Date(), unit_no: '', unit_type: '', booking_amount: '', total_amount: '', remarks: '' }); setClosureSv(sv); }}
+                <TouchableOpacity onPress={() => navigation.navigate('ClosureProjects', { sv })}
                   style={{ marginTop: 12, backgroundColor: NAVY, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9, alignSelf: 'flex-start' }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.white }}>Record Closure</Text>
                 </TouchableOpacity>

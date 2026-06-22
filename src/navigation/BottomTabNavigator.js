@@ -12,6 +12,8 @@ import SalesFollowUpsScreen from '../screens/Sales/SalesFollowUpsScreen';
 import SalesSiteVisitsScreen from '../screens/Sales/SalesSiteVisitsScreen';
 import SalesMyConversionsScreen from '../screens/Sales/SalesMyConversionsScreen';
 import SalesReportsScreen from '../screens/Sales/SalesReportsScreen';
+import ClosureProjectsScreen from '../screens/Sales/ClosureProjectsScreen';
+import ClosureViewerScreen from '../screens/Sales/ClosureViewerScreen';
 
 const Tab = createBottomTabNavigator();
 const ModulesStack = createNativeStackNavigator();
@@ -26,6 +28,8 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="SalesSiteVisits" component={SalesSiteVisitsScreen} />
       <ModulesStack.Screen name="SalesMyConversions" component={SalesMyConversionsScreen} />
       <ModulesStack.Screen name="SalesReports"  component={SalesReportsScreen} />
+      <ModulesStack.Screen name="ClosureProjects" component={ClosureProjectsScreen} />
+      <ModulesStack.Screen name="ClosureViewer" component={ClosureViewerScreen} />
     </ModulesStack.Navigator>
   );
 }

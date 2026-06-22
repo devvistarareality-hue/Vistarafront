@@ -433,6 +433,12 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
   const mappedCount = zones.length;
   const totalPlots  = plots.length;
 
+  // Plots not yet drawn on the map — offered as a pick list instead of free text
+  // so zone numbers always match real plots.
+  const mappedNums = new Set(zones.map(z => String(z.plotNumber)));
+  const unmapped   = plots.filter(p => !mappedNums.has(String(p.number))).map(p => p.number)
+    .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
+
   async function persistZones(newZones) {
     setSaving(true);
     const res = await apiFetch(SALES_ENDPOINTS.project(project.id), {
@@ -512,8 +518,8 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
 
   function cancelDraw() { setPolyPoints([]); setPendingZone(null); setCurrentRect(null); setPlotInput(''); }
 
-  async function confirmZone() {
-    const val = plotInput.trim();
+  async function confirmZone(value) {
+    const val = String(value ?? plotInput).trim();
     if (!val) return;
     await persistZones([...zones, { id: Date.now(), plotNumber: val, ...pendingZone }]);
     setPendingZone(null); setPlotInput('');
@@ -669,20 +675,27 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
               </Svg>
             </View>
 
-            {/* Plot number input after drawing */}
+            {/* Pick the plot for the drawn zone — tap an unmapped plot (no free text) */}
             {pendingZone && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, borderWidth: 1.5, borderColor: BLUE + '40' }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>Plot No.:</Text>
-                <TextInput value={plotInput} onChangeText={setPlotInput} placeholder="e.g. D-1"
-                  onSubmitEditing={confirmZone}
-                  style={{ flex: 1, borderWidth: 1.5, borderColor: BLUE + '60', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 14, fontWeight: '700', color: TEXT, backgroundColor: COLORS.white }} />
-                <TouchableOpacity onPress={confirmZone}
-                  style={{ paddingHorizontal: 14, paddingVertical: 9, backgroundColor: NAVY, borderRadius: 9 }}>
-                  <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>Save</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={cancelDraw} style={{ padding: 6 }}>
-                  <Ionicons name="close" size={18} color={MUTED} />
-                </TouchableOpacity>
+              <View style={{ marginTop: 10, padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, borderWidth: 1.5, borderColor: BLUE + '40' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>Tap the plot for this zone</Text>
+                  <TouchableOpacity onPress={cancelDraw} style={{ padding: 4 }}>
+                    <Ionicons name="close" size={18} color={MUTED} />
+                  </TouchableOpacity>
+                </View>
+                {unmapped.length === 0 ? (
+                  <Text style={{ fontSize: 12, color: MUTED }}>All plots already mapped.</Text>
+                ) : (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+                    {unmapped.map(n => (
+                      <TouchableOpacity key={String(n)} onPress={() => confirmZone(n)}
+                        style={{ paddingHorizontal: 14, paddingVertical: 9, backgroundColor: COLORS.white, borderRadius: 9, borderWidth: 1.5, borderColor: BLUE + '60' }}>
+                        <Text style={{ color: NAVY, fontWeight: '800', fontSize: 13 }}>{n}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
               </View>
             )}
 
