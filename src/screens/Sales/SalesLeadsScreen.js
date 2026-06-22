@@ -1038,7 +1038,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>PROJECT</Text>
             <DropdownPicker value={local.project_id} onChange={v => set('project_id', v)}
-              options={[{ value: '', label: 'All Projects' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))]}
+              options={[{ value: '', label: 'All Projects' }, { value: 'none', label: '— No Project —' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))]}
               placeholder="All Projects" />
           </View>
 

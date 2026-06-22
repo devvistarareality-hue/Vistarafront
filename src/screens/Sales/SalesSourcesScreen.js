@@ -55,7 +55,7 @@ const GUIDE_STEPS = [
   { n: '2', title: 'Add Webhooks Product',       body: 'Inside your app, click Add Product → find Webhooks → Set Up. From the dropdown select Page → Subscribe to this object.' },
   { n: '3', title: 'Configure Webhook URL',      body: 'In the popup: paste the Webhook URL as Callback URL. Paste the Verify Token. Click Verify and Save.\n\n⚠ URL must be HTTPS — localhost will not work.' },
   { n: '4', title: 'Subscribe to leadgen field', body: 'After verification, find leadgen in the fields list → click Subscribe. Meta will now notify your CRM on every new lead.' },
-  { n: '5', title: 'Get Page Access Token',      body: 'Meta Business Suite → Settings → Advanced → Page Access Tokens. Generate token (EAA…) → paste it → Save Configuration.\n\n💡 Use a long-lived token (60 days) to avoid reconnecting.' },
+  { n: '5', title: 'Get a System-User Access Token', body: 'Meta Business Settings → System Users → add/select a system user → Generate token for your app with pages_show_list, leads_retrieval & pages_read_engagement. Paste it → Save Configuration.\n\n⚠ A single Page token won’t list your pages. 💡 A System-User token is long-lived, so you won’t need to reconnect.' },
   { n: '6', title: 'Get your Form IDs',          body: 'Ads Manager → Lead Ads Forms → click a form → copy the number after form_id= in the URL.\n\nOr call Graph API Explorer: GET /me/leadgen_forms?access_token=YOUR_TOKEN' },
   { n: '7', title: 'Map Forms to Projects',      body: 'In Form → Project Routing: enter Form ID, a label, select the project → tap + Add Mapping. Repeat for each project.' },
   { n: '8', title: 'Test the Integration',       body: 'Meta for Developers → your app → Webhooks → leadgen → Test → Send. Check All Leads — the test lead should appear within 5 seconds.' },
@@ -113,6 +113,9 @@ function MetaTab() {
   const [mapSaving,    setMapSaving]   = useState(false);
   const [projOpen,     setProjOpen]    = useState(false);
   const [expandedPages,setExpandedPages] = useState({});
+  const [editingToken, setEditingToken] = useState(false);
+  const [refreshingPages, setRefreshingPages] = useState(false);
+  const [pagesDiag,    setPagesDiag]   = useState('');
   const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   const webhookUrl = `${RAILWAY_URL}/api/sales/webhooks/meta/`;
@@ -134,18 +137,60 @@ function MetaTab() {
   useEffect(() => { load(); }, [companyId]);
 
   async function saveConfig() {
-    setSaving(true); setMsg('');
+    // Strip stray spaces/newlines a paste may have added (Meta: "Cannot parse token").
+    const cleanPat = pat.replace(/\s+/g, '');
+    if (cleanPat !== pat) setPat(cleanPat);
+    setSaving(true); setMsg(''); setPagesDiag('');
     try {
       const res = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
         method: 'POST',
-        body: JSON.stringify({ action: 'save', page_access_token: pat, ...(companyId ? { company_id: companyId } : {}) }),
+        body: JSON.stringify({ action: 'save', page_access_token: cleanPat, ...(companyId ? { company_id: companyId } : {}) }),
       });
       const d = await res.json();
-      if (res.ok) { setCfg(prev => ({ ...prev, is_active: d.is_active, page_access_token: pat })); setMsg('Saved!'); }
-      else setMsg('Error saving.');
+      if (res.ok) {
+        setCfg(prev => ({ ...prev, is_active: d.is_active, page_access_token: cleanPat, pages_data: d.pages_data || prev?.pages_data || [] }));
+        setMsg('Saved!'); setEditingToken(false);
+      } else setMsg('Error saving.');
     } catch (_) { setMsg('Network error.'); }
     setSaving(false);
     setTimeout(() => setMsg(''), 3000);
+  }
+
+  // On-demand re-fetch of Pages & Forms from Meta (GET only auto-refreshes >2h).
+  // Surfaces the raw Meta error so empty results are actionable.
+  async function refreshPages() {
+    const cleanPat = pat.replace(/\s+/g, '');
+    if (!cleanPat) { setMsg('Save a token first.'); return; }
+    if (cleanPat !== pat) setPat(cleanPat);
+    setRefreshingPages(true); setMsg(''); setPagesDiag('');
+    const cidBody = companyId ? { company_id: companyId } : {};
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
+        method: 'POST', body: JSON.stringify({ action: 'save', page_access_token: cleanPat, ...cidBody }),
+      });
+      const d = await res.json().catch(() => ({}));
+      const pages = d.pages_data || [];
+      setCfg(prev => ({ ...prev, pages_data: pages }));
+      if (pages.length) setMsg('Pages refreshed.');
+      else {
+        setMsg('No pages returned.');
+        try {
+          const dgRes = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
+            method: 'POST', body: JSON.stringify({ action: 'debug_forms', ...cidBody }),
+          });
+          const dg = await dgRes.json();
+          if (dg.accounts_status && dg.accounts_status !== 200) {
+            const m = dg.accounts_error?.error?.message || JSON.stringify(dg.accounts_error || {});
+            setPagesDiag(`Meta rejected the token (HTTP ${dg.accounts_status}): ${m}`);
+          } else if (!(dg.pages || []).length) {
+            setPagesDiag('Token is valid but no Pages are accessible. Use a User/System-User token that manages at least one Page with pages_show_list & leads_retrieval (a single Page token won’t list pages).');
+          } else {
+            setPagesDiag('Pages found but lead forms could not be read — check the leads_retrieval permission.');
+          }
+        } catch { /* best-effort */ }
+      }
+    } catch { setMsg('Network error.'); }
+    setRefreshingPages(false);
   }
 
   async function regenToken() {
@@ -248,32 +293,91 @@ function MetaTab() {
         </View>
       </Card>
 
-      {/* Page Access Token */}
-      <Card>
-        <SectionLabel>Page Access Token</SectionLabel>
-        <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>Meta Business Suite → Settings → Advanced → Page Access Tokens</Text>
-        <TextInput
-          value={pat}
-          onChangeText={setPat}
-          placeholder="EAA…your token here…"
-          multiline
-          numberOfLines={3}
-          style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, fontSize: 12, color: TEXT, backgroundColor: BG, minHeight: 70, textAlignVertical: 'top' }}
-        />
-        <TouchableOpacity onPress={saveConfig} disabled={saving} style={{ marginTop: 12, backgroundColor: NAVY, borderRadius: 10, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: saving ? 0.7 : 1 }}>
-          {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="save-outline" size={16} color={COLORS.white} />}
-          <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.white }}>Save Configuration</Text>
-        </TouchableOpacity>
-        {!!msg && (
-          <Text style={{ marginTop: 8, textAlign: 'center', fontSize: 12, fontWeight: '700', color: msg.includes('Error') || msg.includes('Network') ? COLORS.errorStrong : GREEN }}>{msg}</Text>
-        )}
-      </Card>
+      {/* Access Token — masked & read-only by default, Edit to change */}
+      {(() => {
+        const savedTok = pat || cfg?.page_access_token || '';
+        const hasToken = !!savedTok;
+        const editing  = editingToken || !hasToken;
+        const masked   = savedTok.length > 14
+          ? `${savedTok.slice(0, 8)}${'•'.repeat(12)}${savedTok.slice(-4)}`
+          : '••••••••';
+        const msgErr = msg.includes('Error') || msg.includes('Network') || msg.includes('No pages');
+        return (
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <SectionLabel>ACCESS TOKEN (USER / SYSTEM USER)</SectionLabel>
+              {hasToken && !editing && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.successBg, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN }} />
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: GREEN }}>Connected</Text>
+                </View>
+              )}
+            </View>
+            <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8, lineHeight: 16 }}>
+              Business Settings → System Users → Generate token with pages_show_list, leads_retrieval & pages_read_engagement. A single Page token won’t work.
+            </Text>
+            {editing ? (
+              <>
+                <TextInput
+                  value={pat}
+                  onChangeText={setPat}
+                  placeholder="EAA…your token here…"
+                  multiline
+                  numberOfLines={3}
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, fontSize: 12, color: TEXT, backgroundColor: BG, minHeight: 70, textAlignVertical: 'top' }}
+                />
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                  <TouchableOpacity onPress={saveConfig} disabled={saving} style={{ flex: 1, backgroundColor: NAVY, borderRadius: 10, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: saving ? 0.7 : 1 }}>
+                    {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="save-outline" size={16} color={COLORS.white} />}
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.white }}>Save Configuration</Text>
+                  </TouchableOpacity>
+                  {hasToken && (
+                    <TouchableOpacity onPress={() => { setPat(cfg?.page_access_token || ''); setEditingToken(false); setMsg(''); }}
+                      style={{ paddingHorizontal: 16, justifyContent: 'center', backgroundColor: COLORS.screenBg, borderRadius: 10 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: MUTED }}>Cancel</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: BLUE, backgroundColor: COLORS.screenBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11 }} numberOfLines={1}>{masked}</Text>
+                <TouchableOpacity onPress={() => { setEditingToken(true); setMsg(''); setPagesDiag(''); }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8 }}>
+                  <Ionicons name="create-outline" size={15} color={MUTED} />
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: MUTED }}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {!!msg && (
+              <Text style={{ marginTop: 8, textAlign: 'center', fontSize: 12, fontWeight: '700', color: msgErr ? COLORS.errorStrong : GREEN }}>{msg}</Text>
+            )}
+          </Card>
+        );
+      })()}
 
-      {/* Connected Pages & Forms */}
-      {(cfg?.pages_data || []).length > 0 && (
-        <Card>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 12 }}>Connected Pages & Forms</Text>
-          {(cfg.pages_data).map(pg => {
+      {/* Connected Pages & Forms — always shown, with on-demand refresh */}
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>Connected Pages & Forms</Text>
+          <TouchableOpacity onPress={refreshPages} disabled={refreshingPages}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.linkBg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, opacity: refreshingPages ? 0.6 : 1 }}>
+            {refreshingPages ? <ActivityIndicator size="small" color={BLUE} /> : <Ionicons name="refresh" size={14} color={BLUE} />}
+            <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+        {(cfg?.pages_data || []).length === 0 ? (
+          <View style={{ padding: 16, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, borderStyle: 'dashed', backgroundColor: BG }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: NAVY, textAlign: 'center', marginBottom: 4 }}>No pages loaded for this company yet.</Text>
+            <Text style={{ fontSize: 12, color: MUTED, textAlign: 'center' }}>
+              {pat ? 'Tap Refresh to fetch your Pages & lead forms from Meta.' : 'Add and save a valid token above, then Refresh.'}
+            </Text>
+            {!!pagesDiag && (
+              <Text style={{ fontSize: 12, color: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 8, padding: 10, marginTop: 12, lineHeight: 18 }}>{pagesDiag}</Text>
+            )}
+          </View>
+        ) : (
+          (cfg.pages_data).map(pg => {
             const mappingMap = {};
             mappings.forEach(m => { mappingMap[m.form_id] = m; });
             const isOpen = !!expandedPages[pg.page_id];
@@ -318,9 +422,9 @@ function MetaTab() {
                 )}
               </View>
             );
-          })}
-        </Card>
-      )}
+          })
+        )}
+      </Card>
 
       {/* Form → Project Routing (single card) */}
       <Card>
