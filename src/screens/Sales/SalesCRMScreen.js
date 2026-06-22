@@ -44,7 +44,9 @@ export default function SalesCRMScreen({ navigation }) {
   const _des = (user?.designation || '').toLowerCase();
   const isStm = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive');
   const isTelecaller = _des.includes('telecaller') || _des.includes('tele caller');
-  const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.stmOnly || isAdmin || isStm) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm));
+  // Managers also get the STM-portal modules (Site Visits, Booking, My Conversions).
+  const isManager = user?.role === 'Manager';
+  const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.stmOnly || isAdmin || isStm || isManager) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager));
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
   const [stats,      setStats]      = useState(null);

@@ -464,7 +464,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed })
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
                   <View style={{ flex: 1 }}><Text style={lblS}>Project</Text>
                     <View style={[inpS, { justifyContent: 'center', backgroundColor: COLORS.screenBg }]}><Text style={{ fontSize: 13, color: TEXT }} numberOfLines={1}>{project.name}</Text></View></View>
-                  <View style={{ flex: 1 }}><Text style={lblS}>Sales Executive</Text>
+                  <View style={{ flex: 1 }}><Text style={lblS}>{user?.designation || user?.role || 'Booked By'}</Text>
                     <View style={[inpS, { justifyContent: 'center', backgroundColor: COLORS.screenBg }]}><Text style={{ fontSize: 13, color: TEXT }} numberOfLines={1}>{user?.name || '—'}</Text></View></View>
                 </View>
 
