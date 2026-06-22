@@ -187,11 +187,11 @@ function StatCard({ label, value, color, bg }) {
   );
 }
 
-export default function SalesMyConversionsScreen({ navigation }) {
+export default function SalesMyConversionsScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
   const des = (user?.designation || '').toLowerCase();
   const isStm = des.includes('stm') || des.includes('sales team') || des.includes('sales executive');
-  const [tab, setTab] = useState('sv');
+  const [tab, setTab] = useState(route?.params?.initialTab === 'closures' ? 'closures' : 'sv');
   const [visits, setVisits] = useState([]);
   const [closures, setClosures] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1112,7 +1112,16 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
 const fsLbl = { fontSize: 10, fontWeight: '700', color: MUTED, letterSpacing: 0.8, marginBottom: 8 };
 
 /* ── Main Leads Screen ── */
-export default function SalesLeadsScreen({ navigation }) {
+export default function SalesLeadsScreen({ navigation, route }) {
+  // Dashboard stat cards deep-link here with an initialFilter (e.g. {status:'new'}
+  // or {date_from:'today'}) — seed the filter state from it.
+  const seedFilters = () => {
+    const f = route?.params?.initialFilter;
+    if (!f) return EMPTY_FILTERS;
+    const today = new Date().toISOString().slice(0, 10);
+    const df = f.date_from === 'today' ? today : (f.date_from || '');
+    return { ...EMPTY_FILTERS, ...f, date_from: df, date_to: f.date_from === 'today' ? today : (f.date_to || '') };
+  };
   const [leads,       setLeads]       = useState([]);
   const [projects,    setProjects]    = useState([]);
   const [sources,     setSources]     = useState([]);
@@ -1123,7 +1132,7 @@ export default function SalesLeadsScreen({ navigation }) {
   const [search,      setSearch]      = useState('');
   const [searchText,  setSearchText]  = useState(''); // instant input value; debounced into `search`
   const [statusFilter,setStatusFilter]= useState('all');
-  const [filters,     setFilters]     = useState(EMPTY_FILTERS);
+  const [filters,     setFilters]     = useState(seedFilters);
   const [filterSheet, setFilterSheet] = useState(false);
   const [page,        setPage]        = useState(1);
   const [hasMore,     setHasMore]     = useState(true);

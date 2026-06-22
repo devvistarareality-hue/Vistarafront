@@ -37,14 +37,14 @@ const lblS = { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.5
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white };
 const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.white };
 
-export default function SalesSiteVisitsScreen({ navigation }) {
+export default function SalesSiteVisitsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   const [visits,     setVisits]     = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter,     setFilter]     = useState('today');
+  const [filter,     setFilter]     = useState(route?.params?.initialTab || 'today');
 
   // schedule modal
   const [schedOpen, setSchedOpen] = useState(false);

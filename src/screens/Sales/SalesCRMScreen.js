@@ -91,13 +91,15 @@ export default function SalesCRMScreen({ navigation }) {
     setRefreshing(false);
   }
 
+  // Each card deep-links to its corresponding list (Projects only for admins,
+  // who have that screen registered).
   const STAT_CARDS = [
-    { label: 'Total Leads',  value: stats?.total_leads    ?? '—', color: BLUE,      bg: COLORS.linkBg },
-    { label: 'New Today',    value: stats?.leads_today     ?? '—', color: COLORS.success, bg: COLORS.successBg },
-    { label: 'Unassigned',   value: stats?.new_leads       ?? '—', color: COLORS.warning, bg: COLORS.warningBg },
-    { label: 'Closures',     value: stats?.closures        ?? '—', color: COLORS.error, bg: COLORS.errorBg },
-    { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: COLORS.purple, bg: COLORS.purpleBg },
-    { label: 'Projects',     value: stats?.active_projects ?? '—', color: COLORS.info, bg: COLORS.infoBg },
+    { label: 'Total Leads',  value: stats?.total_leads    ?? '—', color: BLUE,      bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { label: 'New Today',    value: stats?.leads_today     ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { date_from: 'today' } } },
+    { label: 'Unassigned',   value: stats?.new_leads       ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { status: 'new' } } },
+    { label: 'Closures',     value: stats?.closures        ?? '—', color: COLORS.error, bg: COLORS.errorBg,    target: 'SalesMyConversions', params: { initialTab: 'closures' } },
+    { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: COLORS.purple, bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'Projects',     value: stats?.active_projects ?? '—', color: COLORS.info, bg: COLORS.infoBg,      target: 'ClosureProjects' },
   ];
 
   return (
@@ -131,10 +133,12 @@ export default function SalesCRMScreen({ navigation }) {
           ) : (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {STAT_CARDS.map(s => (
-                <View key={s.label} style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
+                <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
+                  onPress={() => s.target && navigation.navigate(s.target, s.params)}
+                  style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
                   <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
                   <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600' }}>{s.label}</Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
