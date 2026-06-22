@@ -42,14 +42,17 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const [filter,     setFilter]     = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [zoomMaster, setZoomMaster] = useState(false);
+  const [sources, setSources] = useState([]);
 
   useEffect(() => {
     Promise.all([
       apiFetch(SALES_ENDPOINTS.project(projectId)).then(r => r.ok ? r.json() : null).catch(() => null),
       apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([p, pl]) => {
+      apiFetch(SALES_ENDPOINTS.sources).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([p, pl, src]) => {
       setProject(p);
       setPlots(Array.isArray(pl) ? pl : (pl?.results || []));
+      setSources(Array.isArray(src) ? src : (src?.results || []));
       setLoading(false);
     });
   }, [projectId]);
@@ -207,9 +210,9 @@ export default function ClosureViewerScreen({ navigation, route }) {
       </ScrollView>
 
       {selected && (
-        <UnitModal plot={selected} project={project} sv={sv} user={user}
+        <UnitModal plot={selected} project={project} sv={sv} user={user} sources={sources}
           onClose={() => setSelected(null)}
-          onClosed={() => navigation.navigate('SalesSiteVisits')} />
+          onClosed={() => navigation.navigate(sv ? 'SalesSiteVisits' : 'SalesMyConversions')} />
       )}
 
       {/* Enlarged, pannable, tappable unit map */}
@@ -227,12 +230,13 @@ export default function ClosureViewerScreen({ navigation, route }) {
 }
 
 /* ── Unit detail: floor-plan layouts + record-closure form ── */
-function UnitModal({ plot, project, sv, user, onClose, onClosed }) {
+function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed }) {
   const cfg = STATUS[plot.status] || STATUS.available;
   const typePlans = useMemo(() => {
     const entry = (project.plot_type_plans || []).find(t => t.name === plot.cluster_type);
     return entry?.floor_plans || [];
   }, [project, plot]);
+  const booking = !sv; // no site visit → direct booking from the Booking nav
 
   const [viewing, setViewing] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -241,12 +245,41 @@ function UnitModal({ plot, project, sv, user, onClose, onClosed }) {
     closure_date: new Date(), unit_no: String(plot.number), unit_type: plot.cluster_type || '',
     booking_amount: '', total_amount: '', remarks: '',
   });
+  const [lead, setLead] = useState({ name: '', phone: '', source: '' }); // direct-booking lead
   const [saving, setSaving] = useState(false);
   const [err,    setErr]    = useState('');
 
   function openPlan(url) {
     if (isImageUrl(url)) setViewing(url);
     else Linking.openURL(url).catch(() => {});
+  }
+
+  async function recordBooking() {
+    if (!lead.name.trim() || !lead.phone.trim()) { setErr('Customer name and phone are required.'); return; }
+    if (!cForm.booking_amount) { setErr('Booking amount is required.'); return; }
+    setSaving(true); setErr('');
+    try {
+      const leadRes = await apiFetch(SALES_ENDPOINTS.leads, {
+        method: 'POST',
+        body: JSON.stringify({ name: lead.name.trim(), phone: lead.phone.trim(), project: project.id, source: lead.source || null, status: 'new' }),
+      });
+      const leadData = await leadRes.json();
+      if (!leadRes.ok) { setErr(JSON.stringify(leadData)); setSaving(false); return; }
+      const leadId = leadData.id;
+      await apiFetch(SALES_ENDPOINTS.lead(leadId), { method: 'PATCH', body: JSON.stringify({ stm: user?.id, stm_status: 'closed' }) }).catch(() => {});
+      const cRes = await apiFetch(SALES_ENDPOINTS.closures, {
+        method: 'POST',
+        body: JSON.stringify({
+          lead: leadId, project: project.id, stm: user?.id, status: 'booked',
+          closure_date: cForm.closure_date.toISOString().slice(0, 10),
+          unit_no: cForm.unit_no, unit_type: cForm.unit_type,
+          booking_amount: cForm.booking_amount, total_amount: cForm.total_amount || null, remarks: cForm.remarks,
+        }),
+      });
+      if (cRes.ok) onClosed();
+      else setErr(JSON.stringify(await cRes.json().catch(() => ({}))));
+    } catch (e) { setErr(e.message); }
+    setSaving(false);
   }
 
   async function recordClosure() {
@@ -324,14 +357,64 @@ function UnitModal({ plot, project, sv, user, onClose, onClosed }) {
               </View>
             )}
 
-            {/* Record closure */}
-            {!sv ? (
-              <Text style={{ fontSize: 12, color: MUTED, textAlign: 'center' }}>Browsing only — start from Record Closure on a site visit.</Text>
-            ) : !showForm ? (
+            {/* Record closure / direct booking */}
+            {!showForm ? (
               <TouchableOpacity onPress={() => { setErr(''); setShowForm(true); }}
                 style={{ backgroundColor: COLORS.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
-                <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>Record Closure for Unit {plot.number}</Text>
+                <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{booking ? `Book Unit ${plot.number}` : `Record Closure for Unit ${plot.number}`}</Text>
               </TouchableOpacity>
+            ) : booking ? (
+              <View style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingTop: 14 }}>
+                <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.5, color: MUTED, marginBottom: 6 }}>CUSTOMER</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}><Text style={lblS}>Name *</Text>
+                    <TextInput value={lead.name} onChangeText={t => setLead({ ...lead, name: t })} placeholder="Customer name" style={inpS} /></View>
+                  <View style={{ flex: 1 }}><Text style={lblS}>Phone *</Text>
+                    <TextInput value={lead.phone} onChangeText={t => setLead({ ...lead, phone: t })} keyboardType="phone-pad" placeholder="+91…" style={inpS} /></View>
+                </View>
+                <Text style={lblS}>Source</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+                  {sources.map(s => {
+                    const active = String(lead.source) === String(s.id);
+                    return (
+                      <TouchableOpacity key={s.id} onPress={() => setLead({ ...lead, source: active ? '' : s.id })}
+                        style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? COLORS.linkBg : COLORS.white }}>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>{s.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+                  <View style={{ flex: 1 }}><Text style={lblS}>Project</Text>
+                    <View style={[inpS, { justifyContent: 'center', backgroundColor: COLORS.screenBg }]}><Text style={{ fontSize: 13, color: TEXT }} numberOfLines={1}>{project.name}</Text></View></View>
+                  <View style={{ flex: 1 }}><Text style={lblS}>Sales Executive</Text>
+                    <View style={[inpS, { justifyContent: 'center', backgroundColor: COLORS.screenBg }]}><Text style={{ fontSize: 13, color: TEXT }} numberOfLines={1}>{user?.name || '—'}</Text></View></View>
+                </View>
+
+                <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.5, color: MUTED, marginTop: 12, marginBottom: 6 }}>BOOKING</Text>
+                <Text style={lblS}>Booking Date *</Text>
+                <TouchableOpacity onPress={() => setShowDate(true)} style={pickBtn}>
+                  <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{cForm.closure_date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                  <Ionicons name="calendar-outline" size={18} color={BLUE} />
+                </TouchableOpacity>
+                {showDate && (
+                  <DateTimePicker value={cForm.closure_date} mode="date" display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(e, d) => { setShowDate(Platform.OS === 'ios'); if (d) setCForm({ ...cForm, closure_date: d }); }} />
+                )}
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}><Text style={lblS}>Booking Amount *</Text>
+                    <TextInput value={cForm.booking_amount} onChangeText={t => setCForm({ ...cForm, booking_amount: t })} keyboardType="numeric" placeholder="₹" style={inpS} /></View>
+                  <View style={{ flex: 1 }}><Text style={lblS}>Total Amount</Text>
+                    <TextInput value={cForm.total_amount} onChangeText={t => setCForm({ ...cForm, total_amount: t })} keyboardType="numeric" placeholder="₹" style={inpS} /></View>
+                </View>
+                <Text style={lblS}>Remarks</Text>
+                <TextInput value={cForm.remarks} onChangeText={t => setCForm({ ...cForm, remarks: t })} multiline placeholder="Notes…" style={[inpS, { height: 60, textAlignVertical: 'top' }]} />
+                {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 8 }}>{err}</Text>}
+                <TouchableOpacity onPress={recordBooking} disabled={saving}
+                  style={{ marginTop: 14, backgroundColor: COLORS.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
+                  <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Confirm Booking'}</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               <View style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingTop: 14 }}>
                 <Text style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>{sv.lead_name} · {sv.lead_phone}</Text>
