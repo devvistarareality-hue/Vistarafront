@@ -1237,8 +1237,13 @@ export default function SalesLeadsScreen({ navigation }) {
         apiFetch(buildLeadsUrl(p)),
         projects.length    ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.projects),
         sources.length     ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.sources),
-        (isCaller || telecallers.length) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers),
-        (isCaller || stms.length)        ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms),
+        // Refetch the assign lists on every reset (incl. company switch), not just
+        // once — and scope them to the selected company. The endpoints already
+        // carry `?crm_role=…`, so company_id MUST be appended with `&` (a `?` here
+        // makes a malformed double-`?` URL that drops crm_role AND company_id, so
+        // the backend returns every company's users mixed across both roles).
+        (isCaller || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers + (companyId ? `&company_id=${companyId}` : '')),
+        (isCaller || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms        + (companyId ? `&company_id=${companyId}` : '')),
       ]);
       if (leadsRes.ok) {
         const d = await leadsRes.json();
