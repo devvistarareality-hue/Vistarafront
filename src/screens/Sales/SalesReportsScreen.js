@@ -93,6 +93,9 @@ export default function SalesReportsScreen({ navigation }) {
   useEffect(() => { load(); }, [companyId]);
 
   const summary   = data?.summary   || {};
+  // Team-performance tables are management-only; personal reports (STM/CP/
+  // telecaller) show just their own funnel + closures.
+  const teamView  = data?.team_view !== false;
   const campaigns = data?.campaigns  || [];
   const telecallers = data?.telecallers || [];
   const stms      = data?.stms       || [];
@@ -130,45 +133,50 @@ export default function SalesReportsScreen({ navigation }) {
             <StatCard label="Meta Leads"   value={summary.meta_leads}      color={COLORS.warning} />
           </View>
 
-          {/* Campaign performance */}
-          <SectionTitle title="Campaign Performance" />
-          <PerformanceTable
-            title="Meta / Ad Campaigns"
-            data={campaigns}
-            nameKey="meta_campaign_name"
-            columns={[
-              { key: 'total', label: 'Leads',  color: BLUE },
-              { key: 'sv',    label: 'SV',     color: COLORS.info },
-              { key: 'closed', label: 'Closed', color: COLORS.success },
-            ]}
-          />
+          {/* Team-performance tables — management only */}
+          {teamView && (
+            <>
+              {/* Campaign performance */}
+              <SectionTitle title="Campaign Performance" />
+              <PerformanceTable
+                title="Meta / Ad Campaigns"
+                data={campaigns}
+                nameKey="meta_campaign_name"
+                columns={[
+                  { key: 'total', label: 'Leads',  color: BLUE },
+                  { key: 'sv',    label: 'SV',     color: COLORS.info },
+                  { key: 'closed', label: 'Closed', color: COLORS.success },
+                ]}
+              />
 
-          {/* Telecaller performance */}
-          <SectionTitle title="Telecaller Performance" />
-          <PerformanceTable
-            title="Pre-sales"
-            data={telecallers}
-            nameKey="telecaller__name"
-            columns={[
-              { key: 'total',       label: 'Leads',       color: BLUE },
-              { key: 'warm',        label: 'Warm',        color: COLORS.warningAlt },
-              { key: 'transferred', label: 'Transferred', color: COLORS.warning },
-            ]}
-          />
+              {/* Telecaller performance */}
+              <SectionTitle title="Telecaller Performance" />
+              <PerformanceTable
+                title="Pre-sales"
+                data={telecallers}
+                nameKey="telecaller__name"
+                columns={[
+                  { key: 'total',       label: 'Leads',       color: BLUE },
+                  { key: 'warm',        label: 'Warm',        color: COLORS.warningAlt },
+                  { key: 'transferred', label: 'Transferred', color: COLORS.warning },
+                ]}
+              />
 
-          {/* STM performance */}
-          <SectionTitle title="STM Performance" />
-          <PerformanceTable
-            title="Sales"
-            data={stms}
-            nameKey="stm__name"
-            columns={[
-              { key: 'total',   label: 'Leads',   color: BLUE },
-              { key: 'hot',     label: 'Hot',     color: COLORS.warning },
-              { key: 'sv_done', label: 'SV Done', color: COLORS.info },
-              { key: 'closed',  label: 'Closed',  color: COLORS.success },
-            ]}
-          />
+              {/* STM performance */}
+              <SectionTitle title="STM Performance" />
+              <PerformanceTable
+                title="Sales"
+                data={stms}
+                nameKey="stm__name"
+                columns={[
+                  { key: 'total',   label: 'Leads',   color: BLUE },
+                  { key: 'hot',     label: 'Hot',     color: COLORS.warning },
+                  { key: 'sv_done', label: 'SV Done', color: COLORS.info },
+                  { key: 'closed',  label: 'Closed',  color: COLORS.success },
+                ]}
+              />
+            </>
+          )}
 
           {/* Recent closures */}
           {closures.length > 0 && (

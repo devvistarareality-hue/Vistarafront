@@ -170,11 +170,12 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const _desig = (user?.designation || '').toLowerCase();
   const _isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
   const _isStm = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
-  const canAssign = !(_isTelecaller || _isStm);
-  // Telecallers see only the Telecaller (TC) section; Sales Executives (STM) see only the STM section.
-  // Admins/managers see both.
+  const _isCp  = _desig.includes('cp executive') || _desig.includes('channel partner');
+  const canAssign = !(_isTelecaller || _isStm || _isCp);
+  // Telecallers see only the Telecaller (TC) section; STMs / CP Executives see only
+  // the STM section. Admins/managers see both.
   const showTC  = canAssign || _isTelecaller;
-  const showStm = canAssign || _isStm;
+  const showStm = canAssign || _isStm || _isCp;
   const [form, setForm]   = useState({});
   const [saving, setSaving] = useState(false);
   const [tab, setTab]     = useState('detail');
@@ -487,10 +488,10 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               {showStm && (<>
               <View style={divider} />
 
-              {/* STM section */}
-              <Text style={secH}>STM (Sales)</Text>
+              {/* STM section (labelled CP for Channel Partners) */}
+              <Text style={secH}>{_isCp ? 'CP (Channel Partner)' : 'STM (Sales)'}</Text>
 
-              {/* Row 6: Assign STM | STM Status (assign hidden for telecaller/STM portals) */}
+              {/* Row 6: Assign STM | STM Status (assign hidden for telecaller/STM/CP portals) */}
               <View style={row2}>
                 {canAssign && (
                 <View style={half}>
@@ -499,15 +500,15 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
                 )}
                 <View style={half}>
-                  <Text style={lblS}>STM Status</Text>
+                  <Text style={lblS}>{_isCp ? 'CP Status' : 'STM Status'}</Text>
                   <PickerDropdown
                     items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
                     value={form.stm_status} onChange={v => set('stm_status', v)}
-                    placeholder="Status" title="STM Status" />
+                    placeholder="Status" title={_isCp ? 'CP Status' : 'STM Status'} />
                 </View>
               </View>
 
-              <Text style={lblS}>STM Remarks</Text>
+              <Text style={lblS}>{_isCp ? 'CP Remarks' : 'STM Remarks'}</Text>
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
                 multiline placeholder="Notes…" placeholderTextColor="#666666"
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
@@ -999,7 +1000,7 @@ const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback']
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'];
 
 /* ── Filter Bottom Sheet ── */
-function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms }) {
+function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false }) {
   const [local, setLocal] = useState(filters);
   useEffect(() => { if (visible) setLocal(filters); }, [visible]);
   const set = (k, v) => setLocal(f => ({ ...f, [k]: v }));
@@ -1050,45 +1051,54 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
               placeholder="All Sources" />
           </View>
 
-          {/* Telecaller */}
+          {/* Telecaller / STM assignee filters — admins/managers only */}
+          {showAssignees && (
           <View>
             <Text style={fsLbl}>TELECALLER</Text>
             <DropdownPicker value={local.telecaller_id} onChange={v => set('telecaller_id', v)}
               options={[{ value: '', label: 'All Telecallers' }, ...telecallers.map(u => ({ value: String(u.id), label: u.name }))]}
               placeholder="All Telecallers" />
           </View>
+          )}
 
-          {/* STM */}
+          {showAssignees && (
           <View>
             <Text style={fsLbl}>STM</Text>
             <DropdownPicker value={local.stm_id} onChange={v => set('stm_id', v)}
               options={[{ value: '', label: 'All STMs' }, ...stms.map(u => ({ value: String(u.id), label: u.name }))]}
               placeholder="All STMs" />
           </View>
+          )}
 
-          {/* Overall Status */}
+          {/* Overall Status — admins/managers only */}
+          {showAssignees && (
           <View>
             <Text style={fsLbl}>OVERALL STATUS</Text>
             <DropdownPicker value={local.status || ''} onChange={v => set('status', v)}
               options={[{ value: '', label: 'All Statuses' }, ...STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))]}
               placeholder="All Statuses" />
           </View>
+          )}
 
-          {/* TC Status */}
+          {/* TC Status — telecaller / admin only */}
+          {showTcStatus && (
           <View>
             <Text style={fsLbl}>TC STATUS</Text>
             <DropdownPicker value={local.tc_status} onChange={v => set('tc_status', v)}
               options={[{ value: '', label: 'All TC Statuses' }, ...TC_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
               placeholder="All TC Statuses" />
           </View>
+          )}
 
-          {/* STM Status */}
+          {/* STM Status (labelled CP Status for CPs) — STM / CP / admin only */}
+          {showStmStatus && (
           <View>
-            <Text style={fsLbl}>STM STATUS</Text>
+            <Text style={fsLbl}>{isCp ? 'CP STATUS' : 'STM STATUS'}</Text>
             <DropdownPicker value={local.stm_status} onChange={v => set('stm_status', v)}
-              options={[{ value: '', label: 'All STM Statuses' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
-              placeholder="All STM Statuses" />
+              options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              placeholder={isCp ? 'All CP Statuses' : 'All STM Statuses'} />
           </View>
+          )}
 
           {/* Duplicates toggle */}
           <TouchableOpacity onPress={() => set('is_duplicate', !local.is_duplicate)}
@@ -1149,8 +1159,15 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const _desig = (user?.designation || '').toLowerCase();
   const isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
   const isStm        = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
-  const isCaller     = isTelecaller || isStm;
+  const isCp         = _desig.includes('cp executive') || _desig.includes('channel partner');
+  const isCaller     = isTelecaller || isStm || isCp;
+  // Each scoped role sees only its own status filter; admins/managers see all.
+  const isAdminMgr   = !isTelecaller && !isStm && !isCp;
+  const showTcStatus = isAdminMgr || isTelecaller;
+  const showStmStatus= isAdminMgr || isStm || isCp;
+  const showAssignees= isAdminMgr;
   const [workTab, setWorkTab] = useState('pending'); // 'pending' | 'called' (callers only)
+  const [total,   setTotal]   = useState(0); // backend count for the current filter
 
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
 
@@ -1258,6 +1275,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
         const d = await leadsRes.json();
         const results = Array.isArray(d) ? d : (d.results || []);
         setLeads(prev => reset ? results : [...prev, ...results]);
+        setTotal(Array.isArray(d) ? results.length : (d.count ?? results.length));
         setHasMore(results.length === 25 && (p * 25) < (d.count ?? Infinity));
         pageRef.current = p + 1;
         setPage(p + 1);
@@ -1381,7 +1399,12 @@ export default function SalesLeadsScreen({ navigation, route }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={NAVY} />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>All Leads</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>All Leads</Text>
+          <Text style={{ fontSize: 12, color: MUTED, marginTop: 1 }}>
+            {total.toLocaleString()} {isCaller ? (workTab === 'pending' ? 'to call' : 'called') : (activeFilterCount > 0 ? 'matching' : 'total')} lead{total === 1 ? '' : 's'}
+          </Text>
+        </View>
         <TouchableOpacity onPress={() => setCreateModal(true)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
           <Ionicons name="add" size={16} color={COLORS.white} />
@@ -1445,7 +1468,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters}
-        projects={projects} sources={sources} telecallers={telecallers} stms={stms} />
+        projects={projects} sources={sources} telecallers={telecallers} stms={stms}
+        showTcStatus={showTcStatus} showStmStatus={showStmStatus} showAssignees={showAssignees} isCp={isCp} />
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

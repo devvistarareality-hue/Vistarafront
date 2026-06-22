@@ -33,6 +33,8 @@ const MENU = [
 function getDesignationLabel(user) {
   const des = (user?.designation || '').toLowerCase();
   if (des.includes('telecaller') || des.includes('tele caller')) return { title: 'Telecaller Portal', sub: 'Your call queue & leads' };
+  if (des.includes('cp cluster head')) return { title: 'Channel Partner', sub: 'Your CP team' };
+  if (des.includes('cp executive') || des.includes('channel partner')) return { title: 'Channel Partner', sub: 'Your pipeline & site visits' };
   if (des.includes('stm') || des.includes('sales team') || des.includes('sales executive')) return { title: 'Sales Executive', sub: 'Your pipeline & site visits' };
   return { title: 'Sales CRM', sub: 'Vistara Realty' };
 }
@@ -46,7 +48,9 @@ export default function SalesCRMScreen({ navigation }) {
   const isTelecaller = _des.includes('telecaller') || _des.includes('tele caller');
   // Managers also get the STM-portal modules (Site Visits, Booking, My Conversions).
   const isManager = user?.role === 'Manager';
-  const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.stmOnly || isAdmin || isStm || isManager) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager));
+  // CP Executive works their own leads like an STM (no Meta) → same modules.
+  const isCp = _des.includes('cp executive') || _des.includes('channel partner');
+  const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp));
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
   const [stats,      setStats]      = useState(null);
