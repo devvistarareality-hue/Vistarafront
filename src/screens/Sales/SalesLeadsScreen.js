@@ -170,10 +170,10 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const _desig = (user?.designation || '').toLowerCase();
   const _isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
   const _isStm = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
-  const _isCp  = _desig.includes('cp executive') || _desig.includes('channel partner');
+  const _isCp  = _desig.includes('cp executive') || _desig.includes('channel partner') || _desig.includes('cp cluster head');
   const canAssign = !(_isTelecaller || _isStm || _isCp);
-  // Telecallers see only the Telecaller (TC) section; STMs / CP Executives see only
-  // the STM section. Admins/managers see both.
+  // Telecallers see only the Telecaller (TC) section; STMs / CPs (exec + cluster
+  // head) see only the STM/CP section. Admins/managers see both.
   const showTC  = canAssign || _isTelecaller;
   const showStm = canAssign || _isStm || _isCp;
   const [form, setForm]   = useState({});
@@ -1160,11 +1160,14 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
   const isStm        = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
   const isCp         = _desig.includes('cp executive') || _desig.includes('channel partner');
-  const isCaller     = isTelecaller || isStm || isCp;
+  const isCpHead     = _desig.includes('cp cluster head');
+  const isCpAny      = isCp || isCpHead;
+  const isCaller     = isTelecaller || isStm || isCp;       // CP Head sees the full team list (no work split)
   // Each scoped role sees only its own status filter; admins/managers see all.
-  const isAdminMgr   = !isTelecaller && !isStm && !isCp;
+  // CP Cluster Heads use the CP view (no telecaller/STM filters), like CP Execs.
+  const isAdminMgr   = !isTelecaller && !isStm && !isCpAny;
   const showTcStatus = isAdminMgr || isTelecaller;
-  const showStmStatus= isAdminMgr || isStm || isCp;
+  const showStmStatus= isAdminMgr || isStm || isCpAny;
   const showAssignees= isAdminMgr;
   const [workTab, setWorkTab] = useState('pending'); // 'pending' | 'called' (callers only)
   const [total,   setTotal]   = useState(0); // backend count for the current filter
@@ -1469,7 +1472,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters}
         projects={projects} sources={sources} telecallers={telecallers} stms={stms}
-        showTcStatus={showTcStatus} showStmStatus={showStmStatus} showAssignees={showAssignees} isCp={isCp} />
+        showTcStatus={showTcStatus} showStmStatus={showStmStatus} showAssignees={showAssignees} isCp={isCpAny} />
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
