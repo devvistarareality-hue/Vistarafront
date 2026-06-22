@@ -11,6 +11,7 @@ import SalesLeadsScreen from '../screens/Sales/SalesLeadsScreen';
 import SalesFollowUpsScreen from '../screens/Sales/SalesFollowUpsScreen';
 import SalesSiteVisitsScreen from '../screens/Sales/SalesSiteVisitsScreen';
 import SalesMyConversionsScreen from '../screens/Sales/SalesMyConversionsScreen';
+import MyTeamScreen from '../screens/Sales/MyTeamScreen';
 import SalesReportsScreen from '../screens/Sales/SalesReportsScreen';
 import ClosureProjectsScreen from '../screens/Sales/ClosureProjectsScreen';
 import ClosureViewerScreen from '../screens/Sales/ClosureViewerScreen';
@@ -27,6 +28,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="SalesFollowUps" component={SalesFollowUpsScreen} />
       <ModulesStack.Screen name="SalesSiteVisits" component={SalesSiteVisitsScreen} />
       <ModulesStack.Screen name="SalesMyConversions" component={SalesMyConversionsScreen} />
+      <ModulesStack.Screen name="MyTeam" component={MyTeamScreen} />
       <ModulesStack.Screen name="SalesReports"  component={SalesReportsScreen} />
       <ModulesStack.Screen name="ClosureProjects" component={ClosureProjectsScreen} />
       <ModulesStack.Screen name="ClosureViewer" component={ClosureViewerScreen} />
