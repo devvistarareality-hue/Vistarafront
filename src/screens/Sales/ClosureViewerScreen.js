@@ -11,6 +11,9 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+
+// Booking web app (own login + form → records booking, auto-LOI, Google Sheet).
+const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypnmUmBmBIrL5rC6xqSEbLFDvSw1XvES6D-JyL1beY8-AeEREnfvVM_TbbbV1t1i883g/exec';
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 const STATUS = {
@@ -391,7 +394,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed })
 
             {/* Record closure / direct booking */}
             {!showForm ? (
-              <TouchableOpacity onPress={() => { setErr(''); setShowForm(true); }}
+              <TouchableOpacity onPress={() => { if (booking) { Linking.openURL(BOOKING_SCRIPT_URL).catch(() => {}); } else { setErr(''); setShowForm(true); } }}
                 style={{ backgroundColor: COLORS.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
                 <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{booking ? `Book Unit ${plot.number}` : `Record Closure for Unit ${plot.number}`}</Text>
               </TouchableOpacity>
