@@ -31,6 +31,9 @@ export default function BookingFormScreen({ navigation, route }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [insts, setInsts] = useState([]);
+  const [extraDate, setExtraDate] = useState('');
+  const [ew, setEw] = useState({ desc: '', amt: '' });
+  const [ewInsts, setEwInsts] = useState([]);
   const [loiFile, setLoiFile] = useState(null);
 
   const [f, setF] = useState({
@@ -69,7 +72,13 @@ export default function BookingFormScreen({ navigation, route }) {
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: b.booking_date || s.booking_date, cp_name: b.cp_name || '' }));
-      if (Array.isArray(b.installments)) setInsts(b.installments.filter((i) => !i.isExtra).map((i) => ({ date: i.date || '', pct: String(i.pct || ''), amt: String(i.amt || '') })));
+      if (Array.isArray(b.installments)) {
+        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork).map((i) => ({ date: i.date || '', pct: String(i.pct || ''), amt: String(i.amt || '') })));
+        const ex = b.installments.find((i) => i.isExtra);
+        if (ex) setExtraDate(ex.date || '');
+      }
+      setEw({ desc: b.extra_work_desc || '', amt: b.extra_work_amount ? String(b.extra_work_amount) : '' });
+      if (Array.isArray(b.extra_work_inst)) setEwInsts(b.extra_work_inst.map((i) => ({ date: i.date || '', pct: String(i.pct || ''), amt: String(i.amt || '') })));
     }).catch(() => {});
   }, [reviseId]);
 
@@ -82,10 +91,28 @@ export default function BookingFormScreen({ navigation, route }) {
     gender: f.gender, landSaleDeed: f.land_sale_deed, constAgreement: f.const_agreement,
     premiumLocation: f.premium_location, saleDeedRate: f.sale_deed_rate, devAgreementRate: f.dev_agreement_rate,
     applyRegFee: f.apply_reg_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
-  }), [f, formulaSet, project]);
+    extraWorkAmt: reviseId ? ew.amt : 0, extraWorkDesc: ew.desc,
+  }), [f, formulaSet, project, ew, reviseId]);
   const base = installmentBase(v);
   const pctTotal = insts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
+  const ewBase = parseFloat(ew.amt) || 0;
+  const ewPctTotal = ewInsts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
   const unit = flags.areaUnit;
+  const inr = (n) => Number(n || 0).toLocaleString('en-IN');
+  const extraSub = formulaSet === 'ankhol'
+    ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal + Premium'
+    : formulaSet === 'industrial' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal'
+    : 'Stamp + Reg + GST + Maintenance + Legal';
+  function buildEw(n) { n = parseInt(n, 10) || 0; setEwInsts(Array.from({ length: n }, (_, i) => ewInsts[i] || { date: '', pct: '', amt: '' })); }
+  function setEwInst(i, k, val) {
+    setEwInsts((arr) => arr.map((r, idx) => {
+      if (idx !== i) return r;
+      const nr = { ...r, [k]: val };
+      if (k === 'pct') nr.amt = val && ewBase ? String(Math.round(ewBase * parseFloat(val) / 100)) : '';
+      return nr;
+    }));
+  }
+  const ewArr = () => ewInsts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isExtraWork: true }));
 
   function buildInsts(n) { n = parseInt(n, 10) || 0; setInsts(Array.from({ length: n }, (_, i) => insts[i] || { date: '', pct: '', amt: '' })); }
   function setInst(i, k, val) {
@@ -98,7 +125,7 @@ export default function BookingFormScreen({ navigation, route }) {
   }
   function instArr() {
     const arr = insts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0 }));
-    arr.push({ no: 'Extra', date: '', amt: Math.round(v.totalExtra), isExtra: true });
+    arr.push({ no: 'Extra', date: extraDate, amt: Math.round(v.totalExtra), isExtra: true });
     return arr;
   }
 
@@ -109,7 +136,7 @@ export default function BookingFormScreen({ navigation, route }) {
       project: project?.name, plotNo: plotNo, bookingDate: f.booking_date,
       villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: me?.name,
     };
-    try { await Print.printAsync({ html: buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name }) }); }
+    try { await Print.printAsync({ html: buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr() }) }); }
     catch (e) { setMsg('LOI error: ' + e.message); }
   }
 
@@ -147,6 +174,9 @@ export default function BookingFormScreen({ navigation, route }) {
       total_extra: Math.round(v.totalExtra), discount: f.discount || 0, final_amount: Math.round(v.finalAmt),
       apply_reg_fee: f.apply_reg_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
       installments: instArr(), booking_date: f.booking_date, cp_name: f.cp_name,
+      extra_work_desc: reviseId ? (ew.desc || '') : '',
+      extra_work_amount: reviseId ? Math.round(parseFloat(ew.amt) || 0) : 0,
+      extra_work_inst: reviseId ? ewArr() : [],
       loi_file: loiFile, ...(reviseId ? { revision_of: reviseId } : {}),
     };
     try {
@@ -206,14 +236,13 @@ export default function BookingFormScreen({ navigation, route }) {
         </Sec>
 
         <View style={[CARD, { backgroundColor: '#EAF2FF' }]}>
-          <Tot l="Plot Basic Amount" val={v.plotBasic} />
-          {flags.hasSaleDeed && <Tot l="Sale Deed" val={v.saleDeed} />}
-          {flags.hasConstructionFields && <Tot l="Plot Development" val={v.plotDev} />}
-          {flags.hasConstructionFields && <Tot l="Construction" val={v.constAmt} />}
-          <Tot l="Stamp Duty" val={v.stampDuty} />
-          <Tot l="Registration Fees" val={v.regFees} />
-          <Tot l="GST" val={v.gst} />
-          <Tot l="Total Extra Charges" val={v.totalExtra} />
+          <Tot l="Plot Basic Amount" sub={`${inr(v.area)} × ${inr(v.landRate)}`} val={v.plotBasic} />
+          {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)}`} val={v.plotDev} />}
+          {flags.hasConstructionFields && <Tot l="Construction Amount" sub={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
+          {flags.hasConstructionFields && <Tot l="Total Basic Amount" sub="Plot Basic + Plot Dev + Construction" val={v.plotBasic + v.plotDev + v.constAmt} subtotal />}
+          {flags.hasSaleDeed && <Tot l="Sale Deed" sub={formulaSet === 'ankhol' ? '60% × (Base + Premium − Discount)' : 'Sale Deed Rate × Plot Area'} val={v.saleDeed} />}
+          <Tot l="Extra Charges" sub={extraSub} val={v.totalExtra} />
+          {!!reviseId && v.extraWorkAmt > 0 && <Tot l="Extra Work" val={v.extraWorkAmt} />}
           <Tot l="Discount" val={-v.discount} />
           <Tot l="FINAL AMOUNT" val={v.finalAmt} big />
         </View>
@@ -230,8 +259,32 @@ export default function BookingFormScreen({ navigation, route }) {
               <TextInput value={r.amt} onChangeText={(t) => setInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
             </View>
           ))}
-          {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}% · Extra {rupee(v.totalExtra)}</Text>}
+          {v.totalExtra > 0 && (
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center', backgroundColor: '#FFF8E1', borderRadius: 8, padding: 6 }}>
+              <Text style={{ width: 16, color: '#92400E', fontWeight: '700', fontSize: 11 }}>Ex</Text>
+              <TextInput value={extraDate} onChangeText={setExtraDate} placeholder="Extra charges date" style={[inpS, { flex: 2 }]} />
+              <Text style={{ flex: 2.4, color: '#92400E', fontWeight: '700', fontSize: 12, textAlign: 'right' }}>Extra Charges {rupee(v.totalExtra)}</Text>
+            </View>
+          )}
+          {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}%</Text>}
         </Sec>
+
+        {!!reviseId && (
+          <Sec title="Extra Work (revise only)">
+            <Fld l="Description" val={ew.desc} on={(t) => setEw((s) => ({ ...s, desc: t }))} />
+            <Fld l="Total Amount (₹)" val={ew.amt} on={(t) => setEw((s) => ({ ...s, amt: t }))} kb="numeric" />
+            <Fld l="No. of Installments" val={ewInsts.length ? String(ewInsts.length) : ''} on={buildEw} kb="numeric" />
+            {ewInsts.map((r, i) => (
+              <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
+                <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
+                <TextInput value={r.date} onChangeText={(t) => setEwInst(i, 'date', t)} placeholder="YYYY-MM-DD" style={[inpS, { flex: 2 }]} />
+                <TextInput value={r.pct} onChangeText={(t) => setEwInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
+                <TextInput value={r.amt} onChangeText={(t) => setEwInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
+              </View>
+            ))}
+            {ewInsts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(ewPctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Extra Work Total {ewPctTotal.toFixed(2)}%</Text>}
+          </Sec>
+        )}
 
         <Sec title="LOI Document">
           <TouchableOpacity onPress={genLoi} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
@@ -282,9 +335,17 @@ const Pick = ({ l, val, on, opts }) => (
     </View>
   </View>
 );
-const Tot = ({ l, val, big }) => (
-  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: big ? 8 : 4, borderTopWidth: big ? 2 : 0, borderTopColor: '#B3CDF9', marginTop: big ? 6 : 0 }}>
-    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '500', color: big ? '#0D47A1' : '#4B5563' }}>{l}</Text>
-    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: big ? '#0D47A1' : TEXT }}>{rupee(val)}</Text>
+const Tot = ({ l, sub, val, big, subtotal }) => (
+  <View style={{
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: big ? 8 : subtotal ? 7 : 4, paddingHorizontal: subtotal ? 8 : 0,
+    borderTopWidth: big ? 2 : 0, borderTopColor: '#B3CDF9', marginTop: big ? 6 : 0,
+    ...(subtotal ? { backgroundColor: '#DBEAFE', borderRadius: 6, marginVertical: 4 } : {}),
+  }}>
+    <View style={{ flex: 1, paddingRight: 8 }}>
+      <Text style={{ fontSize: big ? 15 : 13, fontWeight: (big || subtotal) ? '800' : '500', color: (big || subtotal) ? '#0D47A1' : '#4B5563' }}>{l}</Text>
+      {!!sub && <Text style={{ fontSize: 10, color: '#9CA3AF' }}>{sub}</Text>}
+    </View>
+    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: (big || subtotal) ? '#0D47A1' : TEXT }}>{rupee(val)}</Text>
   </View>
 );
