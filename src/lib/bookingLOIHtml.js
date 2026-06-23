@@ -183,9 +183,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sign .nm { font-size: 11px; color: #1e293b; }
   .dateline { text-align: center; color: #475569; font-size: 10px; margin-top: 10px; }
   .decl { background: #fcf5e1; border: 1px solid #c4953c; border-radius: 6px; padding: 9px; font-style: italic; text-align: center; color: #645014; margin-top: 14px; font-size: 10px; }
-  .pb { page-break-before: always; }
   .foot { position: fixed; bottom: 0; left: 0; right: 0; background: #0d2f61; border-top: 2px solid #c4953c; color: #fff; font-size: 8px; text-align: center; padding: 5px 0; }
-  table, .grid, .sign, .decl, .client, .sec { page-break-inside: avoid; }
+  /* keep each section (header + its body) together so nothing is cut across pages */
+  .block { page-break-inside: avoid; break-inside: avoid; }
+  .sec { page-break-after: avoid; break-after: avoid; }
 </style></head><body>
   <div class="hdr">
     <div class="date">Date: ${esc(fmtDate(meta.bookingDate))}</div>
@@ -204,35 +205,30 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     </div>
   </div>
 
-  ${sec('Project & Booking Details', '#0d2f61')}
-  ${grid(details)}
+  <div class="block">${sec('Project & Booking Details', '#0d2f61')}${grid(details)}</div>
 
-  ${sec('Pricing Details', '#336699')}
-  ${grid(pricing)}
+  <div class="block">${sec('Pricing Details', '#336699')}${grid(pricing)}</div>
 
-  ${agreement}
+  <div class="block">${agreement}</div>
 
-  ${sec('Extra Charges', '#7c3aed')}
-  <table class="money">${extra}</table>
+  <div class="block">${sec('Extra Charges', '#7c3aed')}<table class="money">${extra}</table></div>
 
-  ${extraWork}
+  ${extraWork ? `<div class="block">${extraWork}</div>` : ''}
 
-  <div class="pb"></div>
-  ${sec('Total Deal Summary', '#0d2f61')}
-  <table class="money">${deal}</table>
+  <div class="block">${sec('Total Deal Summary', '#0d2f61')}<table class="money">${deal}</table></div>
 
-  ${schedule}
+  ${schedule ? `<div class="block">${schedule}</div>` : ''}
 
-  ${sec('Terms & Conditions', '#475569')}
-  ${terms.map((t) => `<div class="term"><b>${esc(t[0])}:</b> ${esc(t[1])}</div>`).join('')}
+  <div class="block">${sec('Terms & Conditions', '#475569')}${terms.map((t) => `<div class="term"><b>${esc(t[0])}:</b> ${esc(t[1])}</div>`).join('')}</div>
 
-  <div class="pb"></div>
-  <div class="sign">
-    <div class="box"><div class="t">BUYER SIGNATURE</div><div class="line"></div><div class="nm">${esc(meta.clientName || '—')}</div></div>
-    <div class="box"><div class="t">SELLER SIGNATURE</div><div class="line"></div><div class="nm">Vistara Group</div></div>
+  <div class="block">
+    <div class="sign">
+      <div class="box"><div class="t">BUYER SIGNATURE</div><div class="line"></div><div class="nm">${esc(meta.clientName || '—')}</div></div>
+      <div class="box"><div class="t">SELLER SIGNATURE</div><div class="line"></div><div class="nm">Vistara Group</div></div>
+    </div>
+    <div class="dateline">Date: ________________________</div>
+    <div class="decl">I hereby declare that I have read, understood, and agreed to all terms and conditions.</div>
   </div>
-  <div class="dateline">Date: ________________________</div>
-  <div class="decl">I hereby declare that I have read, understood, and agreed to all terms and conditions.</div>
 
   <div class="foot">Vistara Group • ${esc(docType)} • ${esc(new Date().toLocaleDateString('en-IN'))}</div>
 </body></html>`;
