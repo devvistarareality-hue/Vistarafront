@@ -1,0 +1,289 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Print from 'expo-print';
+import { apiFetch } from '../../utils/apiFetch';
+import { SALES_ENDPOINTS } from '../../constants/api';
+import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
+import { buildLOIHtml } from '../../lib/bookingLOIHtml';
+
+const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 12, ...CARD_SHADOW };
+
+export default function BookingFormScreen({ navigation, route }) {
+  const me = useSelector((s) => s.auth.user);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
+  const p = route?.params || {};
+  const reviseId = p.revise || '';
+  const [projectId, setProjectId] = useState(p.project ? String(p.project) : '');
+  const [plotId, setPlotId] = useState(p.plot ? String(p.plot) : '');
+  const leadId = p.lead || '';
+
+  const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
+  const [plotNo, setPlotNo] = useState(p.plotNumber || '');
+  const [sources, setSources] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [insts, setInsts] = useState([]);
+  const [loiFile, setLoiFile] = useState(null);
+
+  const [f, setF] = useState({
+    client_name: p.client || '', gender: '', phone: p.phone || '', address: '', source: '',
+    area: '', area_unit: 'sq.yd', const_area: '', villa_type: '',
+    land_rate: '', dev_rate: '', const_rate: '', sale_deed_rate: '', dev_agreement_rate: '',
+    land_sale_deed: '', const_agreement: '', premium_location: '',
+    discount: '0', legal_charges: '', maint_rate: '', maint_months: '',
+    apply_reg_fee: 'Yes', apply_stamp_duty: 'Yes', apply_gst: 'Yes',
+    booking_date: new Date().toISOString().slice(0, 10), cp_name: '',
+  });
+  const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
+
+  useEffect(() => {
+    if (projectId) apiFetch(SALES_ENDPOINTS.project(projectId) + cq('?')).then(r => r.json()).then((pr) => {
+      setProject(pr); setF((s) => ({ ...s, area_unit: pr.formula_set === 'kalrav' ? 'sq.yd' : 'sq.ft' }));
+    }).catch(() => {});
+    if (projectId) apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}${cq('&')}`).then(r => r.json()).then((arr) => {
+      const pl = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(plotId));
+      if (pl) { setPlotNo(pl.number); setF((s) => ({ ...s, area: (pl.size || '').replace(/[^\d.]/g, '') })); }
+    }).catch(() => {});
+    apiFetch(SALES_ENDPOINTS.sources + cq('?')).then(r => r.json()).then((d) => setSources(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [projectId, plotId, companyId]);
+
+  // Revision prefill
+  useEffect(() => {
+    if (!reviseId) return;
+    apiFetch(SALES_ENDPOINTS.bookings + cq('?')).then(r => r.json()).then((arr) => {
+      const b = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(reviseId));
+      if (!b) return;
+      setProjectId(String(b.project)); setPlotId(String(b.plot || ''));
+      setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: b.source || '',
+        area: b.area || '', area_unit: b.area_unit || 'sq.yd', const_area: b.const_area || '', villa_type: b.villa_type || '',
+        land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
+        land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
+        discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
+        apply_reg_fee: b.apply_reg_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
+        booking_date: b.booking_date || s.booking_date, cp_name: b.cp_name || '' }));
+      if (Array.isArray(b.installments)) setInsts(b.installments.filter((i) => !i.isExtra).map((i) => ({ date: i.date || '', pct: String(i.pct || ''), amt: String(i.amt || '') })));
+    }).catch(() => {});
+  }, [reviseId]);
+
+  const formulaSet = project?.formula_set || 'kalrav';
+  const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
+  const v = useMemo(() => computeFormulas({
+    formulaSet, projectName: project?.name,
+    area: f.area, landRate: f.land_rate, devRate: f.dev_rate, constArea: f.const_area, constRate: f.const_rate,
+    discount: f.discount, legalCharges: f.legal_charges, maintRate: f.maint_rate, maintMonths: f.maint_months,
+    gender: f.gender, landSaleDeed: f.land_sale_deed, constAgreement: f.const_agreement,
+    premiumLocation: f.premium_location, saleDeedRate: f.sale_deed_rate, devAgreementRate: f.dev_agreement_rate,
+    applyRegFee: f.apply_reg_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
+  }), [f, formulaSet, project]);
+  const base = installmentBase(v);
+  const pctTotal = insts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
+  const unit = flags.areaUnit;
+
+  function buildInsts(n) { n = parseInt(n, 10) || 0; setInsts(Array.from({ length: n }, (_, i) => insts[i] || { date: '', pct: '', amt: '' })); }
+  function setInst(i, k, val) {
+    setInsts((arr) => arr.map((r, idx) => {
+      if (idx !== i) return r;
+      const nr = { ...r, [k]: val };
+      if (k === 'pct') nr.amt = val && base ? String(Math.round(base * parseFloat(val) / 100)) : '';
+      return nr;
+    }));
+  }
+  function instArr() {
+    const arr = insts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0 }));
+    arr.push({ no: 'Extra', date: '', amt: Math.round(v.totalExtra), isExtra: true });
+    return arr;
+  }
+
+  async function genLoi() {
+    if (!f.client_name.trim() || !v.plotBasic) { setMsg('Fill client + pricing before the LOI.'); return; }
+    const meta = {
+      clientName: f.client_name, phoneNumber: f.phone, gender: f.gender, address: f.address,
+      project: project?.name, plotNo: plotNo, bookingDate: f.booking_date,
+      villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: me?.name,
+    };
+    try { await Print.printAsync({ html: buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name }) }); }
+    catch (e) { setMsg('LOI error: ' + e.message); }
+  }
+
+  async function pickLoi() {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
+      if (res.canceled || !res.assets?.[0]) return;
+      const a = res.assets[0];
+      const data = await FileSystem.readAsStringAsync(a.uri, { encoding: FileSystem.EncodingType.Base64 });
+      setLoiFile({ name: a.name || 'signed_loi.pdf', type: a.mimeType || 'application/pdf', data });
+      setMsg('📎 Attached ' + (a.name || 'file'));
+    } catch (e) { setMsg('Attach failed: ' + e.message); }
+  }
+
+  async function submit() {
+    if (!f.client_name.trim() || !f.phone.trim()) { setMsg('Client name and phone are required.'); return; }
+    if (!f.land_rate || !v.plotBasic) { setMsg('Land rate / area required.'); return; }
+    if (insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
+    setSaving(true); setMsg('');
+    const payload = {
+      project: projectId, plot: plotId, lead: leadId || undefined,
+      client_name: f.client_name.trim(), gender: f.gender, phone: f.phone.trim(), address: f.address, source: f.source,
+      formula_set: formulaSet, area: f.area, area_unit: f.area_unit, const_area: f.const_area || '0',
+      villa_type: flags.bunglowTypeIsDropdown ? f.villa_type : '', bunglow_type: flags.bunglowTypeFixed || '',
+      land_rate: f.land_rate || 0, dev_rate: f.dev_rate || 0, const_rate: f.const_rate || 0,
+      sale_deed_rate: f.sale_deed_rate || 0, dev_agreement_rate: f.dev_agreement_rate || 0,
+      maint_rate: f.maint_rate || 0, maint_months: f.maint_months || 0,
+      plot_basic: Math.round(v.plotBasic), plot_dev: Math.round(v.plotDev), const_amt: Math.round(v.constAmt),
+      sale_deed: Math.round(v.saleDeed), dev_agreement: Math.round(v.devAgreement),
+      land_sale_deed: f.land_sale_deed || 0, const_agreement: f.const_agreement || 0,
+      stamp_duty: Math.round(v.stampDuty), reg_fees: Math.round(v.regFees), gst: Math.round(v.gst),
+      maintenance: Math.round(v.maint), maint_deposit: Math.round(v.maintDeposit), maint_advance: Math.round(v.maintAdvance),
+      legal_charges: f.legal_charges || 0, premium_location: f.premium_location || 0,
+      total_extra: Math.round(v.totalExtra), discount: f.discount || 0, final_amount: Math.round(v.finalAmt),
+      apply_reg_fee: f.apply_reg_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
+      installments: instArr(), booking_date: f.booking_date, cp_name: f.cp_name,
+      loi_file: loiFile, ...(reviseId ? { revision_of: reviseId } : {}),
+    };
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.bookings + cq('?'), { method: 'POST', body: JSON.stringify(payload) });
+      if (res.ok) { setMsg('✅ Booking saved.'); setTimeout(() => navigation.goBack(), 1000); }
+      else setMsg('Error: ' + JSON.stringify(await res.json().catch(() => ({}))));
+    } catch (e) { setMsg(e.message); }
+    setSaving(false);
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? 'Revise Booking' : 'Book Unit'} {plotNo}</Text>
+          <Text style={{ fontSize: 12, color: MUTED }}>{project?.name || '…'} · {formulaSet.toUpperCase()}</Text>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <Sec title="Client">
+          <Fld l="Client Name *" val={f.client_name} on={(t) => set('client_name', t)} />
+          <Pick l="Gender *" val={f.gender} on={(x) => set('gender', x)} opts={['Male', 'Female']} />
+          <Fld l="Phone *" val={f.phone} on={(t) => set('phone', t)} kb="phone-pad" />
+          <Pick l="Source" val={f.source} on={(x) => set('source', x)} opts={sources.map((s) => s.name)} />
+        </Sec>
+
+        <Sec title="Plot & Type">
+          <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" />
+          {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
+          {flags.bunglowTypeIsDropdown && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
+        </Sec>
+
+        <Sec title="Pricing">
+          <Fld l={`Land Rate (₹/${unit}) *`} val={f.land_rate} on={(t) => set('land_rate', t)} kb="numeric" />
+          {flags.hasConstructionFields && <Fld l={`Development Rate (₹/${unit})`} val={f.dev_rate} on={(t) => set('dev_rate', t)} kb="numeric" />}
+          {flags.hasConstructionFields && <Fld l={`Construction Rate (₹/${unit})`} val={f.const_rate} on={(t) => set('const_rate', t)} kb="numeric" />}
+          {flags.hasSaleDeedRate && <Fld l="Sale Deed Rate (₹/sq.ft)" val={f.sale_deed_rate} on={(t) => set('sale_deed_rate', t)} kb="numeric" />}
+          {flags.hasDevAgreement && <Fld l="Dev Agreement Rate (₹/sq.ft)" val={f.dev_agreement_rate} on={(t) => set('dev_agreement_rate', t)} kb="numeric" />}
+          {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
+          {flags.hasConstructionAgreement && <Fld l="Construction Agreement (₹)" val={f.const_agreement} on={(t) => set('const_agreement', t)} kb="numeric" />}
+          {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
+          <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />
+        </Sec>
+
+        <Sec title="Extra Charges">
+          {formulaSet === 'ankhol' && <Pick l="Apply Stamp Duty?" val={f.apply_stamp_duty} on={(x) => set('apply_stamp_duty', x)} opts={['Yes', 'No']} />}
+          <Pick l="Apply Registration Fee?" val={f.apply_reg_fee} on={(x) => set('apply_reg_fee', x)} opts={['Yes', 'No']} />
+          {formulaSet === 'ankhol' && <Pick l="Apply GST?" val={f.apply_gst} on={(x) => set('apply_gst', x)} opts={['Yes', 'No']} />}
+          <Fld l={`Maintenance Rate (₹/${unit}${formulaSet === 'industrial' ? '' : '/mo'})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
+          {formulaSet !== 'industrial' && <Fld l="Maintenance Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />}
+          <Fld l="Legal Charges & Others (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
+        </Sec>
+
+        <View style={[CARD, { backgroundColor: '#EAF2FF' }]}>
+          <Tot l="Plot Basic Amount" val={v.plotBasic} />
+          {flags.hasSaleDeed && <Tot l="Sale Deed" val={v.saleDeed} />}
+          {flags.hasConstructionFields && <Tot l="Plot Development" val={v.plotDev} />}
+          {flags.hasConstructionFields && <Tot l="Construction" val={v.constAmt} />}
+          <Tot l="Stamp Duty" val={v.stampDuty} />
+          <Tot l="Registration Fees" val={v.regFees} />
+          <Tot l="GST" val={v.gst} />
+          <Tot l="Total Extra Charges" val={v.totalExtra} />
+          <Tot l="Discount" val={-v.discount} />
+          <Tot l="FINAL AMOUNT" val={v.finalAmt} big />
+        </View>
+
+        <Sec title="Payment Schedule">
+          <Fld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} ph="YYYY-MM-DD" />
+          <Fld l="CP / Channel Partner" val={f.cp_name} on={(t) => set('cp_name', t)} />
+          <Fld l="No. of Installments" val={insts.length ? String(insts.length) : ''} on={buildInsts} kb="numeric" />
+          {insts.map((r, i) => (
+            <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
+              <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
+              <TextInput value={r.date} onChangeText={(t) => setInst(i, 'date', t)} placeholder="YYYY-MM-DD" style={[inpS, { flex: 2 }]} />
+              <TextInput value={r.pct} onChangeText={(t) => setInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
+              <TextInput value={r.amt} onChangeText={(t) => setInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
+            </View>
+          ))}
+          {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}% · Extra {rupee(v.totalExtra)}</Text>}
+        </Sec>
+
+        <Sec title="LOI Document">
+          <TouchableOpacity onPress={genLoi} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📄 Generate LOI (Print / Share)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={pickLoi} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 10, padding: 14, alignItems: 'center' }}>
+            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}>📎 {loiFile ? loiFile.name : 'Attach signed LOI (image / PDF)'}</Text>
+          </TouchableOpacity>
+          <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Generate → print/sign → attach the signed copy.</Text>
+        </Sec>
+
+        {!!msg && <View style={{ padding: 12, borderRadius: 8, backgroundColor: msg[0] === '✅' ? COLORS.successBg : COLORS.errorBg, marginBottom: 12 }}>
+          <Text style={{ color: msg[0] === '✅' ? COLORS.success : COLORS.error, fontSize: 13 }}>{msg}</Text>
+        </View>}
+        <TouchableOpacity onPress={submit} disabled={saving} style={{ backgroundColor: COLORS.navy, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
+          {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const inpS = { backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: TEXT };
+const Sec = ({ title, children }) => (
+  <View style={CARD}>
+    <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: BLUE, marginBottom: 10, textTransform: 'uppercase' }}>{title}</Text>
+    {children}
+  </View>
+);
+const Fld = ({ l, val, on, kb, ph }) => (
+  <View style={{ marginBottom: 10 }}>
+    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
+    <TextInput value={val} onChangeText={on} keyboardType={kb || 'default'} placeholder={ph} style={inpS} />
+  </View>
+);
+const Pick = ({ l, val, on, opts }) => (
+  <View style={{ marginBottom: 10 }}>
+    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {opts.map((o) => {
+        const on2 = val === o;
+        return (
+          <TouchableOpacity key={o} onPress={() => on(on2 ? '' : o)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on2 ? BLUE : COLORS.border, backgroundColor: on2 ? BLUE : COLORS.white }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: on2 ? '#fff' : MUTED }}>{o}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  </View>
+);
+const Tot = ({ l, val, big }) => (
+  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: big ? 8 : 4, borderTopWidth: big ? 2 : 0, borderTopColor: '#B3CDF9', marginTop: big ? 6 : 0 }}>
+    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '500', color: big ? '#0D47A1' : '#4B5563' }}>{l}</Text>
+    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: big ? '#0D47A1' : TEXT }}>{rupee(val)}</Text>
+  </View>
+);

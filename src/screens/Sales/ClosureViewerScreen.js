@@ -215,6 +215,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
       {selected && (
         <UnitModal plot={selected} project={project} sv={sv} user={user} sources={sources}
           onClose={() => setSelected(null)}
+          onBook={() => { setSelected(null); navigation.navigate('BookingForm', {
+            project: project?.id, plot: selected?.id, plotNumber: selected?.number,
+            projectName: project?.name, formulaSet: project?.formula_set,
+            lead: sv?.lead, client: sv?.lead_name, phone: sv?.lead_phone,
+          }); }}
           onClosed={() => navigation.navigate(sv ? 'SalesSiteVisits' : 'SalesMyConversions')} />
       )}
 
@@ -233,7 +238,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
 }
 
 /* ── Unit detail: floor-plan layouts + record-closure form ── */
-function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed }) {
+function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, onBook }) {
   const cfg = STATUS[plot.status] || STATUS.available;
   const typePlans = useMemo(() => {
     const entry = (project.plot_type_plans || []).find(t => t.name === plot.cluster_type);
@@ -294,9 +299,8 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed })
               </View>
             )}
 
-            {/* Booking & closure are both handled by the booking web app
-                (own login, auto-LOI, Google Sheet). */}
-            <TouchableOpacity onPress={() => { Linking.openURL(BOOKING_SCRIPT_URL).catch(() => {}); }}
+            {/* Native ERP booking form. */}
+            <TouchableOpacity onPress={onBook}
               style={{ backgroundColor: COLORS.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
               <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{booking ? `Book Unit ${plot.number}` : `Record Closure for Unit ${plot.number}`}</Text>
             </TouchableOpacity>
