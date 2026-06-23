@@ -106,7 +106,9 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW 
 export default function MyTeamScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const companies = useSelector((s) => s.companies?.companies || []);
   const isAdmin = me?.role === 'Admin' || me?.is_staff;
+  const companyName = (companyId && companies.find((c) => c.id === companyId)?.name) || me?.company_name || 'Organisation';
   const { module = '', scope = '', title = 'My Team' } = route?.params || {};
   const query = (() => {
     const parts = [];
@@ -157,7 +159,11 @@ export default function MyTeamScreen({ navigation, route }) {
     if (!tops.length) tops = team.filter((m) => !m.reporting_manager_id || !byId[m.reporting_manager_id]);
     tops = sortSiblings(tops);
     if (tops.length === 1) return { ...build(tops[0]), _root: true };
-    return { name: module || 'Organisation', designation: scope === 'all' ? 'Company' : (module ? 'Department' : 'Company'), _root: true, children: tops.map(build) };
+    return {
+      name: scope === 'all' ? companyName : (module || companyName),
+      designation: scope === 'all' ? 'Organisation' : (module ? 'Department' : 'Company'),
+      _root: true, children: tops.map(build),
+    };
   })();
   const orgView = !!(tree && !tree._isMe);
   const n = team.length;
