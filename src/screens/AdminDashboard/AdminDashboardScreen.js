@@ -17,11 +17,11 @@ const ADMIN_MODULES = [
   { name: 'Company Management', icon: 'domain',               color: COLORS.info, iconBg: COLORS.infoBg, screen: 'CompanyManagement',  params: undefined },
   { name: 'Designation Master', icon: 'tag-multiple-outline', color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'DesignationMaster',  params: undefined },
   { name: 'Sales',              icon: 'storefront-outline',   color: COLORS.warningAlt, iconBg: COLORS.warningBg, screen: 'SalesCRM',           params: undefined },
-  { name: 'HR',                 icon: 'account-group-outline',color: COLORS.link, iconBg: COLORS.linkBg, screen: 'MyTeam',  params: { module: 'HR', title: 'My Team · HR' } },
-  { name: 'Accounts & Finance', icon: 'wallet-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'MyTeam',  params: { module: 'Accounts & Finance', title: 'My Team · Accounts' } },
-  { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'MyTeam',  params: { module: 'Execution', title: 'My Team · Execution' } },
-  { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'MyTeam',  params: { module: 'Purchase', title: 'My Team · Purchase' } },
-  { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'MyTeam',  params: { module: 'Land', title: 'My Team · Land' } },
+  { name: 'HR',                 icon: 'account-group-outline',color: COLORS.link, iconBg: COLORS.linkBg, screen: 'ModuleHome',  params: { module: 'HR', name: 'HR' } },
+  { name: 'Accounts & Finance', icon: 'wallet-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Accounts & Finance', name: 'Accounts & Finance' } },
+  { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Execution', name: 'Execution' } },
+  { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'ModuleHome',  params: { module: 'Purchase', name: 'Purchase' } },
+  { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'ModuleHome',  params: { module: 'Land', name: 'Land' } },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {

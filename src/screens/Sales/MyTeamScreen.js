@@ -172,6 +172,7 @@ export default function MyTeamScreen({ navigation, route }) {
     };
   })();
   const orgView = !!(tree && !tree._isMe);
+  const showStats = module === 'Sales';   // leads/closures are sales-only
   const n = team.length;
   const subtitle = scope === 'all'
     ? `${n} across the organisation`
@@ -239,7 +240,7 @@ export default function MyTeamScreen({ navigation, route }) {
                 </View>
                 <Text style={{ fontSize: 12, color: MUTED, marginTop: 1 }}>{m.designation || m.role}{m.user_code ? ` · ${m.user_code}` : ''}</Text>
                 <Text style={{ fontSize: 11, color: COLORS.textTertiary, marginTop: 1 }}>
-                  {m.leads} leads · {m.closures} closures{m.reporting_manager ? ` · ↑ ${m.reporting_manager}` : ''}
+                  {showStats ? `${m.leads} leads · ${m.closures} closures` : ''}{m.reporting_manager ? `${showStats ? ' · ' : ''}↑ ${m.reporting_manager}` : ''}
                 </Text>
               </View>
             </View>
