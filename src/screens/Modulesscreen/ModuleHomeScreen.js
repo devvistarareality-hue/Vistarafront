@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
@@ -12,10 +13,13 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW 
 // (department org chart). More cards can be added as modules grow.
 export default function ModuleHomeScreen({ navigation, route }) {
   const { module = '', name = 'Module' } = route?.params || {};
+  const user = useSelector((s) => s.auth.user);
+  const canSeeTeam = user?.role === 'Manager' || user?.role === 'Admin' || user?.is_staff;
 
   const cards = [
-    { key: 'MyTeam', label: 'My Team', desc: `${name} department org chart`, icon: 'people-circle-outline',
-      color: COLORS.link, bg: COLORS.linkBg, params: { module, title: `My Team · ${name}` } },
+    // My Team is a management view — only managers/admins see it.
+    ...(canSeeTeam ? [{ key: 'MyTeam', label: 'My Team', desc: `${name} department org chart`, icon: 'people-circle-outline',
+      color: COLORS.link, bg: COLORS.linkBg, params: { module, title: `My Team · ${name}` } }] : []),
   ];
 
   return (
@@ -33,6 +37,11 @@ export default function ModuleHomeScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Modules</Text>
+        {cards.length === 0 && (
+          <View style={[CARD, { padding: 28, alignItems: 'center' }]}>
+            <Text style={{ fontSize: 13, color: MUTED, textAlign: 'center' }}>No tools available in this module yet.</Text>
+          </View>
+        )}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {cards.map((c) => (
             <TouchableOpacity key={c.key} onPress={() => navigation.navigate(c.key, c.params)}
