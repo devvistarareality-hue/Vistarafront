@@ -87,6 +87,12 @@ export default function UserManagementScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={s.headerTitle}>User Management</Text>
         <TouchableOpacity
+          style={[s.iconBtn, { marginRight: 8 }]}
+          onPress={() => navigation.navigate('MyTeam', { scope: 'all', title: 'Company Org Chart' })}
+        >
+          <Ionicons name="git-network-outline" size={20} color={COLORS.link} />
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[s.iconBtn, { backgroundColor: COLORS.navy }]}
           onPress={() => navigation.navigate('CreateUser')}
         >

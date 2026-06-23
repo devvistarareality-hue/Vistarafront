@@ -17,10 +17,11 @@ const ADMIN_MODULES = [
   { name: 'Company Management', icon: 'domain',               color: COLORS.info, iconBg: COLORS.infoBg, screen: 'CompanyManagement',  params: undefined },
   { name: 'Designation Master', icon: 'tag-multiple-outline', color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'DesignationMaster',  params: undefined },
   { name: 'Sales',              icon: 'storefront-outline',   color: COLORS.warningAlt, iconBg: COLORS.warningBg, screen: 'SalesCRM',           params: undefined },
-  { name: 'HR',                 icon: 'account-group-outline',color: COLORS.link, iconBg: COLORS.linkBg, screen: 'Placeholder',        params: { title: 'HR' } },
-  { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'Placeholder',        params: { title: 'Execution' } },
-  { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'Placeholder',        params: { title: 'Purchase' } },
-  { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'Placeholder',        params: { title: 'Land' } },
+  { name: 'HR',                 icon: 'account-group-outline',color: COLORS.link, iconBg: COLORS.linkBg, screen: 'MyTeam',  params: { module: 'HR', title: 'My Team · HR' } },
+  { name: 'Accounts & Finance', icon: 'wallet-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'MyTeam',  params: { module: 'Accounts & Finance', title: 'My Team · Accounts' } },
+  { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'MyTeam',  params: { module: 'Execution', title: 'My Team · Execution' } },
+  { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'MyTeam',  params: { module: 'Purchase', title: 'My Team · Purchase' } },
+  { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'MyTeam',  params: { module: 'Land', title: 'My Team · Land' } },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {

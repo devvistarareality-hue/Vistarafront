@@ -13,6 +13,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 function sortSiblings(arr) {
   const rank = (d = '') => {
     d = d.toLowerCase();
+    if (d.includes('director') || d.includes('chief') || ['cmo', 'cao', 'cfo', 'ceo'].some((t) => d.includes(t))) return -1;
     if (d.includes('head') || d.includes('manager') || d.includes('coordinator')) return 0;
     if (d.includes('stm') || d.includes('sales'))   return 1;
     if (d.includes('cp')  || d.includes('channel')) return 2;
@@ -100,9 +101,14 @@ const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
-// "My Team" — everyone reporting under the logged-in manager (their org subtree).
-export default function MyTeamScreen({ navigation }) {
+// "My Team" / org chart. `module` scopes to a department (admins only); `scope='all'`
+// shows the whole company. Non-admins always get their own reporting subtree.
+export default function MyTeamScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
+  const isAdmin = me?.role === 'Admin' || me?.is_staff;
+  const { module = '', scope = '', title = 'My Team' } = route?.params || {};
+  const query = isAdmin ? (scope === 'all' ? '?scope=all' : module ? `?module=${encodeURIComponent(module)}` : '') : '';
+
   const [team,    setTeam]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -111,11 +117,11 @@ export default function MyTeamScreen({ navigation }) {
 
   const load = useCallback(async () => {
     try {
-      const res = await apiFetch(SALES_ENDPOINTS.myTeam);
+      const res = await apiFetch(SALES_ENDPOINTS.myTeam + query);
       if (res.ok) { const d = await res.json(); setTeam(Array.isArray(d) ? d : []); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
-  }, []);
+  }, [query]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -136,11 +142,23 @@ export default function MyTeamScreen({ navigation }) {
     if ((byParent[me?.id] || []).length > 0) {
       return build({ id: me?.id, name: me?.name, designation: me?.designation, role: me?.role, _root: true });
     }
-    const roots = sortSiblings(team.filter((m) => !m.reporting_manager_id || !byId[m.reporting_manager_id]));
-    if (roots.length === 1) return { ...build(roots[0]), _root: true };
-    return { name: 'Organisation', designation: 'Company', _root: true, children: roots.map(build) };
+    // Org view (admin): top-level = a Manager with no reporting manager (admins,
+    // whose role isn't "Manager", are never tops). Everyone else nests beneath.
+    let tops = team.filter((m) => m.role === 'Manager' && !m.reporting_manager_id);
+    if (!tops.length) tops = team.filter((m) => !m.reporting_manager_id || !byId[m.reporting_manager_id]);
+    tops = sortSiblings(tops);
+    if (tops.length === 1) return { ...build(tops[0]), _root: true };
+    return { name: module || 'Organisation', designation: scope === 'all' ? 'Company' : (module ? 'Department' : 'Company'), _root: true, children: tops.map(build) };
   })();
   const orgView = !!(tree && !tree._isMe);
+  const n = team.length;
+  const subtitle = scope === 'all'
+    ? `${n} across the organisation`
+    : module && isAdmin
+    ? `${n} in ${module}`
+    : orgView
+    ? `${n} across the organisation`
+    : `${n} reporting under you${n ? ` · ${directs} direct` : ''}`;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -150,12 +168,8 @@ export default function MyTeamScreen({ navigation }) {
           <Ionicons name="arrow-back" size={20} color={NAVY} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>My Team</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>
-            {orgView
-              ? `${team.length} across the organisation`
-              : `${team.length} reporting under you${team.length ? ` · ${directs} direct` : ''}`}
-          </Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }} numberOfLines={1}>{title}</Text>
+          <Text style={{ fontSize: 12, color: MUTED }}>{subtitle}</Text>
         </View>
         <View style={{ flexDirection: 'row', backgroundColor: COLORS.surfaceAlt, borderRadius: 9, padding: 3 }}>
           {[['tree', 'git-network-outline'], ['list', 'list-outline']].map(([k, icon]) => (
@@ -171,8 +185,8 @@ export default function MyTeamScreen({ navigation }) {
         <ActivityIndicator size="large" color={BLUE} style={{ marginTop: 40 }} />
       ) : team.length === 0 ? (
         <View style={[CARD, { padding: 32, alignItems: 'center', margin: 16 }]}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, marginBottom: 4 }}>No one reports to you yet.</Text>
-          <Text style={{ fontSize: 13, color: MUTED, textAlign: 'center' }}>Set their Reporting Manager to you and they’ll appear here.</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, marginBottom: 4 }}>No org chart yet.</Text>
+          <Text style={{ fontSize: 13, color: MUTED, textAlign: 'center' }}>Assign people to this {module ? 'department' : 'team'} and set their Reporting Manager, and they’ll appear here.</Text>
         </View>
       ) : view === 'tree' ? (
         <ScrollView contentContainerStyle={{ padding: 16, minHeight: '100%' }}

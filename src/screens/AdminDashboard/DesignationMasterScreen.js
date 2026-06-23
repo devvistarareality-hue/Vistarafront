@@ -11,7 +11,7 @@ import { BASE_URL } from '../../constants/api';
 import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
-const ALL_MODULES = ['Sales', 'HR', 'Execution', 'Purchase', 'Land'];
+const ALL_MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase', 'Land'];
 
 function ModuleDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
