@@ -151,7 +151,13 @@ export default function MyTeamScreen({ navigation, route }) {
     team.forEach((m) => { (byParent[m.reporting_manager_id] = byParent[m.reporting_manager_id] || []).push(m); });
     const build = (u) => ({ ...u, _isMe: u.id === me?.id, children: sortSiblings(byParent[u.id] || []).map(build) });
     if (!isAdmin && (byParent[me?.id] || []).length > 0) {
-      return build({ id: me?.id, name: me?.name, designation: me?.designation, role: me?.role, _root: true });
+      // Manager view: show the department header on top, then the manager + their team.
+      const meNode = build({ id: me?.id, name: me?.name, designation: me?.designation, role: me?.role });
+      return {
+        name: module || companyName,
+        designation: module ? 'Department' : 'Company',
+        _root: true, children: [meNode],
+      };
     }
     // Org view (admin): top-level = a Manager with no reporting manager (admins,
     // whose role isn't "Manager", are never tops). Everyone else nests beneath.
