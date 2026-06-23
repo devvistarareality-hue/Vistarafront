@@ -105,9 +105,18 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW 
 // shows the whole company. Non-admins always get their own reporting subtree.
 export default function MyTeamScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
   const isAdmin = me?.role === 'Admin' || me?.is_staff;
   const { module = '', scope = '', title = 'My Team' } = route?.params || {};
-  const query = isAdmin ? (scope === 'all' ? '?scope=all' : module ? `?module=${encodeURIComponent(module)}` : '') : '';
+  const query = (() => {
+    const parts = [];
+    if (isAdmin) {
+      if (scope === 'all') parts.push('scope=all');
+      else if (module) parts.push(`module=${encodeURIComponent(module)}`);
+    }
+    if (companyId) parts.push(`company_id=${companyId}`);   // honour "Viewing Company" filter
+    return parts.length ? '?' + parts.join('&') : '';
+  })();
 
   const [team,    setTeam]    = useState([]);
   const [loading, setLoading] = useState(true);
