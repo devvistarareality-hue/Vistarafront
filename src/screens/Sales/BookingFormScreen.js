@@ -128,6 +128,7 @@ export default function BookingFormScreen({ navigation, route }) {
     if (!f.client_name.trim() || !f.phone.trim()) { setMsg('Client name and phone are required.'); return; }
     if (!f.land_rate || !v.plotBasic) { setMsg('Land rate / area required.'); return; }
     if (insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
+    if (!loiFile) { setMsg('Generate the LOI, get it signed, and attach it before submitting.'); return; }
     setSaving(true); setMsg('');
     const payload = {
       project: projectId, plot: plotId, lead: leadId || undefined,
