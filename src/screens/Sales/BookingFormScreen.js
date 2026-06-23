@@ -14,6 +14,7 @@ import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 12, ...CARD_SHADOW };
+const safeDate = (s) => { const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s || '')); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; };
 
 export default function BookingFormScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
@@ -71,14 +72,14 @@ export default function BookingFormScreen({ navigation, route }) {
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
-        booking_date: b.booking_date || s.booking_date, cp_name: b.cp_name || '' }));
+        booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
-        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork).map((i) => ({ date: i.date || '', pct: String(i.pct || ''), amt: String(i.amt || '') })));
+        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
         const ex = b.installments.find((i) => i.isExtra);
-        if (ex) setExtraDate(ex.date || '');
+        if (ex) setExtraDate(safeDate(ex.date));
       }
       setEw({ desc: b.extra_work_desc || '', amt: b.extra_work_amount ? String(b.extra_work_amount) : '' });
-      if (Array.isArray(b.extra_work_inst)) setEwInsts(b.extra_work_inst.map((i) => ({ date: i.date || '', pct: String(i.pct || ''), amt: String(i.amt || '') })));
+      if (Array.isArray(b.extra_work_inst)) setEwInsts(b.extra_work_inst.map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
     }).catch(() => {});
   }, [reviseId]);
 
