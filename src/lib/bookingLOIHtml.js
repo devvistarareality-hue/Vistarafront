@@ -130,7 +130,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   @page { margin: 0; }
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 0 14px 46px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .hdr { background: linear-gradient(135deg,#0d2f61,#1a73e8); color: #fff; text-align: center; padding: 14px 16px 16px; margin: 0 -14px 14px; position: relative; border-top: 3px solid #c4953c; }
+  .hdr { background: #0d2f61; color: #fff; text-align: center; padding: 14px 16px 16px; margin: 0 -14px 14px; position: relative; border-top: 3px solid #c4953c; }
   .hdr h1 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 1px; }
   .hdr .proj { color: #c4d6ff; font-size: 12px; margin-top: 2px; }
   .hdr .badge { display: inline-block; background: #c4953c; color: #0d2f61; font-weight: 700; font-size: 9px; padding: 4px 16px; border-radius: 4px; margin-top: 8px; letter-spacing: .5px; }
@@ -172,7 +172,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sched td.bdg { font-size: 7px; font-weight: 800; color: #fff; border-radius: 3px; padding: 3px 2px; }
   .sched tr.extra td.bdg { background: #c4953c !important; }
   .sched tr.work td.bdg { background: #16a34a !important; }
-  .sched tr.grand td { background: #fdf6e3 !important; color: #0d2f61; font-weight: 800; font-size: 12px; padding: 9px 8px; border-top: 1px solid #c4953c; border-bottom: 1px solid #c4953c; }
+  .sched tr.grand td { background: #fcf5e1 !important; color: #0d2f61; font-weight: 800; font-size: 12px; padding: 9px 8px; border-top: 1px solid #c4953c; border-bottom: 1px solid #c4953c; }
   .term { padding: 6px 0 6px 16px; border-bottom: 1px solid #f1f5f9; position: relative; font-size: 10px; }
   .term::before { content: ""; position: absolute; left: 3px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: #c4953c; }
   .term b { color: #0d2f61; }
@@ -182,7 +182,8 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sign .line { border-top: 1px solid #cbd5e1; margin: 24px 10px 6px; }
   .sign .nm { font-size: 11px; color: #1e293b; }
   .dateline { text-align: center; color: #475569; font-size: 10px; margin-top: 10px; }
-  .decl { background: #fdf6e3; border: 1px solid #c4953c; border-radius: 6px; padding: 9px; font-style: italic; text-align: center; color: #64501a; margin-top: 14px; font-size: 10px; }
+  .decl { background: #fcf5e1; border: 1px solid #c4953c; border-radius: 6px; padding: 9px; font-style: italic; text-align: center; color: #645014; margin-top: 14px; font-size: 10px; }
+  .pb { page-break-before: always; }
   .foot { position: fixed; bottom: 0; left: 0; right: 0; background: #0d2f61; border-top: 2px solid #c4953c; color: #fff; font-size: 8px; text-align: center; padding: 5px 0; }
   table, .grid, .sign, .decl, .client, .sec { page-break-inside: avoid; }
 </style></head><body>
@@ -216,6 +217,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   ${extraWork}
 
+  <div class="pb"></div>
   ${sec('Total Deal Summary', '#0d2f61')}
   <table class="money">${deal}</table>
 
@@ -224,6 +226,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   ${sec('Terms & Conditions', '#475569')}
   ${terms.map((t) => `<div class="term"><b>${esc(t[0])}:</b> ${esc(t[1])}</div>`).join('')}
 
+  <div class="pb"></div>
   <div class="sign">
     <div class="box"><div class="t">BUYER SIGNATURE</div><div class="line"></div><div class="nm">${esc(meta.clientName || '—')}</div></div>
     <div class="box"><div class="t">SELLER SIGNATURE</div><div class="line"></div><div class="nm">Vistara Group</div></div>
