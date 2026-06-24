@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -157,8 +158,17 @@ export default function BookingFormScreen({ navigation, route }) {
       project: project?.name, plotNo: plotNo, bookingDate: f.booking_date,
       villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: me?.name,
     };
-    try { await Print.printAsync({ html: buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr() }) }); }
-    catch (e) { setMsg('LOI error: ' + e.message); }
+    try {
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr() });
+      const { uri } = await Print.printToFileAsync({ html });
+      // Same filename convention as the web LOI: LOI_<project>_Plot<no>_<client>.pdf
+      const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
+      const dest = FileSystem.cacheDirectory + name;
+      try { await FileSystem.deleteAsync(dest, { idempotent: true }); } catch (e) {}
+      await FileSystem.copyAsync({ from: uri, to: dest });
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(dest, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
+      else await Print.printAsync({ uri: dest });
+    } catch (e) { setMsg('LOI error: ' + e.message); }
   }
 
   async function pickLoi() {
