@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -163,11 +162,22 @@ export default function BookingFormScreen({ navigation, route }) {
       const { uri } = await Print.printToFileAsync({ html });
       // Same filename convention as the web LOI: LOI_<project>_Plot<no>_<client>.pdf
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
+      const SAF = FileSystem.StorageAccessFramework;
+      if (Platform.OS === 'android' && SAF) {
+        const perm = await SAF.requestDirectoryPermissionsAsync();
+        if (perm.granted) {
+          const b64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+          const newUri = await SAF.createFileAsync(perm.directoryUri, name, 'application/pdf');
+          await FileSystem.writeAsStringAsync(newUri, b64, { encoding: FileSystem.EncodingType.Base64 });
+          setMsg('✅ Saved ' + name);
+          return;
+        }
+      }
+      // iOS / permission denied → open the print/save dialog on the named file
       const dest = FileSystem.cacheDirectory + name;
       try { await FileSystem.deleteAsync(dest, { idempotent: true }); } catch (e) {}
       await FileSystem.copyAsync({ from: uri, to: dest });
-      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(dest, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
-      else await Print.printAsync({ uri: dest });
+      await Print.printAsync({ uri: dest });
     } catch (e) { setMsg('LOI error: ' + e.message); }
   }
 
