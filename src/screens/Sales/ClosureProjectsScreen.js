@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { MyBookingsList } from './MyBookingsScreen';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -21,6 +22,7 @@ export default function ClosureProjectsScreen({ navigation, route }) {
   const [projects,   setProjects]   = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [view,       setView]       = useState('closures'); // 'closures' | 'mybookings'
 
   const load = useCallback(async () => {
     try {
@@ -54,7 +56,16 @@ export default function ClosureProjectsScreen({ navigation, route }) {
         </View>
       </View>
 
-      {loading ? (
+      {/* Toggle: Record Closure ↔ My Bookings */}
+      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 }}>
+        {[['closures', 'Record Closure'], ['mybookings', 'My Bookings']].map(([k, label]) => (
+          <TouchableOpacity key={k} onPress={() => setView(k)} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: view === k ? BLUE : COLORS.surfaceAlt }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: view === k ? '#fff' : MUTED }}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {view === 'mybookings' ? <MyBookingsList navigation={navigation} /> : loading ? (
         <ActivityIndicator size="large" color={BLUE} style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}

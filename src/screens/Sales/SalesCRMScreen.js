@@ -21,7 +21,6 @@ const MENU = [
   { key: 'SalesFollowUps',    label: 'Follow-Ups',   icon: 'calendar-outline',        color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: false },
   { key: 'SalesSiteVisits',   label: 'Site Visits',  icon: 'location-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, stmOnly: true },
   { key: 'ClosureProjects',   label: 'Booking',      icon: 'document-text-outline',   color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, stmOnly: true },
-  { key: 'MyBookings',        label: 'My Bookings',  icon: 'briefcase-outline',       color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, stmOnly: true },
   { key: 'SalesMyConversions', label: 'My Conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, tcStmOnly: true },
   { key: 'MyTeam',            label: 'My Team',      icon: 'people-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: false, managerOnly: true, navParams: { module: 'Sales', title: 'My Team' } },
   { key: 'BookingApprovals',  label: 'Approvals',    icon: 'checkmark-done-outline',  color: COLORS.success, bg: COLORS.successBg, adminOnly: false, managerOnly: true },
