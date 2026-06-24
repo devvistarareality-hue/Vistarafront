@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -159,7 +160,14 @@ export default function BookingFormScreen({ navigation, route }) {
     };
     try {
       const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr() });
-      await Print.printAsync({ html });
+      const { uri } = await Print.printToFileAsync({ html });
+      // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
+      const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
+      const dest = FileSystem.cacheDirectory + name;
+      try { await FileSystem.deleteAsync(dest, { idempotent: true }); } catch (e) {}
+      await FileSystem.copyAsync({ from: uri, to: dest });
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(dest, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
+      else await Print.printAsync({ uri: dest });
     } catch (e) { setMsg('LOI error: ' + e.message); }
   }
 

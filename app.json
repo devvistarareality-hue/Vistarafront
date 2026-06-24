@@ -13,7 +13,12 @@
     "userInterfaceStyle": "light",
     "plugins": [
       "@react-native-community/datetimepicker",
-      ["onesignal-expo-plugin", { "mode": "development" }],
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development"
+        }
+      ],
       [
         "expo-location",
         {
@@ -26,6 +31,7 @@
           "faceIDPermission": "Allow Vistararealty to use Face ID for authentication."
         }
       ],
+      "expo-sharing"
     ],
     "ios": {
       "supportsTablet": true,
