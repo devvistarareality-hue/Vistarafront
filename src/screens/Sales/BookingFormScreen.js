@@ -100,10 +100,18 @@ export default function BookingFormScreen({ navigation, route }) {
   const ewPctTotal = ewInsts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
   const unit = flags.areaUnit;
   const inr = (n) => Number(n || 0).toLocaleString('en-IN');
-  const extraSub = formulaSet === 'ankhol'
-    ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal + Premium'
+  const extraSub = formulaSet === 'ankhol' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal + Premium'
     : formulaSet === 'industrial' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal'
     : 'Stamp + Reg + GST + Maintenance + Legal';
+  const extraSub2 = formulaSet === 'ankhol'
+    ? `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maintDeposit)} + ${inr(v.maintAdvance)} + ${inr(v.legal)} + ${inr(v.premiumLocation)}`
+    : formulaSet === 'industrial'
+      ? `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maintDeposit)} + ${inr(v.maintAdvance)} + ${inr(v.legal)}`
+      : `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maint)} + ${inr(v.legal)}`;
+  const saleDeedSub = formulaSet === 'ankhol' ? '60% × (Base + Premium − Discount)' : 'Sale Deed Rate × Plot Area';
+  const saleDeedSub2 = formulaSet === 'ankhol'
+    ? `60% × (${inr(v.plotBasic + v.plotDev + v.constAmt)} + ${inr(v.premiumLocation)} − ${inr(v.discount)})`
+    : `${inr(v.saleDeedRate)} × ${inr(v.area)}`;
   const stampSub = (formulaSet === 'ankhol' && f.apply_stamp_duty === 'No') ? 'Not applicable'
     : (formulaSet === 'kalrav' ? '4.9% of Land Sale Deed' : '4.9% of Sale Deed');
   const regSub = f.apply_reg_fee === 'No' ? 'Not applicable'
@@ -255,12 +263,12 @@ export default function BookingFormScreen({ navigation, route }) {
         </Sec>
 
         <View style={[CARD, { backgroundColor: '#EAF2FF' }]}>
-          <Tot l="Plot Basic Amount" sub={`Plot Area × Land Rate  (${inr(v.area)} × ${inr(v.landRate)})`} val={v.plotBasic} />
-          {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${formulaSet === 'ankhol' ? 'Construction' : 'Plot'} Area × Dev Rate  (${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)})`} val={v.plotDev} />}
-          {flags.hasConstructionFields && <Tot l="Construction Amount" sub={`Construction Area × Construction Rate  (${inr(v.constArea)} × ${inr(v.constRate)})`} val={v.constAmt} />}
+          <Tot l="Plot Basic Amount" sub="Plot Area × Land Rate" sub2={`${inr(v.area)} × ${inr(v.landRate)}`} val={v.plotBasic} />
+          {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${formulaSet === 'ankhol' ? 'Construction' : 'Plot'} Area × Dev Rate`} sub2={`${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)}`} val={v.plotDev} />}
+          {flags.hasConstructionFields && <Tot l="Construction Amount" sub="Construction Area × Construction Rate" sub2={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
           {flags.hasConstructionFields && <Tot l="Total Basic Amount" sub="Plot Basic + Plot Dev + Construction" val={v.plotBasic + v.plotDev + v.constAmt} subtotal />}
-          {flags.hasSaleDeed && <Tot l="Sale Deed" sub={formulaSet === 'ankhol' ? '60% × (Base + Premium − Discount)' : 'Sale Deed Rate × Plot Area'} val={v.saleDeed} />}
-          <Tot l="Extra Charges" sub={extraSub} val={v.totalExtra} />
+          {flags.hasSaleDeed && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
+          <Tot l="Extra Charges" sub={extraSub} sub2={extraSub2} val={v.totalExtra} />
           {!!reviseId && v.extraWorkAmt > 0 && <Tot l="Extra Work" val={v.extraWorkAmt} />}
           <Tot l="Discount" val={-v.discount} />
           <Tot l="FINAL AMOUNT" val={v.finalAmt} big />
@@ -363,7 +371,7 @@ const Pick = ({ l, val, on, opts }) => (
     </View>
   </View>
 );
-const Tot = ({ l, sub, val, big, subtotal }) => (
+const Tot = ({ l, sub, sub2, val, big, subtotal }) => (
   <View style={{
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: big ? 8 : subtotal ? 7 : 4, paddingHorizontal: subtotal ? 8 : 0,
@@ -373,6 +381,7 @@ const Tot = ({ l, sub, val, big, subtotal }) => (
     <View style={{ flex: 1, paddingRight: 8 }}>
       <Text style={{ fontSize: big ? 15 : 13, fontWeight: (big || subtotal) ? '800' : '500', color: (big || subtotal) ? '#0D47A1' : '#4B5563' }}>{l}</Text>
       {!!sub && <Text style={{ fontSize: 10, color: '#9CA3AF' }}>{sub}</Text>}
+      {!!sub2 && <Text style={{ fontSize: 10, color: '#9CA3AF' }}>{sub2}</Text>}
     </View>
     <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: (big || subtotal) ? '#0D47A1' : TEXT }}>{rupee(val)}</Text>
   </View>
