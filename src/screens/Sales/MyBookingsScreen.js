@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, R
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
-import { SALES_ENDPOINTS, getBaseUrl } from '../../constants/api';
+import { SALES_ENDPOINTS, loiHref } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
@@ -56,7 +56,7 @@ export function MyBookingsList({ navigation }) {
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                {b.loi_document && <TouchableOpacity onPress={() => Linking.openURL(getBaseUrl() + b.loi_document)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
+                {b.loi_document && <TouchableOpacity onPress={() => Linking.openURL(loiHref(b.loi_document))} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
                 {b.status === 'sold' && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise LOI</Text></TouchableOpacity>}
                 {b.status === 'pending' && <Text style={{ fontSize: 12, color: COLORS.warning }}>Awaiting approval</Text>}
               </View>

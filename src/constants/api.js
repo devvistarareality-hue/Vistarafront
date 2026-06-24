@@ -7,6 +7,8 @@ export let BASE_URL = RAILWAY_URL;
 
 export const setBaseUrl = (url) => { BASE_URL = url; };
 export const getBaseUrl = () => BASE_URL;
+// LOI document URL — already absolute when stored in Supabase; otherwise prefix the backend.
+export const loiHref = (doc) => (!doc ? '' : (/^https?:\/\//.test(doc) ? doc : getBaseUrl() + doc));
 
 export const ATTENDANCE_ENDPOINTS = {
   get dashboard() { return `${BASE_URL}/api/attendance/dashboard/`; },
