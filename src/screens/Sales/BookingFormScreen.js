@@ -104,6 +104,18 @@ export default function BookingFormScreen({ navigation, route }) {
     ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal + Premium'
     : formulaSet === 'industrial' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal'
     : 'Stamp + Reg + GST + Maintenance + Legal';
+  const stampSub = (formulaSet === 'ankhol' && f.apply_stamp_duty === 'No') ? 'Not applicable'
+    : (formulaSet === 'kalrav' ? '4.9% of Land Sale Deed' : '4.9% of Sale Deed');
+  const regSub = f.apply_reg_fee === 'No' ? 'Not applicable'
+    : (formulaSet === 'ankhol' ? '1% of Sale Deed + ₹1,500'
+      : formulaSet === 'industrial' ? 'Male: 1% Sale Deed + ₹1,500 | Female: ₹1,500'
+      : 'Male: 1% LSD + ₹1,500 | Female: ₹1,500');
+  const gstSub = (formulaSet === 'ankhol' && f.apply_gst === 'No') ? 'Not applicable'
+    : (formulaSet === 'ankhol' ? '5% of Sale Deed'
+      : formulaSet === 'industrial' ? (v.isTundav ? '18% of 67% of Sale Deed' : '18% of Development Agreement')
+      : '18% of Construction Agreement');
+  const maintSub = formulaSet === 'ankhol' ? 'Construction Area × Rate × Months'
+    : formulaSet === 'industrial' ? 'Plot Area × Rate' : 'Plot Area × Rate × Months';
   function buildEw(n) { n = parseInt(n, 10) || 0; setEwInsts(Array.from({ length: n }, (_, i) => ewInsts[i] || { date: '', pct: '', amt: '' })); }
   function setEwInst(i, k, val) {
     setEwInsts((arr) => arr.map((r, idx) => {
@@ -229,10 +241,16 @@ export default function BookingFormScreen({ navigation, route }) {
 
         <Sec title="Extra Charges">
           {formulaSet === 'ankhol' && <Pick l="Apply Stamp Duty?" val={f.apply_stamp_duty} on={(x) => set('apply_stamp_duty', x)} opts={['Yes', 'No']} />}
+          <Calc l="Stamp Duty" sub={stampSub} val={v.stampDuty} />
           <Pick l="Apply Registration Fee?" val={f.apply_reg_fee} on={(x) => set('apply_reg_fee', x)} opts={['Yes', 'No']} />
+          <Calc l="Registration Fees" sub={regSub} val={v.regFees} />
           {formulaSet === 'ankhol' && <Pick l="Apply GST?" val={f.apply_gst} on={(x) => set('apply_gst', x)} opts={['Yes', 'No']} />}
+          <Calc l="GST" sub={gstSub} val={v.gst} />
           <Fld l={`Maintenance Rate (₹/${unit}${formulaSet === 'industrial' ? '' : '/mo'})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
           {formulaSet !== 'industrial' && <Fld l="Maintenance Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />}
+          <Calc l="Maintenance Amount" sub={maintSub} val={v.maint} />
+          {flags.hasMaintDeposit && <Calc l="Maintenance Deposit" sub="= Maintenance Amount" val={v.maintDeposit} />}
+          {flags.hasMaintAdvance && <Calc l="Maintenance Advance" sub="= Maintenance Amount" val={v.maintAdvance} />}
           <Fld l="Legal Charges & Others (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
         </Sec>
 
@@ -319,6 +337,15 @@ const Fld = ({ l, val, on, kb, ph }) => (
   <View style={{ marginBottom: 10 }}>
     <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
     <TextInput value={val} onChangeText={on} keyboardType={kb || 'default'} placeholder={ph} style={inpS} />
+  </View>
+);
+const Calc = ({ l, sub, val }) => (
+  <View style={{ marginBottom: 10 }}>
+    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 2 }}>{l}</Text>
+    {!!sub && <Text style={{ fontSize: 10, color: '#9CA3AF', fontStyle: 'italic', marginBottom: 4 }}>{sub}</Text>}
+    <View style={{ backgroundColor: '#F0F4FF', borderWidth: 1.5, borderColor: '#C5D8FB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9 }}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1a73e8' }}>{rupee(val)}</Text>
+    </View>
   </View>
 );
 const Pick = ({ l, val, on, opts }) => (
