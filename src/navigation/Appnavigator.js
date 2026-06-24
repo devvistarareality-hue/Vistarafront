@@ -43,6 +43,7 @@ import SalesTeamScreen         from '../screens/Sales/SalesTeamScreen';
 import SalesDistributionScreen from '../screens/Sales/SalesDistributionScreen';
 import SalesReportsScreen      from '../screens/Sales/SalesReportsScreen';
 import SalesImportScreen       from '../screens/Sales/SalesImportScreen';
+import NotificationsScreen      from '../screens/Sales/NotificationsScreen';
 
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
@@ -92,6 +93,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
             <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
             <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
+            <Stack.Screen name="SalesNotifications"  component={NotificationsScreen} />
             <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
           </>
 

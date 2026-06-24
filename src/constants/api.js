@@ -29,6 +29,11 @@ export const COMPANY_ENDPOINTS = {
   get detail() { return (id) => `${BASE_URL}/api/company/${id}/`; },
 };
 
+export const NOTIFICATION_ENDPOINTS = {
+  get list()    { return `${BASE_URL}/api/auth/notifications/`; },
+  get readAll() { return `${BASE_URL}/api/auth/notifications/read/`; },
+};
+
 export const SALES_ENDPOINTS = {
   // Dashboard
   get stats()      { return `${BASE_URL}/api/sales/stats/`; },

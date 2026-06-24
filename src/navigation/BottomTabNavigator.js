@@ -7,6 +7,7 @@ import { COLORS } from '../constants/theme';
 import HomeScreen from '../screens/Dashboardscreen/Homescreen/Homescreen';
 import ModulesScreen from '../screens/Modulesscreen/ModulesScreen';
 import SalesCRMScreen from '../screens/Sales/SalesCRMScreen';
+import NotificationsScreen from '../screens/Sales/NotificationsScreen';
 import SalesLeadsScreen from '../screens/Sales/SalesLeadsScreen';
 import SalesFollowUpsScreen from '../screens/Sales/SalesFollowUpsScreen';
 import SalesSiteVisitsScreen from '../screens/Sales/SalesSiteVisitsScreen';
@@ -27,6 +28,7 @@ function ModulesNavigator() {
     <ModulesStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
       <ModulesStack.Screen name="ModulesList"   component={ModulesScreen} />
       <ModulesStack.Screen name="SalesCRM"      component={SalesCRMScreen} />
+      <ModulesStack.Screen name="SalesNotifications" component={NotificationsScreen} />
       <ModulesStack.Screen name="SalesLeads"    component={SalesLeadsScreen} />
       <ModulesStack.Screen name="SalesFollowUps" component={SalesFollowUpsScreen} />
       <ModulesStack.Screen name="SalesSiteVisits" component={SalesSiteVisitsScreen} />

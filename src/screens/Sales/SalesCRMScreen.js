@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
-import { SALES_ENDPOINTS } from '../../constants/api';
+import { SALES_ENDPOINTS, NOTIFICATION_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -58,6 +59,13 @@ export default function SalesCRMScreen({ navigation }) {
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [unread,     setUnread]     = useState(0);
+
+  useFocusEffect(useCallback(() => {
+    let alive = true;
+    apiFetch(NOTIFICATION_ENDPOINTS.list).then(r => (r.ok ? r.json() : null)).then((d) => { if (alive && d) setUnread(d.unread || 0); }).catch(() => {});
+    return () => { alive = false; };
+  }, []));
 
   // Cache key is per-company so switching company never shows stale data from another company
   const STATS_CACHE_KEY = `@vistara_sales_stats_${companyId || 'all'}`;
@@ -124,6 +132,14 @@ export default function SalesCRMScreen({ navigation }) {
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{screenTitle}</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{screenSub}</Text>
         </View>
+        <TouchableOpacity onPress={() => { setUnread(0); navigation.navigate('SalesNotifications'); }} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, marginRight: 8 }}>
+          <Ionicons name="notifications-outline" size={20} color={NAVY} />
+          {unread > 0 && (
+            <View style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, paddingHorizontal: 3, borderRadius: 8, backgroundColor: COLORS.error, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800' }}>{unread > 99 ? '99+' : unread}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
