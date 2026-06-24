@@ -255,9 +255,9 @@ export default function BookingFormScreen({ navigation, route }) {
         </Sec>
 
         <View style={[CARD, { backgroundColor: '#EAF2FF' }]}>
-          <Tot l="Plot Basic Amount" sub={`${inr(v.area)} × ${inr(v.landRate)}`} val={v.plotBasic} />
-          {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)}`} val={v.plotDev} />}
-          {flags.hasConstructionFields && <Tot l="Construction Amount" sub={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
+          <Tot l="Plot Basic Amount" sub={`Plot Area × Land Rate  (${inr(v.area)} × ${inr(v.landRate)})`} val={v.plotBasic} />
+          {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${formulaSet === 'ankhol' ? 'Construction' : 'Plot'} Area × Dev Rate  (${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)})`} val={v.plotDev} />}
+          {flags.hasConstructionFields && <Tot l="Construction Amount" sub={`Construction Area × Construction Rate  (${inr(v.constArea)} × ${inr(v.constRate)})`} val={v.constAmt} />}
           {flags.hasConstructionFields && <Tot l="Total Basic Amount" sub="Plot Basic + Plot Dev + Construction" val={v.plotBasic + v.plotDev + v.constAmt} subtotal />}
           {flags.hasSaleDeed && <Tot l="Sale Deed" sub={formulaSet === 'ankhol' ? '60% × (Base + Premium − Discount)' : 'Sale Deed Rate × Plot Area'} val={v.saleDeed} />}
           <Tot l="Extra Charges" sub={extraSub} val={v.totalExtra} />
