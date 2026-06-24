@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -217,6 +217,18 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  const cancelClosure = useCallback((id) => {
+    Alert.alert('Cancel Closure', 'This frees the unit and permanently deletes its signed LOI from storage. This cannot be undone.', [
+      { text: 'Keep', style: 'cancel' },
+      { text: 'Cancel Closure', style: 'destructive', onPress: async () => {
+        try {
+          const r = await apiFetch(SALES_ENDPOINTS.closureCancel(id), { method: 'POST' });
+          if (r.ok) load(); else Alert.alert('Failed', ((await r.json().catch(() => ({}))).detail) || 'Could not cancel.');
+        } catch (e) { Alert.alert('Error', e.message); }
+      } },
+    ]);
+  }, [load]);
+
   const svCompleted = visits.filter(v => v.status === 'completed');
   const svScheduled = visits.filter(v => v.status === 'scheduled');
 
@@ -344,6 +356,9 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
                         </Text>
                       </View>
                     </View>
+                    <TouchableOpacity onPress={() => cancelClosure(c.id)} style={{ alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: COLORS.error, backgroundColor: COLORS.errorBg }}>
+                      <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 12 }}>Cancel Closure</Text>
+                    </TouchableOpacity>
                   </TouchableOpacity>
                 ))}
               </View>
