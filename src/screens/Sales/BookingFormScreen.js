@@ -36,6 +36,11 @@ export default function BookingFormScreen({ navigation, route }) {
   const [extraDate, setExtraDate] = useState('');
   const [ew, setEw] = useState({ desc: '', amt: '' });
   const [ewInsts, setEwInsts] = useState([]);
+  const [extraTerms, setExtraTerms] = useState([]); // [{title,desc}] — appended below default LOI terms
+  const addTerm    = () => setExtraTerms((s) => [...s, { title: '', desc: '' }]);
+  const setTerm    = (i, k, val) => setExtraTerms((s) => s.map((t, j) => (j === i ? { ...t, [k]: val } : t)));
+  const removeTerm = (i) => setExtraTerms((s) => s.filter((_, j) => j !== i));
+  const cleanTerms = () => extraTerms.map((t) => ({ title: (t.title || '').trim(), desc: (t.desc || '').trim() })).filter((t) => t.title || t.desc);
   const [loiFile, setLoiFile] = useState(null);
 
   const [f, setF] = useState({
@@ -81,6 +86,7 @@ export default function BookingFormScreen({ navigation, route }) {
       }
       setEw({ desc: b.extra_work_desc || '', amt: b.extra_work_amount ? String(b.extra_work_amount) : '' });
       if (Array.isArray(b.extra_work_inst)) setEwInsts(b.extra_work_inst.map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+      if (Array.isArray(b.extra_terms)) setExtraTerms(b.extra_terms.map((t) => ({ title: t.title || '', desc: t.desc || '' })));
     }).catch(() => {});
   }, [reviseId]);
 
@@ -159,7 +165,7 @@ export default function BookingFormScreen({ navigation, route }) {
       villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: me?.name,
     };
     try {
-      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr() });
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms() });
       const { uri } = await Print.printToFileAsync({ html });
       // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
@@ -208,6 +214,7 @@ export default function BookingFormScreen({ navigation, route }) {
       extra_work_desc: reviseId ? (ew.desc || '') : '',
       extra_work_amount: reviseId ? Math.round(parseFloat(ew.amt) || 0) : 0,
       extra_work_inst: reviseId ? ewArr() : [],
+      extra_terms: cleanTerms(),
       loi_file: loiFile, ...(reviseId ? { revision_of: reviseId } : {}),
     };
     try {
@@ -322,6 +329,22 @@ export default function BookingFormScreen({ navigation, route }) {
             {ewInsts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(ewPctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Extra Work Total {ewPctTotal.toFixed(2)}%</Text>}
           </Sec>
         )}
+
+        <Sec title="📝 Extra Terms & Conditions (optional — added below the default terms)">
+          {extraTerms.map((t, i) => (
+            <View key={i} style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 10, marginBottom: 10, backgroundColor: COLORS.surfaceAlt }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED }}>Term {i + 1}</Text>
+                <TouchableOpacity onPress={() => removeTerm(i)}><Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.error }}>✕ Remove</Text></TouchableOpacity>
+              </View>
+              <TextInput value={t.title} onChangeText={(x) => setTerm(i, 'title', x)} placeholder="Title (e.g. Possession)" style={[inpS, { marginBottom: 8 }]} />
+              <TextInput value={t.desc} onChangeText={(x) => setTerm(i, 'desc', x)} placeholder="Description / clause text" multiline style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
+            </View>
+          ))}
+          <TouchableOpacity onPress={addTerm} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 10, padding: 14, alignItems: 'center' }}>
+            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}>+ Add Extra Term</Text>
+          </TouchableOpacity>
+        </Sec>
 
         <Sec title="LOI Document">
           <TouchableOpacity onPress={genLoi} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
