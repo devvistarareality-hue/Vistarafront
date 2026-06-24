@@ -87,10 +87,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     : '';
 
   // ── Total Deal Summary ──
-  let deal = mrow('Plot Basic Amount  (' + num(v.area) + ' x ' + num(v.landRate) + ')', v.plotBasic);
+  let deal = mrow('Plot Basic Amount  (Plot Area x Land Rate = ' + num(v.area) + ' x ' + num(v.landRate) + ')', v.plotBasic);
   if (!isIndustrial) {
-    deal += mrow('Plot Development Amount  (' + (isAnkhol ? num(v.constArea) : num(v.area)) + ' x ' + num(v.devRate) + ')', v.plotDev);
-    deal += mrow('Construction Amount  (' + num(v.constArea) + ' x ' + num(v.constRate) + ')', v.constAmt);
+    deal += mrow('Plot Development Amount  (' + (isAnkhol ? 'Const Area' : 'Plot Area') + ' x Dev Rate = ' + (isAnkhol ? num(v.constArea) : num(v.area)) + ' x ' + num(v.devRate) + ')', v.plotDev);
+    deal += mrow('Construction Amount  (Const Area x Const Rate = ' + num(v.constArea) + ' x ' + num(v.constRate) + ')', v.constAmt);
     deal += mrow('Total Basic Amount', (v.plotBasic || 0) + (v.plotDev || 0) + (v.constAmt || 0), { sub: true });
   }
   deal += mrow((isAnkhol && v.premiumLocation > 0) ? 'Extra Charges  (incl. Premium Location Charge)' : 'Extra Charges', v.totalExtra);
