@@ -27,7 +27,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const sec = (t, c) => `<div class="sec" style="background:${c || '#0d2f61'}">${esc(t)}</div>`;
   // money row: cls = sub|total ; green for discount
   const mrow = (l, n, o = {}) =>
-    `<tr class="${o.total ? 'total' : o.sub ? 'sub' : ''}"><td class="l">${esc(l)}</td><td class="rs">Rs.</td><td class="amt ${o.green ? 'green' : ''}">${money(n)}</td></tr>`;
+    `<tr class="${o.total ? 'total' : o.sub ? 'sub' : ''}"><td class="l">${esc(l)}${o.subline ? `<div class="sl">${esc(o.subline)}</div>` : ''}</td><td class="rs">Rs.</td><td class="amt ${o.green ? 'green' : ''}">${money(n)}</td></tr>`;
 
   // ── Project & Booking Details ──
   let details;
@@ -87,10 +87,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     : '';
 
   // ── Total Deal Summary ──
-  let deal = mrow('Plot Basic Amount  (Plot Area x Land Rate = ' + num(v.area) + ' x ' + num(v.landRate) + ')', v.plotBasic);
+  let deal = mrow('Plot Basic Amount  (Plot Area x Land Rate)', v.plotBasic, { subline: num(v.area) + ' x ' + num(v.landRate) });
   if (!isIndustrial) {
-    deal += mrow('Plot Development Amount  (' + (isAnkhol ? 'Const Area' : 'Plot Area') + ' x Dev Rate = ' + (isAnkhol ? num(v.constArea) : num(v.area)) + ' x ' + num(v.devRate) + ')', v.plotDev);
-    deal += mrow('Construction Amount  (Const Area x Const Rate = ' + num(v.constArea) + ' x ' + num(v.constRate) + ')', v.constAmt);
+    deal += mrow('Plot Development Amount  (' + (isAnkhol ? 'Const Area' : 'Plot Area') + ' x Dev Rate)', v.plotDev, { subline: (isAnkhol ? num(v.constArea) : num(v.area)) + ' x ' + num(v.devRate) });
+    deal += mrow('Construction Amount  (Const Area x Const Rate)', v.constAmt, { subline: num(v.constArea) + ' x ' + num(v.constRate) });
     deal += mrow('Total Basic Amount', (v.plotBasic || 0) + (v.plotDev || 0) + (v.constAmt || 0), { sub: true });
   }
   deal += mrow((isAnkhol && v.premiumLocation > 0) ? 'Extra Charges  (incl. Premium Location Charge)' : 'Extra Charges', v.totalExtra);
@@ -155,6 +155,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   td.rs { padding: 5px 2px; text-align: right; color: #475569; border-bottom: 1px solid #eef0f5; width: 26px; }
   td.amt { padding: 5px 8px 5px 0; text-align: right; font-weight: 700; color: #1e293b; border-bottom: 1px solid #eef0f5; white-space: nowrap; width: 92px; }
   td.amt.green { color: #16a34a; }
+  td.l .sl { font-size: 9px; color: #94a3b8; font-weight: 400; margin-top: 1px; }
   tr:nth-child(even) td.l, tr:nth-child(even) td.rs, tr:nth-child(even) td.amt { background: #f8fafe; }
   tr.sub td { background: #e8f0fe !important; color: #1a73e8; font-weight: 800; border-bottom: none; }
   tr.sub td.amt { color: #1a73e8; }
