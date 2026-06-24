@@ -2,6 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
 import Constants from 'expo-constants';
 
+// ⚠️ Opt-in only. When false, the app ALWAYS uses the Railway production
+// backend. Set true ONLY for local backend development — otherwise the app
+// auto-routes to a developer's local server, so real bookings/leads silently
+// land in that local DB instead of Railway.
+const USE_LOCAL_DISCOVERY = false;
+
 const PORT = 8000;
 const PROBE_PATHS = ['/api/sales/stats/', '/api/attendance/today/'];
 const CACHE_KEY = '@vistara_server_url';
@@ -45,6 +51,13 @@ async function scanIpsParallel(ips) {
 }
 
 export async function discoverServer(fallback) {
+  // Default: always use the production (Railway) backend. Local discovery is
+  // opt-in to prevent real data from going to a developer's local database.
+  if (!USE_LOCAL_DISCOVERY) {
+    try { await AsyncStorage.removeItem(CACHE_KEY); } catch {}
+    return fallback;
+  }
+
   // 1. Try cached URL first (fastest, avoids scanning)
   try {
     const cached = await AsyncStorage.getItem(CACHE_KEY);
