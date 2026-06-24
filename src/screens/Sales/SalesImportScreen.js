@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../../utils/apiFetch';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
@@ -24,6 +26,23 @@ export default function SalesImportScreen({ navigation }) {
   const [file,       setFile]       = useState(null);
   const [importing,  setImporting]  = useState(false);
   const [result,     setResult]     = useState(null);
+  const [dlTpl,      setDlTpl]      = useState(false);
+
+  async function downloadTemplate() {
+    try {
+      setDlTpl(true);
+      const token = await AsyncStorage.getItem('access_token');
+      const fileUri = FileSystem.cacheDirectory + 'vistara_pipeline_import_template.xlsx';
+      const { uri, status } = await FileSystem.downloadAsync(SALES_ENDPOINTS.leadsImportTemplate, fileUri, { headers: { Authorization: `Bearer ${token}` } });
+      if (status !== 200) { Alert.alert('Download failed', 'Could not get the template. Try again.'); return; }
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dialogTitle: 'Vistara — Full Pipeline import template', UTI: 'org.openxmlformats.spreadsheetml.sheet' });
+      } else {
+        Alert.alert('Saved', 'Template saved to:\n' + uri);
+      }
+    } catch (e) { Alert.alert('Error', e.message); }
+    finally { setDlTpl(false); }
+  }
 
   useEffect(() => {
     (async () => {
@@ -46,15 +65,13 @@ export default function SalesImportScreen({ navigation }) {
 
   async function doImport() {
     if (!file)    { Alert.alert('No file', 'Please select a CSV or Excel file.'); return; }
-    if (!project) { Alert.alert('Required', 'Please select a project.'); return; }
-    if (!source)  { Alert.alert('Required', 'Please select a source.'); return; }
     setImporting(true); setResult(null);
     try {
       const headers = await authHeaders();
       const form    = new FormData();
       form.append('file',       { uri: file.uri, name: file.name, type: file.mimeType || 'text/csv' });
-      form.append('project_id', String(project));
-      form.append('source_id',  String(source));
+      if (project) form.append('project_id', String(project));
+      if (source)  form.append('source_id',  String(source));
       const res = await fetch(SALES_ENDPOINTS.leadsImport, { method: 'POST', headers, body: form });
       const d   = await res.json();
       if (res.ok) setResult(d);
@@ -73,6 +90,21 @@ export default function SalesImportScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+
+        {/* Download template */}
+        <View style={[CARD, { padding: 16, marginBottom: 14 }]}>
+          <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Full Pipeline template</Text>
+          <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>Lead → telecaller → STM → site visit → closure, with dropdowns. Fill it, then upload below.</Text>
+          <TouchableOpacity onPress={downloadTemplate} disabled={dlTpl}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: BLUE, backgroundColor: COLORS.white }}>
+            {dlTpl ? <ActivityIndicator color={BLUE} /> : (
+              <>
+                <Ionicons name="download-outline" size={18} color={BLUE} />
+                <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}>Download template</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
 
         {/* Step 1 — File */}
         <View style={[CARD, { padding: 16, marginBottom: 14 }]}>
@@ -98,7 +130,7 @@ export default function SalesImportScreen({ navigation }) {
             <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: project ? COLORS.success : NAVY, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 12 }}>{project ? '✓' : '2'}</Text>
             </View>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Assign Project</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Assign Project (optional)</Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -118,7 +150,7 @@ export default function SalesImportScreen({ navigation }) {
             <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: source ? COLORS.success : NAVY, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 12 }}>{source ? '✓' : '3'}</Text>
             </View>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Assign Source</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Assign Source (optional)</Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -133,8 +165,8 @@ export default function SalesImportScreen({ navigation }) {
         </View>
 
         {/* Import button */}
-        <TouchableOpacity onPress={doImport} disabled={importing || !file || !project || !source}
-          style={{ paddingVertical: 15, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center', marginBottom: 16, opacity: (!file || !project || !source) ? 0.5 : 1 }}>
+        <TouchableOpacity onPress={doImport} disabled={importing || !file}
+          style={{ paddingVertical: 15, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center', marginBottom: 16, opacity: (!file) ? 0.5 : 1 }}>
           {importing ? <ActivityIndicator color={COLORS.white} /> : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="cloud-upload-outline" size={18} color={COLORS.white} />
@@ -159,13 +191,26 @@ export default function SalesImportScreen({ navigation }) {
                 </View>
               ))}
             </View>
+            {(result.site_visits > 0 || result.closures > 0) && (
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                {[
+                  { label: 'Site visits', value: result.site_visits ?? 0, color: '#0D47A1', bg: COLORS.infoBg || COLORS.surfaceAlt },
+                  { label: 'Closures',    value: result.closures ?? 0,    color: COLORS.purple, bg: COLORS.surfaceAlt },
+                ].map(r => (
+                  <View key={r.label} style={{ flex: 1, padding: 12, borderRadius: 12, backgroundColor: r.bg, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 22, fontWeight: '800', color: r.color }}>{r.value}</Text>
+                    <Text style={{ fontSize: 11, color: MUTED, marginTop: 3, fontWeight: '600' }}>{r.label}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
         {/* Info */}
         <View style={{ marginTop: 14, padding: 14, backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: BLUE + '30' }}>
           <Text style={{ fontSize: 12, color: COLORS.link, fontWeight: '600', marginBottom: 4 }}>Supported formats</Text>
-          <Text style={{ fontSize: 11, color: MUTED }}>CSV, XLS, XLSX — columns auto-detected for name, phone, alt_phone, email, campaign, adset.</Text>
+          <Text style={{ fontSize: 11, color: MUTED }}>CSV, XLS, XLSX. Use the Full Pipeline template above to import the whole journey — telecaller, STM, statuses, site visits and closures — all linked. A plain name/phone sheet works too.</Text>
         </View>
 
       </ScrollView>

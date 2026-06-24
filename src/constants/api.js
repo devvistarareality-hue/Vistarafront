@@ -37,6 +37,7 @@ export const SALES_ENDPOINTS = {
   get bulkDelete() { return `${BASE_URL}/api/sales/leads/bulk-delete/`; },
   lead: (id)       => `${BASE_URL}/api/sales/leads/${id}/`,
   get leadsImport(){ return `${BASE_URL}/api/sales/leads/import/`; },
+  get leadsImportTemplate(){ return `${BASE_URL}/api/sales/leads/import-template/`; },
   // Projects & Plots
   get projects()   { return `${BASE_URL}/api/sales/projects/`; },
   project: (id)    => `${BASE_URL}/api/sales/projects/${id}/`,
