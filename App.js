@@ -4,11 +4,20 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { TextInput } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import store from './src/redux/store';
 import SplashScreen from './src/screens/Splashscreen/Splashscreen';
 import AppNavigator from './src/navigation/Appnavigator';
+
+// Standalone (EAS) builds follow the device theme; in dark mode RN defaults
+// TextInput placeholders to white. The app is light-only, so force a visible
+// grey placeholder everywhere unless a component sets its own.
+if (TextInput.defaultProps == null) TextInput.defaultProps = {};
+if (TextInput.defaultProps.placeholderTextColor == null) {
+  TextInput.defaultProps.placeholderTextColor = '#9CA3AF';
+}
 
 const ONESIGNAL_APP_ID = '6904b4e0-0e22-4685-a609-a38038a4082a';
 
