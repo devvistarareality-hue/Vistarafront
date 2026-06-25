@@ -12,6 +12,10 @@ const ROUTE_FOR_TYPE = {
   booking_approved: { screen: 'ClosureProjects', params: { initialView: 'mybookings' } },
   booking_rejected: { screen: 'ClosureProjects', params: { initialView: 'mybookings' } },
   closure: { screen: 'SalesMyConversions' },
+  followup_overdue: { screen: 'SalesFollowUps' },
+  sv_overdue: { screen: 'SalesSiteVisits' },
+  // availability_reminder intentionally unmapped — tapping just opens the app to the
+  // dashboard, where the Mark-available toggle already lives.
 };
 
 export function routeForNotifType(type) {

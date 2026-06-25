@@ -21,7 +21,10 @@ const TYPE_STYLE = {
   booking_rejected: { icon: 'close-circle',     color: '#DC2626', bg: '#FEE2E2' },
   closure:          { icon: 'ribbon',           color: '#7C3AED', bg: '#F1E8FF' },
   overdue:          { icon: 'alarm',            color: '#DC2626', bg: '#FEE2E2' },
+  followup_overdue: { icon: 'alarm',            color: '#DC2626', bg: '#FEE2E2' },
+  sv_overdue:       { icon: 'alarm',            color: '#DC2626', bg: '#FEE2E2' },
   mark_available:   { icon: 'radio-button-on',  color: '#15803D', bg: '#DCFCE7' },
+  availability_reminder: { icon: 'radio-button-on', color: '#15803D', bg: '#DCFCE7' },
   test:             { icon: 'notifications',    color: '#3D5AFE', bg: '#EAEEFF' },
 };
 const styleFor = (t) => TYPE_STYLE[t] || { icon: 'notifications', color: '#3D5AFE', bg: '#EAEEFF' };
