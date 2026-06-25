@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, Activit
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
@@ -292,13 +293,13 @@ export default function BookingFormScreen({ navigation, route }) {
         </View>
 
         <Sec title="Payment Schedule">
-          <Fld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} ph="YYYY-MM-DD" />
+          <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
           <Fld l="CP / Channel Partner" val={f.cp_name} on={(t) => set('cp_name', t)} />
           <Fld l="No. of Installments" val={insts.length ? String(insts.length) : ''} on={buildInsts} kb="numeric" />
           {insts.map((r, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
               <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
-              <TextInput value={r.date} onChangeText={(t) => setInst(i, 'date', t)} placeholder="YYYY-MM-DD" style={[inpS, { flex: 2 }]} />
+              <DateField value={r.date} onChange={(t) => setInst(i, 'date', t)} style={{ flex: 2 }} />
               <TextInput value={r.pct} onChangeText={(t) => setInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
               <TextInput value={r.amt} onChangeText={(t) => setInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
             </View>
@@ -306,7 +307,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {v.totalExtra > 0 && (
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center', backgroundColor: '#FFF8E1', borderRadius: 8, padding: 6 }}>
               <Text style={{ width: 16, color: '#92400E', fontWeight: '700', fontSize: 11 }}>Ex</Text>
-              <TextInput value={extraDate} onChangeText={setExtraDate} placeholder="Extra charges date" style={[inpS, { flex: 2 }]} />
+              <DateField value={extraDate} onChange={setExtraDate} placeholder="Extra charges date" style={{ flex: 2 }} />
               <Text style={{ flex: 2.4, color: '#92400E', fontWeight: '700', fontSize: 12, textAlign: 'right' }}>Extra Charges {rupee(v.totalExtra)}</Text>
             </View>
           )}
@@ -321,7 +322,7 @@ export default function BookingFormScreen({ navigation, route }) {
             {ewInsts.map((r, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
                 <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
-                <TextInput value={r.date} onChangeText={(t) => setEwInst(i, 'date', t)} placeholder="YYYY-MM-DD" style={[inpS, { flex: 2 }]} />
+                <DateField value={r.date} onChange={(t) => setEwInst(i, 'date', t)} style={{ flex: 2 }} />
                 <TextInput value={r.pct} onChangeText={(t) => setEwInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
                 <TextInput value={r.amt} onChangeText={(t) => setEwInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
               </View>
@@ -378,6 +379,40 @@ const Fld = ({ l, val, on, kb, ph }) => (
   <View style={{ marginBottom: 10 }}>
     <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
     <TextInput value={val} onChangeText={on} keyboardType={kb || 'default'} placeholder={ph} style={inpS} />
+  </View>
+);
+
+// Dates are stored as YYYY-MM-DD (backend/LOI) but shown to the user as DD-MM-YYYY.
+const ymdToDMY = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? `${m[3]}-${m[2]}-${m[1]}` : ''; };
+const dateToYMD = (d) => { const z = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`; };
+
+// Tappable field that opens the native calendar; emits YYYY-MM-DD, displays DD-MM-YYYY.
+function DateField({ value, onChange, placeholder = 'DD-MM-YYYY', style }) {
+  const [show, setShow] = useState(false);
+  const display = ymdToDMY(value);
+  const current = value ? new Date(`${value}T12:00:00`) : new Date();
+  return (
+    <>
+      <TouchableOpacity onPress={() => setShow(true)} style={[inpS, { justifyContent: 'center' }, style]}>
+        <Text style={{ fontSize: 13, color: display ? TEXT : '#9CA3AF' }}>{display || placeholder}</Text>
+      </TouchableOpacity>
+      {show && (
+        <DateTimePicker
+          value={current}
+          mode="date"
+          display="default"
+          onChange={(event, d) => { setShow(false); if (event.type === 'set' && d) onChange(dateToYMD(d)); }}
+        />
+      )}
+    </>
+  );
+}
+
+// Labelled date field (used for Booking Date).
+const DateFld = ({ l, val, on }) => (
+  <View style={{ marginBottom: 10 }}>
+    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
+    <DateField value={val} onChange={on} />
   </View>
 );
 const Calc = ({ l, sub, val }) => (
