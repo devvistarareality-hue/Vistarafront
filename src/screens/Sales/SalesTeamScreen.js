@@ -140,7 +140,9 @@ export default function SalesTeamScreen({ navigation }) {
     setFetchError('');
     try {
       const cq = companyId ? `?company_id=${companyId}` : '';
-      const res = await apiFetch(SALES_ENDPOINTS.usersSlim + cq);
+      // `team` is the Sales-department-scoped list (same as web); usersSlim returns
+      // every department, which is why finance/HR users were leaking in.
+      const res = await apiFetch(SALES_ENDPOINTS.team + cq);
       if (res.ok) {
         const d = await res.json();
         const list = Array.isArray(d) ? d : (d.results || []);
