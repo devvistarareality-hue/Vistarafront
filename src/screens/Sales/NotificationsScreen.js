@@ -11,11 +11,20 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const NAVY = COLORS.navy; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 12, padding: 14, ...CARD_SHADOW };
 
-const ICON = {
-  new_lead: 'person-add', followup: 'call', sv: 'location', sv_done: 'checkmark-done',
-  booking_approval: 'document-text', booking_approved: 'trophy', booking_rejected: 'close-circle',
-  closure: 'ribbon', overdue: 'alarm', mark_available: 'radio-button-on', test: 'notifications',
+const TYPE_STYLE = {
+  new_lead:         { icon: 'person-add',       color: '#2E7D32', bg: '#E7F6EC' },
+  followup:         { icon: 'call',             color: '#3D5AFE', bg: '#EAEEFF' },
+  sv:               { icon: 'location',         color: '#0D9488', bg: '#DCF4F1' },
+  sv_done:          { icon: 'checkmark-done',   color: '#2E7D32', bg: '#E7F6EC' },
+  booking_approval: { icon: 'document-text',    color: '#B45309', bg: '#FEF3C7' },
+  booking_approved: { icon: 'trophy',           color: '#15803D', bg: '#DCFCE7' },
+  booking_rejected: { icon: 'close-circle',     color: '#DC2626', bg: '#FEE2E2' },
+  closure:          { icon: 'ribbon',           color: '#7C3AED', bg: '#F1E8FF' },
+  overdue:          { icon: 'alarm',            color: '#DC2626', bg: '#FEE2E2' },
+  mark_available:   { icon: 'radio-button-on',  color: '#15803D', bg: '#DCFCE7' },
+  test:             { icon: 'notifications',    color: '#3D5AFE', bg: '#EAEEFF' },
 };
+const styleFor = (t) => TYPE_STYLE[t] || { icon: 'notifications', color: '#3D5AFE', bg: '#EAEEFF' };
 
 function ago(iso) {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
@@ -57,17 +66,21 @@ export default function NotificationsScreen({ navigation }) {
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up 🎉</Text></View>
         ) : rows.map((n) => {
           const target = routeForNotifType(n.type);
+          const st = styleFor(n.type);
           return (
-          <TouchableOpacity key={n.id} activeOpacity={target ? 0.6 : 1} onPress={() => target && navigation.navigate(target.screen, target.params)}
-            style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', backgroundColor: n.is_read ? COLORS.cardBg : '#F3F6FF' }]}>
-            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={ICON[n.type] || 'notifications'} size={18} color={BLUE} />
+          <TouchableOpacity key={n.id} activeOpacity={target ? 0.7 : 1} onPress={() => target && navigation.navigate(target.screen, target.params)}
+            style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14,
+              borderLeftWidth: n.is_read ? 0 : 3, borderLeftColor: st.color,
+              backgroundColor: n.is_read ? COLORS.cardBg : '#FBFCFF' }]}>
+            <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: st.bg, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name={st.icon} size={20} color={st.color} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{n.title}</Text>
-              {!!n.body && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{n.body}</Text>}
-              <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 3 }}>{ago(n.created_at)}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT }}>{n.title}</Text>
+              {!!n.body && <Text style={{ fontSize: 12.5, color: MUTED, marginTop: 2, lineHeight: 17 }}>{n.body}</Text>}
+              <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{ago(n.created_at)}</Text>
             </View>
+            {!n.is_read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: st.color }} />}
             {!!target && <Ionicons name="chevron-forward" size={16} color="#C4CDDA" />}
           </TouchableOpacity>
           );
