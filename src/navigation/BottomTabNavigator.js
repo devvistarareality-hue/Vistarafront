@@ -25,7 +25,7 @@ const ModulesStack = createNativeStackNavigator();
 
 function ModulesNavigator() {
   return (
-    <ModulesStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+    <ModulesStack.Navigator initialRouteName="ModulesList" screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
       <ModulesStack.Screen name="ModulesList"   component={ModulesScreen} />
       <ModulesStack.Screen name="SalesCRM"      component={SalesCRMScreen} />
       <ModulesStack.Screen name="SalesNotifications" component={NotificationsScreen} />
@@ -89,6 +89,21 @@ const BottomTabNavigator = () => {
         name="Modules"
         component={ModulesNavigator}
         options={{ tabBarLabel: 'Modules' }}
+        listeners={({ navigation }) => ({
+          // Tapping the Modules tab always returns to the Modules list — even if a
+          // notification deep-linked into a child screen and left the stack deep
+          // (which otherwise showed a stale screen or a blank stack).
+          tabPress: (e) => {
+            try {
+              const tab = (navigation.getState().routes || []).find((r) => r.name === 'Modules');
+              const nested = tab && tab.state;
+              if (nested && typeof nested.index === 'number' && nested.index > 0) {
+                e.preventDefault();
+                navigation.navigate('Modules', { screen: 'ModulesList' });
+              }
+            } catch (_) {}
+          },
+        })}
       />
     </Tab.Navigator>
   );
