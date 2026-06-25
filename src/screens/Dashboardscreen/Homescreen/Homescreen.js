@@ -299,7 +299,7 @@ const HomeScreen = () => {
           </View>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
             <TouchableOpacity
-              onPress={() => { setUnread(0); navigation.navigate('Modules', { screen: 'SalesNotifications' }); }}
+              onPress={() => { setUnread(0); navigation.navigate('Modules', { screen: 'SalesNotifications', initial: false }); }}
               style={{
                 width: 40, height: 40, borderRadius: 20,
                 backgroundColor: COLORS.white,

@@ -31,7 +31,12 @@ export function navigateFromNotif(data, attempt = 0) {
   try {
     const names = (navigationRef.getRootState() || {}).routeNames || [];
     if (names.includes('Dashboard')) {
-      navigationRef.navigate('Dashboard', { screen: 'Modules', params: { screen: route.screen, params: route.params } });
+      // initial: false keeps ModulesList at the base of the Modules stack, so Back
+      // pops target → ModulesList instead of leaving the tab stuck on the target.
+      navigationRef.navigate('Dashboard', {
+        screen: 'Modules',
+        params: { screen: route.screen, params: route.params, initial: false },
+      });
     } else {
       navigationRef.navigate(route.screen, route.params);
     }
