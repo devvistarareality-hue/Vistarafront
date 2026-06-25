@@ -10,6 +10,7 @@ import { Provider } from 'react-redux';
 import store from './src/redux/store';
 import SplashScreen from './src/screens/Splashscreen/Splashscreen';
 import AppNavigator from './src/navigation/Appnavigator';
+import { navigateFromNotif } from './src/navigation/notifRouting';
 
 // Standalone (EAS) builds follow the device theme; in dark mode RN defaults
 // TextInput placeholders to white. The app is light-only, so force a visible
@@ -39,6 +40,10 @@ function App() {
     try {
       OneSignal.initialize(ONESIGNAL_APP_ID);
       OneSignal.Notifications.requestPermission(true);
+      // Tapping a push deep-links to the relevant screen (leads/approvals/…).
+      OneSignal.Notifications.addEventListener('click', (event) => {
+        try { navigateFromNotif(event?.notification?.additionalData); } catch (e) {}
+      });
     } catch (e) {
       console.warn('OneSignal init skipped:', e?.message);
     }

@@ -12,7 +12,8 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { fetchDashboard, fetchMonthlyAttendance } from '../../../redux/actions/dashboardActions';
 import { logout } from '../../../redux/actions/authActions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getBaseUrl, SALES_ENDPOINTS } from '../../../constants/api';
+import { getBaseUrl, SALES_ENDPOINTS, NOTIFICATION_ENDPOINTS } from '../../../constants/api';
+import { apiFetch } from '../../../utils/apiFetch';
 import { COLORS, CARD_SHADOW as THEME_SHADOW } from '../../../constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -62,6 +63,15 @@ const HomeScreen = () => {
     || _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
   const [avail,     setAvail]     = useState(null);   // { is_available, expires_at }
   const [availBusy, setAvailBusy] = useState(false);
+  const [unread,    setUnread]    = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      apiFetch(NOTIFICATION_ENDPOINTS.list).then(r => (r.ok ? r.json() : null)).then((d) => { if (alive && d) setUnread(d.unread || 0); }).catch(() => {});
+      return () => { alive = false; };
+    }, [])
+  );
 
   const fetchAvailability = useCallback(async () => {
     if (!isTcOrStm) return;
@@ -288,19 +298,25 @@ const HomeScreen = () => {
             <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{user?.name || '—'}</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-            <TouchableOpacity style={{
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: COLORS.white,
-              justifyContent: 'center', alignItems: 'center',
-              shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.18, shadowRadius: 10, elevation: 3,
-            }}>
+            <TouchableOpacity
+              onPress={() => { setUnread(0); navigation.navigate('Modules', { screen: 'SalesNotifications' }); }}
+              style={{
+                width: 40, height: 40, borderRadius: 20,
+                backgroundColor: COLORS.white,
+                justifyContent: 'center', alignItems: 'center',
+                shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.18, shadowRadius: 10, elevation: 3,
+              }}>
               <Ionicons name="notifications-outline" size={20} color={TEXT} />
-              <View style={{
-                position: 'absolute', top: 8, right: 8,
-                width: 8, height: 8, borderRadius: 4,
-                backgroundColor: COLORS.error,
-              }} />
+              {unread > 0 && (
+                <View style={{
+                  position: 'absolute', top: 4, right: 4,
+                  minWidth: 16, height: 16, paddingHorizontal: 3, borderRadius: 8,
+                  backgroundColor: COLORS.error, alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800' }}>{unread > 99 ? '99+' : unread}</Text>
+                </View>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={openProfile}

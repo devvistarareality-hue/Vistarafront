@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { NOTIFICATION_ENDPOINTS } from '../../constants/api';
+import { screenForNotifType } from '../../navigation/notifRouting';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const NAVY = COLORS.navy; const BLUE = COLORS.link;
@@ -54,8 +55,11 @@ export default function NotificationsScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
         {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : rows.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up 🎉</Text></View>
-        ) : rows.map((n) => (
-          <View key={n.id} style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, backgroundColor: n.is_read ? COLORS.cardBg : '#F3F6FF' }]}>
+        ) : rows.map((n) => {
+          const target = screenForNotifType(n.type);
+          return (
+          <TouchableOpacity key={n.id} activeOpacity={target ? 0.6 : 1} onPress={() => target && navigation.navigate(target)}
+            style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', backgroundColor: n.is_read ? COLORS.cardBg : '#F3F6FF' }]}>
             <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name={ICON[n.type] || 'notifications'} size={18} color={BLUE} />
             </View>
@@ -64,8 +68,10 @@ export default function NotificationsScreen({ navigation }) {
               {!!n.body && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{n.body}</Text>}
               <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 3 }}>{ago(n.created_at)}</Text>
             </View>
-          </View>
-        ))}
+            {!!target && <Ionicons name="chevron-forward" size={16} color="#C4CDDA" />}
+          </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );

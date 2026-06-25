@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { navigationRef } from './navigationRef';
 import { useSelector } from 'react-redux';
 
 // Auth screens
@@ -56,7 +57,7 @@ const AppNavigator = () => {
   const isVRLAdmin  = user?.role === 'Admin' && user?.company_code === 'VRL';
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
 
         {!user ? (
