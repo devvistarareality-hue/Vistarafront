@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { NOTIFICATION_ENDPOINTS } from '../../constants/api';
-import { screenForNotifType } from '../../navigation/notifRouting';
+import { routeForNotifType } from '../../navigation/notifRouting';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const NAVY = COLORS.navy; const BLUE = COLORS.link;
@@ -56,9 +56,9 @@ export default function NotificationsScreen({ navigation }) {
         {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : rows.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up 🎉</Text></View>
         ) : rows.map((n) => {
-          const target = screenForNotifType(n.type);
+          const target = routeForNotifType(n.type);
           return (
-          <TouchableOpacity key={n.id} activeOpacity={target ? 0.6 : 1} onPress={() => target && navigation.navigate(target)}
+          <TouchableOpacity key={n.id} activeOpacity={target ? 0.6 : 1} onPress={() => target && navigation.navigate(target.screen, target.params)}
             style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', backgroundColor: n.is_read ? COLORS.cardBg : '#F3F6FF' }]}>
             <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name={ICON[n.type] || 'notifications'} size={18} color={BLUE} />

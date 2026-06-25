@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -22,7 +22,8 @@ export default function ClosureProjectsScreen({ navigation, route }) {
   const [projects,   setProjects]   = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [view,       setView]       = useState('closures'); // 'closures' | 'mybookings'
+  const [view,       setView]       = useState(route.params?.initialView || 'closures'); // 'closures' | 'mybookings'
+  useEffect(() => { if (route.params?.initialView) setView(route.params.initialView); }, [route.params?.initialView]);
 
   const load = useCallback(async () => {
     try {
