@@ -12,15 +12,19 @@
     },
     "userInterfaceStyle": "light",
     "plugins": [
-      "@react-native-community/datetimepicker",
       [
         "onesignal-expo-plugin",
         {
           "mode": "development",
-          "smallIcons": ["./assets/notification-icon.png"],
-          "largeIcons": ["./assets/icon.png"]
+          "smallIcons": [
+            "./assets/notification-icon.png"
+          ],
+          "largeIcons": [
+            "./assets/icon.png"
+          ]
         }
       ],
+      "@react-native-community/datetimepicker",
       [
         "expo-location",
         {
@@ -33,7 +37,15 @@
           "faceIDPermission": "Allow Vistararealty to use Face ID for authentication."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,
