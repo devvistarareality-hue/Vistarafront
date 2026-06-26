@@ -13,6 +13,11 @@
         "simulator": false
       }
     },
+    "ios-sim": {
+      "ios": {
+        "simulator": true
+      }
+    },
     "production": {
       "android": {
         "buildType": "app-bundle"
