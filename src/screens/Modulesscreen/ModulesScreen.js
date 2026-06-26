@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW, MODULE_ACCENT } from '../../constants/theme';
@@ -59,13 +59,26 @@ const ModulesScreen = () => {
     .filter((m) => MODULE_CONFIG[m])
     .map((m) => ({ key: m, ...MODULE_CONFIG[m], accent: MODULE_ACCENT[m] || MODULE_ACCENT.HR }));
 
-  useEffect(() => {
-    if (userModules.length === 1) {
-      navigation.replace(userModules[0].screen, userModules[0].getParams(user));
-    }
-  }, [userModules.length]);
+  // Single-module users (e.g. Sales-only) skip this list and go straight to their
+  // module. useFocusEffect (not useEffect) so it re-fires every time the screen is
+  // focused — including when navigating BACK to it — instead of leaving a blank
+  // screen because the mount-only effect never re-ran.
+  useFocusEffect(
+    useCallback(() => {
+      if (userModules.length === 1) {
+        navigation.replace(userModules[0].screen, userModules[0].getParams(user));
+      }
+    }, [userModules.length])
+  );
 
-  if (userModules.length === 1) return null;
+  // Never render blank: show a brief loader while the redirect above runs.
+  if (userModules.length === 1) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={COLORS.link} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
