@@ -1005,7 +1005,7 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
 }
 
 /* ── Create Lead Modal ── */
-function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
+function CreateLeadModal({ projects, sources, telecallers = [], stms = [], visible, onClose, onCreated }) {
   const user = useSelector((s) => s.auth.user);
   const _desig = (user?.designation || '').toLowerCase();
   const _isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
@@ -1014,7 +1014,7 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
   const _isAdminMgr = !(_isTelecaller || _isStm || _isCp);
   const showTC  = _isAdminMgr || _isTelecaller;
   const showStm = _isAdminMgr || _isStm || _isCp;
-  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '' };
+  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '' };
   const [form, setForm] = useState(emptyForm);
   const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1108,6 +1108,11 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
 
             {showTC && (
               <>
+                {_isAdminMgr && (
+                  <Field label="Assign Telecaller">
+                    <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="— None —" title="Assign Telecaller" />
+                  </Field>
+                )}
                 <Field label="TC Status">
                   <DropdownPicker
                     value={form.telecaller_status}
@@ -1123,6 +1128,11 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
 
             {showStm && (
               <>
+                {_isAdminMgr && (
+                  <Field label="Assign STM">
+                    <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="— None —" title="Assign STM" />
+                  </Field>
+                )}
                 <Field label={_isCp ? 'CP Status' : 'STM Status'}>
                   <DropdownPicker
                     value={form.stm_status}
@@ -1649,7 +1659,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       <LeadDetailModal lead={selectedLead} projects={projects} sources={sources} telecallers={telecallers} stms={stms}
         visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} />
-      <CreateLeadModal projects={projects} sources={sources}
+      <CreateLeadModal projects={projects} sources={sources} telecallers={telecallers} stms={stms}
         visible={createModal} onClose={() => setCreateModal(false)} onCreated={l => setLeads(prev => [l, ...prev])} />
     </SafeAreaView>
   );
