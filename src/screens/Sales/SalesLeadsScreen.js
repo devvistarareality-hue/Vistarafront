@@ -1005,12 +1005,13 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
 }
 
 /* ── Create Lead Modal ── */
-function CreateLeadModal({ projects, sources, telecallers = [], stms = [], visible, onClose, onCreated }) {
+function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps = [], visible, onClose, onCreated }) {
   const user = useSelector((s) => s.auth.user);
   const _desig = (user?.designation || '').toLowerCase();
   const _isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
   const _isStm = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
-  const _isCp  = _desig.includes('cp executive') || _desig.includes('channel partner') || _desig.includes('cp cluster head');
+  const _isCpHead = _desig.includes('cp cluster head');
+  const _isCp  = _desig.includes('cp executive') || _desig.includes('channel partner') || _isCpHead;
   const _isAdminMgr = !(_isTelecaller || _isStm || _isCp);
   const showTC  = _isAdminMgr || _isTelecaller;
   const showStm = _isAdminMgr || _isStm || _isCp;
@@ -1131,6 +1132,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], visib
                 {_isAdminMgr && (
                   <Field label="Assign STM">
                     <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="— None —" title="Assign STM" />
+                  </Field>
+                )}
+                {_isCpHead && (
+                  <Field label="Assign CP">
+                    <UserPickerDropdown users={cps} value={form.stm} onChange={v => set('stm', v)} placeholder="— None —" title="Assign CP" />
                   </Field>
                 )}
                 <Field label={_isCp ? 'CP Status' : 'STM Status'}>
@@ -1292,6 +1298,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [sources,     setSources]     = useState([]);
   const [telecallers, setTelecallers] = useState([]);
   const [stms,        setStms]        = useState([]);
+  const [cps,         setCps]         = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [refreshing,  setRefreshing]  = useState(false);
   const [search,      setSearch]      = useState('');
@@ -1417,7 +1424,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     }
 
     try {
-      const [leadsRes, projRes, srcRes, tcRes, stmRes] = await Promise.all([
+      const [leadsRes, projRes, srcRes, tcRes, stmRes, cpRes] = await Promise.all([
         apiFetch(buildLeadsUrl(p)),
         projects.length    ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.projects),
         sources.length     ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.sources),
@@ -1428,6 +1435,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
         // the backend returns every company's users mixed across both roles).
         (isCaller || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers + (companyId ? `&company_id=${companyId}` : '')),
         (isCaller || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms        + (companyId ? `&company_id=${companyId}` : '')),
+        // CP managers (cluster heads) assign leads to their CP executives.
+        (!isCpHead || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.cps        + (companyId ? `&company_id=${companyId}` : '')),
       ]);
       if (leadsRes.ok) {
         const d = await leadsRes.json();
@@ -1453,6 +1462,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
       if (srcRes?.ok)   setSources(await srcRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
       if (tcRes?.ok)    setTelecallers(await tcRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
       if (stmRes?.ok)   setStms(await stmRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
+      if (cpRes?.ok)    setCps(await cpRes.json().then(d => Array.isArray(d) ? d : (d.results || [])));
     } catch (_) {}
 
     setLoading(false);
@@ -1659,7 +1669,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       <LeadDetailModal lead={selectedLead} projects={projects} sources={sources} telecallers={telecallers} stms={stms}
         visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} />
-      <CreateLeadModal projects={projects} sources={sources} telecallers={telecallers} stms={stms}
+      <CreateLeadModal projects={projects} sources={sources} telecallers={telecallers} stms={stms} cps={cps}
         visible={createModal} onClose={() => setCreateModal(false)} onCreated={l => setLeads(prev => [l, ...prev])} />
     </SafeAreaView>
   );
