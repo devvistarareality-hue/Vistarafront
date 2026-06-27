@@ -1006,7 +1006,8 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
 
 /* ── Create Lead Modal ── */
 function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
-  const [form, setForm] = useState({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new' });
+  const [form, setForm] = useState({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '' });
+  const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -1015,7 +1016,7 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
     setSaving(true);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
-      if (res.ok) { onCreated(await res.json()); onClose(); setForm({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new' }); }
+      if (res.ok) { onCreated(await res.json()); onClose(); setForm({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '' }); setCityOther(false); }
       else { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
@@ -1041,6 +1042,42 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
             <TextField label="Phone" required value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" placeholder="10-digit mobile" />
             <TextField label="Alt Phone" value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" placeholder="Optional" />
             <TextField label="Email" value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" autoCapitalize="none" placeholder="name@email.com" />
+            <Field label="City">
+              <DropdownPicker
+                value={cityOther ? 'Other' : form.city}
+                onChange={v => { if (v === 'Other') { setCityOther(true); set('city', ''); } else { setCityOther(false); set('city', v); } }}
+                options={[...CITY_OPTIONS.map(c => ({ value: c, label: c })), { value: 'Other', label: 'Other' }]}
+                placeholder="Select city"
+                triggerStyle={{ marginBottom: 0 }}
+              />
+            </Field>
+            {cityOther && (
+              <TextField label="Enter City" value={form.city} onChangeText={v => set('city', v)} placeholder="City name" />
+            )}
+            <Field label="Budget">
+              <DropdownPicker
+                value={form.budget_bucket}
+                onChange={v => set('budget_bucket', v)}
+                options={BUDGET_OPTIONS}
+                placeholder="Select budget"
+                triggerStyle={{ marginBottom: 0 }}
+              />
+            </Field>
+            <TextField label="Address" value={form.address} onChangeText={v => set('address', v)} placeholder="Address" multiline style={{ height: 70, textAlignVertical: 'top' }} />
+            <Field label="Purpose">
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {PURPOSE_OPTIONS.map(p => {
+                  const on = (form.purpose || []).includes(p.value);
+                  return (
+                    <TouchableOpacity key={p.value}
+                      onPress={() => set('purpose', on ? (form.purpose || []).filter(x => x !== p.value) : [...(form.purpose || []), p.value])}
+                      style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: on ? BLUE : COLORS.surfaceAlt, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: on ? BLUE : MUTED }}>{on ? '✓ ' : ''}{p.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </Field>
             <Field label="Project">
               <DropdownPicker
                 value={form.project}
