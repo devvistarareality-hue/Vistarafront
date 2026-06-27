@@ -40,6 +40,22 @@ const STATUSES = [
   { key: 'lost',             label: 'Lost'            },
 ];
 
+// Lead requirement options (mirror sales/models.py LEAD_PURPOSE_CHOICES + BUDGET_BUCKETS)
+const PURPOSE_OPTIONS = [
+  { value: 'investment', label: 'Investment' },
+  { value: 'end_use', label: 'End Use' },
+  { value: 'other', label: 'Other' },
+];
+const BUDGET_OPTIONS = [
+  { value: 'lt_10l', label: 'Less than ₹10 Lakh' },
+  { value: '10_50l', label: '₹10 – 50 Lakh' },
+  { value: '50l_1cr', label: '₹50 Lakh – ₹1 Cr' },
+  { value: '1_2cr', label: '₹1 – 2 Cr' },
+  { value: '2_3cr', label: '₹2 – 3 Cr' },
+  { value: '3_5cr', label: '₹3 – 5 Cr' },
+  { value: 'gt_5cr', label: 'Above ₹5 Cr' },
+];
+
 const STATUS_COLOR = {
   new:              { bg: COLORS.linkBg, text: COLORS.link },
   assigned:         { bg: COLORS.purpleBg, text: COLORS.purple },
@@ -215,13 +231,24 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         stm:               lead.stm             || '',
         stm_status:        lead.stm_status      || '',
         stm_remarks:       lead.stm_remarks     || '',
+        city: '', address: '', purpose: [], budget_bucket: '',
       });
       setTab('detail');
       setDetail(null);
       async function loadDetail() {
         try {
           const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id));
-          if (res.ok) setDetail(await res.json());
+          if (res.ok) {
+            const d = await res.json();
+            setDetail(d);
+            // City/Address/Purpose/Budget come only on the detail payload — merge them in.
+            setForm(f => ({
+              ...f,
+              city: d.city || '', address: d.address || '',
+              purpose: Array.isArray(d.purpose) ? d.purpose : [],
+              budget_bucket: d.budget_bucket || '',
+            }));
+          }
         } catch (_) {}
       }
       loadDetail();
@@ -418,6 +445,42 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                     <Text style={{ fontSize: 12, color: MUTED }} selectable numberOfLines={1}>{lead.email || '—'}</Text>
                   </View>
                 </View>
+              </View>
+
+              <View style={divider} />
+
+              {/* Requirement: City | Budget, Address, Purpose */}
+              <View style={row2}>
+                <View style={half}>
+                  <Text style={lblS}>City</Text>
+                  <TextInput value={form.city} onChangeText={v => set('city', v)} style={inpS} placeholder="City" placeholderTextColor="#666666" />
+                </View>
+                <View style={half}>
+                  <Text style={lblS}>Budget</Text>
+                  <PickerDropdown
+                    items={[{ value: '', label: '— Select —' }, ...BUDGET_OPTIONS]}
+                    value={form.budget_bucket || ''} onChange={v => set('budget_bucket', v)}
+                    placeholder="Budget" title="Budget" />
+                </View>
+              </View>
+
+              <Text style={lblS}>Address</Text>
+              <TextInput value={form.address} onChangeText={v => set('address', v)}
+                style={{ ...inpS, height: 60, textAlignVertical: 'top', marginBottom: 8 }} multiline
+                placeholder="Address" placeholderTextColor="#666666" />
+
+              <Text style={lblS}>Purpose</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2, marginBottom: 10 }}>
+                {PURPOSE_OPTIONS.map(p => {
+                  const on = (form.purpose || []).includes(p.value);
+                  return (
+                    <TouchableOpacity key={p.value}
+                      onPress={() => set('purpose', on ? (form.purpose || []).filter(x => x !== p.value) : [...(form.purpose || []), p.value])}
+                      style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: on ? BLUE : COLORS.surfaceAlt, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: on ? BLUE : MUTED }}>{on ? '✓ ' : ''}{p.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
               <View style={divider} />
