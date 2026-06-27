@@ -1006,7 +1006,16 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
 
 /* ── Create Lead Modal ── */
 function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
-  const [form, setForm] = useState({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '' });
+  const user = useSelector((s) => s.auth.user);
+  const _desig = (user?.designation || '').toLowerCase();
+  const _isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
+  const _isStm = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
+  const _isCp  = _desig.includes('cp executive') || _desig.includes('channel partner') || _desig.includes('cp cluster head');
+  const _isAdminMgr = !(_isTelecaller || _isStm || _isCp);
+  const showTC  = _isAdminMgr || _isTelecaller;
+  const showStm = _isAdminMgr || _isStm || _isCp;
+  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '' };
+  const [form, setForm] = useState(emptyForm);
   const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -1016,7 +1025,7 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
     setSaving(true);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
-      if (res.ok) { onCreated(await res.json()); onClose(); setForm({ name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '' }); setCityOther(false); }
+      if (res.ok) { onCreated(await res.json()); onClose(); setForm(emptyForm); setCityOther(false); }
       else { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
@@ -1096,6 +1105,36 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
                 triggerStyle={{ marginBottom: 0 }}
               />
             </Field>
+
+            {showTC && (
+              <>
+                <Field label="TC Status">
+                  <DropdownPicker
+                    value={form.telecaller_status}
+                    onChange={v => set('telecaller_status', v)}
+                    options={[{ value: '', label: '— None —' }, ...TC_STATUSES.map(s => ({ value: s, label: s.replace(/_/g, ' ') }))]}
+                    placeholder="TC Status"
+                    triggerStyle={{ marginBottom: 0 }}
+                  />
+                </Field>
+                <TextField label="TC Remarks" value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
+              </>
+            )}
+
+            {showStm && (
+              <>
+                <Field label="STM Status">
+                  <DropdownPicker
+                    value={form.stm_status}
+                    onChange={v => set('stm_status', v)}
+                    options={[{ value: '', label: '— None —' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g, ' ') }))]}
+                    placeholder="STM Status"
+                    triggerStyle={{ marginBottom: 0 }}
+                  />
+                </Field>
+                <TextField label="STM Remarks" value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
+              </>
+            )}
           </ScrollView>
     </FormSheet>
   );
