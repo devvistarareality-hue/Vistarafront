@@ -41,6 +41,7 @@ const STATUSES = [
 ];
 
 // Lead requirement options (mirror sales/models.py LEAD_PURPOSE_CHOICES + BUDGET_BUCKETS)
+const CITY_OPTIONS = ['Ahmedabad', 'Vadodara'];
 const PURPOSE_OPTIONS = [
   { value: 'investment', label: 'Investment' },
   { value: 'end_use', label: 'End Use' },
@@ -193,6 +194,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const showTC  = canAssign || _isTelecaller;
   const showStm = canAssign || _isStm || _isCp;
   const [form, setForm]   = useState({});
+  const [cityOther, setCityOther] = useState(false);  // City = "Other" → free-text box
   const [saving, setSaving] = useState(false);
   const [tab, setTab]     = useState('detail');
   const [detail, setDetail] = useState(null);
@@ -233,6 +235,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         stm_remarks:       lead.stm_remarks     || '',
         city: '', address: '', purpose: [], budget_bucket: '',
       });
+      setCityOther(false);
       setTab('detail');
       setDetail(null);
       async function loadDetail() {
@@ -242,6 +245,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             const d = await res.json();
             setDetail(d);
             // City/Address/Purpose/Budget come only on the detail payload — merge them in.
+            setCityOther(!!d.city && !CITY_OPTIONS.includes(d.city));
             setForm(f => ({
               ...f,
               city: d.city || '', address: d.address || '',
@@ -453,7 +457,17 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <View style={row2}>
                 <View style={half}>
                   <Text style={lblS}>City</Text>
-                  <TextInput value={form.city} onChangeText={v => set('city', v)} style={inpS} placeholder="City" placeholderTextColor="#666666" />
+                  <PickerDropdown
+                    items={[{ value: '', label: '— Select —' }, ...CITY_OPTIONS.map(c => ({ value: c, label: c })), { value: 'Other', label: 'Other' }]}
+                    value={cityOther ? 'Other' : (form.city || '')}
+                    onChange={v => {
+                      if (v === 'Other') { setCityOther(true); set('city', ''); }
+                      else { setCityOther(false); set('city', v); }
+                    }}
+                    placeholder="City" title="City" />
+                  {cityOther && (
+                    <TextInput value={form.city} onChangeText={v => set('city', v)} style={{ ...inpS, marginTop: 6 }} placeholder="Enter city" placeholderTextColor="#666666" />
+                  )}
                 </View>
                 <View style={half}>
                   <Text style={lblS}>Budget</Text>
