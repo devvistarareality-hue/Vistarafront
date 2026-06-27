@@ -1123,16 +1123,16 @@ function CreateLeadModal({ projects, sources, visible, onClose, onCreated }) {
 
             {showStm && (
               <>
-                <Field label="STM Status">
+                <Field label={_isCp ? 'CP Status' : 'STM Status'}>
                   <DropdownPicker
                     value={form.stm_status}
                     onChange={v => set('stm_status', v)}
                     options={[{ value: '', label: '— None —' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g, ' ') }))]}
-                    placeholder="STM Status"
+                    placeholder={_isCp ? 'CP Status' : 'STM Status'}
                     triggerStyle={{ marginBottom: 0 }}
                   />
                 </Field>
-                <TextField label="STM Remarks" value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
+                <TextField label={_isCp ? 'CP Remarks' : 'STM Remarks'} value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
               </>
             )}
           </ScrollView>
