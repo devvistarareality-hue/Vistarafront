@@ -233,26 +233,18 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         stm:               lead.stm             || '',
         stm_status:        lead.stm_status      || '',
         stm_remarks:       lead.stm_remarks     || '',
-        city: '', address: '', purpose: [], budget_bucket: '',
+        // City/Address/Purpose/Budget now ship in the list payload → prefill instantly.
+        city: lead.city || '', address: lead.address || '',
+        purpose: Array.isArray(lead.purpose) ? lead.purpose : [],
+        budget_bucket: lead.budget_bucket || '',
       });
-      setCityOther(false);
+      setCityOther(!!lead.city && !CITY_OPTIONS.includes(lead.city));
       setTab('detail');
       setDetail(null);
       async function loadDetail() {
         try {
           const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id));
-          if (res.ok) {
-            const d = await res.json();
-            setDetail(d);
-            // City/Address/Purpose/Budget come only on the detail payload — merge them in.
-            setCityOther(!!d.city && !CITY_OPTIONS.includes(d.city));
-            setForm(f => ({
-              ...f,
-              city: d.city || '', address: d.address || '',
-              purpose: Array.isArray(d.purpose) ? d.purpose : [],
-              budget_bucket: d.budget_bucket || '',
-            }));
-          }
+          if (res.ok) setDetail(await res.json());
         } catch (_) {}
       }
       loadDetail();
