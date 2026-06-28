@@ -215,6 +215,10 @@ export default function BookingFormScreen({ navigation, route }) {
           const fileUri = await SAF.createFileAsync(dirUri, name.replace(/\.pdf$/i, ''), 'application/pdf');
           await FileSystem.writeAsStringAsync(fileUri, b64, { encoding: FileSystem.EncodingType.Base64 });
           setMsg('✅ LOI downloaded to your phone.');
+          Alert.alert('LOI downloaded ✅', 'Saved to your phone. Open it now?', [
+            { text: 'Later', style: 'cancel' },
+            { text: 'Open', onPress: async () => { try { if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(srcUri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name }); } catch (e) {} } },
+          ]);
           return;
         }
       } catch (e) { await AsyncStorage.removeItem('loi_download_dir'); /* fall through to share */ }
@@ -457,7 +461,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Generate → print/sign → capture pages or attach the signed copy → Submit.</Text>
         </Sec>
 
-        {!!msg && (() => { const ok = msg[0] === '✅' || msg[0] === '📎'; return (
+        {!!msg && (() => { const ok = msg.startsWith('✅') || msg.startsWith('📎'); return (
         <View style={{ padding: 12, borderRadius: 8, backgroundColor: ok ? COLORS.successBg : COLORS.errorBg, marginBottom: 12 }}>
           <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}>{msg}</Text>
         </View>); })()}
