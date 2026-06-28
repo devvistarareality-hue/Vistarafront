@@ -259,7 +259,20 @@ export default function BookingFormScreen({ navigation, route }) {
         </Sec>
 
         <Sec title="Plot & Type">
-          <Pick l="Area Unit" val={f.area_unit} on={(x) => { if (x) set('area_unit', x); }} opts={['sq.yd', 'sq.ft', 'sq.m']} />
+          <View style={{ marginBottom: 10 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Area Unit</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {['sq.yd', 'sq.ft', 'sq.m'].map((u) => {
+                const on2 = unit === u;
+                return (
+                  <TouchableOpacity key={u} onPress={() => set('area_unit', u)}
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', borderColor: on2 ? BLUE : COLORS.border, backgroundColor: on2 ? BLUE : COLORS.white }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: on2 ? '#fff' : MUTED }}>{u}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
           <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" />
           {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
           {flags.bunglowTypeIsDropdown && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
