@@ -57,7 +57,8 @@ export default function BookingFormScreen({ navigation, route }) {
     apply_reg_fee: 'Yes', apply_stamp_duty: 'Yes', apply_gst: 'Yes',
     booking_date: new Date().toISOString().slice(0, 10), cp_name: '',
   });
-  const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
+  const [errs, setErrs] = useState({});   // required-field highlight on Generate/Submit
+  const set = (k, v) => { setF((s) => ({ ...s, [k]: v })); setErrs((e) => (e[k] ? { ...e, [k]: false } : e)); };
 
   useEffect(() => {
     if (projectId) apiFetch(SALES_ENDPOINTS.project(projectId) + cq('?')).then(r => r.json()).then((pr) => {
@@ -171,7 +172,14 @@ export default function BookingFormScreen({ navigation, route }) {
   }
 
   async function genLoi() {
-    if (!f.client_name.trim() || !v.plotBasic) { setMsg('Fill client + pricing before the LOI.'); return; }
+    {
+      const e = {};
+      if (!f.client_name.trim()) e.client_name = true;
+      if (!f.phone.trim()) e.phone = true;
+      if (!v.plotBasic) { if (!f.area) e.area = true; if (!f.land_rate) e.land_rate = true; }
+      if (Object.keys(e).length) { setErrs(e); setMsg('Please fill the highlighted fields.'); return; }
+      setErrs({});
+    }
     const meta = {
       clientName: f.client_name, phoneNumber: f.phone, gender: f.gender, address: f.address,
       project: project?.name, plotNo: plotNo, bookingDate: f.booking_date,
@@ -259,8 +267,14 @@ export default function BookingFormScreen({ navigation, route }) {
   }
 
   async function submit() {
-    if (!f.client_name.trim() || !f.phone.trim()) { setMsg('Client name and phone are required.'); return; }
-    if (!f.land_rate || !v.plotBasic) { setMsg('Land rate / area required.'); return; }
+    {
+      const e = {};
+      if (!f.client_name.trim()) e.client_name = true;
+      if (!f.phone.trim()) e.phone = true;
+      if (!f.land_rate || !v.plotBasic) { e.land_rate = true; if (!f.area) e.area = true; }
+      if (Object.keys(e).length) { setErrs(e); setMsg('Please fill the highlighted fields.'); return; }
+      setErrs({});
+    }
     if (insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
     if (!loiFile) { setMsg('Generate the LOI, get it signed, and attach it before submitting.'); return; }
     setSaving(true); setMsg('');
@@ -310,9 +324,9 @@ export default function BookingFormScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         <Sec title="Client">
-          <Fld l="Client Name *" val={f.client_name} on={(t) => set('client_name', t)} />
+          <Fld l="Client Name *" val={f.client_name} on={(t) => set('client_name', t)} invalid={errs.client_name} />
           <Pick l="Gender *" val={f.gender} on={(x) => set('gender', x)} opts={['Male', 'Female']} />
-          <Fld l="Phone *" val={f.phone} on={(t) => set('phone', t)} kb="phone-pad" />
+          <Fld l="Phone *" val={f.phone} on={(t) => set('phone', t)} kb="phone-pad" invalid={errs.phone} />
           <Pick l="Source" val={f.source} on={(x) => set('source', x)} opts={sources.map((s) => s.name)} />
         </Sec>
 
@@ -331,13 +345,13 @@ export default function BookingFormScreen({ navigation, route }) {
               })}
             </View>
           </View>
-          <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" />
+          <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} />
           {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
           {flags.bunglowTypeIsDropdown && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
         </Sec>
 
         <Sec title="Pricing">
-          <Fld l={`Land Rate (₹/${unit}) *`} val={f.land_rate} on={(t) => set('land_rate', t)} kb="numeric" />
+          <Fld l={`Land Rate (₹/${unit}) *`} val={f.land_rate} on={(t) => set('land_rate', t)} kb="numeric" invalid={errs.land_rate} />
           {flags.hasConstructionFields && <Fld l={`Development Rate (₹/${unit})`} val={f.dev_rate} on={(t) => set('dev_rate', t)} kb="numeric" />}
           {flags.hasConstructionFields && <Fld l={`Construction Rate (₹/${unit})`} val={f.const_rate} on={(t) => set('const_rate', t)} kb="numeric" />}
           {flags.hasSaleDeedRate && <Fld l="Sale Deed Rate (₹/sq.ft)" val={f.sale_deed_rate} on={(t) => set('sale_deed_rate', t)} kb="numeric" />}
@@ -461,10 +475,11 @@ const Sec = ({ title, children }) => (
     {children}
   </View>
 );
-const Fld = ({ l, val, on, kb, ph }) => (
+const Fld = ({ l, val, on, kb, ph, invalid }) => (
   <View style={{ marginBottom: 10 }}>
     <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
-    <TextInput value={val} onChangeText={on} keyboardType={kb || 'default'} placeholder={ph} style={inpS} />
+    <TextInput value={val} onChangeText={on} keyboardType={kb || 'default'} placeholder={ph}
+      style={[inpS, invalid ? { borderColor: COLORS.error, backgroundColor: '#FEF2F2' } : null]} />
   </View>
 );
 
