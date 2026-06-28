@@ -41,7 +41,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const [project, setProject] = useState(null);
   const [plots,   setPlots]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]); // multi-select: plot ids to book together
   const [filter,     setFilter]     = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [zoomMaster, setZoomMaster] = useState(false);
@@ -82,9 +82,23 @@ export default function ClosureViewerScreen({ navigation, route }) {
     (typeFilter !== 'all' && plot.cluster_type !== typeFilter);
   const shownCount = plots.filter(p => !isHidden(p)).length;
 
+  // Multi-select: a client can buy several plots in one booking. Tapping an
+  // available unit toggles it; the action bar books all selected together.
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   function pickPlot(plot) {
     if (!plot || plot.status !== 'available') return; // only Available selectable
-    setSelected(plot);
+    setSelectedIds((ids) => (ids.includes(plot.id) ? ids.filter((x) => x !== plot.id) : [...ids, plot.id]));
+  }
+  const selPlots = useMemo(() => selectedIds.map((pid) => plots.find((p) => p.id === pid)).filter(Boolean), [selectedIds, plots]);
+  const selArea = useMemo(() => selPlots.reduce((a, p) => a + (parseFloat(String(p.size || '').replace(/[^\d.]/g, '')) || 0), 0), [selPlots]);
+  function bookSelected() {
+    if (!selectedIds.length) return;
+    navigation.navigate('BookingForm', {
+      project: project?.id, plots: selectedIds.join(','),
+      plotNumber: selPlots.map((p) => p.number).join(', '),
+      projectName: project?.name, formulaSet: project?.formula_set,
+      lead: sv?.lead, client: sv?.lead_name, phone: sv?.lead_phone,
+    });
   }
 
   if (loading) return <SafeAreaView style={{ flex: 1, backgroundColor: BG }}><ActivityIndicator size="large" color={BLUE} style={{ marginTop: 60 }} /></SafeAreaView>;
@@ -101,7 +115,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }} numberOfLines={1}>{project.name}</Text>
           <Text style={{ fontSize: 12, color: sv ? BLUE : MUTED }} numberOfLines={1}>
-            {sv ? `Tap an available unit to close for ${sv.lead_name}` : (project.location || 'Units')}
+            {sv ? `Tap units to select for ${sv.lead_name}` : (project.location || 'Tap units to select')}
           </Text>
         </View>
       </View>
@@ -175,13 +189,17 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const { cx, cy } = zoneCenter(zone);
                   const labelText = String(zone.plotNumber).replace(/^[^\d]+/, '') || String(zone.plotNumber);
                   const press = () => pickPlot(plot);
+                  const isSel = selectedSet.has(plot.id);
+                  const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
+                  const strokeC = isSel ? '#1A237E' : cfg.dot;
+                  const sw = isSel ? '0.9' : '0.5';
                   return (
                     <React.Fragment key={zone.id}>
                       {zone.points?.length
-                        ? <Polygon points={zone.points.map(p => `${p.x},${p.y}`).join(' ')} fill={cfg.dot + '99'} stroke={cfg.dot} strokeWidth="0.5" opacity={op} onPress={press} />
-                        : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={cfg.dot + '99'} stroke={cfg.dot} strokeWidth="0.5" opacity={op} onPress={press} />
+                        ? <Polygon points={zone.points.map(p => `${p.x},${p.y}`).join(' ')} fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
+                        : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
                       }
-                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.6" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{labelText}</SvgText>
+                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.6" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{isSel ? `✓${labelText}` : labelText}</SvgText>
                     </React.Fragment>
                   );
                 })}
@@ -199,10 +217,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 {plots.filter(p => !isHidden(p)).map(plot => {
                   const cfg = STATUS[plot.status] || STATUS.available;
                   const clickable = plot.status === 'available';
+                  const isSel = selectedSet.has(plot.id);
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
-                      style={{ minWidth: 54, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: cfg.dot, backgroundColor: cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
-                      <Text style={{ fontWeight: '800', fontSize: 13, color: cfg.dot }}>{plot.number}</Text>
+                      style={{ minWidth: 54, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
+                      <Text style={{ fontWeight: '800', fontSize: 13, color: isSel ? '#fff' : cfg.dot }}>{isSel ? `✓ ${plot.number}` : plot.number}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -212,25 +231,33 @@ export default function ClosureViewerScreen({ navigation, route }) {
         )}
       </ScrollView>
 
-      {selected && (
-        <UnitModal plot={selected} project={project} sv={sv} user={user} sources={sources}
-          onClose={() => setSelected(null)}
-          onBook={() => { setSelected(null); navigation.navigate('BookingForm', {
-            project: project?.id, plot: selected?.id, plotNumber: selected?.number,
-            projectName: project?.name, formulaSet: project?.formula_set,
-            lead: sv?.lead, client: sv?.lead_name, phone: sv?.lead_phone,
-          }); }}
-          onClosed={() => navigation.navigate(sv ? 'SalesSiteVisits' : 'SalesMyConversions')} />
+      {/* Multi-select action bar — books all selected plots in one booking. */}
+      {selPlots.length > 0 && (
+        <View style={{ position: 'absolute', left: 12, right: 12, bottom: 16, backgroundColor: COLORS.white, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, ...CARD_SHADOW }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>
+              {selPlots.length} plot{selPlots.length > 1 ? 's' : ''} selected{selArea > 0 ? ` · ${+selArea.toFixed(2)} area` : ''}
+            </Text>
+            <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>Plot {selPlots.map((p) => p.number).join(', ')}</Text>
+          </View>
+          <TouchableOpacity onPress={() => setSelectedIds([])} style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Clear</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={bookSelected} style={{ backgroundColor: COLORS.success, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 }}>
+            <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 14 }}>{sv ? 'Record Closure' : 'Book'} →</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
-      {/* Enlarged, pannable, tappable unit map */}
+      {/* Enlarged, pannable, tappable unit map — multi-select continues here */}
       <InteractiveMapModal
         visible={zoomMaster}
         uri={mapImage}
         zones={zones}
         plotByNumber={plotByNumber}
         isHidden={isHidden}
-        onPick={(plot) => { setZoomMaster(false); setSelected(plot); }}
+        selectedSet={selectedSet}
+        onPick={(plot) => pickPlot(plot)}
         onClose={() => setZoomMaster(false)}
       />
     </SafeAreaView>
@@ -357,7 +384,7 @@ function ZoomableImageModal({ visible, uri, onClose }) {
 
 /* ── Fullscreen INTERACTIVE map — enlarged, pannable, tappable zones ──
    Solves the "plots too small/congested to tap" problem on the inline map. */
-function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, onPick, onClose }) {
+function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, selectedSet, onPick, onClose }) {
   const { width: SW } = Dimensions.get('window');
   const [scale, setScale] = useState(2);
   const [nat, setNat] = useState({ w: 16, h: 10 });
@@ -369,7 +396,7 @@ function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, onPi
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onShow={() => setScale(2)}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.96)' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 10 }}>
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Tap an available unit</Text>
+          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Tap units to select</Text>
           <TouchableOpacity onPress={onClose}><Ionicons name="close-circle" size={34} color={COLORS.white} /></TouchableOpacity>
         </View>
         <ScrollView style={{ flex: 1 }} maximumZoomScale={4} minimumZoomScale={1} bouncesZoom
@@ -388,13 +415,17 @@ function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, onPi
                   const { cx, cy } = zoneCenter(zone);
                   const labelText = String(zone.plotNumber).replace(/^[^\d]+/, '') || String(zone.plotNumber);
                   const press = () => { if (plot.status === 'available') onPick(plot); };
+                  const isSel = selectedSet?.has(plot.id);
+                  const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
+                  const strokeC = isSel ? '#1A237E' : cfg.dot;
+                  const sw = isSel ? '0.9' : '0.5';
                   return (
                     <React.Fragment key={zone.id}>
                       {zone.points?.length
-                        ? <Polygon points={zone.points.map(p => `${p.x},${p.y}`).join(' ')} fill={cfg.dot + '99'} stroke={cfg.dot} strokeWidth="0.5" opacity={op} onPress={press} />
-                        : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={cfg.dot + '99'} stroke={cfg.dot} strokeWidth="0.5" opacity={op} onPress={press} />
+                        ? <Polygon points={zone.points.map(p => `${p.x},${p.y}`).join(' ')} fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
+                        : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
                       }
-                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.4" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{labelText}</SvgText>
+                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.4" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{isSel ? `✓${labelText}` : labelText}</SvgText>
                     </React.Fragment>
                   );
                 })}

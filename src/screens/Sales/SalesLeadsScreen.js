@@ -180,7 +180,7 @@ function fmtDateTime(iso) {
 }
 
 /* ── Lead Detail Modal ── */
-function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated }) {
+function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated, navigation }) {
   const user = useSelector((s) => s.auth.user);
   // Only admins/managers may (re)assign telecaller / STM. Telecaller & Sales Executive
   // portals can update status & remarks but cannot reassign leads.
@@ -211,14 +211,10 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const [svRemarks,  setSvRemarks]  = useState('');
   const [showSvDate, setShowSvDate] = useState(false);
   const [showSvTime, setShowSvTime] = useState(false);
-  // Inline "record closure" when STM sets stm_status = closed
-  const emptyClosure = () => ({ closure_date: new Date(), unit_no: '', unit_type: '', booking_amount: '', total_amount: '', remarks: '' });
-  const [closureForm, setClosureForm] = useState(emptyClosure);
-  const [showClosureDate, setShowClosureDate] = useState(false);
 
   useEffect(() => {
     if (lead) {
-      setSvAt(null); setSvRemarks(''); setClosureForm(emptyClosure());
+      setSvAt(null); setSvRemarks('');
       setForm({
         name:              lead.name            || '',
         phone:             lead.phone           || '',
@@ -256,7 +252,12 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   async function save() {
     setSaving(true);
     try {
-      const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(form) });
+      // "closed" is NOT persisted from the dropdown — a lead only becomes CLOSED
+      // when its booking is approved (backend sets stm_status='closed' on approval).
+      // Picking "closed" just routes the STM into the booking flow below.
+      const body = { ...form };
+      if (body.stm_status === 'closed') delete body.stm_status;
+      const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
 
@@ -298,24 +299,15 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
           } catch (_) {}
         }
 
-        // STM marked closed → record a closure (only on transition into closed, with an amount)
-        if (form.stm_status === 'closed' && lead.stm_status !== 'closed' && closureForm.booking_amount) {
-          try {
-            const latestSv = (detail?.site_visits || []).slice()
-              .sort((a, b) => new Date(b.visited_at || b.scheduled_at || b.created_at) - new Date(a.visited_at || a.scheduled_at || a.created_at))[0];
-            const cd = closureForm.closure_date instanceof Date ? closureForm.closure_date : new Date();
-            await apiFetch(SALES_ENDPOINTS.closures, {
-              method: 'POST',
-              body: JSON.stringify({
-                lead: lead.id, site_visit: latestSv?.id || null, project: form.project || null,
-                stm: form.stm || user?.id, referred_by_telecaller: form.telecaller || null,
-                status: 'booked', closure_date: cd.toISOString().slice(0, 10),
-                unit_no: closureForm.unit_no, unit_type: closureForm.unit_type,
-                booking_amount: closureForm.booking_amount, total_amount: closureForm.total_amount || null,
-                remarks: closureForm.remarks || '',
-              }),
-            });
-          } catch (_) {}
+        // STM marked closed → save the lead, then jump into the booking flow with
+        // this lead prefilled (pick plot(s) on the unit map → record the booking).
+        if (form.stm_status === 'closed') {
+          onUpdated(updated); onClose();
+          const sv = { lead: lead.id, lead_name: form.name || lead.name, lead_phone: form.phone || lead.phone };
+          if (form.project) navigation?.navigate('ClosureViewer', { projectId: form.project, sv });
+          else navigation?.navigate('ClosureProjects', { sv });
+          setSaving(false);
+          return;
         }
 
         onUpdated(updated); onClose();
@@ -397,7 +389,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             </View>
             <TouchableOpacity onPress={save} disabled={saving}
               style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 10, opacity: saving ? 0.6 : 1 }}>
-              {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Save</Text>}
+              {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>{form.stm_status === 'closed' ? 'Record Closure →' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
 
@@ -647,70 +639,14 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
               )}
 
-              {/* Inline closure recording when STM picks "closed" */}
+              {/* STM picked "closed" → saving routes into the booking flow with this
+                  lead prefilled; the lead becomes CLOSED only when the booking is approved. */}
               {form.stm_status === 'closed' && (
-                <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 12 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <Ionicons name="checkmark-circle-outline" size={14} color="#15803D" />
-                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 }}>RECORD CLOSURE</Text>
-                  </View>
-
-                  <Text style={[lblS, { color: '#166534' }]}>Closure Date *</Text>
-                  <TouchableOpacity onPress={() => setShowClosureDate(true)} style={{ borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
-                    <Ionicons name="calendar-outline" size={16} color={BLUE} />
-                    <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{(closureForm.closure_date instanceof Date ? closureForm.closure_date : new Date()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
-                  </TouchableOpacity>
-
-                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[lblS, { color: '#166534' }]}>Unit No.</Text>
-                      <TextInput value={closureForm.unit_no} onChangeText={v => setClosureForm({ ...closureForm, unit_no: v })} placeholder="A-101" placeholderTextColor={COLORS.shadow} style={inpS} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[lblS, { color: '#166534' }]}>Unit Type</Text>
-                      <TextInput value={closureForm.unit_type} onChangeText={v => setClosureForm({ ...closureForm, unit_type: v })} placeholder="2BHK" placeholderTextColor={COLORS.shadow} style={inpS} />
-                    </View>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[lblS, { color: '#166534' }]}>Booking Amount *</Text>
-                      <TextInput value={closureForm.booking_amount} onChangeText={v => setClosureForm({ ...closureForm, booking_amount: v })} keyboardType="numeric" placeholder="₹" placeholderTextColor={COLORS.shadow} style={inpS} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[lblS, { color: '#166534' }]}>Total Amount</Text>
-                      <TextInput value={closureForm.total_amount} onChangeText={v => setClosureForm({ ...closureForm, total_amount: v })} keyboardType="numeric" placeholder="₹" placeholderTextColor={COLORS.shadow} style={inpS} />
-                    </View>
-                  </View>
-
-                  <Text style={[lblS, { color: '#166534', marginTop: 8 }]}>Remarks</Text>
-                  <TextInput value={closureForm.remarks} onChangeText={v => setClosureForm({ ...closureForm, remarks: v })} placeholder="Notes…" placeholderTextColor={COLORS.shadow} style={inpS} />
-
-                  {lead.stm_status === 'closed'
-                    ? <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>This lead is already closed — a closure was recorded earlier.</Text>
-                    : !closureForm.booking_amount && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Enter the booking amount to record a closure automatically on save.</Text>}
-
-                  {/* iOS date picker */}
-                  {Platform.OS === 'ios' && showClosureDate && (
-                    <Modal transparent animationType="slide" onRequestClose={() => setShowClosureDate(false)}>
-                      <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowClosureDate(false)}>
-                        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
-                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-                            <TouchableOpacity onPress={() => setShowClosureDate(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
-                            <Text style={{ fontWeight: '700', color: TEXT }}>Closure Date</Text>
-                            <TouchableOpacity onPress={() => setShowClosureDate(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
-                          </View>
-                          <DateTimePicker value={closureForm.closure_date instanceof Date ? closureForm.closure_date : new Date()} mode="date" display="spinner" textColor={TEXT}
-                            onChange={(_, d) => { if (d) setClosureForm({ ...closureForm, closure_date: d }); }} />
-                        </View>
-                      </TouchableOpacity>
-                    </Modal>
-                  )}
-                  {/* Android date picker */}
-                  {Platform.OS === 'android' && showClosureDate && (
-                    <DateTimePicker value={closureForm.closure_date instanceof Date ? closureForm.closure_date : new Date()} mode="date" display="default"
-                      onChange={(e, d) => { setShowClosureDate(false); if (e.type === 'dismissed') return; if (d) setClosureForm({ ...closureForm, closure_date: d }); }} />
-                  )}
+                <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="checkmark-circle-outline" size={16} color="#15803D" />
+                  <Text style={{ fontSize: 12, color: '#166534', fontWeight: '600', flex: 1 }}>
+                    Saving takes you to the booking flow — pick the plot(s) and record the booking for this lead.
+                  </Text>
                 </View>
               )}
               </>)}
@@ -1668,7 +1604,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
       )}
 
       <LeadDetailModal lead={selectedLead} projects={projects} sources={sources} telecallers={telecallers} stms={stms}
-        visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} />
+        visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} navigation={navigation} />
       <CreateLeadModal projects={projects} sources={sources} telecallers={telecallers} stms={stms} cps={cps}
         visible={createModal} onClose={() => setCreateModal(false)} onCreated={l => setLeads(prev => [l, ...prev])} />
     </SafeAreaView>

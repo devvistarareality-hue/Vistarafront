@@ -25,7 +25,9 @@ export default function BookingFormScreen({ navigation, route }) {
   const p = route?.params || {};
   const reviseId = p.revise || '';
   const [projectId, setProjectId] = useState(p.project ? String(p.project) : '');
-  const [plotId, setPlotId] = useState(p.plot ? String(p.plot) : '');
+  // Multi-plot: `plots` route param is a comma list of ids; fall back to single `plot`.
+  const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
+  const plotId = plotIds[0] || '';
   const leadId = p.lead || '';
 
   const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
@@ -60,11 +62,17 @@ export default function BookingFormScreen({ navigation, route }) {
       setProject(pr); setF((s) => ({ ...s, area_unit: pr.formula_set === 'kalrav' ? 'sq.yd' : 'sq.ft' }));
     }).catch(() => {});
     if (projectId) apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}${cq('&')}`).then(r => r.json()).then((arr) => {
-      const pl = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(plotId));
-      if (pl) { setPlotNo(pl.number); setF((s) => ({ ...s, area: (pl.size || '').replace(/[^\d.]/g, '') })); }
+      const all = Array.isArray(arr) ? arr : [];
+      // Resolve every selected plot (preserve order) and sum their areas.
+      const picked = plotIds.map((pid) => all.find((x) => String(x.id) === String(pid))).filter(Boolean);
+      if (picked.length) {
+        setPlotNo(picked.map((x) => x.number).join(', '));
+        const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
+        setF((s) => ({ ...s, area: sumArea ? String(+sumArea.toFixed(2)) : s.area }));
+      }
     }).catch(() => {});
     apiFetch(SALES_ENDPOINTS.sources + cq('?')).then(r => r.json()).then((d) => setSources(Array.isArray(d) ? d : [])).catch(() => {});
-  }, [projectId, plotId, companyId]);
+  }, [projectId, plotIds.join(','), companyId]);
 
   // Revision prefill
   useEffect(() => {
@@ -72,7 +80,8 @@ export default function BookingFormScreen({ navigation, route }) {
     apiFetch(SALES_ENDPOINTS.bookings + cq('?')).then(r => r.json()).then((arr) => {
       const b = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(reviseId));
       if (!b) return;
-      setProjectId(String(b.project)); setPlotId(String(b.plot || ''));
+      setProjectId(String(b.project));
+      setPlotIds(((b.plot_ids && b.plot_ids.length ? b.plot_ids : [b.plot]).filter(Boolean)).map(String));
       setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: b.source || '',
         area: b.area || '', area_unit: b.area_unit || 'sq.yd', const_area: b.const_area || '', villa_type: b.villa_type || '',
         land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
@@ -196,7 +205,7 @@ export default function BookingFormScreen({ navigation, route }) {
     if (!loiFile) { setMsg('Generate the LOI, get it signed, and attach it before submitting.'); return; }
     setSaving(true); setMsg('');
     const payload = {
-      project: projectId, plot: plotId, lead: leadId || undefined,
+      project: projectId, plot: plotId, plot_ids: plotIds, lead: leadId || undefined,
       client_name: f.client_name.trim(), gender: f.gender, phone: f.phone.trim(), address: f.address, source: f.source,
       formula_set: formulaSet, area: f.area, area_unit: f.area_unit, const_area: f.const_area || '0',
       villa_type: flags.bunglowTypeIsDropdown ? f.villa_type : '', bunglow_type: flags.bunglowTypeFixed || '',
@@ -234,7 +243,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? 'Revise Booking' : 'Book Unit'} {plotNo}</Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? 'Revise Booking' : (plotIds.length > 1 ? 'Book Units' : 'Book Unit')} {plotNo}</Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{project?.name || '…'} · {formulaSet.toUpperCase()}</Text>
         </View>
       </View>
