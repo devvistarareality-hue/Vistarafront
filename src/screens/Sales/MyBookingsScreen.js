@@ -32,7 +32,7 @@ export function MyBookingsList({ navigation }) {
   const groups = {};
   rows.forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
-  projectNames.forEach((pn) => groups[pn].sort((a, b) => String(a.plot_number || a.area).localeCompare(String(b.plot_number || b.area))));
+  projectNames.forEach((pn) => groups[pn].sort((a, b) => String(a.plot_numbers || a.plot_number || a.area).localeCompare(String(b.plot_numbers || b.plot_number || b.area))));
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
@@ -47,7 +47,7 @@ export function MyBookingsList({ navigation }) {
             <View key={b.id} style={[CARD, { marginBottom: 10 }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Plot {b.plot_number || b.area}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Plot {b.plot_numbers || b.plot_number || b.area}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
                   <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.client_name || '—'} · {b.phone}</Text>
                   <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>Booked {b.booking_date || '—'}</Text>
                 </View>

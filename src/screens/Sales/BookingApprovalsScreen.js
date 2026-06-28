@@ -120,7 +120,7 @@ export default function BookingApprovalsScreen({ navigation }) {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{b.client_name || '—'}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
-                <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.phone} · {b.project_name} · Unit {b.plot_number || b.area}</Text>
+                <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.phone} · {b.project_name} · Unit {b.plot_numbers || b.plot_number || b.area}</Text>
                 <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>STM: {b.stm_name || '—'} · {b.booking_date || '—'}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
