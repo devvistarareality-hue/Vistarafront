@@ -457,9 +457,10 @@ export default function BookingFormScreen({ navigation, route }) {
           <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Generate → print/sign → capture pages or attach the signed copy → Submit.</Text>
         </Sec>
 
-        {!!msg && <View style={{ padding: 12, borderRadius: 8, backgroundColor: msg[0] === '✅' ? COLORS.successBg : COLORS.errorBg, marginBottom: 12 }}>
-          <Text style={{ color: msg[0] === '✅' ? COLORS.success : COLORS.error, fontSize: 13 }}>{msg}</Text>
-        </View>}
+        {!!msg && (() => { const ok = msg[0] === '✅' || msg[0] === '📎'; return (
+        <View style={{ padding: 12, borderRadius: 8, backgroundColor: ok ? COLORS.successBg : COLORS.errorBg, marginBottom: 12 }}>
+          <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}>{msg}</Text>
+        </View>); })()}
         <TouchableOpacity onPress={submit} disabled={saving} style={{ backgroundColor: COLORS.navy, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}
         </TouchableOpacity>
