@@ -459,7 +459,14 @@ function MetaTab() {
         <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT, marginBottom: 12 }}>Add Mapping</Text>
         <TextInput
           value={mapFormId}
-          onChangeText={setMapFormId}
+          onChangeText={(id) => {
+            setMapFormId(id);
+            // Auto-fill the label from the matching connected form's name.
+            const t = (id || '').trim();
+            let nm = '';
+            for (const pg of (cfg?.pages_data || [])) { const f = (pg.forms || []).find(x => String(x.id) === t); if (f) { nm = f.name || ''; break; } }
+            if (nm) setMapFormName(nm);
+          }}
           placeholder="Form ID (e.g. 1234567890)"
           keyboardType="numeric"
           style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 11, fontSize: 13, color: TEXT, backgroundColor: BG, marginBottom: 10 }}
