@@ -79,6 +79,8 @@ export const SALES_ENDPOINTS = {
   get plotsRenameType() { return `${BASE_URL}/api/sales/plots/rename-type/`; },
   plot: (id)            => `${BASE_URL}/api/sales/plots/${id}/`,
   get userProjects()    { return `${BASE_URL}/api/sales/user-projects/`; },
+  get mediaUpload()     { return `${BASE_URL}/api/sales/media/upload/`; },
+  get mediaDelete()     { return `${BASE_URL}/api/sales/media/delete/`; },
   source: (id)          => `${BASE_URL}/api/sales/sources/${id}/`,
   get metaWebhookConfig(){ return `${BASE_URL}/api/sales/webhooks/meta/config/`; },
   get metaMappings()    { return `${BASE_URL}/api/sales/webhooks/meta/mappings/`; },

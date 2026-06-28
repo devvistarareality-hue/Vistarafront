@@ -1,63 +1,43 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { FileSystemUploadType } from 'expo-file-system/legacy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SALES_ENDPOINTS } from '../constants/api';
 
-const SUPABASE_URL  = 'https://lftvumbhogcixihjydwx.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmdHZ1bWJob2djaXhpaGp5ZHd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2OTE1MDMsImV4cCI6MjA5NzI2NzUwM30.BXi352GOwxIJDEafjZD-fLFE-SwcmmAFZCCiPX9sNTg';
-const BUCKET = 'erp-media';
-
+// Uploads now go through the backend (service-role key) instead of the public anon
+// key, so the Supabase anon INSERT policy can be revoked. Returns the public URL.
 export async function uploadToSupabase(fileUri, mimeType = 'image/jpeg', folder = 'erp/media') {
-  const ext  = fileUri.split('.').pop().split('?')[0].toLowerCase() || 'jpg';
-  const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-  const path = `${folder}/${filename}`;
-
-  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`;
+  const token = await AsyncStorage.getItem('access_token');
+  const headers = { Authorization: `Bearer ${token}` };
+  const ext = fileUri.split('.').pop().split('?')[0].toLowerCase() || 'jpg';
+  const filename = `upload_${Date.now()}.${ext}`;
 
   const isRemote = /^(https?:|blob:|data:)/i.test(fileUri);
   if (isRemote) {
-    const response = await fetch(fileUri);
-    const blob     = await response.blob();
-
-    const res = await fetch(uploadUrl, {
-      method:  'POST',
-      headers: {
-        Authorization:  `Bearer ${SUPABASE_ANON}`,
-        apikey:         SUPABASE_ANON,
-        'Content-Type': mimeType,
-      },
-      body: blob,
-    });
-
+    // Remote/blob source → multipart via fetch (RN reads the uri).
+    const fd = new FormData();
+    fd.append('file', { uri: fileUri, name: filename, type: mimeType });
+    fd.append('folder', folder);
+    const res = await fetch(SALES_ENDPOINTS.mediaUpload, { method: 'POST', headers, body: fd });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `Upload failed (${res.status})`);
+      throw new Error(err.detail || `Upload failed (${res.status})`);
     }
-
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+    return (await res.json()).url;
   }
 
-  // For Expo mobile / local files, use native uploadAsync.
-  const uploadOptions = {
+  // Local file → native multipart upload to the backend.
+  const result = await FileSystem.uploadAsync(SALES_ENDPOINTS.mediaUpload, fileUri, {
     httpMethod: 'POST',
-    headers: {
-      Authorization: `Bearer ${SUPABASE_ANON}`,
-      apikey: SUPABASE_ANON,
-    },
+    headers,
     fieldName: 'file',
     mimeType,
     uploadType: FileSystemUploadType.MULTIPART,
-  };
-
-  const result = await FileSystem.uploadAsync(uploadUrl, fileUri, uploadOptions);
+    parameters: { folder },
+  });
   if (result.status < 200 || result.status >= 300) {
     let message = `Upload failed (${result.status})`;
-    try {
-      const body = JSON.parse(result.body || '{}');
-      if (body.message) message = body.message;
-    } catch {
-      // ignore parse errors
-    }
+    try { const b = JSON.parse(result.body || '{}'); if (b.detail) message = b.detail; } catch {}
     throw new Error(message);
   }
-
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+  return JSON.parse(result.body).url;
 }
