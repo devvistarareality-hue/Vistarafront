@@ -115,7 +115,8 @@ export default function BookingFormScreen({ navigation, route }) {
   const pctTotal = insts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
   const ewBase = parseFloat(ew.amt) || 0;
   const ewPctTotal = ewInsts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
-  const unit = flags.areaUnit;
+  // Area unit follows the STM's toggle (relabel only); defaults to the project's native unit.
+  const unit = f.area_unit || flags.areaUnit;
   const inr = (n) => Number(n || 0).toLocaleString('en-IN');
   const extraSub = formulaSet === 'ankhol' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal + Premium'
     : formulaSet === 'industrial' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal'
@@ -173,9 +174,10 @@ export default function BookingFormScreen({ navigation, route }) {
       clientName: f.client_name, phoneNumber: f.phone, gender: f.gender, address: f.address,
       project: project?.name, plotNo: plotNo, bookingDate: f.booking_date,
       villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: me?.name,
+      areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
-      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms() });
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit });
       const { uri } = await Print.printToFileAsync({ html });
       // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
@@ -257,6 +259,7 @@ export default function BookingFormScreen({ navigation, route }) {
         </Sec>
 
         <Sec title="Plot & Type">
+          <Pick l="Area Unit" val={f.area_unit} on={(x) => { if (x) set('area_unit', x); }} opts={['sq.yd', 'sq.ft', 'sq.m']} />
           <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" />
           {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
           {flags.bunglowTypeIsDropdown && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}

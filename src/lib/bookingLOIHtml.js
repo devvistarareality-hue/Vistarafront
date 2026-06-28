@@ -14,7 +14,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const isEOI = meta.plotNo && meta.plotNo.toString().trim().toUpperCase().indexOf('EOI') === 0;
   const isAnkhol = fs === 'ankhol', isIndustrial = fs === 'industrial';
   const isTundav = isIndustrial && projName.trim().toLowerCase() === 'tundav';
-  const areaUnit = (isAnkhol || isIndustrial) ? 'sq.ft.' : 'sq.yd.';
+  // Honour the booking form's unit toggle; fall back to the formula default.
+  const chosenUnit = opts.areaUnit || meta.areaUnit || '';
+  const areaUnit = chosenUnit === 'sq.m' ? 'sq.mtr'
+    : chosenUnit ? chosenUnit + '.'
+    : (isAnkhol || isIndustrial) ? 'sq.ft.' : 'sq.yd.';
   const rateUnit = areaUnit.replace('.', '');  // sqft. / sqyd.
   const docType = isEOI ? 'Expression of Interest' : 'Letter of Intent';
   let title = isEOI ? 'EXPRESSION OF INTEREST' : 'LETTER OF INTENT';
@@ -34,7 +38,8 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   if (isIndustrial) {
     const sqm = v.area > 0 ? (v.area / 10.764).toFixed(2) + ' sq.mtr' : '—';
     details = [['Client Phone', meta.phoneNumber], ['Booking Date', fmtDate(meta.bookingDate)], ['Project', meta.project], ['Plot No', meta.plotNo],
-      ['Plot Area (sq.ft)', v.area + ' sq.ft.'], ['Plot Area (sq.mtr)', sqm], ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Address', meta.address || '—']];
+      ...((chosenUnit && chosenUnit !== 'sq.ft') ? [['Plot Area', v.area + ' ' + areaUnit]] : [['Plot Area (sq.ft)', v.area + ' sq.ft.'], ['Plot Area (sq.mtr)', sqm]]),
+      ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Address', meta.address || '—']];
   } else {
     details = [['Client Phone', meta.phoneNumber], ['Booking Date', fmtDate(meta.bookingDate)], ['Project', meta.project], ['Plot No', meta.plotNo],
       ['Plot Area', v.area + ' ' + areaUnit], ['Construction Area', v.constArea + ' ' + areaUnit],
@@ -45,7 +50,8 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // ── Pricing ──
   let pricing;
   if (isIndustrial) {
-    pricing = [['Land Rate', 'Rs. ' + num(v.landRate) + ' / sq.ft'], ['Sale Deed Rate', 'Rs. ' + num(v.saleDeedRate) + ' / sq.ft']];
+    const landUnit = (chosenUnit && chosenUnit !== 'sq.ft') ? rateUnit : 'sq.ft';
+    pricing = [['Land Rate', 'Rs. ' + num(v.landRate) + ' / ' + landUnit], ['Sale Deed Rate', 'Rs. ' + num(v.saleDeedRate) + ' / sq.ft']];
     if (!isTundav) pricing.push(['Dev Agreement Rate', 'Rs. ' + num(v.devAgreementRate) + ' / sq.ft']);
     pricing.push(['Discount', 'Rs. ' + num(v.discount)]);
   } else {
