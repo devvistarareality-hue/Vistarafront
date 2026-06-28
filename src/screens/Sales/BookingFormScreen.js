@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -184,9 +186,65 @@ export default function BookingFormScreen({ navigation, route }) {
       const dest = FileSystem.cacheDirectory + name;
       try { await FileSystem.deleteAsync(dest, { idempotent: true }); } catch (e) {}
       await FileSystem.copyAsync({ from: uri, to: dest });
-      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(dest, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
-      else await Print.printAsync({ uri: dest });
+      await downloadLoi(dest, name);
     } catch (e) { setMsg('LOI error: ' + e.message); }
+  }
+
+  // Save the generated PDF to the phone. On Android, write to a folder the user
+  // picks once (e.g. Downloads) via the Storage Access Framework — silent after
+  // that. iOS has no public Downloads folder, so use the share/Save-to-Files sheet.
+  async function downloadLoi(srcUri, name) {
+    if (Platform.OS === 'android') {
+      try {
+        const SAF = FileSystem.StorageAccessFramework;
+        let dirUri = await AsyncStorage.getItem('loi_download_dir');
+        if (!dirUri) {
+          const perm = await SAF.requestDirectoryPermissionsAsync();
+          if (perm.granted) { dirUri = perm.directoryUri; await AsyncStorage.setItem('loi_download_dir', dirUri); }
+        }
+        if (dirUri) {
+          const b64 = await FileSystem.readAsStringAsync(srcUri, { encoding: FileSystem.EncodingType.Base64 });
+          const fileUri = await SAF.createFileAsync(dirUri, name.replace(/\.pdf$/i, ''), 'application/pdf');
+          await FileSystem.writeAsStringAsync(fileUri, b64, { encoding: FileSystem.EncodingType.Base64 });
+          setMsg('✅ LOI downloaded to your phone.');
+          return;
+        }
+      } catch (e) { await AsyncStorage.removeItem('loi_download_dir'); /* fall through to share */ }
+    }
+    if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(srcUri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
+    else await Print.printAsync({ uri: srcUri });
+  }
+
+  // Capture the signed LOI as multiple photos (3+ pages), then merge them into a
+  // single PDF that's attached and uploaded to Supabase on Submit.
+  async function captureLoi() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) { Alert.alert('Camera access needed', 'Allow camera access to capture the signed LOI.'); return; }
+    capturePage([]);
+  }
+  async function capturePage(pages) {
+    try {
+      const res = await ImagePicker.launchCameraAsync({ quality: 0.6, base64: true });
+      if (res.canceled || !res.assets?.[0]?.base64) { if (pages.length) finishCapture(pages); return; }
+      const imgs = [...pages, res.assets[0].base64];
+      Alert.alert(`Page ${imgs.length} captured`, 'Capture another page or finish?', [
+        { text: 'Finish', onPress: () => finishCapture(imgs) },
+        { text: 'Capture next page', onPress: () => capturePage(imgs) },
+      ]);
+    } catch (e) { setMsg('Capture failed: ' + e.message); }
+  }
+  async function finishCapture(imgs) {
+    if (!imgs.length) return;
+    try {
+      setMsg('Building PDF…');
+      const html = `<html><body style="margin:0;padding:0">${imgs.map(b =>
+        `<img src="data:image/jpeg;base64,${b}" style="width:100%;display:block;page-break-after:always" />`).join('')}</body></html>`;
+      const { uri } = await Print.printToFileAsync({ html });
+      const data = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      const name = `LOI_signed_${(f.client_name || '').trim().replace(/\s+/g, '_') || 'capture'}.pdf`;
+      setLoiFile({ name, type: 'application/pdf', data });
+      setMsg(`📎 Captured ${imgs.length} page(s) → attached as PDF`);
+    } catch (e) { setMsg('PDF build failed: ' + e.message); }
   }
 
   async function pickLoi() {
@@ -374,12 +432,15 @@ export default function BookingFormScreen({ navigation, route }) {
 
         <Sec title="LOI Document">
           <TouchableOpacity onPress={genLoi} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📄 Generate LOI (Print / Share)</Text>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📄 Generate LOI (Download)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.success, borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📷 Capture signed LOI (multi-page → PDF)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={pickLoi} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 10, padding: 14, alignItems: 'center' }}>
             <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}>📎 {loiFile ? loiFile.name : 'Attach signed LOI (image / PDF)'}</Text>
           </TouchableOpacity>
-          <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Generate → print/sign → attach the signed copy.</Text>
+          <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Generate → print/sign → capture pages or attach the signed copy → Submit.</Text>
         </Sec>
 
         {!!msg && <View style={{ padding: 12, borderRadius: 8, backgroundColor: msg[0] === '✅' ? COLORS.successBg : COLORS.errorBg, marginBottom: 12 }}>
