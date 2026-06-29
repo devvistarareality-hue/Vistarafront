@@ -220,6 +220,7 @@ function MetaTab() {
       if (res.ok) {
         setMappings(prev => { const idx = prev.findIndex(m => m.form_id === d.form_id); return idx >= 0 ? prev.map((m, i) => i === idx ? d : m) : [...prev, d]; });
         setMapFormId(''); setMapFormName(''); setMapProject(''); setProjOpen(false);
+        Alert.alert('Mapping saved', d.backfilled ? `${d.backfilled} existing lead(s) updated to ${d.project_name}.` : `Mapped to ${d.project_name}.`);
       }
     } catch (_) {}
     setMapSaving(false);
