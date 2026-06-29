@@ -307,7 +307,11 @@ export default function BookingFormScreen({ navigation, route }) {
     };
     try {
       const res = await apiFetch(SALES_ENDPOINTS.bookings + cq('?'), { method: 'POST', body: JSON.stringify(payload) });
-      if (res.ok) { setMsg('✅ Booking saved.'); setTimeout(() => navigation.goBack(), 1000); }
+      if (res.ok) {
+        Alert.alert('Booking submitted ✅', 'Your booking has been submitted and sent for approval.', [
+          { text: 'OK', onPress: () => navigation.navigate('ClosureProjects') },
+        ]);
+      }
       else setMsg('Error: ' + JSON.stringify(await res.json().catch(() => ({}))));
     } catch (e) { setMsg(e.message); }
     setSaving(false);
