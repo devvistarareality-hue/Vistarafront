@@ -249,8 +249,16 @@ export default function BookingFormScreen({ navigation, route }) {
     if (!imgs.length) return;
     try {
       setMsg('Building PDF…');
-      const html = `<html><body style="margin:0;padding:0">${imgs.map(b =>
-        `<img src="data:image/jpeg;base64,${b}" style="width:100%;display:block;page-break-after:always" />`).join('')}</body></html>`;
+      // One image per page: a full-page flex box centers each photo and scales it to
+      // fit (object-fit:contain), so tall photos don't overflow onto a second page.
+      const html = `<html><head><meta charset="utf-8"><style>
+        @page { margin: 0; }
+        html, body { margin: 0; padding: 0; }
+        .pg { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; page-break-after: always; }
+        .pg:last-child { page-break-after: auto; }
+        .pg img { max-width: 100%; max-height: 100%; object-fit: contain; }
+      </style></head><body>${imgs.map(b =>
+        `<div class="pg"><img src="data:image/jpeg;base64,${b}"/></div>`).join('')}</body></html>`;
       const { uri } = await Print.printToFileAsync({ html });
       const data = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
       const name = `LOI_signed_${(f.client_name || '').trim().replace(/\s+/g, '_') || 'capture'}.pdf`;
