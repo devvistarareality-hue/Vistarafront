@@ -192,8 +192,8 @@ export default function SalesReportsScreen({ navigation }) {
                           {c.project_name}{c.stm_name ? ` · STM: ${c.stm_name}` : ''}
                         </Text>
                       </View>
-                      {c.booking_amount ? (
-                        <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.success }}>{fmt(c.booking_amount)}</Text>
+                      {(c.total_amount || c.booking_amount) ? (
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.success }}>{fmt(c.total_amount || c.booking_amount)}</Text>
                       ) : null}
                     </View>
                     <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>
