@@ -132,11 +132,11 @@ export default function SalesCRMScreen({ navigation }) {
     { label: 'My Leads',      value: stats?.total_leads    ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
     { label: 'New Today',     value: stats?.leads_today    ?? '—', color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads' },
     { label: 'Called/MQL',   value: _called,                       color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
-    { label: 'Hot',           value: stats?.hot_count      ?? '—', color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { telecaller_status: 'hot' } } },
-    { label: 'Warm/SQL',      value: stats?.warm_count     ?? '—', color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { telecaller_status: 'warm' } } },
+    { label: 'Hot',           value: stats?.hot_count      ?? '—', color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'hot' } } },
+    { label: 'Warm/SQL',      value: stats?.warm_count     ?? '—', color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
     { label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesMyConversions' },
-    { label: 'Callback Due',  value: stats?.callback_count ?? '—', color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialFilter: { telecaller_status: 'callback' } } },
+    { label: 'Callback Due',  value: stats?.callback_count ?? '—', color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
     { label: 'Closures',      value: stats?.closures       ?? '—', color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
 
