@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { CommonActions } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
@@ -90,16 +91,18 @@ const BottomTabNavigator = () => {
         component={ModulesNavigator}
         options={{ tabBarLabel: 'Modules' }}
         listeners={({ navigation }) => ({
-          // Tapping the Modules tab always returns to the Modules list — even if a
-          // notification deep-linked into a child screen and left the stack deep
-          // (which otherwise showed a stale screen or a blank stack).
           tabPress: (e) => {
             try {
               const tab = (navigation.getState().routes || []).find((r) => r.name === 'Modules');
               const nested = tab && tab.state;
               if (nested && typeof nested.index === 'number' && nested.index > 0) {
                 e.preventDefault();
-                navigation.navigate('Modules', { screen: 'ModulesList' });
+                // Reset the Modules stack (not just navigate) so the back button
+                // on ModulesList has nothing behind it.
+                navigation.dispatch({
+                  ...CommonActions.reset({ index: 0, routes: [{ name: 'ModulesList' }] }),
+                  target: nested.key,
+                });
               }
             } catch (_) {}
           },
