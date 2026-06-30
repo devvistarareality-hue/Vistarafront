@@ -70,11 +70,14 @@ export default function SalesCRMScreen({ navigation }) {
   const [showFromPick, setShowFromPick] = useState(false);
   const [showToPick,   setShowToPick]   = useState(false);
 
-  useEffect(() => { loadStats(); }, [companyId, dateFrom, dateTo]);
+  useEffect(() => {
+    setStats(null);
+    setLoading(true);
+    loadStats();
+  }, [companyId, dateFrom, dateTo]);
 
   async function loadStats(refresh = false) {
-    if (refresh) setRefreshing(true);
-    else if (!stats) setLoading(true);
+    if (refresh) { setStats(null); setRefreshing(true); setLoading(true); }
 
     try {
       const params = new URLSearchParams();
