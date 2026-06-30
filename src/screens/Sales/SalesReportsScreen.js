@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -12,204 +13,195 @@ const BLUE = COLORS.link;
 const BG   = COLORS.screenBg;
 const TEXT = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
-
-function fmt(n) {
-  if (!n) return '₹0';
-  if (n >= 1e7) return `₹${(n / 1e7).toFixed(2)} Cr`;
-  if (n >= 1e5) return `₹${(n / 1e5).toFixed(2)} L`;
-  return `₹${Number(n).toLocaleString('en-IN')}`;
-}
-
-function SectionTitle({ title }) {
-  return <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 10, marginTop: 4 }}>{title}</Text>;
-}
-
-function StatCard({ label, value, sub, color = BLUE }) {
-  return (
-    <View style={[CARD, { flex: 1, padding: 14, alignItems: 'center', minWidth: '28%' }]}>
-      <Text style={{ fontSize: 24, fontWeight: '800', color }}>{value ?? '—'}</Text>
-      <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600' }}>{label}</Text>
-      {sub ? <Text style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{sub}</Text> : null}
-    </View>
-  );
-}
-
-function PerformanceTable({ title, data = [], columns, nameKey = 'name' }) {
-  if (!data.length) return (
-    <View style={[CARD, { marginBottom: 16, padding: 14 }]}>
-      <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 8 }}>{title}</Text>
-      <Text style={{ fontSize: 12, color: MUTED, textAlign: 'center', paddingVertical: 12 }}>No data yet</Text>
-    </View>
-  );
-  return (
-    <View style={[CARD, { marginBottom: 16, overflow: 'hidden' }]}>
-      <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
-        <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>{title}</Text>
-      </View>
-      {data.map((row, i) => (
-        <View key={i} style={{ flexDirection: 'row', padding: 12, borderBottomWidth: i < data.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt, alignItems: 'center' }}>
-          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
-            <Text style={{ color: COLORS.white, fontSize: 11, fontWeight: '800' }}>{i + 1}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{row[nameKey] || '—'}</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
-              {columns.map(col => (
-                <Text key={col.key} style={{ fontSize: 11, color: MUTED }}>
-                  <Text style={{ fontWeight: '700', color: col.color || TEXT }}>{row[col.key] ?? 0}</Text> {col.label}
-                </Text>
-              ))}
-            </View>
-          </View>
-          {row.conversion_pct !== undefined && (
-            <View style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: COLORS.successBg }}>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.success }}>{row.conversion_pct}%</Text>
-            </View>
-          )}
-        </View>
-      ))}
-    </View>
-  );
-}
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
 
 export default function SalesReportsScreen({ navigation }) {
-  const [data,       setData]       = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
 
-  async function load(refresh = false) {
-    if (refresh) setRefreshing(true); else setLoading(true);
+  const fmtDate  = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const daysAgo  = (n) => { const d = new Date(); d.setDate(d.getDate() - n); d.setHours(0,0,0,0); return d; };
+
+  const [stats,        setStats]        = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [refreshing,   setRefreshing]   = useState(false);
+  const [dateFrom,     setDateFrom]     = useState(null);
+  const [dateTo,       setDateTo]       = useState(null);
+  const [showFilter,   setShowFilter]   = useState(false);
+  const [pendingFrom,  setPendingFrom]  = useState(null);
+  const [pendingTo,    setPendingTo]    = useState(null);
+  const [showFromPick, setShowFromPick] = useState(false);
+  const [showToPick,   setShowToPick]   = useState(false);
+
+  const openFilter  = () => { setPendingFrom(dateFrom); setPendingTo(dateTo); setShowFilter(true); };
+  const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setShowFilter(false); };
+  const clearFilter = () => { setPendingFrom(null); setPendingTo(null); };
+  const filterActive = !!(dateFrom || dateTo);
+
+  useEffect(() => {
+    let cancelled = false;
+    setStats(null);
+    setLoading(true);
+    (async () => {
+      try {
+        const params = new URLSearchParams();
+        if (dateFrom)  params.set('date_from',  fmtDate(dateFrom));
+        if (dateTo)    params.set('date_to',     fmtDate(dateTo));
+        if (companyId) params.set('company_id',  companyId);
+        const qs  = params.toString() ? `?${params}` : '';
+        const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
+        if (cancelled) return;
+        if (res.ok) { const data = await res.json(); if (!cancelled) setStats(data); }
+      } catch (_) {}
+      if (!cancelled) { setLoading(false); setRefreshing(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [companyId, dateFrom, dateTo]);
+
+  async function reload(refresh = false) {
+    if (refresh) { setStats(null); setRefreshing(true); setLoading(true); }
     try {
-      let url = SALES_ENDPOINTS.reports;
-      if (companyId) url += `?company_id=${companyId}`;
-      const res = await apiFetch(url);
-      if (res.ok) setData(await res.json());
+      const params = new URLSearchParams();
+      if (dateFrom)  params.set('date_from',  fmtDate(dateFrom));
+      if (dateTo)    params.set('date_to',     fmtDate(dateTo));
+      if (companyId) params.set('company_id',  companyId);
+      const qs  = params.toString() ? `?${params}` : '';
+      const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
+      if (res.ok) { const data = await res.json(); setStats(data); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
   }
 
-  useEffect(() => { load(); }, [companyId]);
+  const _called  = stats?.called_count ?? 0;
+  const _svDone  = stats?.sv_done      ?? 0;
+  const _mqlToSv = _called > 0 ? (_svDone / _called * 100).toFixed(1) + '%' : '—';
 
-  const summary   = data?.summary   || {};
-  // Team-performance tables are management-only; personal reports (STM/CP/
-  // telecaller) show just their own funnel + closures.
-  const teamView  = data?.team_view !== false;
-  const campaigns = data?.campaigns  || [];
-  const telecallers = data?.telecallers || [];
-  const stms      = data?.stms       || [];
-  const closures  = data?.closures   || [];
+  const STAT_CARDS = [
+    { label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
+    { label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
+    { label: 'Hot',          value: stats?.hot_count      ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'hot' } } },
+    { label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
+    { label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesMyConversions' },
+    { label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
+    { label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
+  ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+      {/* Header */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={NAVY} />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Reports</Text>
-        <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
+        <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: TEXT }}>Reports</Text>
+        <TouchableOpacity onPress={() => reload(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={openFilter} style={{ padding: 6, backgroundColor: filterActive ? NAVY : BG, borderWidth: 1, borderColor: filterActive ? NAVY : COLORS.border, borderRadius: 8 }}>
+          <Ionicons name="filter-outline" size={20} color={filterActive ? COLORS.white : NAVY} />
         </TouchableOpacity>
       </View>
 
-      {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={NAVY} />
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-
-          {/* Summary */}
-          <SectionTitle title="Summary" />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-            <StatCard label="Site Visits"  value={summary.total_sv}       color={BLUE} />
-            <StatCard label="Closures"     value={summary.total_closures}  color={COLORS.success} />
-            <StatCard label="Meta Leads"   value={summary.meta_leads}      color={COLORS.warning} />
+      {/* Filter Bottom Sheet */}
+      <Modal visible={showFilter} transparent animationType="slide" onRequestClose={() => setShowFilter(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={() => setShowFilter(false)} />
+        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Filter by Date</Text>
+            <TouchableOpacity onPress={() => setShowFilter(false)}>
+              <Ionicons name="close" size={22} color={MUTED} />
+            </TouchableOpacity>
           </View>
 
-          {/* Team-performance tables — management only */}
-          {teamView && (
-            <>
-              {/* Campaign performance */}
-              <SectionTitle title="Campaign Performance" />
-              <PerformanceTable
-                title="Meta / Ad Campaigns"
-                data={campaigns}
-                nameKey="meta_campaign_name"
-                columns={[
-                  { key: 'total', label: 'Leads',  color: BLUE },
-                  { key: 'sv',    label: 'SV',     color: COLORS.info },
-                  { key: 'closed', label: 'Closed', color: COLORS.success },
-                ]}
-              />
+          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Quick Select</Text>
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+            {[
+              { label: 'Today', from: today,       to: today },
+              { label: 'Week',  from: daysAgo(6),  to: today },
+              { label: 'Month', from: daysAgo(29), to: today },
+            ].map(({ label, from, to }) => {
+              const active = pendingFrom && pendingTo && fmtDate(pendingFrom) === fmtDate(from) && fmtDate(pendingTo) === fmtDate(to);
+              return (
+                <TouchableOpacity key={label} onPress={() => { setPendingFrom(from); setPendingTo(to); }}
+                  style={{ height: 36, paddingHorizontal: 20, borderRadius: 8, backgroundColor: active ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : MUTED }}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity onPress={clearFilter}
+              style={{ height: 36, paddingHorizontal: 20, borderRadius: 8, backgroundColor: !pendingFrom && !pendingTo ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: !pendingFrom && !pendingTo ? COLORS.white : MUTED }}>All</Text>
+            </TouchableOpacity>
+          </View>
 
-              {/* Telecaller performance */}
-              <SectionTitle title="Telecaller Performance" />
-              <PerformanceTable
-                title="Pre-sales"
-                data={telecallers}
-                nameKey="telecaller__name"
-                columns={[
-                  { key: 'total',       label: 'Leads',       color: BLUE },
-                  { key: 'warm',        label: 'Warm',        color: COLORS.warningAlt },
-                  { key: 'transferred', label: 'Transferred', color: COLORS.warning },
-                ]}
-              />
+          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Custom Range</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+            <TouchableOpacity onPress={() => setShowFromPick(true)}
+              style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
+            </TouchableOpacity>
+            <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
+            <TouchableOpacity onPress={() => setShowToPick(true)}
+              style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
+            </TouchableOpacity>
+          </View>
 
-              {/* STM performance */}
-              <SectionTitle title="STM Performance" />
-              <PerformanceTable
-                title="Sales"
-                data={stms}
-                nameKey="stm__name"
-                columns={[
-                  { key: 'total',   label: 'Leads',   color: BLUE },
-                  { key: 'hot',     label: 'Hot',     color: COLORS.warning },
-                  { key: 'sv_done', label: 'SV Done', color: COLORS.info },
-                  { key: 'closed',  label: 'Closed',  color: COLORS.success },
-                ]}
-              />
-            </>
-          )}
+          <TouchableOpacity onPress={applyFilter}
+            style={{ backgroundColor: NAVY, borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
+          </TouchableOpacity>
+        </View>
 
-          {/* Recent closures */}
-          {closures.length > 0 && (
-            <>
-              <SectionTitle title="Recent Closures" />
-              <View style={[CARD, { marginBottom: 16, overflow: 'hidden' }]}>
-                {closures.map((c, i) => (
-                  <View key={i} style={{ padding: 14, borderBottomWidth: i < closures.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{c.lead_name || '—'}</Text>
-                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-                          {c.project_name}{c.stm_name ? ` · STM: ${c.stm_name}` : ''}
-                        </Text>
-                      </View>
-                      {(c.total_amount || c.booking_amount) ? (
-                        <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.success }}>{fmt(c.total_amount || c.booking_amount)}</Text>
-                      ) : null}
-                    </View>
-                    <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>
-                      {c.closure_date ? new Date(c.closure_date).toLocaleDateString('en-IN') : ''}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          )}
+        {showFromPick && (
+          <DateTimePicker value={pendingFrom || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            maximumDate={pendingTo || new Date()}
+            onChange={(_, d) => { setShowFromPick(false); if (d) setPendingFrom(d); }} />
+        )}
+        {showToPick && (
+          <DateTimePicker value={pendingTo || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            minimumDate={pendingFrom || undefined} maximumDate={new Date()}
+            onChange={(_, d) => { setShowToPick(false); if (d) setPendingTo(d); }} />
+        )}
+      </Modal>
 
-          {!data && (
-            <Text style={{ color: MUTED, textAlign: 'center', marginTop: 40 }}>No report data available.</Text>
-          )}
-        </ScrollView>
-      )}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} colors={[NAVY]} tintColor={NAVY} />}>
+
+        {filterActive && (
+          <TouchableOpacity onPress={openFilter} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <Ionicons name="calendar-outline" size={13} color={BLUE} />
+            <Text style={{ fontSize: 12, color: BLUE, fontWeight: '600' }}>
+              {fmtLabel(dateFrom)} → {fmtLabel(dateTo)}
+            </Text>
+            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }} style={{ marginLeft: 2 }}>
+              <Ionicons name="close-circle" size={15} color={MUTED} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        )}
+
+        <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Overview</Text>
+
+        {loading ? (
+          <ActivityIndicator color={NAVY} style={{ marginVertical: 40 }} />
+        ) : (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            {STAT_CARDS.map(s => (
+              <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
+                onPress={() => s.target && navigation.navigate(s.target, s.params)}
+                style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
+                <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
+                <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600' }}>{s.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
