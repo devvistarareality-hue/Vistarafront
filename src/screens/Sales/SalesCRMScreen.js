@@ -57,16 +57,18 @@ export default function SalesCRMScreen({ navigation }) {
   const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp));
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
+  const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); d.setHours(0,0,0,0); return d; };
+
   const [stats,        setStats]        = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [refreshing,   setRefreshing]   = useState(false);
-  const [dateFrom,     setDateFrom]     = useState(new Date('2026-01-01'));
-  const [dateTo,       setDateTo]       = useState(new Date());
+  const [dateFrom,     setDateFrom]     = useState(null);
+  const [dateTo,       setDateTo]       = useState(null);
   const [showFromPick, setShowFromPick] = useState(false);
   const [showToPick,   setShowToPick]   = useState(false);
-
-  const fmtDate = (d) => d.toISOString().slice(0, 10);
-  const fmtLabel = (d) => d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
   useEffect(() => { loadStats(); }, [companyId, dateFrom, dateTo]);
 
@@ -75,9 +77,12 @@ export default function SalesCRMScreen({ navigation }) {
     else if (!stats) setLoading(true);
 
     try {
-      const params = new URLSearchParams({ date_from: fmtDate(dateFrom), date_to: fmtDate(dateTo) });
+      const params = new URLSearchParams();
+      if (dateFrom) params.set('date_from', fmtDate(dateFrom));
+      if (dateTo)   params.set('date_to',   fmtDate(dateTo));
       if (companyId) params.set('company_id', companyId);
-      const res = await apiFetch(`${SALES_ENDPOINTS.stats}?${params}`);
+      const qs = params.toString() ? `?${params}` : '';
+      const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
       if (res.ok) {
         const data = await res.json();
         setStats(data);
@@ -86,6 +91,11 @@ export default function SalesCRMScreen({ navigation }) {
     setLoading(false);
     setRefreshing(false);
   }
+
+  const isActiveRange = (from, to) => {
+    if (!dateFrom || !dateTo) return false;
+    return fmtDate(dateFrom) === fmtDate(from) && fmtDate(dateTo) === fmtDate(to);
+  };
 
   // Each card deep-links to its corresponding list (Projects only for admins,
   // who have that screen registered).
@@ -124,27 +134,48 @@ export default function SalesCRMScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadStats(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
         {/* Date Filter */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <Ionicons name="calendar-outline" size={15} color={MUTED} />
-          <TouchableOpacity onPress={() => setShowFromPick(true)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }}>{fmtLabel(dateFrom)}</Text>
-          </TouchableOpacity>
-          <Text style={{ fontSize: 12, color: MUTED }}>→</Text>
-          <TouchableOpacity onPress={() => setShowToPick(true)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }}>{fmtLabel(dateTo)}</Text>
-          </TouchableOpacity>
+        <View style={{ marginHorizontal: 16, marginTop: 14, marginBottom: 10, backgroundColor: COLORS.white, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt, padding: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Date</Text>
+            <TouchableOpacity onPress={() => setShowFromPick(true)}
+              style={{ height: 34, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center' }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: dateFrom ? TEXT : MUTED }}>{dateFrom ? fmtLabel(dateFrom) : 'From'}</Text>
+            </TouchableOpacity>
+            <Text style={{ fontSize: 12, color: MUTED }}>→</Text>
+            <TouchableOpacity onPress={() => setShowToPick(true)}
+              style={{ height: 34, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center' }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: dateTo ? TEXT : MUTED }}>{dateTo ? fmtLabel(dateTo) : 'To'}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Today', from: today,        to: today },
+              { label: 'Week',  from: daysAgo(6),   to: today },
+              { label: 'Month', from: daysAgo(29),  to: today },
+            ].map(({ label, from, to }) => {
+              const active = isActiveRange(from, to);
+              return (
+                <TouchableOpacity key={label} onPress={() => { setDateFrom(from); setDateTo(to); }}
+                  style={{ height: 32, paddingHorizontal: 16, borderRadius: 8, backgroundColor: active ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? COLORS.white : MUTED }}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }}
+              style={{ height: 32, paddingHorizontal: 16, borderRadius: 8, backgroundColor: !dateFrom && !dateTo ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: !dateFrom && !dateTo ? COLORS.white : MUTED }}>All</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {showFromPick && (
-          <DateTimePicker value={dateFrom} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
-            maximumDate={dateTo}
+          <DateTimePicker value={dateFrom || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            maximumDate={dateTo || new Date()}
             onChange={(_, d) => { setShowFromPick(false); if (d) setDateFrom(d); }} />
         )}
         {showToPick && (
-          <DateTimePicker value={dateTo} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
-            minimumDate={dateFrom} maximumDate={new Date()}
+          <DateTimePicker value={dateTo || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            minimumDate={dateFrom || undefined} maximumDate={new Date()}
             onChange={(_, d) => { setShowToPick(false); if (d) setDateTo(d); }} />
         )}
 
