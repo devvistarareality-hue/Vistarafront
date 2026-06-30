@@ -71,28 +71,42 @@ export default function SalesCRMScreen({ navigation }) {
   const [showToPick,   setShowToPick]   = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     setStats(null);
     setLoading(true);
-    loadStats();
+    (async () => {
+      try {
+        const params = new URLSearchParams();
+        if (dateFrom) params.set('date_from', fmtDate(dateFrom));
+        if (dateTo)   params.set('date_to',   fmtDate(dateTo));
+        if (companyId) params.set('company_id', companyId);
+        const qs = params.toString() ? `?${params}` : '';
+        const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setStats(data);
+        }
+      } catch (_) {}
+      if (!cancelled) { setLoading(false); setRefreshing(false); }
+    })();
+    return () => { cancelled = true; };
   }, [companyId, dateFrom, dateTo]);
 
   async function loadStats(refresh = false) {
-    if (refresh) { setStats(null); setRefreshing(true); setLoading(true); }
-
-    try {
-      const params = new URLSearchParams();
-      if (dateFrom) params.set('date_from', fmtDate(dateFrom));
-      if (dateTo)   params.set('date_to',   fmtDate(dateTo));
-      if (companyId) params.set('company_id', companyId);
-      const qs = params.toString() ? `?${params}` : '';
-      const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
-    } catch (e) {}
-    setLoading(false);
-    setRefreshing(false);
+    if (refresh) {
+      setStats(null); setRefreshing(true); setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (dateFrom) params.set('date_from', fmtDate(dateFrom));
+        if (dateTo)   params.set('date_to',   fmtDate(dateTo));
+        if (companyId) params.set('company_id', companyId);
+        const qs = params.toString() ? `?${params}` : '';
+        const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
+        if (res.ok) { const data = await res.json(); setStats(data); }
+      } catch (_) {}
+      setLoading(false); setRefreshing(false);
+    }
   }
 
   const isActiveRange = (from, to) => {
