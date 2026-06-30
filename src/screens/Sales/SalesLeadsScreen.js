@@ -1267,7 +1267,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const showTcStatus = isAdminMgr || isTelecaller;
   const showStmStatus= isAdminMgr || isStm || isCpAny;
   const showAssignees= isAdminMgr;
-  const [workTab, setWorkTab] = useState('pending'); // 'pending' | 'called' (callers only)
+  const [workTab, setWorkTab] = useState(route?.params?.initialWorkTab === 'called' ? 'called' : 'pending'); // 'pending' | 'called' (callers only)
   const [total,   setTotal]   = useState(0); // backend count for the current filter
 
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
