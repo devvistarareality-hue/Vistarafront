@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -65,10 +65,20 @@ export default function SalesCRMScreen({ navigation }) {
   const [stats,        setStats]        = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [refreshing,   setRefreshing]   = useState(false);
+  // Applied filter (triggers fetch)
   const [dateFrom,     setDateFrom]     = useState(null);
   const [dateTo,       setDateTo]       = useState(null);
+  // Filter sheet state (pending = not yet applied)
+  const [showFilter,   setShowFilter]   = useState(false);
+  const [pendingFrom,  setPendingFrom]  = useState(null);
+  const [pendingTo,    setPendingTo]    = useState(null);
   const [showFromPick, setShowFromPick] = useState(false);
   const [showToPick,   setShowToPick]   = useState(false);
+
+  const openFilter = () => { setPendingFrom(dateFrom); setPendingTo(dateTo); setShowFilter(true); };
+  const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setShowFilter(false); };
+  const clearFilter = () => { setPendingFrom(null); setPendingTo(null); };
+  const filterActive = !!(dateFrom || dateTo);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,55 +155,91 @@ export default function SalesCRMScreen({ navigation }) {
         <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
+        <TouchableOpacity onPress={openFilter} style={{ padding: 6, backgroundColor: filterActive ? NAVY : BG, borderWidth: 1, borderColor: filterActive ? NAVY : COLORS.border, borderRadius: 8 }}>
+          <Ionicons name="filter-outline" size={20} color={filterActive ? COLORS.white : NAVY} />
+        </TouchableOpacity>
       </View>
+
+      {/* Filter Bottom Sheet */}
+      <Modal visible={showFilter} transparent animationType="slide" onRequestClose={() => setShowFilter(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={() => setShowFilter(false)} />
+        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Filter by Date</Text>
+            <TouchableOpacity onPress={() => setShowFilter(false)}>
+              <Ionicons name="close" size={22} color={MUTED} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick buttons */}
+          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Quick Select</Text>
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+            {[
+              { label: 'Today', from: today,       to: today },
+              { label: 'Week',  from: daysAgo(6),  to: today },
+              { label: 'Month', from: daysAgo(29), to: today },
+            ].map(({ label, from, to }) => {
+              const active = pendingFrom && pendingTo && fmtDate(pendingFrom) === fmtDate(from) && fmtDate(pendingTo) === fmtDate(to);
+              return (
+                <TouchableOpacity key={label} onPress={() => { setPendingFrom(from); setPendingTo(to); }}
+                  style={{ height: 36, paddingHorizontal: 20, borderRadius: 8, backgroundColor: active ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : MUTED }}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity onPress={clearFilter}
+              style={{ height: 36, paddingHorizontal: 20, borderRadius: 8, backgroundColor: !pendingFrom && !pendingTo ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: !pendingFrom && !pendingTo ? COLORS.white : MUTED }}>All</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Custom date range */}
+          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Custom Range</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+            <TouchableOpacity onPress={() => setShowFromPick(true)}
+              style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
+            </TouchableOpacity>
+            <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
+            <TouchableOpacity onPress={() => setShowToPick(true)}
+              style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Apply button */}
+          <TouchableOpacity onPress={applyFilter}
+            style={{ backgroundColor: NAVY, borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
+          </TouchableOpacity>
+        </View>
+
+        {showFromPick && (
+          <DateTimePicker value={pendingFrom || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            maximumDate={pendingTo || new Date()}
+            onChange={(_, d) => { setShowFromPick(false); if (d) setPendingFrom(d); }} />
+        )}
+        {showToPick && (
+          <DateTimePicker value={pendingTo || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            minimumDate={pendingFrom || undefined} maximumDate={new Date()}
+            onChange={(_, d) => { setShowToPick(false); if (d) setPendingTo(d); }} />
+        )}
+      </Modal>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadStats(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
-        {/* Date Filter */}
-        <View style={{ marginHorizontal: 16, marginTop: 14, marginBottom: 10, backgroundColor: COLORS.white, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt, padding: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Date</Text>
-            <TouchableOpacity onPress={() => setShowFromPick(true)}
-              style={{ height: 34, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center' }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: dateFrom ? TEXT : MUTED }}>{dateFrom ? fmtLabel(dateFrom) : 'From'}</Text>
+        {/* Active filter label */}
+        {filterActive && (
+          <TouchableOpacity onPress={openFilter} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginTop: 10, marginBottom: 2 }}>
+            <Ionicons name="calendar-outline" size={13} color={BLUE} />
+            <Text style={{ fontSize: 12, color: BLUE, fontWeight: '600' }}>
+              {fmtLabel(dateFrom)} → {fmtLabel(dateTo)}
+            </Text>
+            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }} style={{ marginLeft: 2 }}>
+              <Ionicons name="close-circle" size={15} color={MUTED} />
             </TouchableOpacity>
-            <Text style={{ fontSize: 12, color: MUTED }}>→</Text>
-            <TouchableOpacity onPress={() => setShowToPick(true)}
-              style={{ height: 34, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center' }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: dateTo ? TEXT : MUTED }}>{dateTo ? fmtLabel(dateTo) : 'To'}</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-            {[
-              { label: 'Today', from: today,        to: today },
-              { label: 'Week',  from: daysAgo(6),   to: today },
-              { label: 'Month', from: daysAgo(29),  to: today },
-            ].map(({ label, from, to }) => {
-              const active = isActiveRange(from, to);
-              return (
-                <TouchableOpacity key={label} onPress={() => { setDateFrom(from); setDateTo(to); }}
-                  style={{ height: 32, paddingHorizontal: 16, borderRadius: 8, backgroundColor: active ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? COLORS.white : MUTED }}>{label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }}
-              style={{ height: 32, paddingHorizontal: 16, borderRadius: 8, backgroundColor: !dateFrom && !dateTo ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: !dateFrom && !dateTo ? COLORS.white : MUTED }}>All</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {showFromPick && (
-          <DateTimePicker value={dateFrom || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
-            maximumDate={dateTo || new Date()}
-            onChange={(_, d) => { setShowFromPick(false); if (d) setDateFrom(d); }} />
-        )}
-        {showToPick && (
-          <DateTimePicker value={dateTo || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
-            minimumDate={dateFrom || undefined} maximumDate={new Date()}
-            onChange={(_, d) => { setShowToPick(false); if (d) setDateTo(d); }} />
+          </TouchableOpacity>
         )}
 
         {/* Stats */}
