@@ -105,7 +105,7 @@ export default function SalesCRMScreen({ navigation }) {
     { label: 'New Today',    value: stats?.leads_today     ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { date_from: 'today' } } },
     // CP leads are always self-assigned, so "Unassigned" isn't meaningful for CPs.
     ...(isCp || _des.includes('cp cluster head') ? [] : [{ label: 'Unassigned', value: stats?.new_leads ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { status: 'new' } } }]),
-    ...(isTelecaller ? [{ label: 'Called', value: stats?.called_count ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } }] : []),
+    ...(isTelecaller ? [{ label: 'Called/MQL', value: stats?.called_count ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } }] : []),
     { label: 'Closures',     value: stats?.closures        ?? '—', color: COLORS.error, bg: COLORS.errorBg,    target: 'SalesMyConversions', params: { initialTab: 'closures' } },
     { label: 'Site Visits',  value: stats?.sv_done         ?? '—', color: COLORS.purple, bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'Projects',     value: stats?.active_projects ?? '—', color: COLORS.info, bg: COLORS.infoBg,      target: 'ClosureProjects' },
