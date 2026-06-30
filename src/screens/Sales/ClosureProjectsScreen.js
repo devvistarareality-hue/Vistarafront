@@ -58,7 +58,7 @@ export default function ClosureProjectsScreen({ navigation, route }) {
       </View>
 
       {/* Toggle: Record Closure ↔ My Bookings */}
-      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         {[['closures', 'Record Closure'], ['mybookings', 'My Bookings']].map(([k, label]) => (
           <TouchableOpacity key={k} onPress={() => setView(k)} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: view === k ? BLUE : COLORS.surfaceAlt }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: view === k ? '#fff' : MUTED }}>{label}</Text>
