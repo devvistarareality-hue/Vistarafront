@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -56,42 +57,30 @@ export default function SalesCRMScreen({ navigation }) {
   const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp));
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
-  const [stats,      setStats]      = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [stats,        setStats]        = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [refreshing,   setRefreshing]   = useState(false);
+  const [dateFrom,     setDateFrom]     = useState(new Date('2026-01-01'));
+  const [dateTo,       setDateTo]       = useState(new Date());
+  const [showFromPick, setShowFromPick] = useState(false);
+  const [showToPick,   setShowToPick]   = useState(false);
 
-  // Cache key is per-company so switching company never shows stale data from another company
-  const STATS_CACHE_KEY = `@vistara_sales_stats_${companyId || 'all'}`;
-  const STATS_TTL_MS    = 2 * 60 * 1000; // 2 minutes
+  const fmtDate = (d) => d.toISOString().slice(0, 10);
+  const fmtLabel = (d) => d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  useEffect(() => { loadStats(); }, [companyId]);
+  useEffect(() => { loadStats(); }, [companyId, dateFrom, dateTo]);
 
   async function loadStats(refresh = false) {
-    // Always show cached data immediately (even if stale) — no spinner on repeat visits
-    try {
-      const raw = await AsyncStorage.getItem(STATS_CACHE_KEY);
-      if (raw) {
-        const { ts, data } = JSON.parse(raw);
-        setStats(data);
-        setLoading(false);
-        // If cache is fresh and not a manual refresh, skip network call
-        if (!refresh && Date.now() - ts < STATS_TTL_MS) return;
-      }
-    } catch {}
-
-    // Fetch fresh data in background (show spinner only if no cached data at all)
     if (refresh) setRefreshing(true);
     else if (!stats) setLoading(true);
 
     try {
-      const url = companyId
-        ? `${SALES_ENDPOINTS.stats}?company_id=${companyId}`
-        : SALES_ENDPOINTS.stats;
-      const res = await apiFetch(url);
+      const params = new URLSearchParams({ date_from: fmtDate(dateFrom), date_to: fmtDate(dateTo) });
+      if (companyId) params.set('company_id', companyId);
+      const res = await apiFetch(`${SALES_ENDPOINTS.stats}?${params}`);
       if (res.ok) {
         const data = await res.json();
         setStats(data);
-        await AsyncStorage.setItem(STATS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
       }
     } catch (e) {}
     setLoading(false);
@@ -134,8 +123,33 @@ export default function SalesCRMScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadStats(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
+        {/* Date Filter */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Ionicons name="calendar-outline" size={15} color={MUTED} />
+          <TouchableOpacity onPress={() => setShowFromPick(true)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }}>{fmtLabel(dateFrom)}</Text>
+          </TouchableOpacity>
+          <Text style={{ fontSize: 12, color: MUTED }}>→</Text>
+          <TouchableOpacity onPress={() => setShowToPick(true)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }}>{fmtLabel(dateTo)}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {showFromPick && (
+          <DateTimePicker value={dateFrom} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            maximumDate={dateTo}
+            onChange={(_, d) => { setShowFromPick(false); if (d) setDateFrom(d); }} />
+        )}
+        {showToPick && (
+          <DateTimePicker value={dateTo} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            minimumDate={dateFrom} maximumDate={new Date()}
+            onChange={(_, d) => { setShowToPick(false); if (d) setDateTo(d); }} />
+        )}
+
         {/* Stats */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, marginBottom: 8 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 4, marginBottom: 8 }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Overview</Text>
           {loading ? (
             <ActivityIndicator color={NAVY} style={{ marginVertical: 20 }} />
