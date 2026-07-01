@@ -146,13 +146,13 @@ export default function SalesReportsScreen({ navigation }) {
   const [showToPick,      setShowToPick]      = useState(false);
   const [selectedMonths,  setSelectedMonths]  = useState([]);
   const [pendingMonths,   setPendingMonths]   = useState([]);
-  const [selectedQuarter, setSelectedQuarter] = useState(null);
-  const [pendingQuarter,  setPendingQuarter]  = useState(null);
+  const [selectedQuarter, setSelectedQuarter] = useState([]);
+  const [pendingQuarter,  setPendingQuarter]  = useState([]);
 
   const openFilter  = () => { setPendingFrom(dateFrom); setPendingTo(dateTo); setPendingMonths(selectedMonths); setPendingQuarter(selectedQuarter); setShowFilter(true); };
   const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setSelectedMonths(pendingMonths); setSelectedQuarter(pendingQuarter); setShowFilter(false); };
-  const clearFilter = () => { setPendingFrom(null); setPendingTo(null); setPendingMonths([]); setPendingQuarter(null); };
-  const filterActive = !!(dateFrom || dateTo || selectedMonths.length > 0 || selectedQuarter);
+  const clearFilter = () => { setPendingFrom(null); setPendingTo(null); setPendingMonths([]); setPendingQuarter([]); };
+  const filterActive = !!(dateFrom || dateTo || selectedMonths.length > 0 || selectedQuarter.length > 0);
 
   // Financial year starts April; compute quarter date ranges
   const currentYear = today.getFullYear();
@@ -171,9 +171,11 @@ export default function SalesReportsScreen({ navigation }) {
 
   // Effective date range: quarter > months > date filter
   const effectiveDates = (() => {
-    if (selectedQuarter) {
-      const q = QUARTERS.find(q => q.key === selectedQuarter);
-      return { from: q.from, to: q.to };
+    if (selectedQuarter.length > 0) {
+      const qs = QUARTERS.filter(q => selectedQuarter.includes(q.key));
+      const froms = qs.map(q => q.from).sort();
+      const tos   = qs.map(q => q.to).sort();
+      return { from: froms[0], to: tos[tos.length - 1] };
     }
     if (selectedMonths.length > 0) {
       const sorted = [...selectedMonths].sort();
@@ -284,15 +286,15 @@ export default function SalesReportsScreen({ navigation }) {
               ].map(({ label, from, to }) => {
                 const active = pendingFrom && pendingTo && fmtDate(pendingFrom) === fmtDate(from) && fmtDate(pendingTo) === fmtDate(to);
                 return (
-                  <TouchableOpacity key={label} onPress={() => { setPendingFrom(from); setPendingTo(to); setPendingMonths([]); setPendingQuarter(null); }}
+                  <TouchableOpacity key={label} onPress={() => { setPendingFrom(from); setPendingTo(to); setPendingMonths([]); setPendingQuarter([]); }}
                     style={{ height: 36, paddingHorizontal: 20, borderRadius: 8, backgroundColor: active ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : MUTED }}>{label}</Text>
                   </TouchableOpacity>
                 );
               })}
               <TouchableOpacity onPress={clearFilter}
-                style={{ height: 36, paddingHorizontal: 20, borderRadius: 8, backgroundColor: !pendingFrom && !pendingTo && pendingMonths.length === 0 ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: !pendingFrom && !pendingTo && pendingMonths.length === 0 ? COLORS.white : MUTED }}>All</Text>
+                style={{ height: 36, paddingHorizontal: 20, borderRadius: 8, backgroundColor: !pendingFrom && !pendingTo && pendingMonths.length === 0 && pendingQuarter.length === 0 ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: !pendingFrom && !pendingTo && pendingMonths.length === 0 && pendingQuarter.length === 0 ? COLORS.white : MUTED }}>All</Text>
               </TouchableOpacity>
             </View>
 
@@ -300,10 +302,10 @@ export default function SalesReportsScreen({ navigation }) {
             <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Quarter (FY {fyStart}-{String(fyStart+1).slice(2)})</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
               {QUARTERS.map(({ key, label, sub }) => {
-                const sel = pendingQuarter === key;
+                const sel = pendingQuarter.includes(key);
                 return (
                   <TouchableOpacity key={key}
-                    onPress={() => { setPendingQuarter(sel ? null : key); setPendingFrom(null); setPendingTo(null); setPendingMonths([]); }}
+                    onPress={() => { setPendingQuarter(prev => sel ? prev.filter(k => k !== key) : [...prev, key]); setPendingFrom(null); setPendingTo(null); setPendingMonths([]); }}
                     style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: sel ? COLORS.white : TEXT }}>{label}</Text>
                     <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? COLORS.white + 'CC' : MUTED, marginTop: 2 }}>{sub}</Text>
@@ -319,7 +321,7 @@ export default function SalesReportsScreen({ navigation }) {
                 const sel = pendingMonths.includes(key);
                 return (
                   <TouchableOpacity key={key}
-                    onPress={() => { setPendingFrom(null); setPendingTo(null); setPendingQuarter(null); setPendingMonths(prev => sel ? prev.filter(m => m !== key) : [...prev, key]); }}
+                    onPress={() => { setPendingFrom(null); setPendingTo(null); setPendingQuarter([]); setPendingMonths(prev => sel ? prev.filter(m => m !== key) : [...prev, key]); }}
                     style={{ height: 36, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 12, fontWeight: '700', color: sel ? COLORS.white : MUTED }}>{label}</Text>
                   </TouchableOpacity>
