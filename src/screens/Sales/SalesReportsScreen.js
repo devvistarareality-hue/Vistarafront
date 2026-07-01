@@ -154,13 +154,11 @@ export default function SalesReportsScreen({ navigation }) {
   const filterActive = !!(dateFrom || dateTo);
 
   // Generate last 24 months as options
-  const monthOptions = Array.from({ length: 24 }, (_, i) => {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    return {
-      key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
-      label: d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
-    };
-  });
+  const currentYear = today.getFullYear();
+  const monthOptions = Array.from({ length: 12 }, (_, i) => ({
+    key: `${currentYear}-${String(i + 1).padStart(2, '0')}`,
+    label: new Date(currentYear, i, 1).toLocaleDateString('en-IN', { month: 'long' }),
+  })).reverse();
 
   // Effective date range: month filter overrides main date filter
   const effectiveDates = (() => {
