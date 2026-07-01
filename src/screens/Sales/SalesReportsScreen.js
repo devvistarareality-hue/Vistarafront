@@ -135,7 +135,6 @@ export default function SalesReportsScreen({ navigation }) {
 
   const [stats,           setStats]           = useState(null);
   const [trend,           setTrend]           = useState(null);
-  const [monthTrend,      setMonthTrend]      = useState(null);
   const [loading,         setLoading]         = useState(true);
   const [refreshing,      setRefreshing]      = useState(false);
   const [dateFrom,        setDateFrom]        = useState(null);
@@ -163,18 +162,31 @@ export default function SalesReportsScreen({ navigation }) {
     };
   });
 
+  // Effective date range: month filter overrides main date filter
+  const effectiveDates = (() => {
+    if (selectedMonths.length > 0) {
+      const sorted = [...selectedMonths].sort();
+      const [ey, em] = sorted[0].split('-').map(Number);
+      const [ly, lm] = sorted[sorted.length - 1].split('-').map(Number);
+      const from = `${ey}-${String(em).padStart(2,'0')}-01`;
+      const lastDay = new Date(ly, lm, 0).getDate();
+      const to = `${ly}-${String(lm).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+      return { from, to };
+    }
+    return { from: dateFrom ? fmtDate(dateFrom) : null, to: dateTo ? fmtDate(dateTo) : null };
+  })();
+
   useEffect(() => {
     let cancelled = false;
-    setStats(null);
-    setTrend(null);
+    setStats(null); setTrend(null);
     setLoading(true);
     (async () => {
       try {
         const params = new URLSearchParams();
-        if (dateFrom)  params.set('date_from',  fmtDate(dateFrom));
-        if (dateTo)    params.set('date_to',     fmtDate(dateTo));
-        if (companyId) params.set('company_id',  companyId);
-        const qs  = params.toString() ? `?${params}` : '';
+        if (effectiveDates.from) params.set('date_from', effectiveDates.from);
+        if (effectiveDates.to)   params.set('date_to',   effectiveDates.to);
+        if (companyId)           params.set('company_id', companyId);
+        const qs = params.toString() ? `?${params}` : '';
         const [statsRes, trendRes] = await Promise.all([
           apiFetch(`${SALES_ENDPOINTS.stats}${qs}`),
           apiFetch(`${SALES_ENDPOINTS.statsTrend}${qs}`),
@@ -186,36 +198,16 @@ export default function SalesReportsScreen({ navigation }) {
       if (!cancelled) { setLoading(false); setRefreshing(false); }
     })();
     return () => { cancelled = true; };
-  }, [companyId, dateFrom, dateTo]);
-
-  useEffect(() => {
-    if (selectedMonths.length === 0) { setMonthTrend(null); return; }
-    let cancelled = false;
-    (async () => {
-      const sorted = [...selectedMonths].sort();
-      const [ey, em] = sorted[0].split('-').map(Number);
-      const [ly, lm] = sorted[sorted.length - 1].split('-').map(Number);
-      const from = `${ey}-${String(em).padStart(2,'0')}-01`;
-      const lastDay = new Date(ly, lm, 0).getDate();
-      const to = `${ly}-${String(lm).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-      try {
-        const params = new URLSearchParams({ date_from: from, date_to: to });
-        if (companyId) params.set('company_id', companyId);
-        const res = await apiFetch(`${SALES_ENDPOINTS.statsTrend}?${params}`);
-        if (res.ok && !cancelled) { const d = await res.json(); setMonthTrend(d); }
-      } catch (_) {}
-    })();
-    return () => { cancelled = true; };
-  }, [selectedMonths, companyId]);
+  }, [companyId, dateFrom, dateTo, selectedMonths]);
 
   async function reload(refresh = false) {
     if (refresh) { setStats(null); setTrend(null); setRefreshing(true); setLoading(true); }
     try {
       const params = new URLSearchParams();
-      if (dateFrom)  params.set('date_from',  fmtDate(dateFrom));
-      if (dateTo)    params.set('date_to',     fmtDate(dateTo));
-      if (companyId) params.set('company_id',  companyId);
-      const qs  = params.toString() ? `?${params}` : '';
+      if (effectiveDates.from) params.set('date_from', effectiveDates.from);
+      if (effectiveDates.to)   params.set('date_to',   effectiveDates.to);
+      if (companyId)           params.set('company_id', companyId);
+      const qs = params.toString() ? `?${params}` : '';
       const [statsRes, trendRes] = await Promise.all([
         apiFetch(`${SALES_ENDPOINTS.stats}${qs}`),
         apiFetch(`${SALES_ENDPOINTS.statsTrend}${qs}`),
@@ -354,11 +346,9 @@ export default function SalesReportsScreen({ navigation }) {
               ))}
             </View>
 
-            {(trend || monthTrend) && (() => {
-              const activeTrend = selectedMonths.length > 0 && monthTrend ? monthTrend : trend;
-              if (!activeTrend) return null;
-              const from = activeTrend.date_from;
-              const to   = activeTrend.date_to;
+            {trend && (() => {
+              const from = trend.date_from;
+              const to   = trend.date_to;
               const mqlData  = fillDates(activeTrend.mql, from, to);
               const svData   = fillDates(activeTrend.sv,  from, to);
               const mqlTotal = mqlData.reduce((s, d) => s + d.count, 0);
