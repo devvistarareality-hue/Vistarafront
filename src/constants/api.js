@@ -37,6 +37,7 @@ export const NOTIFICATION_ENDPOINTS = {
 export const SALES_ENDPOINTS = {
   // Dashboard
   get stats()      { return `${BASE_URL}/api/sales/stats/`; },
+  get statsTrend() { return `${BASE_URL}/api/sales/stats/trend/`; },
   // Leads
   get leads()      { return `${BASE_URL}/api/sales/leads/`; },
   get bulkDelete() { return `${BASE_URL}/api/sales/leads/bulk-delete/`; },
