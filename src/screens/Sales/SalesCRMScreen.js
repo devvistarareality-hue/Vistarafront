@@ -9,7 +9,11 @@ import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
-const BLUE = COLORS.link;
+const NAVY  = COLORS.navy;
+const BLUE  = COLORS.link;
+const BG    = COLORS.screenBg;
+const TEXT  = COLORS.textPrimary;
+const MUTED = COLORS.textSecondary;
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
