@@ -337,9 +337,11 @@ export default function SalesReportsScreen({ navigation }) {
           <TouchableOpacity onPress={openFilter} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <Ionicons name="calendar-outline" size={13} color={BLUE} />
             <Text style={{ fontSize: 12, color: BLUE, fontWeight: '600' }}>
-              {fmtLabel(dateFrom)} → {fmtLabel(dateTo)}
+              {selectedMonths.length > 0
+                ? [...selectedMonths].sort().map(m => new Date(m + '-01T00:00:00').toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })).join(', ')
+                : `${fmtLabel(dateFrom)} → ${fmtLabel(dateTo)}`}
             </Text>
-            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }} style={{ marginLeft: 2 }}>
+            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); setSelectedMonths([]); }} style={{ marginLeft: 2 }}>
               <Ionicons name="close-circle" size={15} color={MUTED} />
             </TouchableOpacity>
           </TouchableOpacity>
