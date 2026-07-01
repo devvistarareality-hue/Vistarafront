@@ -321,17 +321,20 @@ export default function SalesReportsScreen({ navigation }) {
             </View>
 
             {trend && (() => {
-              const defaultFrom = (() => { const d = new Date(); d.setDate(d.getDate() - 29); return d.toISOString().slice(0, 10); })();
-              const defaultTo   = new Date().toISOString().slice(0, 10);
-              const from = dateFrom ? fmtDate(dateFrom) : defaultFrom;
-              const to   = dateTo   ? fmtDate(dateTo)   : defaultTo;
-              const mqlData = fillDates(trend.mql, from, to);
-              const svData  = fillDates(trend.sv,  from, to);
+              const from = dateFrom ? fmtDate(dateFrom) : trend.date_from;
+              const to   = dateTo   ? fmtDate(dateTo)   : trend.date_to;
+              const mqlData  = fillDates(trend.mql, from, to);
+              const svData   = fillDates(trend.sv,  from, to);
               const mqlTotal = mqlData.reduce((s, d) => s + d.count, 0);
               const svTotal  = svData.reduce((s, d) => s + d.count, 0);
+              const shortFmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+              const periodLabel = `${shortFmt(from)} – ${shortFmt(to)}`;
               return (
                 <View style={{ marginTop: 20 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Trends</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7 }}>Trends</Text>
+                    <Text style={{ fontSize: 10, color: MUTED, fontWeight: '500' }}>{periodLabel}</Text>
+                  </View>
                   <TrendCard title="Called / MQL"     badge="MQL Trend" total={mqlTotal} data={mqlData} color={BLUE}           gradId="mqlGrad" />
                   <TrendCard title="Site Visits (SV)" badge="SV Trend"  total={svTotal}  data={svData}  color={COLORS.success} gradId="svGrad"  />
                 </View>
