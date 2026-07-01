@@ -89,6 +89,7 @@ export const login = (companyCode, userCode, password) => async (dispatch) => {
         company_code: companyCode,
         user_code: userCode,
         password: password,
+        platform: 'app',
       }),
     });
     const data = await response.json();
