@@ -22,8 +22,9 @@ function fillDates(rows, dateFrom, dateTo) {
   const result = [];
   const cur = new Date(dateFrom + 'T00:00:00');
   const end = new Date(dateTo + 'T00:00:00');
+  const localKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   while (cur <= end) {
-    const key = cur.toISOString().slice(0, 10);
+    const key = localKey(cur);
     result.push({ date: key, count: map[key] ?? 0 });
     cur.setDate(cur.getDate() + 1);
   }
