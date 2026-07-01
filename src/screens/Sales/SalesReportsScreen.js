@@ -347,8 +347,8 @@ export default function SalesReportsScreen({ navigation }) {
             {trend && (() => {
               const from = trend.date_from;
               const to   = trend.date_to;
-              const mqlData  = fillDates(activeTrend.mql, from, to);
-              const svData   = fillDates(activeTrend.sv,  from, to);
+              const mqlData  = fillDates(trend.mql, from, to);
+              const svData   = fillDates(trend.sv,  from, to);
               const mqlTotal = mqlData.reduce((s, d) => s + d.count, 0);
               const svTotal  = svData.reduce((s, d) => s + d.count, 0);
               const shortFmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
