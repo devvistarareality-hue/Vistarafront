@@ -333,19 +333,6 @@ export default function SalesReportsScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
-        {filterActive && (
-          <TouchableOpacity onPress={openFilter} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-            <Ionicons name="calendar-outline" size={13} color={BLUE} />
-            <Text style={{ fontSize: 12, color: BLUE, fontWeight: '600' }}>
-              {selectedMonths.length > 0
-                ? [...selectedMonths].sort().map(m => new Date(m + '-01T00:00:00').toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })).join(', ')
-                : `${fmtLabel(dateFrom)} → ${fmtLabel(dateTo)}`}
-            </Text>
-            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); setSelectedMonths([]); }} style={{ marginLeft: 2 }}>
-              <Ionicons name="close-circle" size={15} color={MUTED} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        )}
 
         <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Overview</Text>
 
