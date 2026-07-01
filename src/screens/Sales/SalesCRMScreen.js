@@ -9,6 +9,8 @@ import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+const BLUE = COLORS.link;
+
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
