@@ -133,22 +133,35 @@ export default function SalesReportsScreen({ navigation }) {
   const today    = new Date(); today.setHours(0,0,0,0);
   const daysAgo  = (n) => { const d = new Date(); d.setDate(d.getDate() - n); d.setHours(0,0,0,0); return d; };
 
-  const [stats,        setStats]        = useState(null);
-  const [trend,        setTrend]        = useState(null);
-  const [loading,      setLoading]      = useState(true);
-  const [refreshing,   setRefreshing]   = useState(false);
-  const [dateFrom,     setDateFrom]     = useState(null);
-  const [dateTo,       setDateTo]       = useState(null);
-  const [showFilter,   setShowFilter]   = useState(false);
-  const [pendingFrom,  setPendingFrom]  = useState(null);
-  const [pendingTo,    setPendingTo]    = useState(null);
-  const [showFromPick, setShowFromPick] = useState(false);
-  const [showToPick,   setShowToPick]   = useState(false);
+  const [stats,           setStats]           = useState(null);
+  const [trend,           setTrend]           = useState(null);
+  const [monthTrend,      setMonthTrend]      = useState(null);
+  const [loading,         setLoading]         = useState(true);
+  const [refreshing,      setRefreshing]      = useState(false);
+  const [dateFrom,        setDateFrom]        = useState(null);
+  const [dateTo,          setDateTo]          = useState(null);
+  const [showFilter,      setShowFilter]      = useState(false);
+  const [pendingFrom,     setPendingFrom]     = useState(null);
+  const [pendingTo,       setPendingTo]       = useState(null);
+  const [showFromPick,    setShowFromPick]    = useState(false);
+  const [showToPick,      setShowToPick]      = useState(false);
+  const [selectedMonths,  setSelectedMonths]  = useState([]);
+  const [pendingMonths,   setPendingMonths]   = useState([]);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   const openFilter  = () => { setPendingFrom(dateFrom); setPendingTo(dateTo); setShowFilter(true); };
   const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setShowFilter(false); };
   const clearFilter = () => { setPendingFrom(null); setPendingTo(null); };
   const filterActive = !!(dateFrom || dateTo);
+
+  // Generate last 24 months as options
+  const monthOptions = Array.from({ length: 24 }, (_, i) => {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    return {
+      key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+      label: d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+    };
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +187,26 @@ export default function SalesReportsScreen({ navigation }) {
     })();
     return () => { cancelled = true; };
   }, [companyId, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (selectedMonths.length === 0) { setMonthTrend(null); return; }
+    let cancelled = false;
+    (async () => {
+      const sorted = [...selectedMonths].sort();
+      const [ey, em] = sorted[0].split('-').map(Number);
+      const [ly, lm] = sorted[sorted.length - 1].split('-').map(Number);
+      const from = `${ey}-${String(em).padStart(2,'0')}-01`;
+      const lastDay = new Date(ly, lm, 0).getDate();
+      const to = `${ly}-${String(lm).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+      try {
+        const params = new URLSearchParams({ date_from: from, date_to: to });
+        if (companyId) params.set('company_id', companyId);
+        const res = await apiFetch(`${SALES_ENDPOINTS.statsTrend}?${params}`);
+        if (res.ok && !cancelled) { const d = await res.json(); setMonthTrend(d); }
+      } catch (_) {}
+    })();
+    return () => { cancelled = true; };
+  }, [selectedMonths, companyId]);
 
   async function reload(refresh = false) {
     if (refresh) { setStats(null); setTrend(null); setRefreshing(true); setLoading(true); }
@@ -321,21 +354,45 @@ export default function SalesReportsScreen({ navigation }) {
               ))}
             </View>
 
-            {trend && (() => {
-              const from = dateFrom ? fmtDate(dateFrom) : trend.date_from;
-              const to   = dateTo   ? fmtDate(dateTo)   : trend.date_to;
-              const mqlData  = fillDates(trend.mql, from, to);
-              const svData   = fillDates(trend.sv,  from, to);
+            {(trend || monthTrend) && (() => {
+              const activeTrend = selectedMonths.length > 0 && monthTrend ? monthTrend : trend;
+              if (!activeTrend) return null;
+              const from = activeTrend.date_from;
+              const to   = activeTrend.date_to;
+              const mqlData  = fillDates(activeTrend.mql, from, to);
+              const svData   = fillDates(activeTrend.sv,  from, to);
               const mqlTotal = mqlData.reduce((s, d) => s + d.count, 0);
               const svTotal  = svData.reduce((s, d) => s + d.count, 0);
               const shortFmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
               const periodLabel = `${shortFmt(from)} – ${shortFmt(to)}`;
               return (
                 <View style={{ marginTop: 20 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                     <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7 }}>Trends</Text>
-                    <Text style={{ fontSize: 10, color: MUTED, fontWeight: '500' }}>{periodLabel}</Text>
+                    <TouchableOpacity onPress={() => { setPendingMonths(selectedMonths); setShowMonthPicker(true); }}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: selectedMonths.length > 0 ? NAVY : COLORS.screenBg, borderWidth: 1, borderColor: selectedMonths.length > 0 ? NAVY : COLORS.border }}>
+                      <Ionicons name="calendar-outline" size={13} color={selectedMonths.length > 0 ? COLORS.white : MUTED} />
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: selectedMonths.length > 0 ? COLORS.white : MUTED }}>
+                        {selectedMonths.length > 0 ? `${selectedMonths.length} Month${selectedMonths.length > 1 ? 's' : ''}` : 'Filter Month'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
+                  {selectedMonths.length > 0 && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                      {[...selectedMonths].sort().map(m => {
+                        const [y, mo] = m.split('-').map(Number);
+                        const label = new Date(y, mo - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+                        return (
+                          <TouchableOpacity key={m} onPress={() => setSelectedMonths(prev => prev.filter(x => x !== m))}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: BLUE + '18' }}>
+                            <Text style={{ fontSize: 11, fontWeight: '600', color: BLUE }}>{label}</Text>
+                            <Ionicons name="close-circle" size={13} color={BLUE} />
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                  <Text style={{ fontSize: 10, color: MUTED, fontWeight: '500', marginBottom: 10 }}>{periodLabel}</Text>
                   <TrendCard title="Called / MQL"     badge="MQL Trend" total={mqlTotal} data={mqlData} color={BLUE}           gradId="mqlGrad" />
                   <TrendCard title="Site Visits (SV)" badge="SV Trend"  total={svTotal}  data={svData}  color={COLORS.success} gradId="svGrad"  />
                 </View>
@@ -344,6 +401,45 @@ export default function SalesReportsScreen({ navigation }) {
           </>
         )}
       </ScrollView>
+
+      {/* Month Picker Modal */}
+      <Modal visible={showMonthPicker} transparent animationType="slide" onRequestClose={() => setShowMonthPicker(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={() => setShowMonthPicker(false)} />
+        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 36, maxHeight: '70%' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Select Months</Text>
+            <TouchableOpacity onPress={() => setShowMonthPicker(false)}>
+              <Ionicons name="close" size={22} color={MUTED} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {monthOptions.map(({ key, label }) => {
+              const selected = pendingMonths.includes(key);
+              return (
+                <TouchableOpacity key={key} onPress={() => setPendingMonths(prev => selected ? prev.filter(m => m !== key) : [...prev, key])}
+                  style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: selected ? NAVY : COLORS.border, backgroundColor: selected ? NAVY : 'transparent', marginRight: 12, alignItems: 'center', justifyContent: 'center' }}>
+                    {selected && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
+                  </View>
+                  <Text style={{ fontSize: 14, fontWeight: selected ? '700' : '500', color: selected ? TEXT : MUTED }}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+            <TouchableOpacity onPress={() => setPendingMonths([])}
+              style={{ flex: 1, height: 46, borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: MUTED }}>Clear</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setSelectedMonths(pendingMonths); setShowMonthPicker(false); }}
+              style={{ flex: 2, height: 46, borderRadius: 12, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.white }}>
+                Apply{pendingMonths.length > 0 ? ` (${pendingMonths.length})` : ''}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
