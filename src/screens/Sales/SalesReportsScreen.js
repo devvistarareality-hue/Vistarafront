@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Svg, { Path, Defs, LinearGradient, Stop, Line, Text as SvgText } from 'react-native-svg';
 import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -15,6 +16,71 @@ const TEXT = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
 const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
 
+function fillDates(rows, dateFrom, dateTo) {
+  const map = {};
+  (rows || []).forEach(r => { map[r.date] = r.count; });
+  const result = [];
+  const cur = new Date(dateFrom + 'T00:00:00');
+  const end = new Date(dateTo + 'T00:00:00');
+  while (cur <= end) {
+    const key = cur.toISOString().slice(0, 10);
+    result.push({ date: key, count: map[key] ?? 0 });
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
+}
+
+function MiniAreaChart({ data = [], color, gradId, width }) {
+  const H = 90, padL = 28, padR = 8, padT = 8, padB = 22;
+  const W = width - padL - padR;
+  const maxVal = Math.max(...data.map(d => d.count), 1);
+  if (!data.length || !width) return null;
+  const px = (i) => padL + (i / (data.length - 1 || 1)) * W;
+  const py = (v) => padT + (1 - v / maxVal) * (H - padT - padB);
+  const linePts = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${px(i).toFixed(1)},${py(d.count).toFixed(1)}`).join(' ');
+  const fillPts = `${linePts} L${px(data.length - 1).toFixed(1)},${(H - padB).toFixed(1)} L${padL},${(H - padB).toFixed(1)} Z`;
+  const labelIdxs = data.length <= 5 ? data.map((_, i) => i) : [0, Math.floor(data.length * 0.25), Math.floor(data.length * 0.5), Math.floor(data.length * 0.75), data.length - 1];
+  const shortDate = (s) => { const d = new Date(s + 'T00:00:00'); return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); };
+  return (
+    <Svg width={width} height={H}>
+      <Defs>
+        <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor={color} stopOpacity={0.25} />
+          <Stop offset="100%" stopColor={color} stopOpacity={0} />
+        </LinearGradient>
+      </Defs>
+      <Line x1={padL} y1={H - padB} x2={padL + W} y2={H - padB} stroke="#F0F3FA" strokeWidth={1} />
+      <Path d={fillPts} fill={`url(#${gradId})`} />
+      <Path d={linePts} stroke={color} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      {labelIdxs.map(i => (
+        <SvgText key={i} x={px(i)} y={H - 4} fontSize={9} fill={MUTED} textAnchor="middle">{shortDate(data[i].date)}</SvgText>
+      ))}
+      <SvgText x={padL - 4} y={padT + 4} fontSize={9} fill={MUTED} textAnchor="end">{maxVal}</SvgText>
+    </Svg>
+  );
+}
+
+function TrendCard({ title, badge, total, data, color, gradId }) {
+  const [width, setWidth] = useState(0);
+  return (
+    <View style={[CARD, { marginBottom: 12, padding: 16, overflow: 'hidden' }]} onLayout={e => setWidth(e.nativeEvent.layout.width - 32)}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <View>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>{title}</Text>
+          <Text style={{ fontSize: 26, fontWeight: '800', color: TEXT }}>{total}</Text>
+        </View>
+        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, backgroundColor: color + '22' }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color }}>{badge}</Text>
+        </View>
+      </View>
+      {width > 0 && data.length > 0
+        ? <MiniAreaChart data={data} color={color} gradId={gradId} width={width} />
+        : <View style={{ height: 90, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 12, color: MUTED }}>No data</Text></View>
+      }
+    </View>
+  );
+}
+
 export default function SalesReportsScreen({ navigation }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
 
@@ -24,6 +90,7 @@ export default function SalesReportsScreen({ navigation }) {
   const daysAgo  = (n) => { const d = new Date(); d.setDate(d.getDate() - n); d.setHours(0,0,0,0); return d; };
 
   const [stats,        setStats]        = useState(null);
+  const [trend,        setTrend]        = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [refreshing,   setRefreshing]   = useState(false);
   const [dateFrom,     setDateFrom]     = useState(null);
@@ -42,6 +109,7 @@ export default function SalesReportsScreen({ navigation }) {
   useEffect(() => {
     let cancelled = false;
     setStats(null);
+    setTrend(null);
     setLoading(true);
     (async () => {
       try {
@@ -50,9 +118,13 @@ export default function SalesReportsScreen({ navigation }) {
         if (dateTo)    params.set('date_to',     fmtDate(dateTo));
         if (companyId) params.set('company_id',  companyId);
         const qs  = params.toString() ? `?${params}` : '';
-        const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
+        const [statsRes, trendRes] = await Promise.all([
+          apiFetch(`${SALES_ENDPOINTS.stats}${qs}`),
+          apiFetch(`${SALES_ENDPOINTS.statsTrend}${qs}`),
+        ]);
         if (cancelled) return;
-        if (res.ok) { const data = await res.json(); if (!cancelled) setStats(data); }
+        if (statsRes.ok) { const d = await statsRes.json(); if (!cancelled) setStats(d); }
+        if (trendRes.ok) { const d = await trendRes.json(); if (!cancelled) setTrend(d); }
       } catch (_) {}
       if (!cancelled) { setLoading(false); setRefreshing(false); }
     })();
@@ -60,15 +132,19 @@ export default function SalesReportsScreen({ navigation }) {
   }, [companyId, dateFrom, dateTo]);
 
   async function reload(refresh = false) {
-    if (refresh) { setStats(null); setRefreshing(true); setLoading(true); }
+    if (refresh) { setStats(null); setTrend(null); setRefreshing(true); setLoading(true); }
     try {
       const params = new URLSearchParams();
       if (dateFrom)  params.set('date_from',  fmtDate(dateFrom));
       if (dateTo)    params.set('date_to',     fmtDate(dateTo));
       if (companyId) params.set('company_id',  companyId);
       const qs  = params.toString() ? `?${params}` : '';
-      const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
-      if (res.ok) { const data = await res.json(); setStats(data); }
+      const [statsRes, trendRes] = await Promise.all([
+        apiFetch(`${SALES_ENDPOINTS.stats}${qs}`),
+        apiFetch(`${SALES_ENDPOINTS.statsTrend}${qs}`),
+      ]);
+      if (statsRes.ok) { const d = await statsRes.json(); setStats(d); }
+      if (trendRes.ok) { const d = await trendRes.json(); setTrend(d); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
   }
@@ -189,16 +265,36 @@ export default function SalesReportsScreen({ navigation }) {
         {loading ? (
           <ActivityIndicator color={NAVY} style={{ marginVertical: 40 }} />
         ) : (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-            {STAT_CARDS.map(s => (
-              <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
-                onPress={() => s.target && navigation.navigate(s.target, s.params)}
-                style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
-                <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600' }}>{s.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              {STAT_CARDS.map(s => (
+                <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
+                  onPress={() => s.target && navigation.navigate(s.target, s.params)}
+                  style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
+                  <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
+                  <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600' }}>{s.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {trend && (() => {
+              const defaultFrom = (() => { const d = new Date(); d.setDate(d.getDate() - 29); return d.toISOString().slice(0, 10); })();
+              const defaultTo   = new Date().toISOString().slice(0, 10);
+              const from = dateFrom ? fmtDate(dateFrom) : defaultFrom;
+              const to   = dateTo   ? fmtDate(dateTo)   : defaultTo;
+              const mqlData = fillDates(trend.mql, from, to);
+              const svData  = fillDates(trend.sv,  from, to);
+              const mqlTotal = mqlData.reduce((s, d) => s + d.count, 0);
+              const svTotal  = svData.reduce((s, d) => s + d.count, 0);
+              return (
+                <View style={{ marginTop: 20 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Trends</Text>
+                  <TrendCard title="Called / MQL"     badge="MQL Trend" total={mqlTotal} data={mqlData} color={BLUE}           gradId="mqlGrad" />
+                  <TrendCard title="Site Visits (SV)" badge="SV Trend"  total={svTotal}  data={svData}  color={COLORS.success} gradId="svGrad"  />
+                </View>
+              );
+            })()}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
