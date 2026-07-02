@@ -8,7 +8,6 @@ import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-import { fillDates, TrendCard } from './_TrendCard';
 
 const NAVY  = COLORS.navy;
 const BLUE  = COLORS.link;
@@ -68,7 +67,6 @@ export default function SalesCRMScreen({ navigation }) {
   const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); d.setHours(0,0,0,0); return d; };
 
   const [stats,        setStats]        = useState(null);
-  const [trend,        setTrend]        = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [refreshing,   setRefreshing]   = useState(false);
   // Applied filter (triggers fetch)
@@ -88,7 +86,7 @@ export default function SalesCRMScreen({ navigation }) {
 
   useEffect(() => {
     let cancelled = false;
-    setStats(null); setTrend(null);
+    setStats(null);
     setLoading(true);
     (async () => {
       try {
@@ -97,13 +95,9 @@ export default function SalesCRMScreen({ navigation }) {
         if (dateTo)   params.set('date_to',   fmtDate(dateTo));
         if (companyId) params.set('company_id', companyId);
         const qs = params.toString() ? `?${params}` : '';
-        const [res, tRes] = await Promise.all([
-          apiFetch(`${SALES_ENDPOINTS.stats}${qs}`),
-          apiFetch(`${SALES_ENDPOINTS.statsTrend}${qs}`),
-        ]);
+        const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
         if (cancelled) return;
-        if (res.ok)  { const data = await res.json();  if (!cancelled) setStats(data); }
-        if (tRes.ok) { const td   = await tRes.json(); if (!cancelled) setTrend(td); }
+        if (res.ok) { const data = await res.json(); if (!cancelled) setStats(data); }
       } catch (_) {}
       if (!cancelled) { setLoading(false); setRefreshing(false); }
     })();
@@ -112,19 +106,15 @@ export default function SalesCRMScreen({ navigation }) {
 
   async function loadStats(refresh = false) {
     if (refresh) {
-      setStats(null); setTrend(null); setRefreshing(true); setLoading(true);
+      setStats(null); setRefreshing(true); setLoading(true);
       try {
         const params = new URLSearchParams();
         if (dateFrom) params.set('date_from', fmtDate(dateFrom));
         if (dateTo)   params.set('date_to',   fmtDate(dateTo));
         if (companyId) params.set('company_id', companyId);
         const qs = params.toString() ? `?${params}` : '';
-        const [res, tRes] = await Promise.all([
-          apiFetch(`${SALES_ENDPOINTS.stats}${qs}`),
-          apiFetch(`${SALES_ENDPOINTS.statsTrend}${qs}`),
-        ]);
-        if (res.ok)  { const data = await res.json();  setStats(data); }
-        if (tRes.ok) { const td   = await tRes.json(); setTrend(td); }
+        const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
+        if (res.ok) { const data = await res.json(); setStats(data); }
       } catch (_) {}
       setLoading(false); setRefreshing(false);
     }
@@ -273,23 +263,6 @@ export default function SalesCRMScreen({ navigation }) {
             </View>
           )}
         </View>
-
-        {/* Trends */}
-        {!loading && trend && (() => {
-          const from = trend.date_from, to = trend.date_to;
-          const mql  = fillDates(trend.mql,  from, to);
-          const sv   = fillDates(trend.sv,   from, to);
-          const warm = fillDates(trend.warm, from, to);
-          const sum  = (a) => a.reduce((s, d) => s + d.count, 0);
-          return (
-            <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Trends</Text>
-              <TrendCard title="Called / MQL" badge="MQL Trend"  total={sum(mql)}  data={mql}  color={BLUE}           gradId="crmMql" />
-              <TrendCard title="Site Visits"  badge="SV Trend"   total={sum(sv)}   data={sv}   color={COLORS.success} gradId="crmSv" />
-              <TrendCard title="Warm / SQL"   badge="Warm Trend" total={sum(warm)} data={warm} color={COLORS.warning} gradId="crmWarm" />
-            </View>
-          );
-        })()}
 
         {/* Menu */}
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
