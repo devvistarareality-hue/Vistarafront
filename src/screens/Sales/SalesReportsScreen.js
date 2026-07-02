@@ -455,10 +455,12 @@ export default function SalesReportsScreen({ navigation }) {
             {trend && (() => {
               const from = trend.date_from;
               const to   = trend.date_to;
-              const mqlData  = fillDates(trend.mql, from, to);
-              const svData   = fillDates(trend.sv,  from, to);
+              const mqlData  = fillDates(trend.mql,  from, to);
+              const svData   = fillDates(trend.sv,   from, to);
+              const warmData = fillDates(trend.warm, from, to);
               const mqlTotal = mqlData.reduce((s, d) => s + d.count, 0);
               const svTotal  = svData.reduce((s, d) => s + d.count, 0);
+              const warmTotal = warmData.reduce((s, d) => s + d.count, 0);
               const shortFmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
               return (
                 <View style={{ marginTop: 20 }}>
@@ -466,8 +468,9 @@ export default function SalesReportsScreen({ navigation }) {
                     <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7 }}>Trends</Text>
                     <Text style={{ fontSize: 10, color: MUTED }}>{shortFmt(from)} – {shortFmt(to)}</Text>
                   </View>
-                  <TrendCard title="Called / MQL"     badge="MQL Trend" total={mqlTotal} data={mqlData} color={BLUE}           gradId="mqlGrad" />
-                  <TrendCard title="Site Visits (SV)" badge="SV Trend"  total={svTotal}  data={svData}  color={COLORS.success} gradId="svGrad"  />
+                  <TrendCard title="Called / MQL"     badge="MQL Trend"  total={mqlTotal}  data={mqlData}  color={BLUE}           gradId="mqlGrad" />
+                  <TrendCard title="Site Visits (SV)" badge="SV Trend"   total={svTotal}   data={svData}   color={COLORS.success} gradId="svGrad"  />
+                  <TrendCard title="Warm / SQL"       badge="Warm Trend" total={warmTotal} data={warmData} color={COLORS.warning} gradId="warmGrad" />
                 </View>
               );
             })()}
