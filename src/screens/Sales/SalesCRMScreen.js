@@ -134,7 +134,8 @@ export default function SalesCRMScreen({ navigation }) {
     { label: 'New Today',     value: stats?.leads_today    ?? '—', color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads' },
     { label: 'Called/MQL',   value: _called,                       color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { label: 'Warm/SQL',      value: stats?.warm_count     ?? '—', color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
-    { label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'Cold Leads',    value: stats?.cold_count     ?? '—', color: BLUE,            bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'cold' } } },
+    { label: 'SV Done / Low Hanging', value: _svDone,              color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesMyConversions' },
     { label: 'Callback Due',  value: stats?.callback_count ?? '—', color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
     { label: 'Closures',      value: stats?.closures       ?? '—', color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
@@ -257,7 +258,7 @@ export default function SalesCRMScreen({ navigation }) {
                   onPress={() => s.target && navigation.navigate(s.target, s.params)}
                   style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
                   <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
-                  <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600' }}>{s.label}</Text>
+                  <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
