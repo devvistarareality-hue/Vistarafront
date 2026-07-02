@@ -150,6 +150,7 @@ export default function SalesReportsScreen({ navigation }) {
   const [pendingQuarter,  setPendingQuarter]  = useState([]);
   const [selectedFyYear,  setSelectedFyYear]  = useState(null);
   const [pendingFyYear,   setPendingFyYear]   = useState(null);
+  const [iosPickerDate,   setIosPickerDate]   = useState(null);
 
   const openFilter  = () => { setPendingFrom(dateFrom); setPendingTo(dateTo); setPendingMonths(selectedMonths); setPendingQuarter(selectedQuarter); setPendingFyYear(selectedFyYear); setShowFilter(true); };
   const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setSelectedMonths(pendingMonths); setSelectedQuarter(pendingQuarter); setSelectedFyYear(pendingFyYear); setShowFilter(false); setShowFromPick(false); setShowToPick(false); };
@@ -368,17 +369,57 @@ export default function SalesReportsScreen({ navigation }) {
 
             {/* Custom Range */}
             <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Custom Range</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <TouchableOpacity onPress={() => setShowFromPick(true)}
-                style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
-              </TouchableOpacity>
-              <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
-              <TouchableOpacity onPress={() => setShowToPick(true)}
-                style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
-              </TouchableOpacity>
-            </View>
+
+            {/* iOS: show spinner inline; Android: show buttons that open native dialog */}
+            {Platform.OS === 'ios' && showFromPick ? (
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: NAVY, marginBottom: 4 }}>From Date</Text>
+                <DateTimePicker value={iosPickerDate || new Date()} mode="date" display="spinner"
+                  maximumDate={pendingTo || new Date()}
+                  onChange={(_, d) => { if (d) setIosPickerDate(d); }}
+                  style={{ height: 160 }} />
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                  <TouchableOpacity onPress={() => setShowFromPick(false)}
+                    style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => { setShowFromPick(false); if (iosPickerDate) { setPendingFrom(iosPickerDate); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }}
+                    style={{ flex: 1, height: 40, borderRadius: 10, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : Platform.OS === 'ios' && showToPick ? (
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: NAVY, marginBottom: 4 }}>To Date</Text>
+                <DateTimePicker value={iosPickerDate || new Date()} mode="date" display="spinner"
+                  minimumDate={pendingFrom || undefined} maximumDate={new Date()}
+                  onChange={(_, d) => { if (d) setIosPickerDate(d); }}
+                  style={{ height: 160 }} />
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                  <TouchableOpacity onPress={() => setShowToPick(false)}
+                    style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => { setShowToPick(false); if (iosPickerDate) { setPendingTo(iosPickerDate); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }}
+                    style={{ flex: 1, height: 40, borderRadius: 10, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                <TouchableOpacity onPress={() => { setIosPickerDate(pendingFrom || new Date()); setShowFromPick(true); }}
+                  style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
+                </TouchableOpacity>
+                <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
+                <TouchableOpacity onPress={() => { setIosPickerDate(pendingTo || new Date()); setShowToPick(true); }}
+                  style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
 
           <TouchableOpacity onPress={applyFilter}
@@ -399,37 +440,6 @@ export default function SalesReportsScreen({ navigation }) {
         )}
       </Modal>
 
-      {/* iOS date pickers — centered overlay so the calendar never clips off-screen */}
-      {Platform.OS === 'ios' && showFromPick && (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setShowFromPick(false)}>
-          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }} activeOpacity={1} onPress={() => setShowFromPick(false)}>
-            <TouchableOpacity activeOpacity={1} style={{ backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden' }}>
-              <View style={{ paddingHorizontal: 16, paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>From Date</Text>
-                <TouchableOpacity onPress={() => setShowFromPick(false)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
-              </View>
-              <DateTimePicker value={pendingFrom || new Date()} mode="date" display="inline"
-                maximumDate={pendingTo || new Date()}
-                onChange={(_, d) => { setShowFromPick(false); if (d) { setPendingFrom(d); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
-      )}
-      {Platform.OS === 'ios' && showToPick && (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setShowToPick(false)}>
-          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }} activeOpacity={1} onPress={() => setShowToPick(false)}>
-            <TouchableOpacity activeOpacity={1} style={{ backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden' }}>
-              <View style={{ paddingHorizontal: 16, paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>To Date</Text>
-                <TouchableOpacity onPress={() => setShowToPick(false)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
-              </View>
-              <DateTimePicker value={pendingTo || new Date()} mode="date" display="inline"
-                minimumDate={pendingFrom || undefined} maximumDate={new Date()}
-                onChange={(_, d) => { setShowToPick(false); if (d) { setPendingTo(d); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
-      )}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} colors={[NAVY]} tintColor={NAVY} />}>
