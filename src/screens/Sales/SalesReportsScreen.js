@@ -17,21 +17,28 @@ const MUTED = COLORS.textSecondary;
 const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
 
 function fillDates(rows, dateFrom, dateTo) {
-  const map = {};
-  (rows || []).forEach(r => { map[r.date] = r.count; });
+  const map = {}, amtMap = {};
+  (rows || []).forEach(r => { map[r.date] = r.count; if (r.amount != null) amtMap[r.date] = r.amount; });
   const result = [];
   const cur = new Date(dateFrom + 'T00:00:00');
   const end = new Date(dateTo + 'T00:00:00');
   const localKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   while (cur <= end) {
     const key = localKey(cur);
-    result.push({ date: key, count: map[key] ?? 0 });
+    result.push({ date: key, count: map[key] ?? 0, amount: amtMap[key] ?? 0 });
     cur.setDate(cur.getDate() + 1);
   }
   return result;
 }
 
-function MiniAreaChart({ data = [], color, gradId, width }) {
+function fmtAmount(n) {
+  if (!n) return '₹0';
+  if (n >= 1e7) return '₹' + (n / 1e7).toFixed(2).replace(/\.00$/, '') + ' Cr';
+  if (n >= 1e5) return '₹' + (n / 1e5).toFixed(2).replace(/\.00$/, '') + ' L';
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+function MiniAreaChart({ data = [], color, gradId, width, showAmount }) {
   const H = 110, padL = 28, padR = 8, padT = 8, padB = 22;
   const W = width - padL - padR;
   const maxVal = Math.max(...data.map(d => d.count), 1);
@@ -68,8 +75,9 @@ function MiniAreaChart({ data = [], color, gradId, width }) {
   const activePx = active ? px(activeIdx) : null;
   const activePy = active ? py(active.count) : null;
 
-  // Tooltip box placement: keep within chart bounds
-  const tooltipW = 72, tooltipH = 34;
+  // Tooltip box placement: keep within chart bounds (wider/taller when showing amount)
+  const showAmt = showAmount && active && active.amount > 0;
+  const tooltipW = showAmt ? 100 : 72, tooltipH = showAmt ? 48 : 34;
   const tooltipX = active ? Math.min(Math.max(activePx - tooltipW / 2, padL), padL + W - tooltipW) : 0;
   const tooltipY = active ? Math.max(activePy - tooltipH - 8, padT) : 0;
 
@@ -97,6 +105,9 @@ function MiniAreaChart({ data = [], color, gradId, width }) {
             <Rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={6} fill="#1A1A2E" />
             <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 13} fontSize={9} fill="#B0BAD0" textAnchor="middle">{shortDate(active.date)}</SvgText>
             <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 27} fontSize={13} fontWeight="700" fill="#fff" textAnchor="middle">{active.count}</SvgText>
+            {showAmt && (
+              <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 42} fontSize={10} fontWeight="700" fill="#E4B77C" textAnchor="middle">{fmtAmount(active.amount)}</SvgText>
+            )}
           </>
         )}
       </Svg>
@@ -104,7 +115,7 @@ function MiniAreaChart({ data = [], color, gradId, width }) {
   );
 }
 
-function TrendCard({ title, badge, total, data, color, gradId }) {
+function TrendCard({ title, badge, total, data, color, gradId, showAmount }) {
   const [width, setWidth] = useState(0);
   return (
     <View style={[CARD, { marginBottom: 12, padding: 16, overflow: 'hidden' }]} onLayout={e => setWidth(e.nativeEvent.layout.width - 32)}>
@@ -118,7 +129,7 @@ function TrendCard({ title, badge, total, data, color, gradId }) {
         </View>
       </View>
       {width > 0 && data.length > 0
-        ? <MiniAreaChart data={data} color={color} gradId={gradId} width={width} />
+        ? <MiniAreaChart data={data} color={color} gradId={gradId} width={width} showAmount={showAmount} />
         : <View style={{ height: 90, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 12, color: MUTED }}>No data</Text></View>
       }
     </View>
@@ -501,7 +512,7 @@ export default function SalesReportsScreen({ navigation }) {
                       ); })()}
                       <TrendCard title="Site Visits (SV)" badge="SV Trend"  total={sum(svData)} data={svData} color={COLORS.success} gradId="svGrad" />
                       {(() => { const cl = fillDates(trend.closures || [], from, to); return (
-                        <TrendCard title="Closures" badge="Closures Trend" total={sum(cl)} data={cl} color={COLORS.purple} gradId="clGrad" />
+                        <TrendCard title="Closures" badge="Closures Trend" total={sum(cl)} data={cl} color={COLORS.purple} gradId="clGrad" showAmount />
                       ); })()}
                     </>
                   ) : (
