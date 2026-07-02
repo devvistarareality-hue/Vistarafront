@@ -152,7 +152,8 @@ export default function SalesReportsScreen({ navigation }) {
   const [pendingFyYear,   setPendingFyYear]   = useState(null);
 
   const openFilter  = () => { setPendingFrom(dateFrom); setPendingTo(dateTo); setPendingMonths(selectedMonths); setPendingQuarter(selectedQuarter); setPendingFyYear(selectedFyYear); setShowFilter(true); };
-  const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setSelectedMonths(pendingMonths); setSelectedQuarter(pendingQuarter); setSelectedFyYear(pendingFyYear); setShowFilter(false); };
+  const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setSelectedMonths(pendingMonths); setSelectedQuarter(pendingQuarter); setSelectedFyYear(pendingFyYear); setShowFilter(false); setShowFromPick(false); setShowToPick(false); };
+  const closeFilter = () => { setShowFilter(false); setShowFromPick(false); setShowToPick(false); };
   const clearFilter = () => { setPendingFrom(null); setPendingTo(null); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); };
   const filterActive = !!(dateFrom || dateTo || selectedMonths.length > 0 || selectedQuarter.length > 0 || selectedFyYear !== null);
 
@@ -286,12 +287,12 @@ export default function SalesReportsScreen({ navigation }) {
       </View>
 
       {/* Filter Bottom Sheet */}
-      <Modal visible={showFilter} transparent animationType="slide" onRequestClose={() => setShowFilter(false)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={() => setShowFilter(false)} />
+      <Modal visible={showFilter} transparent animationType="slide" onRequestClose={closeFilter}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={closeFilter} />
         <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 36, maxHeight: '80%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Filter</Text>
-            <TouchableOpacity onPress={() => setShowFilter(false)}>
+            <TouchableOpacity onPress={closeFilter}>
               <Ionicons name="close" size={22} color={MUTED} />
             </TouchableOpacity>
           </View>
@@ -386,17 +387,49 @@ export default function SalesReportsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {showFromPick && (
-          <DateTimePicker value={pendingFrom || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+        {Platform.OS !== 'ios' && showFromPick && (
+          <DateTimePicker value={pendingFrom || new Date()} mode="date" display="default"
             maximumDate={pendingTo || new Date()}
             onChange={(_, d) => { setShowFromPick(false); if (d) { setPendingFrom(d); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }} />
         )}
-        {showToPick && (
-          <DateTimePicker value={pendingTo || new Date()} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+        {Platform.OS !== 'ios' && showToPick && (
+          <DateTimePicker value={pendingTo || new Date()} mode="date" display="default"
             minimumDate={pendingFrom || undefined} maximumDate={new Date()}
             onChange={(_, d) => { setShowToPick(false); if (d) { setPendingTo(d); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }} />
         )}
       </Modal>
+
+      {/* iOS date pickers — centered overlay so the calendar never clips off-screen */}
+      {Platform.OS === 'ios' && showFromPick && (
+        <Modal transparent animationType="fade" visible onRequestClose={() => setShowFromPick(false)}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }} activeOpacity={1} onPress={() => setShowFromPick(false)}>
+            <TouchableOpacity activeOpacity={1} style={{ backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden' }}>
+              <View style={{ paddingHorizontal: 16, paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>From Date</Text>
+                <TouchableOpacity onPress={() => setShowFromPick(false)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
+              </View>
+              <DateTimePicker value={pendingFrom || new Date()} mode="date" display="inline"
+                maximumDate={pendingTo || new Date()}
+                onChange={(_, d) => { setShowFromPick(false); if (d) { setPendingFrom(d); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+      )}
+      {Platform.OS === 'ios' && showToPick && (
+        <Modal transparent animationType="fade" visible onRequestClose={() => setShowToPick(false)}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }} activeOpacity={1} onPress={() => setShowToPick(false)}>
+            <TouchableOpacity activeOpacity={1} style={{ backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden' }}>
+              <View style={{ paddingHorizontal: 16, paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>To Date</Text>
+                <TouchableOpacity onPress={() => setShowToPick(false)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
+              </View>
+              <DateTimePicker value={pendingTo || new Date()} mode="date" display="inline"
+                minimumDate={pendingFrom || undefined} maximumDate={new Date()}
+                onChange={(_, d) => { setShowToPick(false); if (d) { setPendingTo(d); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} colors={[NAVY]} tintColor={NAVY} />}>
