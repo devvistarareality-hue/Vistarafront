@@ -127,6 +127,10 @@ function TrendCard({ title, badge, total, data, color, gradId }) {
 
 export default function SalesReportsScreen({ navigation }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const user      = useSelector((s) => s.auth.user);
+  const _des      = (user?.designation || '').toLowerCase();
+  // STM & CP see their pipeline (not the telecaller call-queue metrics/charts).
+  const isStmView = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive') || _des.includes('cp executive') || _des.includes('channel partner');
 
   const fmtDate  = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
@@ -258,7 +262,7 @@ export default function SalesReportsScreen({ navigation }) {
   const _svDone  = stats?.sv_done      ?? 0;
   const _mqlToSv = _called > 0 ? (_svDone / _called * 100).toFixed(1) + '%' : '—';
 
-  const STAT_CARDS = [
+  const TELECALLER_CARDS = [
     { label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads' },
     { label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
     { label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
@@ -268,6 +272,16 @@ export default function SalesReportsScreen({ navigation }) {
     { label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
     { label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
+  const STM_CARDS = [
+    { label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { label: 'Hot Leads',    value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
+    { label: 'Warm Leads',   value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
+    { label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
+    { label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
+    { label: 'SV Done / Low Hanging', value: _svDone,             color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
+  ];
+  const STAT_CARDS = isStmView ? STM_CARDS : TELECALLER_CARDS;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -457,7 +471,7 @@ export default function SalesReportsScreen({ navigation }) {
                   onPress={() => s.target && navigation.navigate(s.target, s.params)}
                   style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
                   <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
-                  <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600' }}>{s.label}</Text>
+                  <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -465,12 +479,8 @@ export default function SalesReportsScreen({ navigation }) {
             {trend && (() => {
               const from = trend.date_from;
               const to   = trend.date_to;
-              const mqlData  = fillDates(trend.mql,  from, to);
-              const svData   = fillDates(trend.sv,   from, to);
-              const warmData = fillDates(trend.warm, from, to);
-              const mqlTotal = mqlData.reduce((s, d) => s + d.count, 0);
-              const svTotal  = svData.reduce((s, d) => s + d.count, 0);
-              const warmTotal = warmData.reduce((s, d) => s + d.count, 0);
+              const sum      = (a) => a.reduce((s, d) => s + d.count, 0);
+              const svData   = fillDates(trend.sv, from, to);
               const shortFmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
               return (
                 <View style={{ marginTop: 20 }}>
@@ -478,9 +488,24 @@ export default function SalesReportsScreen({ navigation }) {
                     <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7 }}>Trends</Text>
                     <Text style={{ fontSize: 10, color: MUTED }}>{shortFmt(from)} – {shortFmt(to)}</Text>
                   </View>
-                  <TrendCard title="Called / MQL"     badge="MQL Trend"  total={mqlTotal}  data={mqlData}  color={BLUE}           gradId="mqlGrad" />
-                  <TrendCard title="Site Visits (SV)" badge="SV Trend"   total={svTotal}   data={svData}   color={COLORS.success} gradId="svGrad"  />
-                  <TrendCard title="Warm / SQL"       badge="Warm Trend" total={warmTotal} data={warmData} color={COLORS.warning} gradId="warmGrad" />
+                  {isStmView ? (
+                    <>
+                      <TrendCard title="Site Visits (SV)" badge="SV Trend"  total={sum(svData)} data={svData} color={COLORS.success} gradId="svGrad" />
+                      {(() => { const cl = fillDates(trend.closures, from, to); return (
+                        <TrendCard title="Closures" badge="Closures Trend" total={sum(cl)} data={cl} color={COLORS.purple} gradId="clGrad" />
+                      ); })()}
+                    </>
+                  ) : (
+                    <>
+                      {(() => { const mql = fillDates(trend.mql, from, to); return (
+                        <TrendCard title="Called / MQL" badge="MQL Trend" total={sum(mql)} data={mql} color={BLUE} gradId="mqlGrad" />
+                      ); })()}
+                      <TrendCard title="Site Visits (SV)" badge="SV Trend" total={sum(svData)} data={svData} color={COLORS.success} gradId="svGrad" />
+                      {(() => { const warm = fillDates(trend.warm, from, to); return (
+                        <TrendCard title="Warm / SQL" badge="Warm Trend" total={sum(warm)} data={warm} color={COLORS.warning} gradId="warmGrad" />
+                      ); })()}
+                    </>
+                  )}
                 </View>
               );
             })()}
