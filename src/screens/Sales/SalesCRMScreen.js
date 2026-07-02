@@ -129,17 +129,30 @@ export default function SalesCRMScreen({ navigation }) {
   const _svDone  = stats?.sv_done      ?? 0;
   const _mqlToSv = _called > 0 ? (_svDone / _called * 100).toFixed(1) + '%' : '—';
 
-  const STAT_CARDS = [
+  // Telecallers (and admins/managers) see call-queue metrics; STM/CP see their
+  // pipeline (stm_status based) — mirrors the web's per-role dashboards.
+  const TELECALLER_CARDS = [
     { label: 'My Leads',      value: stats?.total_leads    ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
     { label: 'New Today',     value: stats?.leads_today    ?? '—', color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads' },
-    { label: 'Called/MQL',   value: _called,                       color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
+    { label: 'Called/MQL',    value: _called,                      color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { label: 'Warm/SQL',      value: stats?.warm_count     ?? '—', color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
-    { label: 'Cold Leads',    value: stats?.cold_count     ?? '—', color: BLUE,            bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'cold' } } },
-    { label: 'SV Done / Low Hanging', value: _svDone,              color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesMyConversions' },
     { label: 'Callback Due',  value: stats?.callback_count ?? '—', color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
     { label: 'Closures',      value: stats?.closures       ?? '—', color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
+
+  const STM_CARDS = [
+    { label: 'My Pipeline',   value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { label: 'Hot Leads',     value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
+    { label: 'Warm Leads',    value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
+    { label: 'Cold Leads',    value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
+    { label: 'SV Scheduled',  value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
+    { label: 'SV Done / Low Hanging', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
+  ];
+
+  const STAT_CARDS = (isStm || isCp) ? STM_CARDS : TELECALLER_CARDS;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
