@@ -490,8 +490,17 @@ export default function SalesReportsScreen({ navigation }) {
                   </View>
                   {isStmView ? (
                     <>
+                      {(() => { const hot = fillDates(trend.stm_hot || [], from, to); return (
+                        <TrendCard title="Hot Leads" badge="Hot Trend" total={sum(hot)} data={hot} color={COLORS.error} gradId="hotGrad" />
+                      ); })()}
+                      {(() => { const warm = fillDates(trend.stm_warm || [], from, to); return (
+                        <TrendCard title="Warm Leads" badge="Warm Trend" total={sum(warm)} data={warm} color={COLORS.warning} gradId="warmGrad" />
+                      ); })()}
+                      {(() => { const cold = fillDates(trend.stm_cold || [], from, to); return (
+                        <TrendCard title="Cold Leads" badge="Cold Trend" total={sum(cold)} data={cold} color={BLUE} gradId="coldGrad" />
+                      ); })()}
                       <TrendCard title="Site Visits (SV)" badge="SV Trend"  total={sum(svData)} data={svData} color={COLORS.success} gradId="svGrad" />
-                      {(() => { const cl = fillDates(trend.closures, from, to); return (
+                      {(() => { const cl = fillDates(trend.closures || [], from, to); return (
                         <TrendCard title="Closures" badge="Closures Trend" total={sum(cl)} data={cl} color={COLORS.purple} gradId="clGrad" />
                       ); })()}
                     </>
