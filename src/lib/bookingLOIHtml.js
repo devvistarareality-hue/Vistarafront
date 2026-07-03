@@ -142,7 +142,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .hdr h1 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 1px; }
   .hdr .proj { color: #c4d6ff; font-size: 12px; margin-top: 2px; }
   .hdr .badge { display: inline-block; background: #c4953c; color: #0d2f61; font-weight: 700; font-size: 9px; padding: 4px 16px; border-radius: 4px; margin-top: 8px; letter-spacing: .5px; }
-  .hdr .clogo, .hdr .plogo { position: absolute; top: 15px; width: 82px; height: 44px; object-fit: contain; background: #fff; border-radius: 5px; padding: 4px; box-sizing: border-box; }
+  .hdr .clogo, .hdr .plogo { position: absolute; top: 24px; width: 82px; height: 44px; object-fit: contain; background: #fff; border-radius: 5px; padding: 4px; box-sizing: border-box; }
   .hdr .clogo { left: 26px; }
   .hdr .plogo { right: 26px; }
   .datebelow { text-align: right; color: #475569; font-size: 9px; margin: 0 0 8px; }
