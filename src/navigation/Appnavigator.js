@@ -55,15 +55,14 @@ const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const user        = useSelector((state) => state.auth.user);
-  const isVRLAdmin  = user?.role === 'Admin' && user?.company_code === 'VRL';
-  // Sales module admin: a company Admin scoped to the Sales module only (not a
-  // platform super-admin). Gets a Sales-only app — lands on the Sales admin home,
-  // with no access to other modules or platform-admin screens.
-  const _ALL_MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase', 'Land'];
   const _mods        = user?.modules || [];
-  const _isSuper     = user?.is_staff || isVRLAdmin;
-  const isSalesAdmin = user?.role === 'Admin' && !_isSuper
-    && _mods.length > 0 && _mods.length < _ALL_MODULES.length && _mods.includes('Sales');
+  // Departmental / module admin: role=Admin restricted to exactly one module (holds
+  // even inside VRL). A Sales module admin gets a Sales-only app that lands on the
+  // Sales CRM admin home, with no other modules or platform-admin screens.
+  const _isModuleAdmin = user?.role === 'Admin' && !user?.is_staff && _mods.length === 1;
+  const isSalesAdmin = _isModuleAdmin && _mods[0] === 'Sales';
+  // VRL platform super-admin (full module access) — excludes single-module admins.
+  const isVRLAdmin  = user?.role === 'Admin' && user?.company_code === 'VRL' && !_isModuleAdmin;
 
   return (
     <NavigationContainer ref={navigationRef}>
