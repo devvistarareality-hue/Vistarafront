@@ -2,6 +2,8 @@
 // Faithful match of the web jsPDF LOI (vistaraweb/src/lib/bookingLOI.js):
 // same sections, labels, colours and layout, rendered via the OS print engine.
 
+import { COMPANY_LOGO } from './companyLogo';
+
 const num = (n) => Number(n || 0).toLocaleString('en-IN');
 const money = (n) => Math.round(Number(n) || 0).toLocaleString('en-IN');
 function fmtDate(s) { if (!s) return '—'; const p = String(s).split('-'); if (p.length === 3 && p[0].length === 4) return p[2] + '-' + p[1] + '-' + p[0]; return s; }
@@ -140,7 +142,9 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .hdr h1 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 1px; }
   .hdr .proj { color: #c4d6ff; font-size: 12px; margin-top: 2px; }
   .hdr .badge { display: inline-block; background: #c4953c; color: #0d2f61; font-weight: 700; font-size: 9px; padding: 4px 16px; border-radius: 4px; margin-top: 8px; letter-spacing: .5px; }
-  .hdr .date { position: absolute; top: 8px; right: 12px; font-size: 8px; color: #c4d6ff; }
+  .hdr .clogo { position: absolute; top: 10px; left: 12px; height: 40px; max-width: 96px; object-fit: contain; background: #fff; border-radius: 4px; padding: 3px; box-sizing: border-box; }
+  .hdr .plogo { position: absolute; top: 10px; right: 12px; height: 40px; max-width: 96px; object-fit: contain; background: #fff; border-radius: 4px; padding: 3px; box-sizing: border-box; }
+  .datebelow { text-align: right; color: #475569; font-size: 9px; margin: 0 0 8px; }
   .client { background: #e8f0fe; border: 1px solid #1a73e8; border-left: 4px solid #c4953c; border-radius: 6px; padding: 9px 12px; margin-bottom: 12px; }
   .client .nm { font-size: 14px; font-weight: 800; color: #0d2f61; }
   .client .ph { font-size: 10px; color: #475569; margin-top: 1px; }
@@ -196,11 +200,13 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sec { page-break-after: avoid; break-after: avoid; }
 </style></head><body>
   <div class="hdr">
-    <div class="date">Date: ${esc(fmtDate(meta.bookingDate))}</div>
+    <img class="clogo" src="${COMPANY_LOGO}" />
+    ${opts.projectLogoUrl ? `<img class="plogo" src="${esc(opts.projectLogoUrl)}" />` : ''}
     <h1>VISTARA GROUP</h1>
     <div class="proj">${esc(meta.project || '')}</div>
     <div class="badge">${esc(title)}</div>
   </div>
+  <div class="datebelow">Date: ${esc(fmtDate(meta.bookingDate))}</div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>

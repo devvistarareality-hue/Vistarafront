@@ -251,10 +251,11 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const [form, setForm] = useState({
     name: '', location: '', project_type: 'Plotted', tagline: '', rera: '',
     total_area: '', total_plots: '', price_range: '', possession: '', description: '',
-    cover_image_url: '', master_plan_url: '', is_active: true,
+    cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true,
   });
   const [saving,         setSaving]         = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingLogo,  setUploadingLogo]  = useState(false);
   const [uploadingPlan,  setUploadingPlan]  = useState(false);
 
   // Plot wizard state
@@ -281,12 +282,13 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           possession:      project.possession      || '',
           description:     project.description     || '',
           cover_image_url: project.cover_image_url || '',
+          logo_url: project.logo_url || '',
           master_plan_url: project.master_plan_url || '',
           is_active:       project.is_active !== undefined ? project.is_active : true,
         });
         setEditableTypes((project.plot_type_plans || []).map(pt => ({ original: pt.name, current: pt.name })));
       } else {
-        setForm({ name: '', location: '', project_type: 'Plotted', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', master_plan_url: '', is_active: true });
+        setForm({ name: '', location: '', project_type: 'Plotted', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true });
         setHasTypes(false); setNoTypePlots(''); setPlotTypes([{ name: '', from: '1', to: '' }]);
         setEditableTypes([]);
       }
@@ -466,6 +468,27 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                   {uploadingCover ? <ActivityIndicator color={BLUE} /> : <>
                     <Ionicons name="image-outline" size={28} color={COLORS.shadow} />
                     <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Tap to upload cover image</Text>
+                  </>}
+                </TouchableOpacity>
+              )}
+            </Field>
+
+            {/* Project Logo — shown top-right in the LOI PDF */}
+            <Field label="Project Logo">
+              {form.logo_url ? (
+                <View>
+                  <Image source={{ uri: form.logo_url }} style={{ width: '100%', height: 120, borderRadius: 10, backgroundColor: COLORS.surfaceAlt }} resizeMode="contain" />
+                  <TouchableOpacity onPress={() => set('logo_url', '')}
+                    style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="close" size={16} color={COLORS.white} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity onPress={async () => { const url = await pickAndUpload('erp/projects/logos', setUploadingLogo); if (url) set('logo_url', url); }} disabled={uploadingLogo}
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 10, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.white }}>
+                  {uploadingLogo ? <ActivityIndicator color={BLUE} /> : <>
+                    <Ionicons name="image-outline" size={28} color={COLORS.shadow} />
+                    <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Tap to upload project logo</Text>
                   </>}
                 </TouchableOpacity>
               )}

@@ -196,7 +196,7 @@ export default function BookingFormScreen({ navigation, route }) {
       areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
-      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit });
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit });
       const { uri } = await Print.printToFileAsync({ html });
       // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
