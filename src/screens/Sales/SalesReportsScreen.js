@@ -278,8 +278,13 @@ export default function SalesReportsScreen({ navigation }) {
   const _closures     = stats?.closures ?? 0;
   const _sqlToSv      = _sql > 0 ? Math.round(_svDone / _sql * 100) + '%' : '—';
   const _sqlToClosure = _sql > 0 ? Math.round(_closures / _sql * 100) + '%' : '—';
-  const _avgCloseMo   = stats?.avg_closure_days != null
-    ? (stats.avg_closure_days / 30.44).toFixed(1) + ' mo' : '—';
+  const _avgCloseMo   = (() => {
+    const d = stats?.avg_closure_days;
+    if (d == null) return '—';
+    if (d < 1)      return 'Same day';
+    if (d < 30.44)  return Math.round(d) + ' day' + (Math.round(d) === 1 ? '' : 's');
+    return (d / 30.44).toFixed(1) + ' mo';
+  })();
 
   const TELECALLER_CARDS = [
     { label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads' },
