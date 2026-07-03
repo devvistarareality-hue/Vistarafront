@@ -852,9 +852,17 @@ export default function ManagePlotsScreen({ route, navigation }) {
     sold:      plots.filter(p => p.status === 'sold').length,
   };
   const soldPct  = plots.length ? Math.round(counts.sold / plots.length * 100) : 0;
+  // Sort strictly by the numeric plot number (1 → n), ignoring the cluster prefix.
+  const plotNumVal = (p) => {
+    const disp = p.cluster_type
+      ? p.number.replace(new RegExp('^' + p.cluster_type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), '')
+      : p.number;
+    const m = String(disp).match(/\d+/);
+    return m ? parseInt(m[0], 10) : Number.MAX_SAFE_INTEGER;
+  };
   const filtered = (filter === 'all' ? plots : plots.filter(p => p.status === filter))
     .slice()
-    .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' }));
+    .sort((a, b) => (plotNumVal(a) - plotNumVal(b)) || a.number.localeCompare(b.number, undefined, { numeric: true }));
 
   if (loading) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
