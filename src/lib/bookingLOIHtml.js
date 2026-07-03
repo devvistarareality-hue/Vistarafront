@@ -139,7 +139,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 0 14px 46px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .hdr { background: linear-gradient(180deg, #edf2f9 0%, #ffffff 74%); color: #2e4a78; text-align: center; padding: 16px 16px 14px; margin: 0 -14px 14px; position: relative; border-top: 3px solid #2e4a78; border-bottom: 1px solid #d5deee; box-shadow: inset 0 -3px 0 -2px #ff6b2b; }
-  .hdr h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1.5px; text-indent: 1.5px; }
+  .hdr h1 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: 0.3px; }
   .hdr .proj { color: #78869c; font-size: 12px; margin-top: 3px; }
   .hdr .title { color: #5c7cac; font-weight: 700; font-size: 10px; letter-spacing: 2.5px; text-indent: 2.5px; margin-top: 9px; }
   .hdr .titlebar { width: 26px; height: 2px; background: #ff6b2b; border-radius: 2px; margin: 4px auto 0; }
@@ -204,8 +204,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   <div class="hdr">
     <img class="clogo" src="${COMPANY_LOGO}" />
     ${opts.projectLogoUrl ? `<img class="plogo" src="${esc(opts.projectLogoUrl)}" />` : ''}
-    <h1>VISTARA GROUP</h1>
-    <div class="proj">${esc(meta.project || '')}</div>
+    <h1>${esc(meta.project || '')}</h1>
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
