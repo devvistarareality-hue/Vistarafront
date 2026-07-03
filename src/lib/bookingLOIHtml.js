@@ -138,16 +138,16 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   @page { margin: 0; }
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 0 14px 46px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .hdr { background: #fff; color: #0d2f61; text-align: center; padding: 16px 16px 14px; margin: 0 -14px 14px; position: relative; border-top: 3px solid #c4953c; border-bottom: 2px solid #0d2f61; }
+  .hdr { background: linear-gradient(180deg, #edf2f9 0%, #ffffff 74%); color: #2e4a78; text-align: center; padding: 16px 16px 14px; margin: 0 -14px 14px; position: relative; border-top: 3px solid #2e4a78; border-bottom: 1px solid #d5deee; box-shadow: inset 0 -3px 0 -2px #ff6b2b; }
   .hdr h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1.5px; text-indent: 1.5px; }
-  .hdr .proj { color: #475569; font-size: 12px; margin-top: 3px; }
-  .hdr .title { color: #b07d1e; font-weight: 700; font-size: 10px; letter-spacing: 2.5px; text-indent: 2.5px; margin-top: 9px; }
-  .hdr .titlebar { width: 34px; height: 1.5px; background: #c4953c; margin: 4px auto 0; }
+  .hdr .proj { color: #78869c; font-size: 12px; margin-top: 3px; }
+  .hdr .title { color: #5c7cac; font-weight: 700; font-size: 10px; letter-spacing: 2.5px; text-indent: 2.5px; margin-top: 9px; }
+  .hdr .titlebar { width: 26px; height: 2px; background: #ff6b2b; border-radius: 2px; margin: 4px auto 0; }
   .hdr .clogo, .hdr .plogo { position: absolute; top: 50%; transform: translateY(-50%); width: 84px; height: 46px; object-fit: contain; }
   .hdr .clogo { left: 14px; }
   .hdr .plogo { right: 14px; }
   .datebelow { text-align: right; color: #475569; font-size: 9px; margin: 0 0 8px; }
-  .client { background: #e8f0fe; border: 1px solid #1a73e8; border-left: 4px solid #c4953c; border-radius: 6px; padding: 9px 12px; margin-bottom: 12px; }
+  .client { background: #eef3fb; border: 1px solid #c9d7ee; border-left: 4px solid #ff6b2b; border-radius: 6px; padding: 9px 12px; margin-bottom: 12px; }
   .client .nm { font-size: 14px; font-weight: 800; color: #0d2f61; }
   .client .ph { font-size: 10px; color: #475569; margin-top: 1px; }
   .client .sub { display: flex; margin-top: 7px; }
