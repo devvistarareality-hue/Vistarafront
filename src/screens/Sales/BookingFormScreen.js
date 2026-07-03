@@ -55,7 +55,7 @@ export default function BookingFormScreen({ navigation, route }) {
     sale_deed_pct: '60',
     land_sale_deed: '', const_agreement: '', premium_location: '',
     discount: '0', legal_charges: '', maint_rate: '', maint_months: '',
-    apply_reg_fee: 'Yes', apply_stamp_duty: 'Yes', apply_gst: 'Yes',
+    apply_reg_fee: 'Yes', apply_page_fee: 'Yes', apply_stamp_duty: 'Yes', apply_gst: 'Yes',
     booking_date: new Date().toISOString().slice(0, 10), cp_name: '',
   });
   const [errs, setErrs] = useState({});   // required-field highlight on Generate/Submit
@@ -98,7 +98,7 @@ export default function BookingFormScreen({ navigation, route }) {
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
-        apply_reg_fee: b.apply_reg_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
+        apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
         setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
@@ -120,7 +120,7 @@ export default function BookingFormScreen({ navigation, route }) {
     gender: f.gender, landSaleDeed: f.land_sale_deed, constAgreement: f.const_agreement,
     premiumLocation: f.premium_location, saleDeedRate: f.sale_deed_rate, devAgreementRate: f.dev_agreement_rate,
     saleDeedPct: f.sale_deed_pct,
-    applyRegFee: f.apply_reg_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
+    applyRegFee: f.apply_reg_fee, applyPageFee: f.apply_page_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
     extraWorkAmt: reviseId ? ew.amt : 0, extraWorkDesc: ew.desc,
   }), [f, formulaSet, project, ew, reviseId]);
   const base = installmentBase(v);
@@ -144,10 +144,12 @@ export default function BookingFormScreen({ navigation, route }) {
     : `${inr(v.saleDeedRate)} × ${inr(v.area)}`;
   const stampSub = (formulaSet === 'ankhol' && f.apply_stamp_duty === 'No') ? 'Not applicable'
     : (formulaSet === 'kalrav' ? '4.9% of Land Sale Deed' : '4.9% of Sale Deed');
+  const pageFeeTxt = f.apply_page_fee === 'No' ? '' : ' + ₹1,500';
+  const femPage = f.apply_page_fee === 'No' ? '₹0' : '₹1,500';
   const regSub = f.apply_reg_fee === 'No' ? 'Not applicable'
-    : (formulaSet === 'ankhol' ? '1% of Sale Deed + ₹1,500'
-      : formulaSet === 'industrial' ? 'Male: 1% Sale Deed + ₹1,500 | Female: ₹1,500'
-      : 'Male: 1% LSD + ₹1,500 | Female: ₹1,500');
+    : (formulaSet === 'ankhol' ? `1% of Sale Deed${pageFeeTxt}`
+      : formulaSet === 'industrial' ? `Male: 1% Sale Deed${pageFeeTxt} | Female: ${femPage}`
+      : `Male: 1% LSD${pageFeeTxt} | Female: ${femPage}`);
   const gstSub = (formulaSet === 'ankhol' && f.apply_gst === 'No') ? 'Not applicable'
     : (formulaSet === 'ankhol' ? '5% of Sale Deed'
       : formulaSet === 'industrial' ? (v.isTundav ? '18% of 67% of Sale Deed' : '18% of Development Agreement')
@@ -315,7 +317,7 @@ export default function BookingFormScreen({ navigation, route }) {
       maintenance: Math.round(v.maint), maint_deposit: Math.round(v.maintDeposit), maint_advance: Math.round(v.maintAdvance),
       legal_charges: f.legal_charges || 0, premium_location: f.premium_location || 0,
       total_extra: Math.round(v.totalExtra), discount: f.discount || 0, final_amount: Math.round(v.finalAmt),
-      apply_reg_fee: f.apply_reg_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
+      apply_reg_fee: f.apply_reg_fee, apply_page_fee: f.apply_page_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
       installments: instArr(), booking_date: f.booking_date, cp_name: f.cp_name,
       extra_work_desc: reviseId ? (ew.desc || '') : '',
       extra_work_amount: reviseId ? Math.round(parseFloat(ew.amt) || 0) : 0,
@@ -393,6 +395,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {formulaSet === 'ankhol' && <Pick l="Apply Stamp Duty?" val={f.apply_stamp_duty} on={(x) => set('apply_stamp_duty', x)} opts={['Yes', 'No']} />}
           <Calc l="Stamp Duty" sub={stampSub} val={v.stampDuty} />
           <Pick l="Apply Registration Fee?" val={f.apply_reg_fee} on={(x) => set('apply_reg_fee', x)} opts={['Yes', 'No']} />
+          {f.apply_reg_fee !== 'No' && <Pick l="Apply ₹1,500 Page Fee?" val={f.apply_page_fee} on={(x) => set('apply_page_fee', x)} opts={['Yes', 'No']} />}
           <Calc l="Registration Fees" sub={regSub} val={v.regFees} />
           {formulaSet === 'ankhol' && <Pick l="Apply GST?" val={f.apply_gst} on={(x) => set('apply_gst', x)} opts={['Yes', 'No']} />}
           <Calc l="GST" sub={gstSub} val={v.gst} />
