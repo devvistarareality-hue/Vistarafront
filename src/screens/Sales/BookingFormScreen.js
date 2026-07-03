@@ -72,7 +72,13 @@ export default function BookingFormScreen({ navigation, route }) {
       if (picked.length) {
         setPlotNo(picked.map((x) => x.number).join(', '));
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
-        setF((s) => ({ ...s, area: sumArea ? String(+sumArea.toFixed(2)) : s.area }));
+        // Auto-map construction area from the plot definition(s) into the booking.
+        const sumConst = picked.reduce((a, x) => a + (parseFloat((x.construction_area || '').replace(/[^\d.]/g, '')) || 0), 0);
+        setF((s) => ({
+          ...s,
+          area: sumArea ? String(+sumArea.toFixed(2)) : s.area,
+          const_area: sumConst ? String(+sumConst.toFixed(2)) : s.const_area,
+        }));
       }
     }).catch(() => {});
     apiFetch(SALES_ENDPOINTS.sources + cq('?')).then(r => r.json()).then((d) => setSources(Array.isArray(d) ? d : [])).catch(() => {});

@@ -55,6 +55,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
   const [plotNo,   setPlotNo]   = useState('');
   const [sizeVal,  setSizeVal]  = useState('');
   const [unit,     setUnit]     = useState('sqft');
+  const [constArea, setConstArea] = useState('');
   const [editType, setEditType] = useState('');
   const [saving,   setSaving]   = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
@@ -70,6 +71,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
       setPlotNo(displayNum);
       setSizeVal(p.sizeVal);
       setUnit(UNITS.includes(p.unit) ? p.unit : 'sqft');
+      setConstArea(plot.construction_area || '');
       setEditType(plot.cluster_type || '');
     }
   }, [plot, visible]);
@@ -82,7 +84,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
       const fullNumber = editType ? `${editType}${plotNo}` : plotNo;
       const res = await apiFetch(SALES_ENDPOINTS.plot(plot.id), {
         method: 'PATCH',
-        body: JSON.stringify({ number: fullNumber, size: combined, cluster_type: editType }),
+        body: JSON.stringify({ number: fullNumber, size: combined, construction_area: (constArea || '').trim(), cluster_type: editType }),
       });
       if (res.ok) { onSaved(await res.json()); onClose(); }
       else { Alert.alert('Error', 'Could not save plot.'); }
@@ -126,6 +128,11 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
               </View>
             </TouchableOpacity>
           </Modal>
+
+          {/* Construction Area — auto-maps into the booking form */}
+          <Text style={lblS}>Construction Area (sq.ft)</Text>
+          <TextInput value={constArea} onChangeText={setConstArea} placeholder="e.g. 1200" keyboardType="numeric"
+            style={[inpS, { marginBottom: 14 }]} />
 
           {/* Cluster/Type + Number */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
