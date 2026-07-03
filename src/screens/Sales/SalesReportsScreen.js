@@ -273,6 +273,14 @@ export default function SalesReportsScreen({ navigation }) {
   const _svDone  = stats?.sv_done      ?? 0;
   const _mqlToSv = _called > 0 ? (_svDone / _called * 100).toFixed(1) + '%' : '—';
 
+  // STM/CP funnel metrics: SQL = leads that reached warm; ratios + avg closure timeline.
+  const _sql          = stats?.sql_count ?? stats?.stm_warm_count ?? 0;
+  const _closures     = stats?.closures ?? 0;
+  const _sqlToSv      = _sql > 0 ? Math.round(_svDone / _sql * 100) + '%' : '—';
+  const _sqlToClosure = _sql > 0 ? Math.round(_closures / _sql * 100) + '%' : '—';
+  const _avgCloseMo   = stats?.avg_closure_days != null
+    ? (stats.avg_closure_days / 30.44).toFixed(1) + ' mo' : '—';
+
   const TELECALLER_CARDS = [
     { label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads' },
     { label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
@@ -286,11 +294,14 @@ export default function SalesReportsScreen({ navigation }) {
   const STM_CARDS = [
     { label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
     { label: 'Hot Leads',    value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
-    { label: 'Warm Leads',   value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
+    { label: 'Warm/SQL',     value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
     { label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
     { label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
     { label: 'SV Done / Low Hanging', value: _svDone,             color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
+    { label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
+    { label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
+    { label: 'Avg Closure Time',    value: _avgCloseMo,   color: COLORS.error,  bg: COLORS.errorBg },
   ];
   const STAT_CARDS = isStmView ? STM_CARDS : TELECALLER_CARDS;
 
