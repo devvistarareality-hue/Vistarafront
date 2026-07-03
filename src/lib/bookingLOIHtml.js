@@ -142,9 +142,9 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .hdr h1 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 1px; }
   .hdr .proj { color: #c4d6ff; font-size: 12px; margin-top: 2px; }
   .hdr .badge { display: inline-block; background: #c4953c; color: #0d2f61; font-weight: 700; font-size: 9px; padding: 4px 16px; border-radius: 4px; margin-top: 8px; letter-spacing: .5px; }
-  .hdr .clogo, .hdr .plogo { position: absolute; top: 12px; width: 84px; height: 46px; object-fit: contain; background: #fff; border-radius: 5px; padding: 4px; box-sizing: border-box; }
-  .hdr .clogo { left: 16px; }
-  .hdr .plogo { right: 16px; }
+  .hdr .clogo, .hdr .plogo { position: absolute; top: 15px; width: 82px; height: 44px; object-fit: contain; background: #fff; border-radius: 5px; padding: 4px; box-sizing: border-box; }
+  .hdr .clogo { left: 26px; }
+  .hdr .plogo { right: 26px; }
   .datebelow { text-align: right; color: #475569; font-size: 9px; margin: 0 0 8px; }
   .client { background: #e8f0fe; border: 1px solid #1a73e8; border-left: 4px solid #c4953c; border-radius: 6px; padding: 9px 12px; margin-bottom: 12px; }
   .client .nm { font-size: 14px; font-weight: 800; color: #0d2f61; }
