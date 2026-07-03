@@ -30,7 +30,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // helpers
   const info = (l, d) => `<div class="cell"><div class="k">${esc(l)}</div><div class="d">${esc(d == null || d === '' ? '—' : d)}</div></div>`;
   const grid = (rows) => `<div class="grid">${rows.map(([k, d]) => info(k, d)).join('')}</div>`;
-  const sec = (t, c) => `<div class="sec" style="background:${c || '#0d2f61'}">${esc(t)}</div>`;
+  const sec = (t) => `<div class="sec">${esc(t)}</div>`;
   // money row: cls = sub|total ; green for discount
   const mrow = (l, n, o = {}) =>
     `<tr class="${o.total ? 'total' : o.sub ? 'sub' : ''}"><td class="l">${esc(l)}${o.subline ? `<div class="sl">${esc(o.subline)}</div>` : ''}</td><td class="rs">Rs.</td><td class="amt ${o.green ? 'green' : ''}">${money(n)}</td></tr>`;
@@ -148,14 +148,14 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .hdr .plogo { right: 14px; }
   .datebelow { text-align: right; color: #475569; font-size: 9px; margin: 0 0 8px; }
   .client { background: #eef3fb; border: 1px solid #c9d7ee; border-left: 4px solid #ff6b2b; border-radius: 6px; padding: 9px 12px; margin-bottom: 12px; }
-  .client .nm { font-size: 14px; font-weight: 800; color: #0d2f61; }
+  .client .nm { font-size: 14px; font-weight: 800; color: #2e4a78; }
   .client .ph { font-size: 10px; color: #475569; margin-top: 1px; }
   .client .sub { display: flex; margin-top: 7px; }
   .client .sub .c { flex: 1; border-left: 1px solid #d7e3f5; padding-left: 8px; }
   .client .sub .c:first-child { border-left: 0; padding-left: 0; }
   .client .sub .k { font-size: 8px; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
   .client .sub .d { font-size: 10px; color: #1e293b; }
-  .sec { color: #fff; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; padding: 6px 10px; border-radius: 4px; margin: 12px 0 7px; }
+  .sec { color: #fff; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; padding: 6px 10px; border-radius: 4px; margin: 12px 0 7px; background: linear-gradient(90deg, #2e4a78 0%, #5c7cac 100%); border-left: 3px solid #ff6b2b; }
   .grid { display: flex; flex-wrap: wrap; }
   .cell { width: 50%; padding: 4px 8px; }
   .cell:nth-child(4n+1), .cell:nth-child(4n+2) { background: #f8fafe; }
@@ -169,34 +169,34 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   td.amt.green { color: #16a34a; }
   td.l .sl { font-size: 9px; color: #94a3b8; font-weight: 400; margin-top: 1px; }
   tr:nth-child(even) td.l, tr:nth-child(even) td.rs, tr:nth-child(even) td.amt { background: #f8fafe; }
-  tr.sub td { background: #e8f0fe !important; color: #1a73e8; font-weight: 800; border-bottom: none; }
-  tr.sub td.amt { color: #1a73e8; }
-  tr.total td { background: #0d2f61 !important; color: #fff; font-size: 13px; font-weight: 800; padding-top: 8px; padding-bottom: 8px; border: none; }
+  tr.sub td { background: #eef3fb !important; color: #2e4a78; font-weight: 800; border-bottom: none; }
+  tr.sub td.amt { color: #2e4a78; }
+  tr.total td { background: linear-gradient(90deg, #2e4a78 0%, #5c7cac 100%) !important; color: #fff; font-size: 13px; font-weight: 800; padding-top: 8px; padding-bottom: 8px; border: none; border-left: 3px solid #ff6b2b; }
   tr.total td.amt, tr.total td.rs { color: #fff; }
-  .sched th { background: #0d2f61; color: #fff; font-size: 9px; padding: 7px 8px; text-align: left; }
+  .sched th { background: linear-gradient(90deg, #2e4a78 0%, #5c7cac 100%); color: #fff; font-size: 9px; padding: 7px 8px; text-align: left; }
   .sched th.r, .sched td.r { text-align: right; }
   .sched td { padding: 6px 8px; border-bottom: 1px solid #eef0f5; font-size: 11px; }
   .sched td.r { font-weight: 700; white-space: nowrap; }
   .sched td.no, .sched td.bdg { text-align: center; width: 30px; }
-  .circ { display: inline-block; width: 16px; height: 16px; line-height: 16px; border-radius: 50%; background: #1a73e8; color: #fff; font-size: 8px; font-weight: 700; text-align: center; }
+  .circ { display: inline-block; width: 16px; height: 16px; line-height: 16px; border-radius: 50%; background: #2e4a78; color: #fff; font-size: 8px; font-weight: 700; text-align: center; }
   .sched tr:nth-child(odd) td { background: #f8fafe; }
-  .sched tr.extra td { background: #fff8e1 !important; color: #5c400e; font-weight: 700; }
+  .sched tr.extra td { background: #fff1e8 !important; color: #9a3c16; font-weight: 700; }
   .sched tr.work td { background: #f0fdf4 !important; color: #15803d; font-weight: 700; }
   .sched td.bdg { font-size: 7px; font-weight: 800; color: #fff; border-radius: 3px; padding: 3px 2px; }
-  .sched tr.extra td.bdg { background: #c4953c !important; }
+  .sched tr.extra td.bdg { background: #ff6b2b !important; }
   .sched tr.work td.bdg { background: #16a34a !important; }
-  .sched tr.grand td { background: #fcf5e1 !important; color: #0d2f61; font-weight: 800; font-size: 12px; padding: 9px 8px; border-top: 1px solid #c4953c; border-bottom: 1px solid #c4953c; }
+  .sched tr.grand td { background: #eef3fb !important; color: #2e4a78; font-weight: 800; font-size: 12px; padding: 9px 8px; border-top: 1px solid #ff6b2b; border-bottom: 1px solid #ff6b2b; }
   .term { padding: 6px 0 6px 16px; border-bottom: 1px solid #f1f5f9; position: relative; font-size: 10px; }
-  .term::before { content: ""; position: absolute; left: 3px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: #c4953c; }
-  .term b { color: #0d2f61; }
+  .term::before { content: ""; position: absolute; left: 3px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: #ff6b2b; }
+  .term b { color: #2e4a78; }
   .sign { display: flex; justify-content: space-between; margin-top: 22px; }
   .sign .box { width: 46%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 10px 10px; text-align: center; }
   .sign .t { font-size: 9px; color: #94a3b8; font-weight: 700; letter-spacing: .5px; }
   .sign .line { border-top: 1px solid #cbd5e1; margin: 24px 10px 6px; }
   .sign .nm { font-size: 11px; color: #1e293b; }
   .dateline { text-align: center; color: #475569; font-size: 10px; margin-top: 10px; }
-  .decl { background: #fcf5e1; border: 1px solid #c4953c; border-radius: 6px; padding: 9px; font-style: italic; text-align: center; color: #645014; margin-top: 14px; font-size: 10px; }
-  .foot { position: fixed; bottom: 0; left: 0; right: 0; background: #0d2f61; border-top: 2px solid #c4953c; color: #fff; font-size: 8px; text-align: center; padding: 5px 0; }
+  .decl { background: #eef3fb; border: 1px solid #c9d7ee; border-left: 3px solid #ff6b2b; border-radius: 6px; padding: 9px; font-style: italic; text-align: center; color: #2e4a78; margin-top: 14px; font-size: 10px; }
+  .foot { position: fixed; bottom: 0; left: 0; right: 0; background: #2e4a78; border-top: 2px solid #ff6b2b; color: #fff; font-size: 8px; text-align: center; padding: 5px 0; }
   /* keep each section (header + its body) together so nothing is cut across pages */
   .block { page-break-inside: avoid; break-inside: avoid; }
   .sec { page-break-after: avoid; break-after: avoid; }
