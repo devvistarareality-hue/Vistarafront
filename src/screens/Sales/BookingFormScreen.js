@@ -52,6 +52,7 @@ export default function BookingFormScreen({ navigation, route }) {
     client_name: p.client || '', gender: '', phone: p.phone || '', address: '', source: '',
     area: '', area_unit: 'sq.yd', const_area: '', villa_type: '',
     land_rate: '', dev_rate: '', const_rate: '', sale_deed_rate: '', dev_agreement_rate: '',
+    sale_deed_pct: '60',
     land_sale_deed: '', const_agreement: '', premium_location: '',
     discount: '0', legal_charges: '', maint_rate: '', maint_months: '',
     apply_reg_fee: 'Yes', apply_stamp_duty: 'Yes', apply_gst: 'Yes',
@@ -88,6 +89,7 @@ export default function BookingFormScreen({ navigation, route }) {
       setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: b.source || '',
         area: b.area || '', area_unit: b.area_unit || 'sq.yd', const_area: b.const_area || '', villa_type: b.villa_type || '',
         land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
+        sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
@@ -111,6 +113,7 @@ export default function BookingFormScreen({ navigation, route }) {
     discount: f.discount, legalCharges: f.legal_charges, maintRate: f.maint_rate, maintMonths: f.maint_months,
     gender: f.gender, landSaleDeed: f.land_sale_deed, constAgreement: f.const_agreement,
     premiumLocation: f.premium_location, saleDeedRate: f.sale_deed_rate, devAgreementRate: f.dev_agreement_rate,
+    saleDeedPct: f.sale_deed_pct,
     applyRegFee: f.apply_reg_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
     extraWorkAmt: reviseId ? ew.amt : 0, extraWorkDesc: ew.desc,
   }), [f, formulaSet, project, ew, reviseId]);
@@ -129,9 +132,9 @@ export default function BookingFormScreen({ navigation, route }) {
     : formulaSet === 'industrial'
       ? `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maintDeposit)} + ${inr(v.maintAdvance)} + ${inr(v.legal)}`
       : `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maint)} + ${inr(v.legal)}`;
-  const saleDeedSub = formulaSet === 'ankhol' ? '60% × (Base + Premium − Discount)' : 'Sale Deed Rate × Plot Area';
+  const saleDeedSub = formulaSet === 'ankhol' ? `${v.saleDeedPct}% × (Base + Premium − Discount)` : 'Sale Deed Rate × Plot Area';
   const saleDeedSub2 = formulaSet === 'ankhol'
-    ? `60% × (${inr(v.plotBasic + v.plotDev + v.constAmt)} + ${inr(v.premiumLocation)} − ${inr(v.discount)})`
+    ? `${v.saleDeedPct}% × (${inr(v.plotBasic + v.plotDev + v.constAmt)} + ${inr(v.premiumLocation)} − ${inr(v.discount)})`
     : `${inr(v.saleDeedRate)} × ${inr(v.area)}`;
   const stampSub = (formulaSet === 'ankhol' && f.apply_stamp_duty === 'No') ? 'Not applicable'
     : (formulaSet === 'kalrav' ? '4.9% of Land Sale Deed' : '4.9% of Sale Deed');
@@ -297,6 +300,7 @@ export default function BookingFormScreen({ navigation, route }) {
       villa_type: flags.bunglowTypeIsDropdown ? f.villa_type : '', bunglow_type: flags.bunglowTypeFixed || '',
       land_rate: f.land_rate || 0, dev_rate: f.dev_rate || 0, const_rate: f.const_rate || 0,
       sale_deed_rate: f.sale_deed_rate || 0, dev_agreement_rate: f.dev_agreement_rate || 0,
+      sale_deed_pct: f.sale_deed_pct === '' || f.sale_deed_pct == null ? 60 : f.sale_deed_pct,
       maint_rate: f.maint_rate || 0, maint_months: f.maint_months || 0,
       plot_basic: Math.round(v.plotBasic), plot_dev: Math.round(v.plotDev), const_amt: Math.round(v.constAmt),
       sale_deed: Math.round(v.saleDeed), dev_agreement: Math.round(v.devAgreement),
@@ -375,6 +379,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
           {flags.hasConstructionAgreement && <Fld l="Construction Agreement (₹)" val={f.const_agreement} on={(t) => set('const_agreement', t)} kb="numeric" />}
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
+          {formulaSet === 'ankhol' && <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => set('sale_deed_pct', t)} kb="numeric" />}
           <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />
         </Sec>
 
