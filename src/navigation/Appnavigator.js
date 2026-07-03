@@ -56,6 +56,14 @@ const Stack = createNativeStackNavigator();
 const AppNavigator = () => {
   const user        = useSelector((state) => state.auth.user);
   const isVRLAdmin  = user?.role === 'Admin' && user?.company_code === 'VRL';
+  // Sales module admin: a company Admin scoped to the Sales module only (not a
+  // platform super-admin). Gets a Sales-only app — lands on the Sales admin home,
+  // with no access to other modules or platform-admin screens.
+  const _ALL_MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase', 'Land'];
+  const _mods        = user?.modules || [];
+  const _isSuper     = user?.is_staff || isVRLAdmin;
+  const isSalesAdmin = user?.role === 'Admin' && !_isSuper
+    && _mods.length > 0 && _mods.length < _ALL_MODULES.length && _mods.includes('Sales');
 
   return (
     <NavigationContainer ref={navigationRef}>
@@ -84,6 +92,31 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesMyConversions"  component={SalesMyConversionsScreen} />
             <Stack.Screen name="MyTeam"              component={MyTeamScreen} />
             <Stack.Screen name="ModuleHome"          component={ModuleHomeScreen} />
+            <Stack.Screen name="BookingForm"         component={BookingFormScreen} />
+            <Stack.Screen name="BookingApprovals"    component={BookingApprovalsScreen} />
+            <Stack.Screen name="SalesProjects"       component={ProjectsScreen} />
+            <Stack.Screen name="ManagePlots"         component={ManagePlotsScreen} />
+            <Stack.Screen name="ClosureProjects"     component={ClosureProjectsScreen} />
+            <Stack.Screen name="ClosureViewer"       component={ClosureViewerScreen} />
+            <Stack.Screen name="SalesSources"        component={SalesSourcesScreen} />
+            <Stack.Screen name="SalesTeam"           component={SalesTeamScreen} />
+            <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
+            <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
+            <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
+            <Stack.Screen name="SalesDataReset"      component={SalesDataResetScreen} />
+            <Stack.Screen name="SalesNotifications"  component={NotificationsScreen} />
+            <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
+          </>
+
+        ) : isSalesAdmin ? (
+          // ── Sales module admin — Sales-only, lands on the Sales CRM admin home ─
+          <>
+            <Stack.Screen name="SalesCRM"            component={SalesCRMScreen} />
+            <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
+            <Stack.Screen name="SalesFollowUps"      component={SalesFollowUpsScreen} />
+            <Stack.Screen name="SalesSiteVisits"     component={SalesSiteVisitsScreen} />
+            <Stack.Screen name="SalesMyConversions"  component={SalesMyConversionsScreen} />
+            <Stack.Screen name="MyTeam"              component={MyTeamScreen} />
             <Stack.Screen name="BookingForm"         component={BookingFormScreen} />
             <Stack.Screen name="BookingApprovals"    component={BookingApprovalsScreen} />
             <Stack.Screen name="SalesProjects"       component={ProjectsScreen} />
