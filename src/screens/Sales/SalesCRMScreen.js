@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { apiFetch } from '../../utils/apiFetch';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
@@ -50,7 +51,12 @@ function getDesignationLabel(user) {
 export default function SalesCRMScreen({ navigation }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const dispatch  = useDispatch();
   const isAdmin   = user?.role === 'Admin' || user?.is_staff;
+  // A module (Sales) admin is locked to their own company — clear any stale company
+  // filter a previous super-admin session may have persisted on this device.
+  const isModuleAdmin = user?.role === 'Admin' && !user?.is_staff && (user?.modules || []).length === 1;
+  useEffect(() => { if (isModuleAdmin && companyId != null) dispatch(setAdminCompany(null)); }, [isModuleAdmin, companyId]);
   const _des = (user?.designation || '').toLowerCase();
   const isStm = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive');
   const isTelecaller = _des.includes('telecaller') || _des.includes('tele caller');
