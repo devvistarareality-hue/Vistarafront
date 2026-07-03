@@ -139,9 +139,9 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 0 14px 46px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .hdr { background: #0d2f61; color: #fff; text-align: center; padding: 18px 16px 18px; margin: 0 -14px 14px; position: relative; border-top: 3px solid #c4953c; border-bottom: 3px solid #c4953c; }
-  .hdr h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1.5px; }
+  .hdr h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1.5px; text-indent: 1.5px; }
   .hdr .proj { color: #c8d6f5; font-size: 12px; margin-top: 3px; }
-  .hdr .title { color: #e0c07a; font-weight: 700; font-size: 10px; letter-spacing: 2.5px; margin-top: 9px; }
+  .hdr .title { color: #e0c07a; font-weight: 700; font-size: 10px; letter-spacing: 2.5px; text-indent: 2.5px; margin-top: 9px; }
   .hdr .titlebar { width: 34px; height: 1.5px; background: #c4953c; margin: 4px auto 0; }
   .hdr .clogo, .hdr .plogo { position: absolute; top: 50%; transform: translateY(-50%); width: 82px; height: 44px; object-fit: contain; background: #fff; border-radius: 5px; padding: 4px; box-sizing: border-box; }
   .hdr .clogo { left: 26px; }
