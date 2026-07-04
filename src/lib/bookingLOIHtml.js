@@ -248,7 +248,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   <div class="block">${agreement}</div>
 
-  <div class="block">${sec('Extra Charges', '#7c3aed')}<table class="money">${extra}</table></div>
+  <div class="block">${sec('Legal & Other Charges', '#7c3aed')}<table class="money">${extra}</table></div>
 
   ${extraWork ? `<div class="block">${extraWork}</div>` : ''}
 
