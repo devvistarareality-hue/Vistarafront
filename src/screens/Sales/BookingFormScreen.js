@@ -415,8 +415,8 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasSaleDeed && formulaSet !== 'ankhol' && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
           {formulaSet === 'ankhol' && <>
             <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
-            <Tot l="Extra Work Charges" val={v.nonSaleDeedDoc} valFmt={'₹ ' + Number(v.nonSaleDeedDoc || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} />
-            <Tot l="Total Asset Value" sub="Sale Deed + Non-Sale Deed" val={v.docTotal} valFmt={'₹ ' + Number(v.docTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} subtotal />
+            <Tot l="Extra Work Charges" val={v.nonSaleDeedDoc} />
+            <Tot l="Total Asset Value" sub="Sale Deed + Extra Work Charges" val={v.docTotal} subtotal />
           </>}
           <Tot l="Extra Charges" sub={extraSub} sub2={extraSub2} val={v.totalExtra} />
           {!!reviseId && v.extraWorkAmt > 0 && <Tot l="Extra Work" val={v.extraWorkAmt} />}
