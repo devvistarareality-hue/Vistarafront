@@ -30,7 +30,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // helpers
   const info = (l, d) => `<div class="cell"><div class="k">${esc(l)}</div><div class="d">${esc(d == null || d === '' ? '—' : d)}</div></div>`;
   const grid = (rows) => `<div class="grid">${rows.map(([k, d]) => info(k, d)).join('')}</div>`;
-  const sec = (t) => `<div class="sec">${esc(t)}</div>`;
+  const sec = (t, c) => `<div class="sec"${c ? ` style="background:${esc(c)}"` : ''}>${esc(t)}</div>`;
   // money row: cls = sub|total ; green for discount
   const mrow = (l, n, o = {}) => {
     const val = o.valStr !== undefined ? o.valStr : money(n);
