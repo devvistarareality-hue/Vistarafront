@@ -124,7 +124,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   let grandLegal = 0;
   const legalRows = legalInst.map((i, idx) => {
     const amt = Math.round(i.amt || 0); grandLegal += amt;
-    const legalDate = fmtDate(i.date) || NO_DATE;
+    const rawDate = fmtDate(i.date); const legalDate = (rawDate && rawDate !== '—') ? rawDate : NO_DATE;
     return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(legalDate)}</td><td>Legal & Other Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
 
