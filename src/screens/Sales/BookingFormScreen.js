@@ -434,7 +434,7 @@ export default function BookingFormScreen({ navigation, route }) {
             subtotal />}
           {flags.hasSaleDeed && formulaSet !== 'ankhol' && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
           {formulaSet === 'ankhol' && <>
-            <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
+            <Tot l="Unit Price" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
             <Tot l="Extra Work Charges" val={v.nonSaleDeed} />
             <Tot l="Total Asset Value" sub="Sale Deed + Extra Work Charges" val={v.saleDeed + v.nonSaleDeed} subtotal />
           </>}
