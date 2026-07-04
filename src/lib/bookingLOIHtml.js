@@ -85,7 +85,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (' + (v.gender === 'Female' ? ('Female - ' + (v.applyPageFee === 'No' ? 'Rs.0' : 'Rs.1,500')) : ('Male - 1% LSD' + (v.applyPageFee === 'No' ? '' : ' + Rs.1,500'))) + ')'), v.applyRegFee === 'No' ? 0 : v.regFees);
     extra += mrow('GST (18% of Construction Agreement)', v.gst) + mrow('Maintenance', v.maint) + mrow('Legal Charges & Others', v.legal);
   }
-  extra += mrow('Total Extra Charges', v.totalExtra, { sub: true });
+  extra += mrow('Total Legal & Other Charges', v.totalExtra, { sub: true });
 
   const extraWork = (v.extraWorkAmt > 0)
     ? sec('Extra Work', '#16a34a') + `<table class="money">${mrow(v.extraWorkDesc || 'Extra Work Charges', v.extraWorkAmt)}</table>`
