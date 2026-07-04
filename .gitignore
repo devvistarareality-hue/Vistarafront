@@ -45,3 +45,6 @@ build-*/
 build-*.tar.gz
 *.apk
 *.aab
+
+# IDE
+.idea/
