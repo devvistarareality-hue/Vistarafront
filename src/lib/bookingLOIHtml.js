@@ -42,26 +42,14 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   let details;
   if (isIndustrial) {
     const sqm = v.area > 0 ? (v.area / 10.764).toFixed(2) + ' sq.mtr' : '—';
-    details = [['Client Phone', meta.phoneNumber], ['Booking Date', fmtDate(meta.bookingDate)], ['Project', meta.project], ['Plot No', meta.plotNo],
+    details = [['Plot No', meta.plotNo],
       ...((chosenUnit && chosenUnit !== 'sq.ft') ? [['Plot Area', v.area + ' ' + areaUnit]] : [['Plot Area (sq.ft)', v.area + ' sq.ft.'], ['Plot Area (sq.mtr)', sqm]]),
-      ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Address', meta.address || '—']];
+      ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
   } else {
-    details = [['Client Phone', meta.phoneNumber], ['Booking Date', fmtDate(meta.bookingDate)], ['Project', meta.project], ['Plot No', meta.plotNo],
+    details = [['Plot No', meta.plotNo],
       ['Plot Area', v.area + ' ' + areaUnit], ['Construction Area', v.constArea + ' ' + areaUnit],
       [isAnkhol ? 'Bunglow Type' : 'Villa Type', isAnkhol ? (meta.bunglowType || '5B2HK + SR') : (meta.villaType || '—')],
-      ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Address', meta.address || '—']];
-  }
-
-  // ── Pricing ──
-  let pricing;
-  if (isIndustrial) {
-    const landUnit = (chosenUnit && chosenUnit !== 'sq.ft') ? rateUnit : 'sq.ft';
-    pricing = [['Land Rate', 'Rs. ' + num(v.landRate) + ' / ' + landUnit], ['Sale Deed Rate', 'Rs. ' + num(v.saleDeedRate) + ' / sq.ft']];
-    if (!isTundav) pricing.push(['Dev Agreement Rate', 'Rs. ' + num(v.devAgreementRate) + ' / sq.ft']);
-    pricing.push(['Discount', 'Rs. ' + num(v.discount)]);
-  } else {
-    pricing = [['Land Rate', 'Rs. ' + num(v.landRate) + ' / ' + rateUnit], ['Development Rate', 'Rs. ' + num(v.devRate) + ' / ' + rateUnit],
-      ['Construction Rate', 'Rs. ' + num(v.constRate) + ' / ' + rateUnit], ['Discount', 'Rs. ' + num(v.discount)]];
+      ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
   }
 
   // ── Agreement Amount ──
@@ -69,10 +57,9 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   if (isAnkhol) {
     const sdPct = v.saleDeedPct != null ? v.saleDeedPct : 60;
     const fmt2 = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    agreement = sec(`Sale Deed  (${sdPct}% x Base + Premium - Discount)`, '#475569') + grid([
-      ['Sale Deed Amount', 'Rs. ' + num(v.saleDeed)],
-      ['Extra Work Charges', 'Rs. ' + fmt2(v.nonSaleDeedDoc)],
-      ['Total Asset Document Value', 'Rs. ' + fmt2(v.docTotal)],
+    agreement = sec('Deal Value', '#475569') + grid([
+      ['Unit Price', 'Rs. ' + num(v.saleDeed)],
+      ['Additional Extra Work Charges', 'Rs. ' + fmt2(v.nonSaleDeedDoc)],
     ]);
   }
   else if (isIndustrial) {
@@ -104,54 +91,47 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     ? sec('Extra Work', '#16a34a') + `<table class="money">${mrow(v.extraWorkDesc || 'Extra Work Charges', v.extraWorkAmt)}</table>`
     : '';
 
-  // ── Total Deal Summary ──
-  const fmt2Deal = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  let deal = '';
-  let finalAmtForDeal = v.finalAmt;
-  if (isAnkhol) {
-    const sdPct = v.saleDeedPct != null ? v.saleDeedPct : 60;
-    const nsdK = (v.nonSaleDeed || 0) / 100;
-    const totalAssetDoc = (v.saleDeed || 0) + nsdK;
-    finalAmtForDeal = totalAssetDoc + (v.totalExtra || 0) + (v.extraWorkAmt || 0);
-    deal += mrow(`Sale Deed  (${sdPct}% x Base + Premium - Discount)`, v.saleDeed);
-    deal += mrow('Extra Work Charges', 0, { valStr: fmt2Deal(nsdK) });
-    deal += mrow('Total Asset Value', 0, { sub: true, valStr: fmt2Deal(totalAssetDoc) });
-  } else {
-    deal += mrow('Plot Basic Amount  (Plot Area x Land Rate)', v.plotBasic, { subline: num(v.area) + ' x ' + num(v.landRate) });
-    if (!isIndustrial) {
-      deal += mrow('Plot Development Amount  (Plot Area x Dev Rate)', v.plotDev, { subline: num(v.area) + ' x ' + num(v.devRate) });
-      deal += mrow('Construction Amount  (Const Area x Const Rate)', v.constAmt, { subline: num(v.constArea) + ' x ' + num(v.constRate) });
-      deal += mrow('Total Basic Amount', (v.plotBasic || 0) + (v.plotDev || 0) + (v.constAmt || 0), { sub: true });
-    }
-    deal += mrow('Discount', v.discount, { green: true });
-  }
-  deal += mrow('Extra Charges', v.totalExtra);
-  if (v.extraWorkAmt > 0) deal += mrow('Extra Work', v.extraWorkAmt);
-  deal += mrow('FINAL AMOUNT', 0, { total: true, valStr: isAnkhol ? fmt2Deal(finalAmtForDeal) : money(finalAmtForDeal) });
+  // ── Payment Schedule ── 3 separate sections
+  const unitInst = installments.filter(i => !i.isExtra && !i.isExtraWork && !i.isNsd);
+  const ewcRaw = [
+    ...installments.filter(i => i.isNsd),
+    ...extraWorkInst.map(r => ({ no: 'W' + r.no, date: r.date, pct: r.pct, amt: r.amt, isExtraWork: true, desc: v.extraWorkDesc })),
+  ];
+  const legalInst = installments.filter(i => i.isExtra && Math.round(i.amt || 0) > 0);
+  const schedHdr = `<table class="sched"><tr><th>#</th><th>Due Date</th><th>%</th><th class="r">Amount (Rs.)</th></tr>`;
+  const fmtSub = (n) => n % 1 === 0 ? money(n) : n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const subRow = (label, n) => `<tr class="grand"><td colspan="3">${label}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${fmtSub(n)}</span></div></td></tr>`;
 
-  // ── Payment Schedule ── (normal, then extra-work, then extra charges)
-  const ordered = [];
-  installments.forEach((i) => { if (!i.isExtra && !i.isExtraWork && !i.isNsd) ordered.push(i); });
-  extraWorkInst.forEach((r) => ordered.push({ no: 'W' + r.no, date: r.date, pct: r.pct, amt: r.amt, isExtraWork: true, desc: v.extraWorkDesc }));
-  installments.forEach((i) => { if (i.isNsd) ordered.push(i); });
-  installments.forEach((i) => { if (i.isExtra && Math.round(i.amt || 0) > 0) ordered.push(i); });
-  let grand = 0;
-  const schedRows = ordered.map((i) => {
+  let grandUnit = 0;
+  const unitRows = unitInst.map(i => {
+    const amt = Math.round(i.amt || 0); grandUnit += amt;
+    return `<tr><td class="no"><span class="circ">${esc(i.no)}</span></td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+  }).join('');
+
+  let grandEwc = 0;
+  const ewcRows = ewcRaw.map(i => {
     if (i.isNsd) {
-      const docAmt = (i.amt || 0) / 100;
-      grand += docAmt;
+      const docAmt = (i.amt || 0) / 100; grandEwc += docAmt;
       const docStr = docAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       return `<tr class="nsd"><td class="bdg">EWC</td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${docStr}</span></div></td></tr>`;
     }
-    const amt = Math.round(i.amt || 0); grand += amt;
-    if (i.isExtra) return `<tr class="extra"><td class="bdg">EXTRA</td><td>${fmtDate(i.date) || '—'}</td><td>Extra Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
-    if (i.isExtraWork) return `<tr class="work"><td class="bdg">WORK</td><td>${fmtDate(i.date) || '—'}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
-    return `<tr><td class="no"><span class="circ">${esc(i.no)}</span></td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    const amt = Math.round(i.amt || 0); grandEwc += amt;
+    return `<tr class="work"><td class="bdg">WORK</td><td>${fmtDate(i.date) || '—'}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
-  const grandStr = grand % 1 === 0 ? money(grand) : grand.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const schedule = ordered.length ? sec('Payment Schedule', '#0f766e') +
-    `<table class="sched"><tr><th>#</th><th>Due Date</th><th>%</th><th class="r">Amount (Rs.)</th></tr>${schedRows}` +
-    `<tr class="grand"><td colspan="3">GRAND TOTAL</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${grandStr}</span></div></td></tr></table>` : '';
+
+  let grandLegal = 0;
+  const legalRows = legalInst.map(i => {
+    const amt = Math.round(i.amt || 0); grandLegal += amt;
+    return `<tr class="extra"><td class="bdg">EXTRA</td><td>${fmtDate(i.date) || '—'}</td><td>Legal & Other Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+  }).join('');
+
+  const grand = grandUnit + grandEwc + grandLegal;
+  const schedBlocks = [];
+  if (unitInst.length) schedBlocks.push(`<div class="block">${sec('Unit Price Payment Schedule', '#0f766e')}${schedHdr}${unitRows}${subRow('SUB TOTAL', grandUnit)}</table></div>`);
+  if (ewcRaw.length) schedBlocks.push(`<div class="block">${sec('Additional Extra Work Charges Schedule', '#0369a1')}${schedHdr}${ewcRows}${subRow('SUB TOTAL', grandEwc)}</table></div>`);
+  if (legalInst.length) schedBlocks.push(`<div class="block">${sec('Legal & Other Charges Schedule', '#7c3aed')}${schedHdr}${legalRows}${subRow('SUB TOTAL', grandLegal)}</table></div>`);
+  if (schedBlocks.length) schedBlocks.push(`<div class="block"><table class="sched">${subRow('GRAND TOTAL', grand)}</table></div>`);
+  const scheduleHtml = schedBlocks.join('');
 
   // ── Terms ──
   const terms = [
@@ -177,7 +157,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .hdr .clogo, .hdr .plogo { position: absolute; top: 50%; transform: translateY(-50%); width: 84px; height: 46px; object-fit: contain; }
   .hdr .clogo { left: 14px; }
   .hdr .plogo { right: 14px; }
-  .datebelow { text-align: right; color: #475569; font-size: 9px; margin: 0 0 8px; }
+  .datebelow { display: flex; justify-content: space-between; color: #475569; font-size: 9px; margin: 0 0 8px; }
   .client { background: #eef3fb; border: 1px solid #c9d7ee; border-radius: 6px; padding: 9px 12px 9px 16px; margin-bottom: 12px; position: relative; }
   .client::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 3px; background: #ff6b2b; border-radius: 2px; }
   .client .nm { font-size: 14px; font-weight: 800; color: #2e4a78; }
@@ -254,7 +234,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
-  <div class="datebelow">Date: ${esc(fmtDate(meta.bookingDate))}</div>
+  <div class="datebelow"><span>Plot No: ${esc(meta.plotNo || '—')}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>
@@ -266,9 +246,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     </div>
   </div>
 
-  <div class="block">${sec('Project & Booking Details', '#0d2f61')}${grid(details)}</div>
-
-  <div class="block">${sec('Pricing Details', '#336699')}${grid(pricing)}</div>
+  <div class="block">${sec('Details', '#0d2f61')}${grid(details)}</div>
 
   <div class="block">${agreement}</div>
 
@@ -276,9 +254,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   ${extraWork ? `<div class="block">${extraWork}</div>` : ''}
 
-  <div class="block">${sec('Total Deal Summary', '#0d2f61')}<table class="money">${deal}</table></div>
-
-  ${schedule ? `<div class="block">${schedule}</div>` : ''}
+  ${scheduleHtml}
 
   <div class="block">${sec('Terms & Conditions', '#475569')}${terms.map((t) => `<div class="term"><b>${esc(t[0])}:</b> ${esc(t[1])}</div>`).join('')}</div>
 

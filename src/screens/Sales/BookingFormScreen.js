@@ -208,7 +208,7 @@ export default function BookingFormScreen({ navigation, route }) {
     const meta = {
       clientName: f.client_name, phoneNumber: f.phone, gender: f.gender, address: f.address,
       project: project?.name, plotNo: plotNo, bookingDate: f.booking_date,
-      villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: me?.name,
+      villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: me?.name, source: f.source,
       areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
