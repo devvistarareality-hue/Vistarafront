@@ -130,7 +130,6 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   if (unitInst.length) schedBlocks.push(`<div class="block">${sec('Unit Price Payment Schedule', '#0f766e')}${schedHdr}${unitRows}${subRow('SUB TOTAL', grandUnit)}</table></div>`);
   if (ewcRaw.length) schedBlocks.push(`<div class="block">${sec('Additional Extra Work Charges Schedule', '#0369a1')}${schedHdr}${ewcRows}${subRow('SUB TOTAL', grandEwc)}</table></div>`);
   if (legalInst.length) schedBlocks.push(`<div class="block">${sec('Legal & Other Charges Schedule', '#7c3aed')}${schedHdr}${legalRows}${subRow('SUB TOTAL', grandLegal)}</table></div>`);
-  if (schedBlocks.length) schedBlocks.push(`<div class="block"><table class="sched">${subRow('GRAND TOTAL', grand)}</table></div>`);
   const scheduleHtml = schedBlocks.join('');
 
   // ── Terms ──
