@@ -109,20 +109,20 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   }).join('');
 
   let grandEwc = 0;
-  const ewcRows = ewcRaw.map(i => {
+  const ewcRows = ewcRaw.map((i, idx) => {
     if (i.isNsd) {
       const docAmt = (i.amt || 0) / 100; grandEwc += docAmt;
       const docStr = docAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      return `<tr class="nsd"><td class="bdg">EWC</td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${docStr}</span></div></td></tr>`;
+      return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${docStr}</span></div></td></tr>`;
     }
     const amt = Math.round(i.amt || 0); grandEwc += amt;
-    return `<tr class="work"><td class="bdg">WORK</td><td>${fmtDate(i.date) || '—'}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${fmtDate(i.date) || '—'}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
 
   let grandLegal = 0;
-  const legalRows = legalInst.map(i => {
+  const legalRows = legalInst.map((i, idx) => {
     const amt = Math.round(i.amt || 0); grandLegal += amt;
-    return `<tr class="extra"><td class="bdg">EXTRA</td><td>${fmtDate(i.date) || '—'}</td><td>Legal & Other Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${fmtDate(i.date) || '—'}</td><td>Legal & Other Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
 
   const grand = grandUnit + grandEwc + grandLegal;
