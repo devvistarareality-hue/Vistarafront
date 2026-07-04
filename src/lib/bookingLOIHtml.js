@@ -42,11 +42,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   let details;
   if (isIndustrial) {
     const sqm = v.area > 0 ? (v.area / 10.764).toFixed(2) + ' sq.mtr' : '—';
-    details = [['Plot No', meta.plotNo],
+    details = [
       ...((chosenUnit && chosenUnit !== 'sq.ft') ? [['Plot Area', v.area + ' ' + areaUnit]] : [['Plot Area (sq.ft)', v.area + ' sq.ft.'], ['Plot Area (sq.mtr)', sqm]]),
       ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
   } else {
-    details = [['Plot No', meta.plotNo],
+    details = [
       ['Plot Area', v.area + ' ' + areaUnit], ['Construction Area', v.constArea + ' ' + areaUnit],
       [isAnkhol ? 'Bunglow Type' : 'Villa Type', isAnkhol ? (meta.bunglowType || '5B2HK + SR') : (meta.villaType || '—')],
       ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
