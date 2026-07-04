@@ -116,11 +116,18 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   // ── Payment Schedule ── (normal, then extra-work, then extra charges)
   const ordered = [];
-  installments.forEach((i) => { if (!i.isExtra && !i.isExtraWork) ordered.push(i); });
+  installments.forEach((i) => { if (!i.isExtra && !i.isExtraWork && !i.isNsd) ordered.push(i); });
   extraWorkInst.forEach((r) => ordered.push({ no: 'W' + r.no, date: r.date, pct: r.pct, amt: r.amt, isExtraWork: true, desc: v.extraWorkDesc }));
+  installments.forEach((i) => { if (i.isNsd) ordered.push(i); });
   installments.forEach((i) => { if (i.isExtra && Math.round(i.amt || 0) > 0) ordered.push(i); });
   let grand = 0;
   const schedRows = ordered.map((i) => {
+    if (i.isNsd) {
+      const docAmt = (i.amt || 0) / 100;
+      grand += docAmt;
+      const docStr = docAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `<tr class="nsd"><td class="bdg">EWC</td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="r">Rs. ${docStr}</td></tr>`;
+    }
     const amt = Math.round(i.amt || 0); grand += amt;
     if (i.isExtra) return `<tr class="extra"><td class="bdg">EXTRA</td><td>${fmtDate(i.date) || '—'}</td><td>Extra Charges</td><td class="r">Rs. ${money(amt)}</td></tr>`;
     if (i.isExtraWork) return `<tr class="work"><td class="bdg">WORK</td><td>${fmtDate(i.date) || '—'}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="r">Rs. ${money(amt)}</td></tr>`;
@@ -128,7 +135,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   }).join('');
   const schedule = ordered.length ? sec('Payment Schedule', '#0f766e') +
     `<table class="sched"><tr><th>#</th><th>Due Date</th><th>%</th><th class="r">Amount (Rs.)</th></tr>${schedRows}` +
-    `<tr class="grand"><td colspan="3">GRAND TOTAL</td><td class="r">Rs. ${money(grand)}</td></tr></table>` : '';
+    `<tr class="grand"><td colspan="3">GRAND TOTAL</td><td class="r">Rs. ${grand % 1 === 0 ? money(grand) : grand.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr></table>` : '';
 
   // ── Terms ──
   const terms = [
@@ -196,6 +203,8 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sched tr:nth-child(odd) td { background: #f8fafe; }
   .sched tr.extra td { background: #fff1e8 !important; color: #9a3c16; font-weight: 700; }
   .sched tr.work td { background: #f0fdf4 !important; color: #15803d; font-weight: 700; }
+  .sched tr.nsd td { background: #f0f9ff !important; color: #0369a1; font-weight: 700; }
+  .sched tr.nsd td.bdg { background: #0369a1 !important; }
   .sched td.bdg { font-size: 7px; font-weight: 800; color: #fff; border-radius: 3px; padding: 3px 2px; }
   .sched tr.extra td.bdg { background: #ff6b2b !important; }
   .sched tr.work td.bdg { background: #16a34a !important; }

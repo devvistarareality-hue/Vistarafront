@@ -38,6 +38,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [insts, setInsts] = useState([]);
+  const [nsdInsts, setNsdInsts] = useState([]);
   const [extraDate, setExtraDate] = useState('');
   const [ew, setEw] = useState({ desc: '', amt: '' });
   const [ewInsts, setEwInsts] = useState([]);
@@ -101,7 +102,8 @@ export default function BookingFormScreen({ navigation, route }) {
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
-        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork && !i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+        setNsdInsts(b.installments.filter((i) => i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
         const ex = b.installments.find((i) => i.isExtra);
         if (ex) setExtraDate(safeDate(ex.date));
       }
@@ -176,8 +178,20 @@ export default function BookingFormScreen({ navigation, route }) {
       return nr;
     }));
   }
+  const nsdBase = v.nonSaleDeed || 0;
+  const nsdPctTotal = nsdInsts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
+  function buildNsdInsts(n) { n = parseInt(n, 10) || 0; setNsdInsts(Array.from({ length: n }, (_, i) => nsdInsts[i] || { date: '', pct: '', amt: '' })); }
+  function setNsdInst(i, k, val) {
+    setNsdInsts((arr) => arr.map((r, idx) => {
+      if (idx !== i) return r;
+      const nr = { ...r, [k]: val };
+      if (k === 'pct') nr.amt = val && nsdBase ? String(Math.round(nsdBase * parseFloat(val) / 100)) : '';
+      return nr;
+    }));
+  }
   function instArr() {
     const arr = insts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0 }));
+    nsdInsts.forEach((r, i) => arr.push({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isNsd: true }));
     arr.push({ no: 'Extra', date: extraDate, amt: Math.round(v.totalExtra), isExtra: true });
     return arr;
   }
@@ -444,6 +458,22 @@ export default function BookingFormScreen({ navigation, route }) {
             </View>
           )}
           {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}%</Text>}
+          {formulaSet === 'ankhol' && nsdBase > 0 && (
+            <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#065F46', marginBottom: 2 }}>Extra Work Charges Installments</Text>
+              <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{rupee(nsdBase)}</Text>
+              <Fld l="No. of Installments (Extra Work Charges)" val={nsdInsts.length ? String(nsdInsts.length) : ''} on={buildNsdInsts} kb="numeric" />
+              {nsdInsts.map((r, i) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
+                  <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
+                  <DateField value={r.date} onChange={(t) => setNsdInst(i, 'date', t)} style={{ flex: 2 }} />
+                  <TextInput value={r.pct} onChangeText={(t) => setNsdInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
+                  <TextInput value={r.amt} onChangeText={(t) => setNsdInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
+                </View>
+              ))}
+              {nsdInsts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(nsdPctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {nsdPctTotal.toFixed(2)}%</Text>}
+            </View>
+          )}
         </Sec>
 
         {!!reviseId && (
