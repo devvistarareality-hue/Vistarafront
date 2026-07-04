@@ -241,7 +241,6 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="sub">
       <div class="c"><div class="k">Gender</div><div class="d">${esc(meta.gender || '—')}</div></div>
       <div class="c"><div class="k">Project</div><div class="d">${esc(meta.project || '—')}</div></div>
-      <div class="c"><div class="k">Plot No</div><div class="d">${esc(meta.plotNo || '—')}</div></div>
     </div>
   </div>
 
