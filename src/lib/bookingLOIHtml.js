@@ -103,12 +103,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const subRow = (label, n) => `<tr class="grand"><td colspan="3">${label}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${fmtSub(n)}</span></div></td></tr>`;
 
   const NO_DATE = 'Date of Sale Deed or Possession (whichever is earlier)';
-  const schedDate = (d) => fmtDate(d) || NO_DATE;
 
   let grandUnit = 0;
   const unitRows = unitInst.map(i => {
     const amt = Math.round(i.amt || 0); grandUnit += amt;
-    return `<tr><td class="no"><span class="circ">${esc(i.no)}</span></td><td>${esc(schedDate(i.date))}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${esc(i.no)}</span></td><td>${esc(fmtDate(i.date))}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
 
   let grandEwc = 0;
@@ -116,16 +115,17 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     if (i.isNsd) {
       const docAmt = (i.amt || 0) / 100; grandEwc += docAmt;
       const docStr = docAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(schedDate(i.date))}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${docStr}</span></div></td></tr>`;
+      return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(fmtDate(i.date))}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${docStr}</span></div></td></tr>`;
     }
     const amt = Math.round(i.amt || 0); grandEwc += amt;
-    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(schedDate(i.date))}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(fmtDate(i.date))}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
 
   let grandLegal = 0;
   const legalRows = legalInst.map((i, idx) => {
     const amt = Math.round(i.amt || 0); grandLegal += amt;
-    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(schedDate(i.date))}</td><td>Legal & Other Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    const legalDate = fmtDate(i.date) || NO_DATE;
+    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(legalDate)}</td><td>Legal & Other Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
 
   const grand = grandUnit + grandEwc + grandLegal;
