@@ -63,7 +63,15 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   // ── Agreement Amount ──
   let agreement;
-  if (isAnkhol) agreement = sec(`Sale Deed  (${v.saleDeedPct != null ? v.saleDeedPct : 60}% x Base + Premium - Discount)`, '#475569') + grid([['Sale Deed Amount', 'Rs. ' + num(v.saleDeed)]]);
+  if (isAnkhol) {
+    const sdPct = v.saleDeedPct != null ? v.saleDeedPct : 60;
+    const nsdPct = 100 - sdPct;
+    agreement = sec(`Sale Deed  (${sdPct}% x Base + Premium - Discount)`, '#475569') + grid([
+      ['Sale Deed Amount', 'Rs. ' + num(v.saleDeed)],
+      [`Non-Sale Deed Amount (${nsdPct}% ÷ 100)`, 'Rs. ' + num(v.nonSaleDeedDoc)],
+      ['Total Asset Document Value', 'Rs. ' + num(v.docTotal)],
+    ]);
+  }
   else if (isIndustrial) {
     const rows = [['Sale Deed', 'Rs. ' + num(v.saleDeed) + ' (SD Rate x Plot Area)']];
     if (!isTundav) rows.push(['Development Agreement', 'Rs. ' + num(v.devAgreement) + ' (Dev Rate x Plot Area)']);

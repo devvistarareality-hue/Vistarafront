@@ -412,7 +412,12 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${formulaSet === 'ankhol' ? 'Construction' : 'Plot'} Area × Dev Rate`} sub2={`${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)}`} val={v.plotDev} />}
           {flags.hasConstructionFields && <Tot l="Construction Amount" sub="Construction Area × Construction Rate" sub2={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
           {flags.hasConstructionFields && <Tot l="Total Basic Amount" sub="Plot Basic + Plot Dev + Construction" val={v.plotBasic + v.plotDev + v.constAmt} subtotal />}
-          {flags.hasSaleDeed && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
+          {flags.hasSaleDeed && formulaSet !== 'ankhol' && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
+          {formulaSet === 'ankhol' && <>
+            <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
+            <Tot l={`Non-Sale Deed (${100 - (v.saleDeedPct || 60)}% ÷ 100)`} sub={`${inr(v.nonSaleDeed)} ÷ 100`} val={v.nonSaleDeedDoc} />
+            <Tot l="Total Asset Value" sub="Sale Deed + Non-Sale Deed (÷100)" val={v.docTotal} subtotal />
+          </>}
           <Tot l="Extra Charges" sub={extraSub} sub2={extraSub2} val={v.totalExtra} />
           {!!reviseId && v.extraWorkAmt > 0 && <Tot l="Extra Work" val={v.extraWorkAmt} />}
           <Tot l="Discount" val={-v.discount} />
