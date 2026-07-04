@@ -68,7 +68,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     const fmt2 = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     agreement = sec(`Sale Deed  (${sdPct}% x Base + Premium - Discount)`, '#475569') + grid([
       ['Sale Deed Amount', 'Rs. ' + num(v.saleDeed)],
-      ['Non-Sale Deed Amount', 'Rs. ' + fmt2(v.nonSaleDeedDoc)],
+      ['Extra Work Charges', 'Rs. ' + fmt2(v.nonSaleDeedDoc)],
       ['Total Asset Document Value', 'Rs. ' + fmt2(v.docTotal)],
     ]);
   }
