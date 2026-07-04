@@ -32,8 +32,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const grid = (rows) => `<div class="grid">${rows.map(([k, d]) => info(k, d)).join('')}</div>`;
   const sec = (t) => `<div class="sec">${esc(t)}</div>`;
   // money row: cls = sub|total ; green for discount
-  const mrow = (l, n, o = {}) =>
-    `<tr class="${o.total ? 'total' : o.sub ? 'sub' : ''}"><td class="l">${esc(l)}${o.subline ? `<div class="sl">${esc(o.subline)}</div>` : ''}</td><td class="rs">Rs.</td><td class="amt ${o.green ? 'green' : ''}">${money(n)}</td></tr>`;
+  const mrow = (l, n, o = {}) => {
+    const val = o.valStr !== undefined ? o.valStr : money(n);
+    if (o.total) return `<tr class="total"><td colspan="3" style="padding:8px 10px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:16px;"><span>${esc(l)}</span><span style="white-space:nowrap;flex-shrink:0;">Rs.&nbsp;${val}</span></div></td></tr>`;
+    return `<tr class="${o.sub ? 'sub' : ''}"><td class="l">${esc(l)}${o.subline ? `<div class="sl">${esc(o.subline)}</div>` : ''}</td><td class="rs">Rs.</td><td class="amt ${o.green ? 'green' : ''}">${val}</td></tr>`;
+  };
 
   // ── Project & Booking Details ──
   let details;
@@ -85,7 +88,6 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (1% of Sale Deed' + (v.applyPageFee === 'No' ? ')' : ' + Rs.1,500)')), v.applyRegFee === 'No' ? 0 : v.regFees);
     extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : 'GST (5% of Sale Deed)', v.applyGst === 'No' ? 0 : v.gst);
     extra += mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance) + mrow('Legal Charges & Others', v.legal);
-    if (v.premiumLocation > 0) extra += mrow('Premium Location Charge', v.premiumLocation);
   } else if (isIndustrial) {
     extra += mrow('Stamp Duty (4.9% of Sale Deed)', v.stampDuty);
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (' + (v.gender === 'Female' ? ('Female - ' + (v.applyPageFee === 'No' ? 'Rs.0' : 'Rs.1,500')) : ('Male - 1% Sale Deed' + (v.applyPageFee === 'No' ? '' : ' + Rs.1,500'))) + ')'), v.applyRegFee === 'No' ? 0 : v.regFees);
@@ -103,16 +105,29 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     : '';
 
   // ── Total Deal Summary ──
-  let deal = mrow('Plot Basic Amount  (Plot Area x Land Rate)', v.plotBasic, { subline: num(v.area) + ' x ' + num(v.landRate) });
-  if (!isIndustrial) {
-    deal += mrow('Plot Development Amount  (' + (isAnkhol ? 'Const Area' : 'Plot Area') + ' x Dev Rate)', v.plotDev, { subline: (isAnkhol ? num(v.constArea) : num(v.area)) + ' x ' + num(v.devRate) });
-    deal += mrow('Construction Amount  (Const Area x Const Rate)', v.constAmt, { subline: num(v.constArea) + ' x ' + num(v.constRate) });
-    deal += mrow('Total Basic Amount', (v.plotBasic || 0) + (v.plotDev || 0) + (v.constAmt || 0), { sub: true });
+  const fmt2Deal = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  let deal = '';
+  let finalAmtForDeal = v.finalAmt;
+  if (isAnkhol) {
+    const sdPct = v.saleDeedPct != null ? v.saleDeedPct : 60;
+    const nsdK = (v.nonSaleDeed || 0) / 100;
+    const totalAssetDoc = (v.saleDeed || 0) + nsdK;
+    finalAmtForDeal = totalAssetDoc + (v.totalExtra || 0) + (v.extraWorkAmt || 0);
+    deal += mrow(`Sale Deed  (${sdPct}% x Base + Premium - Discount)`, v.saleDeed);
+    deal += mrow('Extra Work Charges', 0, { valStr: fmt2Deal(nsdK) });
+    deal += mrow('Total Asset Value', 0, { sub: true, valStr: fmt2Deal(totalAssetDoc) });
+  } else {
+    deal += mrow('Plot Basic Amount  (Plot Area x Land Rate)', v.plotBasic, { subline: num(v.area) + ' x ' + num(v.landRate) });
+    if (!isIndustrial) {
+      deal += mrow('Plot Development Amount  (Plot Area x Dev Rate)', v.plotDev, { subline: num(v.area) + ' x ' + num(v.devRate) });
+      deal += mrow('Construction Amount  (Const Area x Const Rate)', v.constAmt, { subline: num(v.constArea) + ' x ' + num(v.constRate) });
+      deal += mrow('Total Basic Amount', (v.plotBasic || 0) + (v.plotDev || 0) + (v.constAmt || 0), { sub: true });
+    }
+    deal += mrow('Discount', v.discount, { green: true });
   }
-  deal += mrow((isAnkhol && v.premiumLocation > 0) ? 'Extra Charges  (incl. Premium Location Charge)' : 'Extra Charges', v.totalExtra);
+  deal += mrow('Extra Charges', v.totalExtra);
   if (v.extraWorkAmt > 0) deal += mrow('Extra Work', v.extraWorkAmt);
-  deal += mrow('Discount', v.discount, { green: true });
-  deal += mrow('FINAL AMOUNT', v.finalAmt, { total: true });
+  deal += mrow('FINAL AMOUNT', 0, { total: true, valStr: isAnkhol ? fmt2Deal(finalAmtForDeal) : money(finalAmtForDeal) });
 
   // ── Payment Schedule ── (normal, then extra-work, then extra charges)
   const ordered = [];
@@ -126,16 +141,17 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
       const docAmt = (i.amt || 0) / 100;
       grand += docAmt;
       const docStr = docAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      return `<tr class="nsd"><td class="bdg">EWC</td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="r">Rs. ${docStr}</td></tr>`;
+      return `<tr class="nsd"><td class="bdg">EWC</td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${docStr}</span></div></td></tr>`;
     }
     const amt = Math.round(i.amt || 0); grand += amt;
-    if (i.isExtra) return `<tr class="extra"><td class="bdg">EXTRA</td><td>${fmtDate(i.date) || '—'}</td><td>Extra Charges</td><td class="r">Rs. ${money(amt)}</td></tr>`;
-    if (i.isExtraWork) return `<tr class="work"><td class="bdg">WORK</td><td>${fmtDate(i.date) || '—'}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="r">Rs. ${money(amt)}</td></tr>`;
-    return `<tr><td class="no"><span class="circ">${esc(i.no)}</span></td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="r">Rs. ${money(amt)}</td></tr>`;
+    if (i.isExtra) return `<tr class="extra"><td class="bdg">EXTRA</td><td>${fmtDate(i.date) || '—'}</td><td>Extra Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    if (i.isExtraWork) return `<tr class="work"><td class="bdg">WORK</td><td>${fmtDate(i.date) || '—'}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${esc(i.no)}</span></td><td>${fmtDate(i.date) || '—'}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
+  const grandStr = grand % 1 === 0 ? money(grand) : grand.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const schedule = ordered.length ? sec('Payment Schedule', '#0f766e') +
     `<table class="sched"><tr><th>#</th><th>Due Date</th><th>%</th><th class="r">Amount (Rs.)</th></tr>${schedRows}` +
-    `<tr class="grand"><td colspan="3">GRAND TOTAL</td><td class="r">Rs. ${grand % 1 === 0 ? money(grand) : grand.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr></table>` : '';
+    `<tr class="grand"><td colspan="3">GRAND TOTAL</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${grandStr}</span></div></td></tr></table>` : '';
 
   // ── Terms ──
   const terms = [
@@ -181,8 +197,8 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   table { width: 100%; border-collapse: collapse; }
   table.money td, .moneyt td { font-size: 11px; }
   td.l { padding: 5px 8px; color: #475569; border-bottom: 1px solid #eef0f5; }
-  td.rs { padding: 5px 2px; text-align: right; color: #475569; border-bottom: 1px solid #eef0f5; width: 26px; }
-  td.amt { padding: 5px 8px 5px 0; text-align: right; font-weight: 700; color: #1e293b; border-bottom: 1px solid #eef0f5; white-space: nowrap; width: 92px; }
+  td.rs { padding: 5px 4px 5px 2px; text-align: right; color: #475569; border-bottom: 1px solid #eef0f5; width: 26px; }
+  td.amt { padding: 5px 8px 5px 0; text-align: right; font-weight: 700; color: #1e293b; border-bottom: 1px solid #eef0f5; white-space: nowrap; min-width: 120px; }
   td.amt.green { color: #16a34a; }
   td.l .sl { font-size: 9px; color: #94a3b8; font-weight: 400; margin-top: 1px; }
   tr:nth-child(even) td.l, tr:nth-child(even) td.rs, tr:nth-child(even) td.amt { background: #f8fafe; }
@@ -190,7 +206,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   tr.sub td.amt { color: #2e4a78; }
   tr.total td { background: #2e4a78 !important; color: #fff; font-size: 13px; font-weight: 800; padding-top: 8px; padding-bottom: 8px; border: none; }
   tr.total td:first-child { border-left: 3px solid #ff6b2b; border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
-  tr.total td:last-child { border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
+  tr.total td:last-child { border-top-right-radius: 5px; border-bottom-right-radius: 5px; padding-right: 8px; }
   tr.total td.amt, tr.total td.rs { color: #fff; }
   .sched th { background: #2e4a78; color: #fff; font-size: 9px; padding: 7px 8px; text-align: left; }
   .sched th:first-child { border-top-left-radius: 5px; }
@@ -198,6 +214,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sched th.r, .sched td.r { text-align: right; }
   .sched td { padding: 6px 8px; border-bottom: 1px solid #eef0f5; font-size: 11px; }
   .sched td.r { font-weight: 700; white-space: nowrap; }
+  .sched td.amtcell { text-align: right; padding: 6px 8px; }
+  .sched .amtw { display: inline-flex; justify-content: space-between; align-items: center; width: 138px; }
+  .sched .amtw .rsl { flex-shrink: 0; padding-right: 5px; }
+  .sched .amtw .amtn { font-weight: 700; }
+  .sched tr.grand .amtw .amtn { font-weight: 800; }
   .sched td.no, .sched td.bdg { text-align: center; width: 30px; }
   .circ { display: inline-block; width: 16px; height: 16px; line-height: 16px; border-radius: 50%; background: #2e4a78; color: #fff; font-size: 8px; font-weight: 700; text-align: center; }
   .sched tr:nth-child(odd) td { background: #f8fafe; }

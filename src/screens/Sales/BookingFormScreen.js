@@ -132,11 +132,11 @@ export default function BookingFormScreen({ navigation, route }) {
   // Area unit follows the STM's toggle (relabel only); defaults to the project's native unit.
   const unit = f.area_unit || flags.areaUnit;
   const inr = (n) => Number(n || 0).toLocaleString('en-IN');
-  const extraSub = formulaSet === 'ankhol' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal + Premium'
+  const extraSub = formulaSet === 'ankhol' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal'
     : formulaSet === 'industrial' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal'
     : 'Stamp + Reg + GST + Maintenance + Legal';
   const extraSub2 = formulaSet === 'ankhol'
-    ? `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maintDeposit)} + ${inr(v.maintAdvance)} + ${inr(v.legal)} + ${inr(v.premiumLocation)}`
+    ? `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maintDeposit)} + ${inr(v.maintAdvance)} + ${inr(v.legal)}`
     : formulaSet === 'industrial'
       ? `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maintDeposit)} + ${inr(v.maintAdvance)} + ${inr(v.legal)}`
       : `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maint)} + ${inr(v.legal)}`;
