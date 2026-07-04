@@ -156,7 +156,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .hdr .clogo, .hdr .plogo { position: absolute; top: 50%; transform: translateY(-50%); width: 84px; height: 46px; object-fit: contain; }
   .hdr .clogo { left: 14px; }
   .hdr .plogo { right: 14px; }
-  .datebelow { display: flex; justify-content: space-between; color: #475569; font-size: 9px; margin: 0 0 8px; }
+  .datebelow { display: flex; justify-content: space-between; color: #1e3a5f; font-size: 11px; font-weight: 700; margin: 0 0 8px; }
   .client { background: #eef3fb; border: 1px solid #c9d7ee; border-radius: 6px; padding: 9px 12px 9px 16px; margin-bottom: 12px; position: relative; }
   .client::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 3px; background: #ff6b2b; border-radius: 2px; }
   .client .nm { font-size: 14px; font-weight: 800; color: #2e4a78; }
@@ -233,7 +233,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
-  <div class="datebelow"><span>Plot No: ${esc(meta.plotNo || '—')}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
+  <div class="datebelow"><span>Plot No: ${esc(((meta.plotNo || '').toString().replace(/^[^0-9]*/, '') || meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>
