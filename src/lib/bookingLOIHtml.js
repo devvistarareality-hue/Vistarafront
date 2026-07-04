@@ -65,11 +65,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   let agreement;
   if (isAnkhol) {
     const sdPct = v.saleDeedPct != null ? v.saleDeedPct : 60;
-    const nsdPct = 100 - sdPct;
+    const fmt2 = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     agreement = sec(`Sale Deed  (${sdPct}% x Base + Premium - Discount)`, '#475569') + grid([
       ['Sale Deed Amount', 'Rs. ' + num(v.saleDeed)],
-      [`Non-Sale Deed Amount (${nsdPct}% ÷ 100)`, 'Rs. ' + num(v.nonSaleDeedDoc)],
-      ['Total Asset Document Value', 'Rs. ' + num(v.docTotal)],
+      ['Non-Sale Deed Amount', 'Rs. ' + fmt2(v.nonSaleDeedDoc)],
+      ['Total Asset Document Value', 'Rs. ' + fmt2(v.docTotal)],
     ]);
   }
   else if (isIndustrial) {

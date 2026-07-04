@@ -415,8 +415,8 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasSaleDeed && formulaSet !== 'ankhol' && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
           {formulaSet === 'ankhol' && <>
             <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
-            <Tot l={`Non-Sale Deed (${100 - (v.saleDeedPct || 60)}% ÷ 100)`} sub={`${inr(v.nonSaleDeed)} ÷ 100`} val={v.nonSaleDeedDoc} />
-            <Tot l="Total Asset Value" sub="Sale Deed + Non-Sale Deed (÷100)" val={v.docTotal} subtotal />
+            <Tot l="Non-Sale Deed Amount" val={v.nonSaleDeedDoc} valFmt={'₹ ' + Number(v.nonSaleDeedDoc || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} />
+            <Tot l="Total Asset Value" sub="Sale Deed + Non-Sale Deed" val={v.docTotal} valFmt={'₹ ' + Number(v.docTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} subtotal />
           </>}
           <Tot l="Extra Charges" sub={extraSub} sub2={extraSub2} val={v.totalExtra} />
           {!!reviseId && v.extraWorkAmt > 0 && <Tot l="Extra Work" val={v.extraWorkAmt} />}
@@ -576,7 +576,7 @@ const Pick = ({ l, val, on, opts }) => (
     </View>
   </View>
 );
-const Tot = ({ l, sub, sub2, val, big, subtotal }) => (
+const Tot = ({ l, sub, sub2, val, valFmt, big, subtotal }) => (
   <View style={{
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: big ? 8 : subtotal ? 7 : 4, paddingHorizontal: subtotal ? 8 : 0,
@@ -588,6 +588,6 @@ const Tot = ({ l, sub, sub2, val, big, subtotal }) => (
       {!!sub && <Text style={{ fontSize: 10, color: '#9CA3AF' }}>{sub}</Text>}
       {!!sub2 && <Text style={{ fontSize: 10, color: '#9CA3AF' }}>{sub2}</Text>}
     </View>
-    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: (big || subtotal) ? '#0D47A1' : TEXT }}>{rupee(val)}</Text>
+    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: (big || subtotal) ? '#0D47A1' : TEXT }}>{valFmt || rupee(val)}</Text>
   </View>
 );
