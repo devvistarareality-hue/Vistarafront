@@ -460,9 +460,9 @@ export default function BookingFormScreen({ navigation, route }) {
           {formulaSet === 'ankhol' && <>
             <Tot l="Unit Price" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
             <Tot l="Extra Work Charges" val={v.nonSaleDeed} />
-            <Tot l="Total Asset Value" sub="Unit Price + Extra Work Charges" val={v.saleDeed + v.nonSaleDeed} subtotal />
             {v.discount > 0 && <Tot l="Discount" val={-v.discount} />}
-            {v.discount > 0 && <Tot l="Discounted Amount" sub="Total Asset Value − Discount" val={v.saleDeed + v.nonSaleDeed - v.discount} subtotal />}
+            {v.discount > 0 && <Tot l="Discounted Amount" sub="Extra Work Charges − Discount" val={v.nonSaleDeed - v.discount} />}
+            <Tot l="Total Asset Value" sub={v.discount > 0 ? 'Unit Price + Discounted Amount' : 'Unit Price + Extra Work Charges'} val={v.saleDeed + v.nonSaleDeed - v.discount} subtotal />
           </>}
           <Tot l="Extra Charges" sub={extraSub} sub2={extraSub2} val={v.totalExtra} />
           {!!reviseId && v.extraWorkAmt > 0 && <Tot l="Extra Work" val={v.extraWorkAmt} />}
