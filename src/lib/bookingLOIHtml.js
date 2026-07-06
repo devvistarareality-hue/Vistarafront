@@ -39,17 +39,21 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   };
 
   // ── Project & Booking Details ──
+  const cpLabel = /^reference$/i.test(meta.source) ? 'Reference Name'
+    : /^channel partner$/i.test(meta.source) ? 'Channel Partner Name'
+    : /^other$/i.test(meta.source) ? 'Other'
+    : 'CP / Channel Partner';
   let details;
   if (isIndustrial) {
     const sqm = v.area > 0 ? (v.area / 10.764).toFixed(2) + ' sq.mtr' : '—';
     details = [
       ...((chosenUnit && chosenUnit !== 'sq.ft') ? [['Plot Area', v.area + ' ' + areaUnit]] : [['Plot Area (sq.ft)', v.area + ' sq.ft.'], ['Plot Area (sq.mtr)', sqm]]),
-      ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
+      [cpLabel, meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
   } else {
     details = [
       ['Plot Area', v.area + ' ' + areaUnit], ['Construction Area', v.constArea + ' ' + areaUnit],
       [isAnkhol ? 'Bunglow Type' : 'Villa Type', isAnkhol ? (meta.bunglowType || '5B2HK + SR') : (meta.villaType || '—')],
-      ['CP / Channel Partner', meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
+      [cpLabel, meta.cpName || '—'], ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
   }
 
   // ── Agreement Amount ──
