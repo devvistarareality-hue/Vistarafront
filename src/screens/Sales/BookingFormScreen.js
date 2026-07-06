@@ -405,9 +405,9 @@ export default function BookingFormScreen({ navigation, route }) {
           <Pick l="Gender *" val={f.gender} on={(x) => set('gender', x)} opts={['Male', 'Female']} />
           <Fld l="Phone *" val={f.phone} on={(t) => set('phone', t)} kb="phone-pad" invalid={errs.phone} />
           <Pick l="Source" val={f.source} on={(x) => set('source', x)} opts={sources.map((s) => s.name)} />
-          {f.source === 'Reference' && <Fld l="Reference Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
-          {f.source === 'Channel Partner' && <Fld l="Channel Partner Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
-          {f.source === 'Other' && <Fld l="Other" val={f.cp_name} on={(t) => set('cp_name', t)} />}
+          {/^reference$/i.test(f.source) && <Fld l="Reference Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
+          {/^channel partner$/i.test(f.source) && <Fld l="Channel Partner Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
+          {/^other$/i.test(f.source) && <Fld l="Other" val={f.cp_name} on={(t) => set('cp_name', t)} />}
         </Sec>
 
         <Sec title="Plot & Type">
@@ -505,7 +505,7 @@ export default function BookingFormScreen({ navigation, route }) {
 
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
-          {!['Reference', 'Channel Partner', 'Other'].includes(f.source) && <Fld l="CP / Channel Partner" val={f.cp_name} on={(t) => set('cp_name', t)} />}
+          {!/^(reference|channel partner|other)$/i.test(f.source) && <Fld l="CP / Channel Partner" val={f.cp_name} on={(t) => set('cp_name', t)} />}
           <Fld l="No. of Installments" val={insts.length ? String(insts.length) : ''} on={buildInsts} kb="numeric" />
           {insts.map((r, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
