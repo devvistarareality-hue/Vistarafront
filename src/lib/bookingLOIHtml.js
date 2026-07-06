@@ -59,7 +59,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     const fmt2 = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     agreement = sec('Deal Value', '#475569') + grid([
       ['Unit Price', 'Rs. ' + num(v.saleDeed)],
-      ['Additional Extra Work Charges', 'Rs. ' + fmt2(v.nonSaleDeedDoc)],
+      ['Additional Extra Work Amount', 'Rs. ' + fmt2(v.nonSaleDeedDoc)],
     ]);
   }
   else if (isIndustrial) {
@@ -74,21 +74,21 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     extra += mrow(v.applyStampDuty === 'No' ? 'Stamp Duty (Not Applicable)' : 'Stamp Duty (4.9% of Sale Deed)', v.applyStampDuty === 'No' ? 0 : v.stampDuty);
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (1% of Sale Deed' + (v.applyPageFee === 'No' ? ')' : ' + Rs.1,500)')), v.applyRegFee === 'No' ? 0 : v.regFees);
     extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : 'GST (5% of Sale Deed)', v.applyGst === 'No' ? 0 : v.gst);
-    extra += mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance) + mrow('Legal Charges & Others', v.legal);
+    extra += mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance) + mrow('Legal Documentation charge', v.legal);
   } else if (isIndustrial) {
     extra += mrow('Stamp Duty (4.9% of Sale Deed)', v.stampDuty);
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (' + (v.gender === 'Female' ? ('Female - ' + (v.applyPageFee === 'No' ? 'Rs.0' : 'Rs.1,500')) : ('Male - 1% Sale Deed' + (v.applyPageFee === 'No' ? '' : ' + Rs.1,500'))) + ')'), v.applyRegFee === 'No' ? 0 : v.regFees);
     extra += mrow(isTundav ? 'GST on Sale Deed (18% of 67% of Sale Deed)' : 'GST on Developed Plot (18% of Development Agreement)', v.gst);
-    extra += mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance) + mrow('Legal Charges & Others', v.legal);
+    extra += mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance) + mrow('Legal Documentation charge', v.legal);
   } else {
     extra += mrow('Stamp Duty (4.9% of Land Sale Deed)', v.stampDuty);
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (' + (v.gender === 'Female' ? ('Female - ' + (v.applyPageFee === 'No' ? 'Rs.0' : 'Rs.1,500')) : ('Male - 1% LSD' + (v.applyPageFee === 'No' ? '' : ' + Rs.1,500'))) + ')'), v.applyRegFee === 'No' ? 0 : v.regFees);
-    extra += mrow('GST (18% of Construction Agreement)', v.gst) + mrow('Maintenance', v.maint) + mrow('Legal Charges & Others', v.legal);
+    extra += mrow('GST (18% of Construction Agreement)', v.gst) + mrow('Maintenance', v.maint) + mrow('Legal Documentation charge', v.legal);
   }
   extra += mrow('Total Legal & Other Charges', v.totalExtra, { sub: true });
 
   const extraWork = (v.extraWorkAmt > 0)
-    ? sec('Extra Work', '#16a34a') + `<table class="money">${mrow(v.extraWorkDesc || 'Extra Work Charges', v.extraWorkAmt)}</table>`
+    ? sec('Extra Work', '#16a34a') + `<table class="money">${mrow(v.extraWorkDesc || 'Extra Work Amount', v.extraWorkAmt)}</table>`
     : '';
 
   // ── Payment Schedule ── 3 separate sections
@@ -131,7 +131,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const grand = grandUnit + grandEwc + grandLegal;
   const schedBlocks = [];
   if (unitInst.length) schedBlocks.push(`<div class="block">${sec('Unit Price Payment Schedule', '#0f766e')}${schedHdr}${unitRows}${subRow('SUB TOTAL', grandUnit)}</table></div>`);
-  if (ewcRaw.length) schedBlocks.push(`<div class="block">${sec('Additional Extra Work Charges Schedule', '#0369a1')}${schedHdr}${ewcRows}${subRow('SUB TOTAL', grandEwc)}</table></div>`);
+  if (ewcRaw.length) schedBlocks.push(`<div class="block">${sec('Additional Extra Work Amount Schedule', '#0369a1')}${schedHdr}${ewcRows}${subRow('SUB TOTAL', grandEwc)}</table></div>`);
   if (legalInst.length) schedBlocks.push(`<div class="block">${sec('Legal & Other Charges Schedule', '#7c3aed')}${schedHdr}${legalRows}${subRow('SUB TOTAL', grandLegal)}</table></div>`);
   const scheduleHtml = schedBlocks.join('');
 

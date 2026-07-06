@@ -430,7 +430,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {formulaSet !== 'ankhol' && <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />}
         </Sec>
 
-        <Sec title="Extra Charges">
+        <Sec title="Legal & Other Charges">
           {formulaSet === 'ankhol' && <Pick l="Apply Stamp Duty?" val={f.apply_stamp_duty} on={(x) => set('apply_stamp_duty', x)} opts={['Yes', 'No']} />}
           <Calc l="Stamp Duty" sub={stampSub} val={v.stampDuty} />
           <Pick l="Apply Registration Fee?" val={f.apply_reg_fee} on={(x) => set('apply_reg_fee', x)} opts={['Yes', 'No']} />
@@ -443,7 +443,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Calc l="Maintenance Amount" sub={maintSub} val={v.maint} />
           {flags.hasMaintDeposit && <Calc l="Maintenance Deposit" sub="= Maintenance Amount" val={v.maintDeposit} />}
           {flags.hasMaintAdvance && <Calc l="Maintenance Advance" sub="= Maintenance Amount" val={v.maintAdvance} />}
-          <Fld l="Legal Charges & Others (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
+          <Fld l="Legal Documentation charge (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
         </Sec>
 
         <View style={[CARD, { backgroundColor: '#EAF2FF' }]}>
@@ -459,15 +459,15 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasSaleDeed && formulaSet !== 'ankhol' && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
           {formulaSet === 'ankhol' && <>
             <Tot l="Unit Price" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
-            <Tot l="Extra Work Charges" val={v.nonSaleDeed} />
+            <Tot l="Extra Work Amount" val={v.nonSaleDeed} />
             <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />
-            {v.discount > 0 && <Tot l="Discounted Amount" sub="Extra Work Charges − Discount" val={v.nonSaleDeed - v.discount} />}
-            <Tot l="Total Asset Value" sub={v.discount > 0 ? 'Unit Price + Discounted Amount' : 'Unit Price + Extra Work Charges'} val={v.saleDeed + v.nonSaleDeed - v.discount} subtotal />
+            {v.discount > 0 && <Tot l="Final Extra Work Amount" sub="Extra Work Amount − Discount" val={v.nonSaleDeed - v.discount} />}
+            <Tot l="Total Unit Price" sub={v.discount > 0 ? 'Unit Price + Final Extra Work Amount' : 'Unit Price + Extra Work Amount'} val={v.saleDeed + v.nonSaleDeed - v.discount} subtotal />
           </>}
-          <Tot l="Extra Charges" sub={extraSub} sub2={extraSub2} val={v.totalExtra} />
+          <Tot l="Legal & Other Charges" sub={extraSub} sub2={extraSub2} val={v.totalExtra} />
           {!!reviseId && v.extraWorkAmt > 0 && <Tot l="Extra Work" val={v.extraWorkAmt} />}
           {formulaSet !== 'ankhol' && <Tot l="Discount" val={-v.discount} />}
-          <Tot l="FINAL AMOUNT" val={v.finalAmt} big />
+          <Tot l="Total Box Price" val={v.finalAmt} big />
         </View>
 
         <Sec title="Payment Schedule">
@@ -486,15 +486,15 @@ export default function BookingFormScreen({ navigation, route }) {
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center', backgroundColor: '#FFF8E1', borderRadius: 8, padding: 6 }}>
               <Text style={{ width: 16, color: '#92400E', fontWeight: '700', fontSize: 11 }}>Ex</Text>
               <DateField value={extraDate} onChange={setExtraDate} placeholder="Extra charges date" style={{ flex: 2 }} />
-              <Text style={{ flex: 2.4, color: '#92400E', fontWeight: '700', fontSize: 12, textAlign: 'right' }}>Extra Charges {rupee(v.totalExtra)}</Text>
+              <Text style={{ flex: 2.4, color: '#92400E', fontWeight: '700', fontSize: 12, textAlign: 'right' }}>Legal & Other Charges {rupee(v.totalExtra)}</Text>
             </View>
           )}
           {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}%</Text>}
           {formulaSet === 'ankhol' && nsdBase > 0 && (
             <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#065F46', marginBottom: 2 }}>Extra Work Charges Installments</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#065F46', marginBottom: 2 }}>Extra Work Amount Installments</Text>
               <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{rupee(nsdBase)}</Text>
-              <Fld l="No. of Installments (Extra Work Charges)" val={nsdInsts.length ? String(nsdInsts.length) : ''} on={buildNsdInsts} kb="numeric" />
+              <Fld l="No. of Installments (Extra Work Amount)" val={nsdInsts.length ? String(nsdInsts.length) : ''} on={buildNsdInsts} kb="numeric" />
               {nsdInsts.map((r, i) => (
                 <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
                   <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
