@@ -59,7 +59,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     const fmt2 = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     agreement = sec('Deal Value', '#475569') + grid([
       ['Unit Price', 'Rs. ' + num(v.saleDeed)],
-      ['Additional Extra Work Amount', 'Rs. ' + fmt2(v.nonSaleDeedDoc)],
+      ['Additional Extra Work Amount', 'Rs. ' + fmt2(v.discount > 0 ? (v.nonSaleDeed - v.discount) / 100 : v.nonSaleDeedDoc)],
     ]);
   }
   else if (isIndustrial) {
