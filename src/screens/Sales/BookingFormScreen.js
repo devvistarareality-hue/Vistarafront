@@ -415,12 +415,12 @@ export default function BookingFormScreen({ navigation, route }) {
                   value={deedAmtStr}
                   keyboardType="numeric"
                   onFocus={() => { editingAmtRef.current = true; }}
-                  onBlur={() => { editingAmtRef.current = false; setDeedAmtStr(String(Math.round(v.saleDeed) || '')); }}
+                  onBlur={() => { editingAmtRef.current = false; }}
                   onChangeText={(t) => {
                     setDeedAmtStr(t);
                     const amt = parseFloat(t) || 0;
                     const base = v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation - v.discount;
-                    if (base > 0) set('sale_deed_pct', String(parseFloat((amt / base * 100).toFixed(4))));
+                    if (base > 0) set('sale_deed_pct', String(amt / base * 100));
                   }}
                   style={inpS}
                 />
