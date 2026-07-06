@@ -507,7 +507,6 @@ export default function BookingFormScreen({ navigation, route }) {
 
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
-          {!/^(reference|channel partner|other)$/i.test(f.source) && <Fld l="CP / Channel Partner" val={f.cp_name} on={(t) => set('cp_name', t)} />}
           <Fld l="No. of Installments" val={insts.length ? String(insts.length) : ''} on={buildInsts} kb="numeric" />
           {insts.map((r, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
