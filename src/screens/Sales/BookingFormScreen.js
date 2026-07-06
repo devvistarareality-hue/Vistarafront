@@ -427,7 +427,7 @@ export default function BookingFormScreen({ navigation, route }) {
               </View>
             </>
           )}
-          <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />
+          {formulaSet !== 'ankhol' && <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />}
         </Sec>
 
         <Sec title="Extra Charges">
@@ -460,7 +460,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {formulaSet === 'ankhol' && <>
             <Tot l="Unit Price" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
             <Tot l="Extra Work Charges" val={v.nonSaleDeed} />
-            {v.discount > 0 && <Tot l="Discount" val={-v.discount} />}
+            <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />
             {v.discount > 0 && <Tot l="Discounted Amount" sub="Extra Work Charges − Discount" val={v.nonSaleDeed - v.discount} />}
             <Tot l="Total Asset Value" sub={v.discount > 0 ? 'Unit Price + Discounted Amount' : 'Unit Price + Extra Work Charges'} val={v.saleDeed + v.nonSaleDeed - v.discount} subtotal />
           </>}
