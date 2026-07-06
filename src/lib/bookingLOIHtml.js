@@ -146,6 +146,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     ['Cancellation', 'In case of delay in payment of more than 30 days from the due date, the developer will have the right to cancel this deal.In such case, the developer will refund the received amount after deduction of 10% of the total deal value within 3 months.'],
     ['Cancellation', 'In case the buyer cancels the booking after 1 month of the booking date, the developer will refund the received amount after deduction of 10% of the total deal value within 3 months.'],
     ['Legal Charges', 'Legal charges may vary as per government rules at the time of sale deed. Developer will not be held liable/responsible for any such variation.'],
+    ['Legal & Other Charges', 'Payment to be done by the buyer at the time of Sale Deed or Possession. (Whichever is Earlier)'],
     ['Society Rules', 'The buyer agrees to follow the rules set by the developer/ service society of the project after the possession of the unit.'],
   ] : [
     ['Payment Mode', 'All payments are received via cheque or bank transfer only. No cash is accepted.'],
@@ -153,6 +154,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     ['Cancellation', 'In case of delay in payment of more than 30 days from the due date, the developer will have the right to cancel this deal. In such case, the developer will refund the received amount after deduction of 10% of the total deal value within 3 months.'],
     ['Cancellation', 'In case the buyer cancels the booking after 1 month of the booking date, the developer will refund the received amount after deduction of 10% of the total deal value within 3 months.'],
     ['Legal Charges', 'Legal charges may vary as per government rules at the time of sale deed. Developer will not be held liable/responsible for any such variation.'],
+    ['Legal & Other Charges', 'Payment to be done by the buyer at the time of Sale Deed or Possession. (Whichever is Earlier)'],
   ];
   (opts.extraTerms || []).forEach((t) => { if (t.title || t.desc) terms.push([t.title || 'Note', t.desc || '']); });
 
