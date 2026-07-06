@@ -469,7 +469,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {formulaSet === 'ankhol' && <Pick l="Apply Stamp Duty?" val={f.apply_stamp_duty} on={(x) => set('apply_stamp_duty', x)} opts={['Yes', 'No']} />}
           <Calc l="Stamp Duty" sub={stampSub} val={v.stampDuty} />
           <Pick l="Apply Registration Fee?" val={f.apply_reg_fee} on={(x) => set('apply_reg_fee', x)} opts={['Yes', 'No']} />
-          {f.apply_reg_fee !== 'No' && <Pick l="Apply ₹1,500 Page Fee?" val={f.apply_page_fee} on={(x) => set('apply_page_fee', x)} opts={['Yes', 'No']} />}
+          <Pick l="Apply ₹1,500 Page Fee?" val={f.apply_page_fee} on={(x) => set('apply_page_fee', x)} opts={['Yes', 'No']} />
           <Calc l="Registration Fees" sub={regSub} val={v.regFees} />
           {formulaSet === 'ankhol' && <Pick l="Apply GST?" val={f.apply_gst} on={(x) => set('apply_gst', x)} opts={['Yes', 'No']} />}
           <Calc l="GST" sub={gstSub} val={v.gst} />
