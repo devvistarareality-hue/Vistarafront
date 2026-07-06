@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
@@ -61,6 +61,8 @@ export default function BookingFormScreen({ navigation, route }) {
   });
   const [errs, setErrs] = useState({});   // required-field highlight on Generate/Submit
   const set = (k, v) => { setF((s) => ({ ...s, [k]: v })); setErrs((e) => (e[k] ? { ...e, [k]: false } : e)); };
+  const [deedAmtStr, setDeedAmtStr] = useState('');
+  const editingAmtRef = useRef(false);
 
   useEffect(() => {
     if (projectId) apiFetch(SALES_ENDPOINTS.project(projectId) + cq('?')).then(r => r.json()).then((pr) => {
@@ -125,6 +127,9 @@ export default function BookingFormScreen({ navigation, route }) {
     applyRegFee: f.apply_reg_fee, applyPageFee: f.apply_page_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
     extraWorkAmt: reviseId ? ew.amt : 0, extraWorkDesc: ew.desc,
   }), [f, formulaSet, project, ew, reviseId]);
+  useEffect(() => {
+    if (!editingAmtRef.current) setDeedAmtStr(String(Math.round(v.saleDeed) || ''));
+  }, [v.saleDeed]);
   const base = installmentBase(v);
   const pctTotal = insts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
   const ewBase = parseFloat(ew.amt) || 0;
@@ -401,7 +406,27 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
           {flags.hasConstructionAgreement && <Fld l="Construction Agreement (₹)" val={f.const_agreement} on={(t) => set('const_agreement', t)} kb="numeric" />}
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
-          {formulaSet === 'ankhol' && <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => set('sale_deed_pct', t)} kb="numeric" />}
+          {formulaSet === 'ankhol' && (
+            <>
+              <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => set('sale_deed_pct', t)} kb="numeric" />
+              <View style={{ marginBottom: 10 }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Unit Price (₹)</Text>
+                <TextInput
+                  value={deedAmtStr}
+                  keyboardType="numeric"
+                  onFocus={() => { editingAmtRef.current = true; }}
+                  onBlur={() => { editingAmtRef.current = false; setDeedAmtStr(String(Math.round(v.saleDeed) || '')); }}
+                  onChangeText={(t) => {
+                    setDeedAmtStr(t);
+                    const amt = parseFloat(t) || 0;
+                    const base = v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation - v.discount;
+                    if (base > 0) set('sale_deed_pct', String(parseFloat((amt / base * 100).toFixed(4))));
+                  }}
+                  style={inpS}
+                />
+              </View>
+            </>
+          )}
           <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />
         </Sec>
 
