@@ -95,7 +95,8 @@ export default function BookingFormScreen({ navigation, route }) {
       if (!b) return;
       setProjectId(String(b.project));
       setPlotIds(((b.plot_ids && b.plot_ids.length ? b.plot_ids : [b.plot]).filter(Boolean)).map(String));
-      setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: b.source || '',
+      const srcDisp = (n) => { if (!n) return n; if (/^referral$/i.test(n)) return 'Reference'; if (/^other$/i.test(n)) return 'Other'; return n; };
+      setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: srcDisp(b.source || ''),
         area: b.area || '', area_unit: b.area_unit || 'sq.yd', const_area: b.const_area || '', villa_type: b.villa_type || '',
         land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
@@ -404,7 +405,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Fld l="Client Name *" val={f.client_name} on={(t) => set('client_name', t)} invalid={errs.client_name} />
           <Pick l="Gender *" val={f.gender} on={(x) => set('gender', x)} opts={['Male', 'Female']} />
           <Fld l="Phone *" val={f.phone} on={(t) => set('phone', t)} kb="phone-pad" invalid={errs.phone} />
-          <Pick l="Source" val={f.source} on={(x) => set('source', x)} opts={sources.map((s) => s.name)} />
+          <Pick l="Source" val={f.source} on={(x) => set('source', x)} opts={(() => { const mapped = sources.map(s => { if (/^referral$/i.test(s.name)) return 'Reference'; if (/^other$/i.test(s.name)) return 'Other'; return s.name; }); const extra = ['Reference', 'Channel Partner', 'Other'].filter(n => !mapped.some(m => m.toLowerCase() === n.toLowerCase())); return [...mapped, ...extra]; })()} />
           {/^reference$/i.test(f.source) && <Fld l="Reference Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
           {/^channel partner$/i.test(f.source) && <Fld l="Channel Partner Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
           {/^other$/i.test(f.source) && <Fld l="Other" val={f.cp_name} on={(t) => set('cp_name', t)} />}
