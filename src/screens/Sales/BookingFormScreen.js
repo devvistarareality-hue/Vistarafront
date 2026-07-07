@@ -73,7 +73,8 @@ export default function BookingFormScreen({ navigation, route }) {
       // Resolve every selected plot (preserve order) and sum their areas.
       const picked = plotIds.map((pid) => all.find((x) => String(x.id) === String(pid))).filter(Boolean);
       if (picked.length) {
-        setPlotNo(picked.map((x) => x.number).join(', '));
+        const stripNum = (n) => { const s = (n || '').toString(); return s.replace(/^[^0-9]*/, '') || s; };
+        setPlotNo(picked.map((x) => stripNum(x.number)).join(', '));
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
         // Auto-map construction area from the plot definition(s) into the booking.
         const sumConst = picked.reduce((a, x) => a + (parseFloat((x.construction_area || '').replace(/[^\d.]/g, '')) || 0), 0);
