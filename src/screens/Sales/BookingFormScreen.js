@@ -455,7 +455,7 @@ export default function BookingFormScreen({ navigation, route }) {
                     setDeedAmtStr(t);
                     const amt = parseFloat(t) || 0;
                     const base = v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation - v.discount;
-                    if (base > 0) set('sale_deed_pct', String(amt / base * 100));
+                    if (base > 0) set('sale_deed_pct', String(parseFloat((amt / base * 100).toFixed(2))));
                   }}
                   style={inpS}
                 />
