@@ -166,7 +166,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  @page { margin: 0; }
+  /* Full-bleed letterhead on page 1; give continuation pages a top margin so
+     content doesn't start glued to the paper edge. */
+  @page { margin: 0; margin-top: 14mm; }
+  @page:first { margin-top: 0; }
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 0 14px 46px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .hdr { background: linear-gradient(180deg, #edf2f9 0%, #ffffff 74%); color: #2e4a78; text-align: center; padding: 16px 16px 14px; margin: 0 -14px 14px; position: relative; border-top: 3px solid #2e4a78; border-bottom: 1px solid #d5deee; box-shadow: inset 0 -3px 0 -2px #ff6b2b; }
