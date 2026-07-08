@@ -1,9 +1,12 @@
 // ── Base URL ──────────────────────────────────────────────────────────
-// Always tries local server first on startup; falls back to Railway
-// if no local server is found on the network.
+// Route the app through the web app's domain (Vercel), which proxies /api/* to
+// Railway server-side. Hitting *.up.railway.app directly fails on some ISPs (e.g.
+// Jio) that don't resolve that domain on mobile data → "Network error". The Vercel
+// domain resolves everywhere, so the app works on any network.
 export const RAILWAY_URL = 'https://vistararealtybackend-production.up.railway.app';
+export const API_PROXY_URL = 'https://vistaraweb.vercel.app';
 
-export let BASE_URL = RAILWAY_URL;
+export let BASE_URL = API_PROXY_URL;
 
 export const setBaseUrl = (url) => { BASE_URL = url; };
 export const getBaseUrl = () => BASE_URL;
