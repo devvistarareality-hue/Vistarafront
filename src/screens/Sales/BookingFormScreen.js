@@ -190,7 +190,7 @@ export default function BookingFormScreen({ navigation, route }) {
         if (idx !== i) return r;
         const nr = { ...r, [k]: val };
         if (k === 'pct') nr.amt = val && ewBase ? String(Math.round(ewBase * parseFloat(val) / 100)) : '';
-        if (k === 'amt') nr.pct = val && ewBase ? parseFloat((parseFloat(val) / ewBase * 100).toFixed(2)) : '';
+        if (k === 'amt') nr.pct = val && ewBase ? String(parseFloat((parseFloat(val) / ewBase * 100).toFixed(2))) : '';
         return nr;
       });
       const last = next.length - 1;
@@ -212,7 +212,7 @@ export default function BookingFormScreen({ navigation, route }) {
         if (idx !== i) return r;
         const nr = { ...r, [k]: val };
         if (k === 'pct') nr.amt = val && base ? String(Math.round(base * parseFloat(val) / 100)) : '';
-        if (k === 'amt') nr.pct = val && base ? parseFloat((parseFloat(val) / base * 100).toFixed(2)) : '';
+        if (k === 'amt') nr.pct = val && base ? String(parseFloat((parseFloat(val) / base * 100).toFixed(2))) : '';
         return nr;
       });
       const last = next.length - 1;
@@ -234,7 +234,7 @@ export default function BookingFormScreen({ navigation, route }) {
         if (idx !== i) return r;
         const nr = { ...r, [k]: val };
         if (k === 'pct') nr.amt = val && nsdBase ? String(Math.round(nsdBase * parseFloat(val) / 100)) : '';
-        if (k === 'amt') nr.pct = val && nsdBase ? parseFloat((parseFloat(val) / nsdBase * 100).toFixed(2)) : '';
+        if (k === 'amt') nr.pct = val && nsdBase ? String(parseFloat((parseFloat(val) / nsdBase * 100).toFixed(2))) : '';
         return nr;
       });
       const last = next.length - 1;
