@@ -30,12 +30,14 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // helpers
   const info = (l, d) => `<div class="cell"><div class="k">${esc(l)}</div><div class="d">${esc(d == null || d === '' ? '—' : d)}</div></div>`;
   const grid = (rows) => `<div class="grid">${rows.map(([k, d]) => info(k, d)).join('')}</div>`;
-  const sec = (t, c) => `<div class="sec"${c ? ` style="background:${esc(c)}"` : ''}>${esc(t)}</div>`;
+  // All section headers use the same matte-blue bar + orange pill (matches the web jsPDF LOI).
+  // The colour arg is intentionally ignored so headers stay uniform.
+  const sec = (t) => `<div class="sec">${esc(t)}</div>`;
   // money row: cls = sub|total ; green for discount
   const mrow = (l, n, o = {}) => {
     const val = o.valStr !== undefined ? o.valStr : money(n);
-    if (o.total) return `<tr class="total"><td colspan="3" style="padding:8px 10px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:16px;"><span>${esc(l)}</span><span style="white-space:nowrap;flex-shrink:0;">Rs.&nbsp;${val}</span></div></td></tr>`;
-    return `<tr class="${o.sub ? 'sub' : ''}"><td class="l">${esc(l)}${o.subline ? `<div class="sl">${esc(o.subline)}</div>` : ''}</td><td class="rs">Rs.</td><td class="amt ${o.green ? 'green' : ''}">${val}</td></tr>`;
+    if (o.total) return `<tr class="total"><td class="l">${esc(l)}</td><td class="amt">Rs.&nbsp;${val}</td></tr>`;
+    return `<tr class="${o.sub ? 'sub' : ''}"><td class="l">${esc(l)}${o.subline ? `<div class="sl">${esc(o.subline)}</div>` : ''}</td><td class="amt ${o.green ? 'green' : ''}">Rs.&nbsp;${val}</td></tr>`;
   };
 
   // ── Project & Booking Details ──
@@ -186,7 +188,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .client .sub .k { font-size: 8px; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
   .client .sub .d { font-size: 10px; color: #1e293b; }
   .sec { color: #fff; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; padding: 6px 10px 6px 15px; border-radius: 5px; margin: 12px 0 7px; background: #2e4a78; position: relative; }
-  .sec::before { content: ''; position: absolute; left: 5px; top: 5px; bottom: 5px; width: 3px; background: #ff6b2b; border-radius: 2px; }
+  .sec::before { content: ''; position: absolute; left: 5px; top: 50%; transform: translateY(-50%); height: 9px; width: 3px; background: #ff6b2b; border-radius: 2px; }
   .grid { display: flex; flex-wrap: wrap; }
   .cell { width: 50%; padding: 4px 8px; }
   .cell:nth-child(4n+1), .cell:nth-child(4n+2) { background: #f8fafe; }
@@ -194,18 +196,16 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .cell .d { font-size: 11px; color: #1e293b; }
   table { width: 100%; border-collapse: collapse; }
   table.money td, .moneyt td { font-size: 11px; }
-  td.l { padding: 5px 8px; color: #475569; border-bottom: 1px solid #eef0f5; }
-  td.rs { padding: 5px 4px 5px 2px; text-align: right; color: #475569; border-bottom: 1px solid #eef0f5; width: 26px; }
-  td.amt { padding: 5px 8px 5px 0; text-align: right; font-weight: 700; color: #1e293b; border-bottom: 1px solid #eef0f5; white-space: nowrap; min-width: 120px; }
+  td.l { padding: 5px 10px; color: #475569; border-bottom: 1px solid #eef0f5; }
+  td.amt { padding: 5px 10px 5px 0; text-align: right; font-weight: 700; color: #1e293b; border-bottom: 1px solid #eef0f5; white-space: nowrap; min-width: 120px; }
   td.amt.green { color: #16a34a; }
   td.l .sl { font-size: 9px; color: #94a3b8; font-weight: 400; margin-top: 1px; }
-  tr:nth-child(even) td.l, tr:nth-child(even) td.rs, tr:nth-child(even) td.amt { background: #f8fafe; }
+  tr:nth-child(even) td.l, tr:nth-child(even) td.amt { background: #f8fafe; }
   tr.sub td { background: #eef3fb !important; color: #2e4a78; font-weight: 800; border-bottom: none; }
   tr.sub td.amt { color: #2e4a78; }
   tr.total td { background: #2e4a78 !important; color: #fff; font-size: 13px; font-weight: 800; padding-top: 8px; padding-bottom: 8px; border: none; }
-  tr.total td:first-child { border-left: 3px solid #ff6b2b; border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
-  tr.total td:last-child { border-top-right-radius: 5px; border-bottom-right-radius: 5px; padding-right: 8px; }
-  tr.total td.amt, tr.total td.rs { color: #fff; }
+  tr.total td.l { border-left: 3px solid #ff6b2b; border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+  tr.total td.amt { color: #fff; border-top-right-radius: 5px; border-bottom-right-radius: 5px; padding-right: 10px; }
   .sched th { background: #2e4a78; color: #fff; font-size: 9px; padding: 7px 8px; text-align: left; }
   .sched th:first-child { border-top-left-radius: 5px; }
   .sched th:last-child { border-top-right-radius: 5px; }
@@ -229,9 +229,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sched tr.work td.bdg { background: #16a34a !important; }
   .sched tr.grand td { background: #eef3fb !important; color: #2e4a78; font-weight: 800; font-size: 12px; padding: 9px 8px; border-top: 1px solid #cdd8ea; border-bottom: 1px solid #cdd8ea; }
   .sched tr.grand td:first-child { border-left: 3px solid #ff6b2b; }
-  .term { padding: 6px 0 6px 16px; border-bottom: 1px solid #f1f5f9; position: relative; font-size: 10px; }
-  .term::before { content: ""; position: absolute; left: 3px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: #ff6b2b; }
-  .term b { color: #2e4a78; }
+  .term { display: flex; gap: 12px; align-items: flex-start; padding: 7px 8px 7px 18px; position: relative; font-size: 10px; }
+  .term.alt { background: #f9fafb; }
+  .term::before { content: ""; position: absolute; left: 5px; top: 11px; width: 6px; height: 6px; border-radius: 50%; background: #ff6b2b; }
+  .term .tl { flex: 0 0 120px; font-weight: 700; color: #2e4a78; }
+  .term .td2 { flex: 1; color: #475569; }
   .sign { display: flex; justify-content: space-between; margin-top: 22px; }
   .sign .box { width: 46%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 10px 10px; text-align: center; }
   .sign .t { font-size: 9px; color: #94a3b8; font-weight: 700; letter-spacing: .5px; }
@@ -273,7 +275,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   ${scheduleHtml}
 
-  <div class="block">${sec('Terms & Conditions', '#475569')}${terms.map((t) => `<div class="term"><b>${esc(t[0])}:</b> ${esc(t[1])}</div>`).join('')}</div>
+  <div class="block">${sec('Terms & Conditions')}${terms.map((t, i) => `<div class="term${i % 2 ? '' : ' alt'}"><span class="tl">${esc(t[0])}</span><span class="td2">${esc(t[1])}</span></div>`).join('')}</div>
 
   <div class="block">
     <div class="sign">
