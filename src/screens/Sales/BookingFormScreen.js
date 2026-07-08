@@ -133,6 +133,22 @@ export default function BookingFormScreen({ navigation, route }) {
   useEffect(() => {
     if (!editingAmtRef.current) setDeedAmtStr(String(Math.round(v.saleDeed) || ''));
   }, [v.saleDeed]);
+
+  // Confirm before leaving the booking form once meaningful data has been entered
+  // (intercepts header back, hardware back and the swipe-back gesture).
+  const isDirty = !!(f.land_rate || f.dev_rate || f.const_rate || f.premium_location || f.sale_deed_amount
+    || f.legal_charges || f.maint_rate || insts.length || nsdInsts.length || deedAmtStr || loiFile);
+  useEffect(() => {
+    const unsub = navigation.addListener('beforeRemove', (ev) => {
+      if (!isDirty) return;
+      ev.preventDefault();
+      Alert.alert('Discard booking?', 'You have unsaved booking details. Are you sure you want to go back?', [
+        { text: 'Stay', style: 'cancel' },
+        { text: 'Go Back', style: 'destructive', onPress: () => navigation.dispatch(ev.data.action) },
+      ]);
+    });
+    return unsub;
+  }, [navigation, isDirty]);
   const base = installmentBase(v);
   const pctTotal = base ? insts.reduce((a, r) => a + (parseFloat(r.amt) || 0), 0) / base * 100 : insts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
   const ewBase = parseFloat(ew.amt) || 0;
@@ -243,6 +259,12 @@ export default function BookingFormScreen({ navigation, route }) {
       if (!v.plotBasic) { if (!f.area) e.area = true; if (!f.land_rate) e.land_rate = true; }
       if (Object.keys(e).length) { setErrs(e); setMsg('Please fill the highlighted fields.'); return; }
       setErrs({});
+    }
+    // Installments are required before the LOI can be generated.
+    if (!insts.length) { setMsg('Add the payment installments before downloading the LOI.'); return; }
+    if (Math.abs(pctTotal - 100) > 0.01) { setMsg('Payment installments must total 100% before downloading the LOI.'); return; }
+    if (formulaSet === 'ankhol' && nsdBase > 0 && (!nsdInsts.length || Math.abs(nsdPctTotal - 100) > 0.01)) {
+      setMsg('Extra Work Amount installments must be filled and total 100% before downloading the LOI.'); return;
     }
     const meta = {
       clientName: f.client_name, phoneNumber: f.phone, gender: f.gender, address: f.address,
