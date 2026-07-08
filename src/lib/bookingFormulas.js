@@ -50,6 +50,8 @@ export function computeFormulas(inp = {}) {
   const devAgreementRate = num(inp.devAgreementRate);
   // Ankhol sale-deed percentage — editable per booking, defaults to 60%.
   const saleDeedPct = (inp.saleDeedPct === '' || inp.saleDeedPct == null) ? 60 : num(inp.saleDeedPct);
+  // Exact Unit Price override (Ankhol): used verbatim so the entered amount stays exact.
+  const saleDeedAmount = num(inp.saleDeedAmount);
   const devAgreement = devAgreementRate * area;
   const applyRegFee    = inp.applyRegFee    || 'Yes';
   const applyStampDuty = inp.applyStampDuty || 'Yes';
@@ -76,7 +78,7 @@ export function computeFormulas(inp = {}) {
   // Sale Deed / Stamp / Reg / GST per formula set
   let saleDeed = 0, stampDuty = 0, regFees = 0, gst = 0, maintDeposit = 0, maintAdvance = 0;
   if (isAnkhol) {
-    saleDeed     = (saleDeedPct / 100) * (plotBasic + constAmt + plotDev + premiumLocation);
+    saleDeed     = saleDeedAmount > 0 ? saleDeedAmount : (saleDeedPct / 100) * (plotBasic + constAmt + plotDev + premiumLocation);
     stampDuty    = saleDeed * 0.049;
     regFees      = (saleDeed * 0.01) + pageFee;
     gst          = saleDeed * 0.05;

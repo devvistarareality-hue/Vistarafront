@@ -137,8 +137,9 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   const grand = grandUnit + grandEwc + grandLegal;
   const schedBlocks = [];
-  if (unitInst.length) schedBlocks.push(`<div class="block">${sec('Unit Price Payment Schedule', '#0f766e')}${schedHdr}${unitRows}${subRow('SUB TOTAL', grandUnit)}</table></div>`);
+  // Extra Work Amount schedule shown ABOVE the sale-deed (Unit Price) schedule.
   if (ewcRaw.length) schedBlocks.push(`<div class="block">${sec('Additional Extra Work Amount Schedule', '#0369a1')}${schedHdr}${ewcRows}${subRow('SUB TOTAL', grandEwc)}</table></div>`);
+  if (unitInst.length) schedBlocks.push(`<div class="block">${sec('Unit Price Payment Schedule', '#0f766e')}${schedHdr}${unitRows}${subRow('SUB TOTAL', grandUnit)}</table></div>`);
   if (legalInst.length) schedBlocks.push(`<div class="block">${sec('Legal & Other Charges Schedule', '#7c3aed')}${schedHdr}${legalRows}${subRow('SUB TOTAL', grandLegal)}</table></div>`);
   const scheduleHtml = schedBlocks.join('');
 

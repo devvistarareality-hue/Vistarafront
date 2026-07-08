@@ -53,7 +53,7 @@ export default function BookingFormScreen({ navigation, route }) {
     client_name: p.client || '', gender: '', phone: p.phone || '', address: '', source: '',
     area: '', area_unit: 'sq.yd', const_area: '', villa_type: '',
     land_rate: '', dev_rate: '', const_rate: '', sale_deed_rate: '', dev_agreement_rate: '',
-    sale_deed_pct: '60',
+    sale_deed_pct: '60', sale_deed_amount: '',
     land_sale_deed: '', const_agreement: '', premium_location: '',
     discount: '0', legal_charges: '', maint_rate: '', maint_months: '',
     apply_reg_fee: 'Yes', apply_page_fee: 'Yes', apply_stamp_duty: 'Yes', apply_gst: 'Yes',
@@ -101,6 +101,7 @@ export default function BookingFormScreen({ navigation, route }) {
         area: b.area || '', area_unit: b.area_unit || 'sq.yd', const_area: b.const_area || '', villa_type: b.villa_type || '',
         land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
+        sale_deed_amount: b.sale_deed_amount ? String(b.sale_deed_amount) : '',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
@@ -125,7 +126,7 @@ export default function BookingFormScreen({ navigation, route }) {
     discount: f.discount, legalCharges: f.legal_charges, maintRate: f.maint_rate, maintMonths: f.maint_months,
     gender: f.gender, landSaleDeed: f.land_sale_deed, constAgreement: f.const_agreement,
     premiumLocation: f.premium_location, saleDeedRate: f.sale_deed_rate, devAgreementRate: f.dev_agreement_rate,
-    saleDeedPct: f.sale_deed_pct,
+    saleDeedPct: f.sale_deed_pct, saleDeedAmount: f.sale_deed_amount,
     applyRegFee: f.apply_reg_fee, applyPageFee: f.apply_page_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
     extraWorkAmt: reviseId ? ew.amt : 0, extraWorkDesc: ew.desc,
   }), [f, formulaSet, project, ew, reviseId]);
@@ -361,6 +362,7 @@ export default function BookingFormScreen({ navigation, route }) {
       land_rate: f.land_rate || 0, dev_rate: f.dev_rate || 0, const_rate: f.const_rate || 0,
       sale_deed_rate: f.sale_deed_rate || 0, dev_agreement_rate: f.dev_agreement_rate || 0,
       sale_deed_pct: f.sale_deed_pct === '' || f.sale_deed_pct == null ? 60 : f.sale_deed_pct,
+      sale_deed_amount: f.sale_deed_amount || 0,
       maint_rate: f.maint_rate || 0, maint_months: f.maint_months || 0,
       plot_basic: Math.round(v.plotBasic), plot_dev: Math.round(v.plotDev), const_amt: Math.round(v.constAmt),
       sale_deed: Math.round(v.saleDeed), dev_agreement: Math.round(v.devAgreement),
@@ -444,7 +446,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
           {formulaSet === 'ankhol' && (
             <>
-              <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => set('sale_deed_pct', t)} kb="numeric" />
+              <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => setF((s) => ({ ...s, sale_deed_pct: t, sale_deed_amount: '' }))} kb="numeric" />
               <View style={{ marginBottom: 10 }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Unit Price (₹)</Text>
                 <TextInput
@@ -455,8 +457,9 @@ export default function BookingFormScreen({ navigation, route }) {
                   onChangeText={(t) => {
                     setDeedAmtStr(t);
                     const amt = parseFloat(t) || 0;
-                    const base = v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation - v.discount;
-                    if (base > 0) set('sale_deed_pct', String(parseFloat((amt / base * 100).toFixed(2))));
+                    const base = v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation;
+                    // Keep the exact amount as source of truth; % is a rounded display.
+                    setF((s) => ({ ...s, sale_deed_amount: t, sale_deed_pct: base > 0 ? String(parseFloat((amt / base * 100).toFixed(2))) : s.sale_deed_pct }));
                   }}
                   style={inpS}
                 />
@@ -508,6 +511,23 @@ export default function BookingFormScreen({ navigation, route }) {
 
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
+          {/* Extra Work Amount Installments — shown ABOVE the sale-deed installments */}
+          {formulaSet === 'ankhol' && nsdBase > 0 && (
+            <View style={{ marginBottom: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#065F46', marginBottom: 2 }}>Extra Work Amount Installments</Text>
+              <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{rupee(nsdBase)}</Text>
+              <Fld l="No. of Installments (Extra Work Amount)" val={nsdInsts.length ? String(nsdInsts.length) : ''} on={buildNsdInsts} kb="numeric" />
+              {nsdInsts.map((r, i) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
+                  <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
+                  <DateField value={r.date} onChange={(t) => setNsdInst(i, 'date', t)} style={{ flex: 2 }} />
+                  <TextInput value={r.pct} onChangeText={(t) => setNsdInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
+                  <TextInput value={r.amt} onChangeText={(t) => setNsdInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
+                </View>
+              ))}
+              {nsdInsts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(nsdPctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {nsdPctTotal.toFixed(2)}%</Text>}
+            </View>
+          )}
           <Fld l="No. of Installments" val={insts.length ? String(insts.length) : ''} on={buildInsts} kb="numeric" />
           {insts.map((r, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
@@ -525,22 +545,6 @@ export default function BookingFormScreen({ navigation, route }) {
             </View>
           )}
           {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}%</Text>}
-          {formulaSet === 'ankhol' && nsdBase > 0 && (
-            <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#065F46', marginBottom: 2 }}>Extra Work Amount Installments</Text>
-              <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{rupee(nsdBase)}</Text>
-              <Fld l="No. of Installments (Extra Work Amount)" val={nsdInsts.length ? String(nsdInsts.length) : ''} on={buildNsdInsts} kb="numeric" />
-              {nsdInsts.map((r, i) => (
-                <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
-                  <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
-                  <DateField value={r.date} onChange={(t) => setNsdInst(i, 'date', t)} style={{ flex: 2 }} />
-                  <TextInput value={r.pct} onChangeText={(t) => setNsdInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
-                  <TextInput value={r.amt} onChangeText={(t) => setNsdInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
-                </View>
-              ))}
-              {nsdInsts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(nsdPctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {nsdPctTotal.toFixed(2)}%</Text>}
-            </View>
-          )}
         </Sec>
 
         {!!reviseId && (
