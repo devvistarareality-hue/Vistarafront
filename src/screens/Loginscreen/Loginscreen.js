@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { COLORS } from '../../constants/theme';
 import {
   View, Text, TextInput, TouchableOpacity, StatusBar,
@@ -10,7 +10,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
-import { login } from '../../redux/actions/authActions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getBaseUrl } from '../../constants/api';
+import { LOGIN_SUCCESS } from '../../redux/types/authTypes';
+
+// react-native-onesignal is a native module absent in Expo Go; load it lazily
+let OneSignal = null;
+try { OneSignal = require('react-native-onesignal').OneSignal; } catch (e) {}
 
 const { height } = Dimensions.get('window');
 const ORANGE = COLORS.error;
@@ -21,38 +27,149 @@ const LoginScreen = () => {
   const { companyCode } = route.params || {};
 
   const dispatch = useDispatch();
-  const { loginLoading, user, loginError } = useSelector((s) => s.auth);
+  const { user } = useSelector((s) => s.auth);
 
+  // Credentials step
   const [userCode, setUserCode]         = useState('');
   const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // OTP step
+  const [otpStep, setOtpStep]     = useState(false);
+  const [otpToken, setOtpToken]   = useState('');
+  const [otpPhone, setOtpPhone]   = useState('');
+  const [otp, setOtp]             = useState('');
+  const [resendSecs, setResendSecs] = useState(30);
+
+  // Shared loading
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
 
   useEffect(() => {
     if (user) navigation.navigate('Dashboard');
   }, [user]);
 
+  // Countdown timer for resend OTP
+  const timerRef = useRef(null);
   useEffect(() => {
-    if (loginError) Alert.alert('Login Failed', loginError);
-  }, [loginError]);
+    if (!otpStep) return;
+    timerRef.current = setInterval(() => {
+      setResendSecs((s) => {
+        if (s <= 1) { clearInterval(timerRef.current); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [otpStep, otpToken]);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!userCode.trim() || !password.trim()) {
-      Alert.alert('Required', 'Please enter both user ID and password.');
+      setError('Please enter both user ID and password.');
       return;
     }
-    dispatch(login(companyCode, userCode.trim(), password));
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/auth/login/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_code: companyCode,
+          user_code: userCode.trim(),
+          password,
+          platform: 'app',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.otp_required) {
+          setOtpToken(data.otp_token);
+          setOtpPhone(data.phone || '');
+          setOtpStep(true);
+          setResendSecs(30);
+        } else {
+          await AsyncStorage.setItem('access_token', data.tokens.access);
+          await AsyncStorage.setItem('refresh_token', data.tokens.refresh);
+          dispatch({ type: LOGIN_SUCCESS, payload: data.user });
+          try { OneSignal?.login(data.user.user_code); } catch (_) {}
+        }
+      } else {
+        setError(data.detail || 'Invalid credentials.');
+      }
+    } catch {
+      setError('Network error. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const canLogin = userCode.trim().length > 0 && password.trim().length > 0 && !loginLoading;
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) { setError('Enter the 6-digit OTP.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/auth/otp/verify/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp_token: otpToken, code: otp, platform: 'app' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await AsyncStorage.setItem('access_token', data.tokens.access);
+        await AsyncStorage.setItem('refresh_token', data.tokens.refresh);
+        dispatch({ type: LOGIN_SUCCESS, payload: data.user });
+        try { OneSignal?.login(data.user.user_code); } catch (_) {}
+      } else {
+        setError(data.detail || 'Invalid OTP.');
+      }
+    } catch {
+      setError('Network error. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/auth/otp/resend/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp_token: otpToken }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOtpToken(data.otp_token);
+        setOtp('');
+        setResendSecs(30);
+      } else {
+        setError(data.detail || 'Could not resend OTP.');
+      }
+    } catch {
+      setError('Network error. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setOtpStep(false);
+    setOtpToken('');
+    setOtpPhone('');
+    setOtp('');
+    setError('');
+  };
+
+  const canSubmit = otpStep
+    ? otp.length === 6 && !loading
+    : userCode.trim().length > 0 && password.trim().length > 0 && !loading;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
-      {/* Deep space gradient */}
       <LinearGradient colors={[COLORS.black, COLORS.navyDark, COLORS.navyDark]} style={StyleSheet.absoluteFill} />
-
-      {/* Decorative blobs */}
       <View style={s.blobTopRight} />
       <View style={s.blobBottomLeft} />
 
@@ -65,7 +182,6 @@ const LoginScreen = () => {
         >
           {/* ── Header ── */}
           <View style={s.header}>
-            {/* Concentric orange rings */}
             <View style={s.ring3}>
               <View style={s.ring2}>
                 <View style={s.ring1}>
@@ -79,13 +195,11 @@ const LoginScreen = () => {
                 </View>
               </View>
             </View>
-
             <View style={s.dividerRow}>
               <View style={s.dividerLine} />
               <View style={s.dividerDot} />
               <View style={s.dividerLine} />
             </View>
-
             <Text style={s.brandName}>Vistara</Text>
             <Text style={s.brandTag}>ERP PLATFORM</Text>
             <Text style={s.brandSub}>Real Estate Management</Text>
@@ -95,80 +209,157 @@ const LoginScreen = () => {
           <View style={s.card}>
             <View style={s.cardAccent} />
 
-            <Text style={s.cardTitle}>Welcome back</Text>
-            <Text style={s.cardSub}>Sign in to your workspace</Text>
+            {otpStep ? (
+              /* ── OTP Step ── */
+              <>
+                <Text style={s.cardTitle}>Verify OTP</Text>
+                <Text style={s.cardSub}>
+                  Code sent to <Text style={{ fontWeight: '700', color: COLORS.navyDark }}>xxxxxx{otpPhone.slice(-4) || '****'}</Text>
+                </Text>
 
-            {/* User ID */}
-            <Text style={s.fieldLabel}>USER ID</Text>
-            <View style={s.inputRow}>
-              <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
-              <TextInput
-                style={s.input}
-                placeholder="Enter your user ID"
-                placeholderTextColor={COLORS.textTertiary}
-                value={userCode}
-                onChangeText={setUserCode}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!loginLoading}
-              />
-            </View>
+                <Text style={s.fieldLabel}>ENTER OTP</Text>
+                <View style={s.inputRow}>
+                  <Ionicons name="key-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
+                  <TextInput
+                    style={[s.input, { flex: 1, letterSpacing: 8, fontSize: 22, fontWeight: '800' }]}
+                    placeholder="- - - - - -"
+                    placeholderTextColor={COLORS.textTertiary}
+                    value={otp}
+                    onChangeText={(v) => { setOtp(v.replace(/[^0-9]/g, '').slice(0, 6)); setError(''); }}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    editable={!loading}
+                    autoFocus
+                  />
+                </View>
 
-            {/* Password */}
-            <Text style={s.fieldLabel}>PASSWORD</Text>
-            <View style={s.inputRow}>
-              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
-              <TextInput
-                style={[s.input, { flex: 1 }]}
-                placeholder="Enter your password"
-                placeholderTextColor={COLORS.textTertiary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!loginLoading}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 6 }}>
-                <Ionicons name={showPassword ? 'eye' : 'eye-outline'} size={20} color={COLORS.textSecondary} />
-              </TouchableOpacity>
-            </View>
+                {!!error && (
+                  <View style={s.errorBox}>
+                    <Ionicons name="alert-circle-outline" size={15} color="#DC2626" style={{ marginRight: 6 }} />
+                    <Text style={s.errorText}>{error}</Text>
+                  </View>
+                )}
 
-            {/* Sign In Button */}
-            <TouchableOpacity
-              onPress={handleLogin}
-              activeOpacity={0.85}
-              disabled={!canLogin}
-              style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
-            >
-              <LinearGradient
-                colors={canLogin ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={s.btn}
-              >
-                {loginLoading
-                  ? <ActivityIndicator color={COLORS.white} />
-                  : (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={s.btnText}>Sign In</Text>
-                      <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
-                    </View>
-                  )
-                }
-              </LinearGradient>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleVerifyOtp}
+                  activeOpacity={0.85}
+                  disabled={!canSubmit}
+                  style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
+                >
+                  <LinearGradient
+                    colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={s.btn}
+                  >
+                    {loading
+                      ? <ActivityIndicator color={COLORS.white} />
+                      : (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={s.btnText}>Verify OTP</Text>
+                          <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.white} />
+                        </View>
+                      )
+                    }
+                  </LinearGradient>
+                </TouchableOpacity>
 
-            {/* Back */}
-            <TouchableOpacity
-              style={s.backBtn}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.7}
-              disabled={loginLoading}
-            >
-              <Ionicons name="arrow-back" size={16} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
-              <Text style={s.backText}>Back to Company Code</Text>
-            </TouchableOpacity>
+                {/* Resend */}
+                <View style={{ alignItems: 'center', marginTop: 18 }}>
+                  {resendSecs > 0 ? (
+                    <Text style={s.resendTimer}>Resend OTP in {resendSecs}s</Text>
+                  ) : (
+                    <TouchableOpacity onPress={handleResendOtp} disabled={loading}>
+                      <Text style={s.resendLink}>Resend OTP</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <TouchableOpacity style={s.backBtn} onPress={handleBackToLogin} activeOpacity={0.7} disabled={loading}>
+                  <Ionicons name="arrow-back" size={16} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={s.backText}>Back to Login</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              /* ── Credentials Step ── */
+              <>
+                <Text style={s.cardTitle}>Welcome back</Text>
+                <Text style={s.cardSub}>Sign in to your workspace</Text>
+
+                {!!error && (
+                  <View style={s.errorBox}>
+                    <Ionicons name="alert-circle-outline" size={15} color="#DC2626" style={{ marginRight: 6 }} />
+                    <Text style={s.errorText}>{error}</Text>
+                  </View>
+                )}
+
+                <Text style={s.fieldLabel}>USER ID</Text>
+                <View style={s.inputRow}>
+                  <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
+                  <TextInput
+                    style={s.input}
+                    placeholder="Enter your user ID"
+                    placeholderTextColor={COLORS.textTertiary}
+                    value={userCode}
+                    onChangeText={(v) => { setUserCode(v); setError(''); }}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+                </View>
+
+                <Text style={s.fieldLabel}>PASSWORD</Text>
+                <View style={s.inputRow}>
+                  <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
+                  <TextInput
+                    style={[s.input, { flex: 1 }]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={COLORS.textTertiary}
+                    value={password}
+                    onChangeText={(v) => { setPassword(v); setError(''); }}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 6 }}>
+                    <Ionicons name={showPassword ? 'eye' : 'eye-outline'} size={20} color={COLORS.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleLogin}
+                  activeOpacity={0.85}
+                  disabled={!canSubmit}
+                  style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
+                >
+                  <LinearGradient
+                    colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={s.btn}
+                  >
+                    {loading
+                      ? <ActivityIndicator color={COLORS.white} />
+                      : (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={s.btnText}>Sign In</Text>
+                          <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+                        </View>
+                      )
+                    }
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={s.backBtn}
+                  onPress={() => navigation.goBack()}
+                  activeOpacity={0.7}
+                  disabled={loading}
+                >
+                  <Ionicons name="arrow-back" size={16} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={s.backText}>Back to Company Code</Text>
+                </TouchableOpacity>
+              </>
+            )}
 
             <View style={s.secureRow}>
               <Ionicons name="shield-checkmark-outline" size={14} color={COLORS.textTertiary} />
@@ -276,6 +467,16 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   btnText: { color: COLORS.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+
+  errorBox: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA',
+    borderRadius: 12, padding: 12, marginBottom: 16,
+  },
+  errorText: { fontSize: 13, color: '#DC2626', flex: 1 },
+
+  resendTimer: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
+  resendLink:  { fontSize: 13, color: COLORS.navy, fontWeight: '700', textDecorationLine: 'underline' },
 
   backBtn: {
     flexDirection: 'row', alignItems: 'center',
