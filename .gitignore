@@ -48,3 +48,6 @@ build-*.tar.gz
 
 # IDE
 .idea/
+
+# Claude Code local settings
+.claude/
