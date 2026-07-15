@@ -12,6 +12,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { fetchDashboard, fetchMonthlyAttendance } from '../../../redux/actions/dashboardActions';
 import { logout } from '../../../redux/actions/authActions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ChangePasswordModal from '../../../components/ChangePasswordModal';
 import { getBaseUrl, SALES_ENDPOINTS, NOTIFICATION_ENDPOINTS } from '../../../constants/api';
 import { apiFetch } from '../../../utils/apiFetch';
 import { COLORS, CARD_SHADOW as THEME_SHADOW } from '../../../constants/theme';
@@ -54,6 +55,7 @@ const HomeScreen = () => {
   const [selectedDay,    setSelectedDay]    = useState(null);
   const [refreshing,     setRefreshing]     = useState(false);
   const [profileVisible,  setProfileVisible]  = useState(false);
+  const [changePwVisible, setChangePwVisible] = useState(false);
   const [profileUser,     setProfileUser]     = useState(null);
   const [profileLoading,  setProfileLoading]  = useState(false);
 
@@ -743,6 +745,20 @@ const HomeScreen = () => {
               ))}
             </View>
 
+            {/* Change Password */}
+            <TouchableOpacity
+              onPress={() => { setProfileVisible(false); setChangePwVisible(true); }}
+              activeOpacity={0.85}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border,
+                borderRadius: 14, paddingVertical: 14, marginBottom: 10,
+              }}
+            >
+              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.textPrimary }}>Change Password</Text>
+            </TouchableOpacity>
+
             {/* Sign Out */}
             <TouchableOpacity
               onPress={handleLogout}
@@ -760,6 +776,8 @@ const HomeScreen = () => {
           </Animated.View>
         </View>
       </Modal>
+
+      <ChangePasswordModal visible={changePwVisible} onClose={() => setChangePwVisible(false)} />
 
     </SafeAreaView>
   );
