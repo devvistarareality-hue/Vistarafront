@@ -101,10 +101,10 @@ const HomeScreen = () => {
             <Ionicons name="business-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
             <TextInput
               style={s.input}
-              placeholder="e.g. VISTARA01"
+              placeholder="e.g. VRL"
               placeholderTextColor={COLORS.textTertiary}
               value={companyCode}
-              onChangeText={setCompanyCode}
+              onChangeText={(t) => setCompanyCode(t.toUpperCase())}
               autoCapitalize="characters"
               autoCorrect={false}
               editable={!companyLoading}
