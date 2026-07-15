@@ -76,9 +76,14 @@ export default function ClosureProjectsScreen({ navigation, route }) {
           ) : visible.map(p => {
             const pc = p.plot_counts || {};
             const total = pc.total || 0;
+            // No plots yet (pre-approval) → raise an EOI instead of booking a unit.
+            const noPlots = total === 0;
+            const goTo = () => noPlots
+              ? navigation.navigate('BookingForm', { project: p.id, eoi: '1', projectName: p.name, formulaSet: p.formula_set, lead: sv?.lead, client: sv?.lead_name, phone: sv?.lead_phone })
+              : navigation.navigate('ClosureViewer', { projectId: p.id, sv });
             return (
               <TouchableOpacity key={p.id} activeOpacity={0.85}
-                onPress={() => navigation.navigate('ClosureViewer', { projectId: p.id, sv })}
+                onPress={goTo}
                 style={[CARD, { overflow: 'hidden' }]}>
                 <View style={{ height: 150, backgroundColor: COLORS.surfaceAlt }}>
                   {p.cover_image_url ? (
@@ -99,8 +104,8 @@ export default function ClosureProjectsScreen({ navigation, route }) {
                       <Text style={{ fontSize: 12, color: COLORS.error, fontWeight: '700' }}>✕ {pc.sold || 0}</Text>
                     </View>
                   )}
-                  <View style={{ marginTop: 12, backgroundColor: COLORS.linkBg, borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: BLUE }}>View units →</Text>
+                  <View style={{ marginTop: 12, backgroundColor: noPlots ? '#FFF4ED' : COLORS.linkBg, borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: noPlots ? '#E4571A' : BLUE }}>{noPlots ? 'Create EOI →' : 'View units →'}</Text>
                   </View>
                 </View>
               </TouchableOpacity>

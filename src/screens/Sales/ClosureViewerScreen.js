@@ -98,6 +98,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
       plotNumber: selPlots.map((p) => p.number).join(', '),
       projectName: project?.name, formulaSet: project?.formula_set,
       lead: sv?.lead, client: sv?.lead_name, phone: sv?.lead_phone,
+      convertEoi: route.params?.convertEoi,   // carry the source EOI id when converting
     });
   }
 

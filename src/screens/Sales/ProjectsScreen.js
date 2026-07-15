@@ -168,6 +168,40 @@ function TypeDropdown({ value, onChange }) {
   );
 }
 
+// Pricing model (formula_set) picker — drives the booking / EOI pricing formulas.
+const FORMULA_OPTIONS = [
+  { value: 'kalrav', label: 'Kalrav (villa / plots)' },
+  { value: 'ankhol', label: 'Ankhol (bunglow · sale-deed %)' },
+  { value: 'industrial', label: 'Industrial' },
+];
+function FormulaDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const cur = FORMULA_OPTIONS.find(o => o.value === value);
+  return (
+    <>
+      <TouchableOpacity onPress={() => setOpen(true)}
+        style={{ ...inp, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 14, color: cur ? TEXT : MUTED }}>{cur ? cur.label : 'Select pricing model'}</Text>
+        <Ionicons name="chevron-down" size={16} color={MUTED} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', paddingHorizontal: 40 }}
+          activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ backgroundColor: COLORS.white, borderRadius: 14, overflow: 'hidden' }}>
+            {FORMULA_OPTIONS.map((o, i) => (
+              <TouchableOpacity key={o.value} onPress={() => { onChange(o.value); setOpen(false); }}
+                style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: value === o.value ? COLORS.surfaceAlt : COLORS.white,
+                  borderBottomWidth: i < FORMULA_OPTIONS.length - 1 ? 1 : 0, borderBottomColor: COLORS.border }}>
+                <Text style={{ fontSize: 15, color: value === o.value ? NAVY : TEXT, fontWeight: value === o.value ? '700' : '400' }}>{o.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
 /* ─── Plot Wizard (shared between Add and Edit) ─── */
 function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTypes, updateType, addType, removeType }) {
   const validTypes     = plotTypes.filter(pt => pt.name.trim() && Number(pt.from) && Number(pt.to) && Number(pt.to) >= Number(pt.from));
@@ -249,10 +283,14 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const editing = !!project;
 
   const [form, setForm] = useState({
-    name: '', location: '', project_type: 'Plotted', tagline: '', rera: '',
+    name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '',
     total_area: '', total_plots: '', price_range: '', possession: '', description: '',
-    cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true,
+    cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [],
   });
+  // EOI standard unit types (pre-approval sizes) — [{type, plot_area, const_area}].
+  const addEoiType    = () => setForm(f => ({ ...f, eoi_unit_types: [...(f.eoi_unit_types || []), { type: '', plot_area: '', const_area: '' }] }));
+  const removeEoiType = (i) => setForm(f => ({ ...f, eoi_unit_types: f.eoi_unit_types.filter((_, idx) => idx !== i) }));
+  const updateEoiType = (i, k, val) => setForm(f => ({ ...f, eoi_unit_types: f.eoi_unit_types.map((t, idx) => idx === i ? { ...t, [k]: val } : t) }));
   const [saving,         setSaving]         = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingLogo,  setUploadingLogo]  = useState(false);
@@ -274,6 +312,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           name:            project.name            || '',
           location:        project.location        || '',
           project_type:    project.project_type    || 'Plotted',
+          formula_set:     project.formula_set      || 'kalrav',
+          eoi_unit_types:  project.eoi_unit_types   || [],
           tagline:         project.tagline         || '',
           rera:            project.rera            || '',
           total_area:      project.total_area      || '',
@@ -288,7 +328,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
         });
         setEditableTypes((project.plot_type_plans || []).map(pt => ({ original: pt.name, current: pt.name })));
       } else {
-        setForm({ name: '', location: '', project_type: 'Plotted', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true });
+        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [] });
         setHasTypes(false); setNoTypePlots(''); setPlotTypes([{ name: '', from: '1', to: '' }]);
         setEditableTypes([]);
       }
@@ -325,7 +365,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
       const totalPlots = editing ? (form.total_plots ? parseInt(form.total_plots) : 0) : plots.length;
 
       // New project: send total_plots=0 so backend _sync_plots() skips auto-creation
-      const body = { ...form, total_plots: editing ? totalPlots : 0 };
+      const body = { ...form, total_plots: editing ? totalPlots : 0,
+        eoi_unit_types: (form.eoi_unit_types || []).filter(t => (t.type || '').trim()) };
       const url    = editing ? SALES_ENDPOINTS.project(project.id) : SALES_ENDPOINTS.projects;
       const method = editing ? 'PATCH' : 'POST';
       const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
@@ -420,6 +461,11 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 </Field>
               </View>
             </View>
+
+            <Field label="Pricing Model">
+              <FormulaDropdown value={form.formula_set} onChange={v => set('formula_set', v)} />
+              <Text style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>Drives the booking / EOI pricing formulas — separate from the display Type.</Text>
+            </Field>
 
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
@@ -591,6 +637,23 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                   noTypePlots={noTypePlots} setNoTypePlots={setNoTypePlots}
                   plotTypes={plotTypes} updateType={updateType} addType={addType} removeType={removeType} />
               )}
+            </View>
+
+            {/* EOI Unit Types — standard pre-approval sizes to prefill the EOI form */}
+            <View style={{ marginTop: 6 }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>EOI Unit Types</Text>
+              <Text style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>Standard sizes shown when creating an EOI. Plot &amp; Construction Area auto-fill from the chosen type.</Text>
+              {(form.eoi_unit_types || []).map((t, i) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 6, marginBottom: 8, alignItems: 'center' }}>
+                  <TextInput value={t.type} onChangeText={v => updateEoiType(i, 'type', v)} placeholder="2 BHK" style={[inp, { flex: 1 }]} />
+                  <TextInput value={String(t.plot_area || '')} onChangeText={v => updateEoiType(i, 'plot_area', v)} placeholder="Plot" keyboardType="numeric" style={[inp, { width: 68 }]} />
+                  <TextInput value={String(t.const_area || '')} onChangeText={v => updateEoiType(i, 'const_area', v)} placeholder="Const" keyboardType="numeric" style={[inp, { width: 68 }]} />
+                  <TouchableOpacity onPress={() => removeEoiType(i)}><Ionicons name="close-circle" size={20} color={COLORS.error} /></TouchableOpacity>
+                </View>
+              ))}
+              <TouchableOpacity onPress={addEoiType} style={{ borderWidth: 1.5, borderColor: '#FF6B2B', borderStyle: 'dashed', borderRadius: 8, paddingVertical: 8, alignItems: 'center', marginTop: 2 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#E4571A' }}>+ Add Unit Type</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={{ height: 20 }} />

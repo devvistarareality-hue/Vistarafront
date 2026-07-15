@@ -61,21 +61,14 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
       ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
   }
 
-  // ── Agreement Amount ──
-  let agreement;
-  if (isAnkhol) {
-    const sdPct = v.saleDeedPct != null ? v.saleDeedPct : 60;
-    const fmt2 = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    agreement = sec('Deal Value', '#475569') + grid([
-      ['Unit Price', 'Rs. ' + num(Math.round(v.saleDeed))],
-      ['Additional Extra Work Amount', 'Rs. ' + fmt2(v.discount > 0 ? (v.nonSaleDeed - v.discount) / 100 : v.nonSaleDeedDoc)],
-    ]);
-  }
-  else if (isIndustrial) {
-    const rows = [['Sale Deed', 'Rs. ' + num(v.saleDeed) + ' (SD Rate x Plot Area)']];
-    if (!isTundav) rows.push(['Development Agreement', 'Rs. ' + num(v.devAgreement) + ' (Dev Rate x Plot Area)']);
-    agreement = sec('Agreement Amount', '#475569') + grid(rows);
-  } else agreement = sec('Agreement Amount', '#475569') + grid([['Land Sale Deed', 'Rs. ' + num(v.lsd)], ['Construction Agreement', 'Rs. ' + num(v.constAgr)]]);
+  // ── Deal Value — all sets now use the sale-deed split (Unit Price + Additional Extra
+  // Work Amount ÷100). ──
+  const isKalrav = fs === 'kalrav';
+  const fmt2 = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const agreement = sec('Deal Value') + grid([
+    ['Unit Price', 'Rs. ' + num(Math.round(v.saleDeed))],
+    ['Additional Extra Work Amount', 'Rs. ' + fmt2(v.discount > 0 ? (v.nonSaleDeed - v.discount) / 100 : v.nonSaleDeedDoc)],
+  ]);
 
   // ── Extra Charges ──
   let extra = '';
@@ -85,14 +78,14 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : 'GST (5% of Sale Deed)', v.applyGst === 'No' ? 0 : v.gst);
     extra += mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance) + mrow('Legal Documentation charge', v.legal);
   } else if (isIndustrial) {
-    extra += mrow('Stamp Duty (4.9% of Sale Deed)', v.stampDuty);
+    extra += mrow(v.applyStampDuty === 'No' ? 'Stamp Duty (Not Applicable)' : 'Stamp Duty (4.9% of Sale Deed)', v.applyStampDuty === 'No' ? 0 : v.stampDuty);
     extra += mrow(v.applyRegFee === 'No' ? (v.applyPageFee === 'No' ? 'Registration Fees (Not Applicable)' : 'Registration Fees (Not Applicable) + Page Fee (Rs.1,500)') : ('Registration Fees (' + (v.gender === 'Female' ? ('Female - ' + (v.applyPageFee === 'No' ? 'Rs.0' : 'Rs.1,500')) : ('Male - 1% Sale Deed' + (v.applyPageFee === 'No' ? '' : ' + Rs.1,500'))) + ')'), v.regFees);
-    extra += mrow(isTundav ? 'GST on Sale Deed (18% of 67% of Sale Deed)' : 'GST on Developed Plot (18% of Development Agreement)', v.gst);
+    extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : (isTundav ? 'GST on Sale Deed (18% of 67% of Sale Deed)' : 'GST on Developed Plot (18% of Development Agreement)'), v.applyGst === 'No' ? 0 : v.gst);
     extra += mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance) + mrow('Legal Documentation charge', v.legal);
   } else {
-    extra += mrow('Stamp Duty (4.9% of Land Sale Deed)', v.stampDuty);
+    extra += mrow(v.applyStampDuty === 'No' ? 'Stamp Duty (Not Applicable)' : 'Stamp Duty (4.9% of Land Sale Deed)', v.applyStampDuty === 'No' ? 0 : v.stampDuty);
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (' + (v.gender === 'Female' ? ('Female - ' + (v.applyPageFee === 'No' ? 'Rs.0' : 'Rs.1,500')) : ('Male - 1% LSD' + (v.applyPageFee === 'No' ? '' : ' + Rs.1,500'))) + ')'), v.applyRegFee === 'No' ? 0 : v.regFees);
-    extra += mrow('GST (18% of Construction Agreement)', v.gst) + mrow('Maintenance', v.maint) + mrow('Legal Documentation charge', v.legal);
+    extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : 'GST (18% of Construction Agreement)', v.applyGst === 'No' ? 0 : v.gst) + mrow('Maintenance', v.maint) + mrow('Legal Documentation charge', v.legal);
   }
   extra += mrow('Total Legal & Other Charges', v.totalExtra, { sub: true });
 
@@ -146,7 +139,13 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const scheduleHtml = schedBlocks.join('');
 
   // ── Terms ──
-  const terms = isAnkhol ? [
+  const terms = (isEOI && isKalrav) ? [
+    ['Minimum Plot Area', 'The area of the minimum plot is subject to change at max. 10%.'],
+    ['Construction Area', 'Const. area is subject to change and will be finalised at the time of disclosure of master layout.'],
+    ['Booking Order', 'The EOI will be booked in a chronological manner and the selection of the plots will be done accordingly.'],
+    ['Super Built-up', 'Plot Area consists of super built up of 32% to 34% and Construction Area consists a super built up of 30%.'],
+    ['Additional Area', 'Clients who have booked EOI will have the opportunity to buy max. area of 10% at the same rate. In case someone wants to buy a bigger piece of land at the time of disclosure of master layout, the rate of additional area will be as per the rate decided by the developer at that point of time.'],
+  ] : isAnkhol ? [
     ['Payment Mode', 'All payments are received via cheque or bank transfer only. No cash is accepted.'],
     ['Late Payment', 'Payment delay of more than 10 days from the due date will attracts 2% per month penalty on the due instalment.'],
     ['Cancellation', 'In case of delay in payment of more than 30 days from the due date, the developer will have the right to cancel this deal.In such case, the developer will refund the received amount after deduction of 10% of the total deal value within 3 months.'],
@@ -257,7 +256,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
-  <div class="datebelow"><span>Plot No: ${esc(((meta.plotNo || '').toString().replace(/^[^0-9]*/, '') || meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
+  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : 'Plot No: ' + esc(((meta.plotNo || '').toString().replace(/^[^0-9]*/, '') || meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>

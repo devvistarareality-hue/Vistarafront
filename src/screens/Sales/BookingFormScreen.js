@@ -26,11 +26,17 @@ export default function BookingFormScreen({ navigation, route }) {
   const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
   const p = route?.params || {};
   const reviseId = p.revise || '';
+  const convertEoiId = p.convertEoi || '';   // converting an EOI into a plot booking
   const [projectId, setProjectId] = useState(p.project ? String(p.project) : '');
   // Multi-plot: `plots` route param is a comma list of ids; fall back to single `plot`.
   const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
   const plotId = plotIds[0] || '';
   const leadId = p.lead || '';
+  // EOI (Expression of Interest): a booking on a project with no plots yet. No plot is
+  // selected; a sequential per-project EOI code (EOI-1, EOI-2…) stands in for the plot no.
+  const eoiMode = !reviseId && (p.eoi === '1' || p.eoi === true || p.eoi === 'true');
+  const [eoiNo, setEoiNo] = useState('');
+  const [eoiType, setEoiType] = useState('');   // selected EOI standard unit type
 
   const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
   const [plotNo, setPlotNo] = useState(p.plotNumber || '');
@@ -81,12 +87,16 @@ export default function BookingFormScreen({ navigation, route }) {
         setF((s) => ({
           ...s,
           area: sumArea ? String(+sumArea.toFixed(2)) : s.area,
-          const_area: sumConst ? String(+sumConst.toFixed(2)) : s.const_area,
+          // When converting an EOI, Construction Area comes from the EOI, not the plot.
+          const_area: (sumConst && !convertEoiId) ? String(+sumConst.toFixed(2)) : s.const_area,
         }));
       }
     }).catch(() => {});
     apiFetch(SALES_ENDPOINTS.sources + cq('?')).then(r => r.json()).then((d) => setSources(Array.isArray(d) ? d : [])).catch(() => {});
-  }, [projectId, plotIds.join(','), companyId]);
+    // EOI: fetch the next per-project EOI code to show in the form + the EOI PDF.
+    if (eoiMode && projectId) apiFetch(`${SALES_ENDPOINTS.bookings}next-eoi/?project=${projectId}${cq('&')}`)
+      .then(r => (r.ok ? r.json() : null)).then((d) => { if (d && d.eoi_no) { setEoiNo(d.eoi_no); setPlotNo(d.eoi_no); } }).catch(() => {});
+  }, [projectId, plotIds.join(','), companyId, eoiMode]);
 
   // Revision prefill
   useEffect(() => {
@@ -118,8 +128,34 @@ export default function BookingFormScreen({ navigation, route }) {
     }).catch(() => {});
   }, [reviseId]);
 
+  // Convert EOI → LOI: prefill from the source EOI. Plot & Plot Area come from the picked
+  // plot; Construction Area from the EOI. All fields editable (normal LOI booking).
+  useEffect(() => {
+    if (!convertEoiId) return;
+    apiFetch(SALES_ENDPOINTS.bookings + cq('?')).then(r => r.json()).then((arr) => {
+      const b = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(convertEoiId));
+      if (!b) return;
+      const srcDisp = (n) => { if (!n) return n; if (/^referral$/i.test(n)) return 'Reference'; if (/^other$/i.test(n)) return 'Other'; return n; };
+      setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: srcDisp(b.source || ''),
+        area_unit: b.area_unit || s.area_unit, const_area: b.const_area || '', villa_type: b.villa_type || '',
+        land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
+        sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
+        land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
+        discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
+        apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
+        booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
+      if (Array.isArray(b.installments)) {
+        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork && !i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+        setNsdInsts(b.installments.filter((i) => i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+      }
+      if (Array.isArray(b.extra_terms)) setExtraTerms(b.extra_terms.map((t) => ({ title: t.title || '', desc: t.desc || '' })));
+    }).catch(() => {});
+  }, [convertEoiId]);
+
   const formulaSet = project?.formula_set || 'kalrav';
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
+  // All pricing sets share the sale-deed % split (Unit Price + Additional Extra Work Amount).
+  const hasSaleDeedSplit = formulaSet === 'ankhol' || formulaSet === 'kalrav' || formulaSet === 'industrial';
   const v = useMemo(() => computeFormulas({
     formulaSet, projectName: project?.name,
     area: f.area, landRate: f.land_rate, devRate: f.dev_rate, constArea: f.const_area, constRate: f.const_rate,
@@ -164,11 +200,12 @@ export default function BookingFormScreen({ navigation, route }) {
     : formulaSet === 'industrial'
       ? `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maintDeposit)} + ${inr(v.maintAdvance)} + ${inr(v.legal)}`
       : `${inr(v.stampDuty)} + ${inr(v.regFees)} + ${inr(v.gst)} + ${inr(v.maint)} + ${inr(v.legal)}`;
-  const saleDeedSub = formulaSet === 'ankhol' ? `${v.saleDeedPct}% × Total Basic Amount` : 'Sale Deed Rate × Plot Area';
-  const saleDeedSub2 = formulaSet === 'ankhol'
-    ? `${v.saleDeedPct}% × ${inr(v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation)}`
+  const sdPct = Math.round((v.saleDeedPct || 0) * 100) / 100;   // display % capped at 2 decimals
+  const saleDeedSub = hasSaleDeedSplit ? `${sdPct}% × Total Basic Amount` : 'Sale Deed Rate × Plot Area';
+  const saleDeedSub2 = hasSaleDeedSplit
+    ? `${sdPct}% × ${inr(v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation)}`
     : `${inr(v.saleDeedRate)} × ${inr(v.area)}`;
-  const stampSub = (formulaSet === 'ankhol' && f.apply_stamp_duty === 'No') ? 'Not applicable'
+  const stampSub = (hasSaleDeedSplit && f.apply_stamp_duty === 'No') ? 'Not applicable'
     : (formulaSet === 'kalrav' ? '4.9% of Land Sale Deed' : '4.9% of Sale Deed');
   const pageFeeTxt = f.apply_page_fee === 'No' ? '' : ' + ₹1,500';
   const femPage = f.apply_page_fee === 'No' ? '₹0' : '₹1,500';
@@ -177,7 +214,7 @@ export default function BookingFormScreen({ navigation, route }) {
     : (formulaSet === 'ankhol' ? `1% of Sale Deed${pageFeeTxt}`
       : formulaSet === 'industrial' ? `Male: 1% Sale Deed${pageFeeTxt} | Female: ${femPage}`
       : `Male: 1% LSD${pageFeeTxt} | Female: ${femPage}`);
-  const gstSub = (formulaSet === 'ankhol' && f.apply_gst === 'No') ? 'Not applicable'
+  const gstSub = (hasSaleDeedSplit && f.apply_gst === 'No') ? 'Not applicable'
     : (formulaSet === 'ankhol' ? '5% of Sale Deed'
       : formulaSet === 'industrial' ? (v.isTundav ? '18% of 67% of Sale Deed' : '18% of Development Agreement')
       : '18% of Construction Agreement');
@@ -266,7 +303,7 @@ export default function BookingFormScreen({ navigation, route }) {
     // Installments are required before the LOI can be generated.
     if (!insts.length) { setMsg('Add the payment installments before downloading the LOI.'); return; }
     if (Math.abs(pctTotal - 100) > 0.01) { setMsg('Payment installments must total 100% before downloading the LOI.'); return; }
-    if (formulaSet === 'ankhol' && nsdBase > 0 && (!nsdInsts.length || Math.abs(nsdPctTotal - 100) > 0.01)) {
+    if (hasSaleDeedSplit && nsdBase > 0 && (!nsdInsts.length || Math.abs(nsdPctTotal - 100) > 0.01)) {
       setMsg('Extra Work Amount installments must be filled and total 100% before downloading the LOI.'); return;
     }
     const meta = {
@@ -380,7 +417,8 @@ export default function BookingFormScreen({ navigation, route }) {
     if (!loiFile) { setMsg('Generate the LOI, get it signed, and attach it before submitting.'); return; }
     setSaving(true); setMsg('');
     const payload = {
-      project: projectId, plot: plotId, plot_ids: plotIds, lead: leadId || undefined,
+      project: projectId, plot: eoiMode ? undefined : plotId, plot_ids: eoiMode ? [] : plotIds, lead: leadId || undefined,
+      ...(eoiMode ? { eoi: true, eoi_no: eoiNo } : {}),
       client_name: f.client_name.trim(), gender: f.gender, phone: f.phone.trim(), address: f.address, source: f.source,
       formula_set: formulaSet, area: f.area, area_unit: f.area_unit, const_area: f.const_area || '0',
       villa_type: flags.bunglowTypeIsDropdown ? f.villa_type : '', bunglow_type: flags.bunglowTypeFixed || '',
@@ -424,8 +462,8 @@ export default function BookingFormScreen({ navigation, route }) {
           <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? 'Revise Booking' : (plotIds.length > 1 ? 'Book Units' : 'Book Unit')} {plotNo}</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>{project?.name || '…'} · {formulaSet.toUpperCase()}</Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? 'Revise Booking' : eoiMode ? 'Create EOI' : (plotIds.length > 1 ? 'Book Units' : 'Book Unit')} <Text style={eoiMode ? { color: '#E4571A' } : null}>{eoiMode ? (eoiNo || '…') : plotNo}</Text></Text>
+          <Text style={{ fontSize: 12, color: MUTED }}>{project?.name || '…'} · {formulaSet.toUpperCase()}{eoiMode ? ' · EOI · no plot' : ''}</Text>
         </View>
       </View>
 
@@ -455,9 +493,34 @@ export default function BookingFormScreen({ navigation, route }) {
               })}
             </View>
           </View>
-          <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} />
-          {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
-          {flags.bunglowTypeIsDropdown && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
+          {eoiMode && (project?.eoi_unit_types || []).length > 0 && (
+            <Pick l="Unit Type" val={eoiType} on={(name) => {
+              setEoiType(name);
+              const t = (project.eoi_unit_types || []).find((x) => x.type === name);
+              // Standard EOI sizes prefill Plot/Construction Area (locked in EOI mode).
+              setF((s) => ({ ...s, villa_type: name, area: t ? String(t.plot_area) : s.area, const_area: t ? String(t.const_area) : s.const_area }));
+            }} opts={(project.eoi_unit_types || []).map((x) => x.type)} />
+          )}
+          {eoiMode ? (
+            <>
+              <View style={{ marginBottom: 10 }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{`Plot Area (${unit})`}</Text>
+                <TextInput value={String(f.area || '')} editable={false} style={[inpS, { backgroundColor: '#F3F4F6', color: MUTED }]} />
+              </View>
+              {flags.hasConstructionFields && (
+                <View style={{ marginBottom: 10 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{`Construction Area (${unit})`}</Text>
+                  <TextInput value={String(f.const_area || '')} editable={false} style={[inpS, { backgroundColor: '#F3F4F6', color: MUTED }]} />
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} />
+              {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
+            </>
+          )}
+          {flags.bunglowTypeIsDropdown && !eoiMode && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
         </Sec>
 
         <Sec title="Pricing">
@@ -469,7 +532,20 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
           {flags.hasConstructionAgreement && <Fld l="Construction Agreement (₹)" val={f.const_agreement} on={(t) => set('const_agreement', t)} kb="numeric" />}
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
-          {formulaSet === 'ankhol' && (
+          {formulaSet === 'kalrav' && (
+            <>
+              {/* Kalrav: Unit Price = Land Sale Deed + Construction Agreement; % derived — both read-only. */}
+              <View style={{ marginBottom: 10 }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Sale Deed %</Text>
+                <TextInput value={v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '0'} editable={false} style={[inpS, { backgroundColor: '#F3F4F6', color: MUTED }]} />
+              </View>
+              <View style={{ marginBottom: 10 }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Unit Price (₹)</Text>
+                <TextInput value={String(Math.round(v.saleDeed) || 0)} editable={false} style={[inpS, { backgroundColor: '#F3F4F6', color: MUTED }]} />
+              </View>
+            </>
+          )}
+          {hasSaleDeedSplit && formulaSet !== 'kalrav' && (
             <>
               <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => setF((s) => ({ ...s, sale_deed_pct: t, sale_deed_amount: '' }))} kb="numeric" />
               <View style={{ marginBottom: 10 }}>
@@ -491,16 +567,16 @@ export default function BookingFormScreen({ navigation, route }) {
               </View>
             </>
           )}
-          {formulaSet !== 'ankhol' && <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />}
+          {!hasSaleDeedSplit && <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />}
         </Sec>
 
         <Sec title="Legal & Other Charges">
-          {formulaSet === 'ankhol' && <Pick l="Apply Stamp Duty?" val={f.apply_stamp_duty} on={(x) => set('apply_stamp_duty', x)} opts={['Yes', 'No']} />}
+          {hasSaleDeedSplit && <Pick l="Apply Stamp Duty?" val={f.apply_stamp_duty} on={(x) => set('apply_stamp_duty', x)} opts={['Yes', 'No']} />}
           <Calc l="Stamp Duty" sub={stampSub} val={v.stampDuty} />
           <Pick l="Apply Registration Fee?" val={f.apply_reg_fee} on={(x) => set('apply_reg_fee', x)} opts={['Yes', 'No']} />
           <Pick l="Apply ₹1,500 Page Fee?" val={f.apply_page_fee} on={(x) => set('apply_page_fee', x)} opts={['Yes', 'No']} />
           <Calc l="Registration Fees" sub={regSub} val={v.regFees} />
-          {formulaSet === 'ankhol' && <Pick l="Apply GST?" val={f.apply_gst} on={(x) => set('apply_gst', x)} opts={['Yes', 'No']} />}
+          {hasSaleDeedSplit && <Pick l="Apply GST?" val={f.apply_gst} on={(x) => set('apply_gst', x)} opts={['Yes', 'No']} />}
           <Calc l="GST" sub={gstSub} val={v.gst} />
           <Fld l={`Maintenance Rate (₹/${unit}${formulaSet === 'industrial' ? '' : '/mo'})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
           {formulaSet !== 'industrial' && <Fld l="Maintenance Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />}
@@ -520,8 +596,8 @@ export default function BookingFormScreen({ navigation, route }) {
             sub={formulaSet === 'ankhol' ? 'Plot Basic + Plot Dev + Construction + Premium' : 'Plot Basic + Plot Dev + Construction'}
             val={formulaSet === 'ankhol' ? v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation : v.plotBasic + v.plotDev + v.constAmt}
             subtotal />}
-          {flags.hasSaleDeed && formulaSet !== 'ankhol' && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
-          {formulaSet === 'ankhol' && <>
+          {flags.hasSaleDeed && formulaSet !== 'ankhol' && !hasSaleDeedSplit && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
+          {hasSaleDeedSplit && <>
             <Tot l="Unit Price" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />
             <Tot l="Extra Work Amount" val={v.nonSaleDeed} />
             <Fld l="Discount (₹)" val={f.discount} on={(t) => set('discount', t)} kb="numeric" />
@@ -530,14 +606,14 @@ export default function BookingFormScreen({ navigation, route }) {
           </>}
           <Tot l="Legal & Other Charges" sub={extraSub} sub2={extraSub2} val={v.totalExtra} />
           {!!reviseId && v.extraWorkAmt > 0 && <Tot l="Extra Work" val={v.extraWorkAmt} />}
-          {formulaSet !== 'ankhol' && <Tot l="Discount" val={-v.discount} />}
+          {!hasSaleDeedSplit && <Tot l="Discount" val={-v.discount} />}
           <Tot l="Total Box Price" val={v.finalAmt} big />
         </View>
 
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
           {/* Extra Work Amount Installments — shown ABOVE the sale-deed installments */}
-          {formulaSet === 'ankhol' && nsdBase > 0 && (
+          {hasSaleDeedSplit && nsdBase > 0 && (
             <View style={{ marginBottom: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 }}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#065F46', marginBottom: 2 }}>Extra Work Amount Installments</Text>
               <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{rupee(nsdBase)}</Text>
@@ -551,6 +627,12 @@ export default function BookingFormScreen({ navigation, route }) {
                 </View>
               ))}
               {nsdInsts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(nsdPctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {nsdPctTotal.toFixed(2)}%</Text>}
+            </View>
+          )}
+          {hasSaleDeedSplit && (
+            <View style={{ marginBottom: 4 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E3A5F' }}>Unit Price Installments</Text>
+              <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{rupee(base)}</Text>
             </View>
           )}
           <Fld l="No. of Installments" val={insts.length ? String(insts.length) : ''} on={buildInsts} kb="numeric" />
