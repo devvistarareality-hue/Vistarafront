@@ -18,6 +18,8 @@ export function MyBookingsList({ navigation }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [open, setOpen] = useState({});   // which project groups are expanded
+  const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
 
   const load = useCallback(async () => {
     try {
@@ -39,10 +41,15 @@ export function MyBookingsList({ navigation }) {
       {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : projectNames.length === 0 ? (
         <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You haven't booked any units yet.</Text></View>
       ) : projectNames.map((pn) => (
-        <View key={pn} style={{ marginBottom: 18 }}>
-          <Text style={{ fontSize: 12, fontWeight: '800', color: BLUE, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
-            🏢 {pn} · {groups[pn].length} unit{groups[pn].length === 1 ? '' : 's'}
-          </Text>
+        <View key={pn} style={{ marginBottom: 12 }}>
+          <TouchableOpacity onPress={() => toggle(pn)} activeOpacity={0.7}
+            style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderWidth: 1.5, borderColor: open[pn] ? '#C7D2FE' : 'transparent' }]}>
+            <Text style={{ fontSize: 12, fontWeight: '800', color: BLUE, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+              🏢 {pn} · {groups[pn].length} unit{groups[pn].length === 1 ? '' : 's'}
+            </Text>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: MUTED }}>{open[pn] ? '⌄' : '›'}</Text>
+          </TouchableOpacity>
+          {open[pn] && <View style={{ marginTop: 10 }}>
           {groups[pn].map((b) => (
             <View key={b.id} style={[CARD, { marginBottom: 10 }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -64,6 +71,7 @@ export function MyBookingsList({ navigation }) {
               </View>
             </View>
           ))}
+          </View>}
         </View>
       ))}
     </ScrollView>
