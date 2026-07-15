@@ -191,6 +191,8 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
   const des = (user?.designation || '').toLowerCase();
   const isStm = des.includes('stm') || des.includes('sales team') || des.includes('sales executive');
+  // Only an approver (admin/manager) may cancel a booking.
+  const isApprover = !!user && (user.role === 'Admin' || user.role === 'Manager' || user.is_staff);
   const [tab, setTab] = useState(route?.params?.initialTab === 'closures' ? 'closures' : 'sv');
   const [visits, setVisits] = useState([]);
   const [closures, setClosures] = useState([]);
@@ -356,9 +358,11 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
                         </Text>
                       </View>
                     </View>
-                    <TouchableOpacity onPress={() => cancelClosure(c.id)} style={{ alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: COLORS.error, backgroundColor: COLORS.errorBg }}>
-                      <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 12 }}>Cancel Closure</Text>
-                    </TouchableOpacity>
+                    {isApprover && (
+                      <TouchableOpacity onPress={() => cancelClosure(c.id)} style={{ alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: COLORS.error, backgroundColor: COLORS.errorBg }}>
+                        <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 12 }}>Cancel Closure</Text>
+                      </TouchableOpacity>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
