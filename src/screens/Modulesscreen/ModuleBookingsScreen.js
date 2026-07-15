@@ -15,6 +15,65 @@ const TEAL = '#0D9488';
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const isEoi = (b) => String(b.plot_numbers || '').toUpperCase().startsWith('EOI');
+const money0 = (n) => (n === '' || n == null) ? '—' : '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const val = (v) => (v === '' || v == null) ? '—' : String(v);
+
+// One label:value row inside the Details panel.
+const DRow = ({ l, v }) => (
+  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+    <Text style={{ fontSize: 11, color: '#8492A6', fontWeight: '600', flexShrink: 1 }}>{l}</Text>
+    <Text style={{ fontSize: 12, color: '#1A1A2E', fontWeight: '700', textAlign: 'right' }}>{v}</Text>
+  </View>
+);
+function BookingDetails({ b }) {
+  const insts = Array.isArray(b.installments) ? b.installments : [];
+  const Head = ({ t }) => <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 10, marginBottom: 4 }}>{t}</Text>;
+  return (
+    <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', borderStyle: 'dashed' }}>
+      <Head t="Client & Property" />
+      <DRow l="Client" v={val(b.client_name)} />
+      <DRow l="Phone" v={val(b.phone)} />
+      <DRow l="Gender" v={val(b.gender)} />
+      <DRow l="Address" v={val(b.address)} />
+      <DRow l="Source" v={val(b.source)} />
+      {b.cp_name ? <DRow l="Reference / CP" v={val(b.cp_name)} /> : null}
+      <DRow l="Unit" v={val(b.plot_numbers || b.plot_number)} />
+      <DRow l="Type" v={val(b.villa_type || b.bunglow_type)} />
+      <DRow l="STM" v={val(b.stm_name)} />
+      <DRow l="Booking Date" v={val(b.booking_date)} />
+      <DRow l="Pricing" v={String(b.formula_set || '').toUpperCase() || '—'} />
+      <DRow l="Plot Area" v={`${val(b.area)} ${b.area_unit || ''}`.trim()} />
+      <DRow l="Construction Area" v={val(b.const_area)} />
+      <Head t="Rates & Amounts" />
+      <DRow l="Land Rate" v={money0(b.land_rate)} />
+      <DRow l="Development Rate" v={money0(b.dev_rate)} />
+      <DRow l="Construction Rate" v={money0(b.const_rate)} />
+      {Number(b.sale_deed_rate) ? <DRow l="Sale Deed Rate" v={money0(b.sale_deed_rate)} /> : null}
+      <DRow l="Sale Deed %" v={b.sale_deed_pct != null ? b.sale_deed_pct + '%' : '—'} />
+      {Number(b.land_sale_deed) ? <DRow l="Land Sale Deed" v={money0(b.land_sale_deed)} /> : null}
+      {Number(b.const_agreement) ? <DRow l="Construction Agreement" v={money0(b.const_agreement)} /> : null}
+      {Number(b.premium_location) ? <DRow l="Premium Location" v={money0(b.premium_location)} /> : null}
+      <DRow l="Plot Basic" v={money0(b.plot_basic)} />
+      <DRow l="Plot Development" v={money0(b.plot_dev)} />
+      <DRow l="Construction Amount" v={money0(b.const_amt)} />
+      <DRow l="Unit Price" v={money0(b.sale_deed)} />
+      <DRow l="Stamp Duty" v={money0(b.stamp_duty)} />
+      <DRow l="Registration" v={money0(b.reg_fees)} />
+      <DRow l="GST" v={money0(b.gst)} />
+      <DRow l="Maintenance Deposit" v={money0(b.maint_deposit || b.maintenance)} />
+      {Number(b.maint_advance) ? <DRow l="Maintenance Advance" v={money0(b.maint_advance)} /> : null}
+      <DRow l="Legal Charges" v={money0(b.legal_charges)} />
+      <DRow l="Total Legal & Other" v={money0(b.total_extra)} />
+      {Number(b.discount) ? <DRow l="Discount" v={money0(b.discount)} /> : null}
+      {Number(b.extra_work_amount) ? <DRow l="Extra Work" v={money0(b.extra_work_amount)} /> : null}
+      <DRow l="Final Amount" v={money0(b.final_amount)} />
+      {insts.length > 0 && <Head t="Payment Schedule" />}
+      {insts.map((i, idx) => (
+        <DRow key={idx} l={`${i.no || idx + 1}. ${i.date || '—'}  ${i.pct != null ? i.pct + '%' : ''}  ${i.isNsd ? '(Extra Work)' : i.isExtra ? '(Legal & Other)' : ''}`.trim()} v={money0(i.amt)} />
+      ))}
+    </View>
+  );
+}
 
 // Accounts & Finance — read-only view of every sales booking (LOI + EOI), grouped by
 // project. Review details + open the signed document; no editing.
@@ -27,6 +86,8 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const [err, setErr] = useState('');
   const [open, setOpen] = useState({});
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
+  const [detailsOpen, setDetailsOpen] = useState({});
+  const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
 
   const load = useCallback(async () => {
     setErr('');
@@ -90,11 +151,17 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                       <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, marginTop: 4 }}>{(b.approval_status || b.status || '').toUpperCase()}</Text>
                     </View>
                   </View>
-                  {b.loi_document ? (
-                    <TouchableOpacity onPress={() => openLoi(b.id)} style={{ alignSelf: 'flex-start', marginTop: 10, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#99F6E4', backgroundColor: COLORS.white }}>
-                      <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>📄 View {isEoi(b) ? 'EOI' : 'LOI'}</Text>
+                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    <TouchableOpacity onPress={() => toggleDetails(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
+                      <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>{detailsOpen[b.id] ? '▲ Hide Details' : '▾ Details'}</Text>
                     </TouchableOpacity>
-                  ) : null}
+                    {b.loi_document ? (
+                      <TouchableOpacity onPress={() => openLoi(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#99F6E4', backgroundColor: COLORS.white }}>
+                        <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>📄 View / Download {isEoi(b) ? 'EOI' : 'LOI'}</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                  {detailsOpen[b.id] ? <BookingDetails b={b} /> : null}
                 </View>
               ))}
             </View>}
