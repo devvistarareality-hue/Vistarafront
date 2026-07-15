@@ -777,7 +777,7 @@ const HomeScreen = () => {
         </View>
       </Modal>
 
-      <ChangePasswordModal visible={changePwVisible} onClose={() => setChangePwVisible(false)} />
+      <ChangePasswordModal visible={changePwVisible} onClose={() => setChangePwVisible(false)} onSuccess={() => { setChangePwVisible(false); handleLogout(); }} />
 
     </SafeAreaView>
   );

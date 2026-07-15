@@ -5,7 +5,7 @@ import { apiFetch } from '../utils/apiFetch';
 import { COLORS } from '../constants/theme';
 
 // "Change my password" modal — opened from the profile sheet.
-export default function ChangePasswordModal({ visible, onClose }) {
+export default function ChangePasswordModal({ visible, onClose, onSuccess }) {
   const [cur, setCur]   = useState('');
   const [nw, setNw]     = useState('');
   const [conf, setConf] = useState('');
@@ -24,7 +24,12 @@ export default function ChangePasswordModal({ visible, onClose }) {
         method: 'POST', body: JSON.stringify({ current_password: cur, new_password: nw }),
       });
       const d = await res.json().catch(() => ({}));
-      if (res.ok) { setMsg({ t: 'ok', m: 'Password changed successfully.' }); setCur(''); setNw(''); setConf(''); setTimeout(close, 1200); }
+      if (res.ok) {
+        // Password change invalidates all sessions (web + app) → sign out & re-login.
+        setMsg({ t: 'ok', m: 'Password changed. Please sign in again…' });
+        setCur(''); setNw(''); setConf('');
+        setTimeout(() => (onSuccess ? onSuccess() : close()), 1400);
+      }
       else setMsg({ t: 'err', m: d.detail || 'Could not change password.' });
     } catch { setMsg({ t: 'err', m: 'Could not change password.' }); }
     setBusy(false);
