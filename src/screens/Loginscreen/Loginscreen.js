@@ -37,7 +37,6 @@ const LoginScreen = () => {
   // OTP step
   const [otpStep, setOtpStep]     = useState(false);
   const [otpToken, setOtpToken]   = useState('');
-  const [otpPhone, setOtpPhone]   = useState('');
   const [otpEmail, setOtpEmail]   = useState('');
   const [otp, setOtp]             = useState('');
   const [resendSecs, setResendSecs] = useState(30);
@@ -85,7 +84,6 @@ const LoginScreen = () => {
       if (res.ok) {
         if (data.otp_required) {
           setOtpToken(data.otp_token);
-          setOtpPhone(data.phone || '');
           setOtpEmail(data.email || '');
           setOtpStep(true);
           setResendSecs(30);
@@ -217,7 +215,7 @@ const LoginScreen = () => {
               <>
                 <Text style={s.cardTitle}>Verify OTP</Text>
                 <Text style={s.cardSub}>
-                  Code sent to{otpPhone ? <Text style={{ fontWeight: '700', color: COLORS.navyDark }}> {otpPhone}</Text> : null}{otpPhone && otpEmail ? <Text> and</Text> : null}{otpEmail ? <Text style={{ fontWeight: '700', color: COLORS.navyDark }}> {otpEmail}</Text> : null}
+                  Code sent to{otpEmail ? <Text style={{ fontWeight: '700', color: COLORS.navyDark }}> {otpEmail}</Text> : null}
                 </Text>
 
                 <Text style={s.fieldLabel}>ENTER OTP</Text>
