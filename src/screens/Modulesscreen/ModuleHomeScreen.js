@@ -16,10 +16,14 @@ export default function ModuleHomeScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
   const canSeeTeam = user?.role === 'Manager' || user?.role === 'Admin' || user?.is_staff;
 
+  const isAccounts = /account|finance/i.test(module);
   const cards = [
     // My Team is a management view — only managers/admins see it.
     ...(canSeeTeam ? [{ key: 'MyTeam', label: 'My Team', desc: `${name} department org chart`, icon: 'people-circle-outline',
       color: COLORS.link, bg: COLORS.linkBg, params: { module, title: `My Team · ${name}` } }] : []),
+    // Accounts & Finance: read-only view of all sales bookings (LOI / EOI).
+    ...(isAccounts ? [{ key: 'ModuleBookings', label: 'Bookings', desc: 'All sales bookings — LOI & EOI', icon: 'document-text-outline',
+      color: '#0D9488', bg: '#CCFBF1', params: { module, name } }] : []),
   ];
 
   return (
