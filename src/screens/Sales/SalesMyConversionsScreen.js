@@ -189,6 +189,8 @@ function StatCard({ label, value, color, bg }) {
 
 export default function SalesMyConversionsScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const cq = companyId ? `?company_id=${companyId}` : '';
   const des = (user?.designation || '').toLowerCase();
   const isStm = des.includes('stm') || des.includes('sales team') || des.includes('sales executive');
   // Only an approver (admin/manager) may cancel a booking.
@@ -208,14 +210,14 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
       const [svRes, clRes] = await Promise.all([
-        apiFetch(SALES_ENDPOINTS.siteVisits),
-        apiFetch(SALES_ENDPOINTS.closures),
+        apiFetch(SALES_ENDPOINTS.siteVisits + cq),
+        apiFetch(SALES_ENDPOINTS.closures + cq),
       ]);
       if (svRes.ok) setVisits(await svRes.json());
       if (clRes.ok) setClosures(await clRes.json());
     } catch (e) {}
     setLoading(false); setRefreshing(false);
-  }, []);
+  }, [cq]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
