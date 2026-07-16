@@ -156,6 +156,9 @@ export default function BookingFormScreen({ navigation, route }) {
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
   // All pricing sets share the sale-deed % split (Unit Price + Additional Extra Work Amount).
   const hasSaleDeedSplit = formulaSet === 'ankhol' || formulaSet === 'kalrav' || formulaSet === 'industrial';
+  // In EOI, area is locked only when the project defines standard unit types (Unit Type
+  // dropdown). Sets without unit types (e.g. Industrial) keep the area editable.
+  const eoiLocked = eoiMode && (project?.eoi_unit_types || []).length > 0;
   const v = useMemo(() => computeFormulas({
     formulaSet, projectName: project?.name,
     area: f.area, landRate: f.land_rate, devRate: f.dev_rate, constArea: f.const_area, constRate: f.const_rate,
@@ -504,7 +507,7 @@ export default function BookingFormScreen({ navigation, route }) {
               setF((s) => ({ ...s, villa_type: name, area: t ? String(t.plot_area) : s.area, const_area: t ? String(t.const_area) : s.const_area }));
             }} opts={(project.eoi_unit_types || []).map((x) => x.type)} />
           )}
-          {eoiMode ? (
+          {eoiLocked ? (
             <>
               <View style={{ marginBottom: 10 }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{`Plot Area (${unit})`}</Text>
