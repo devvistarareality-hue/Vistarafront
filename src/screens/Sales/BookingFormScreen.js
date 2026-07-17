@@ -586,9 +586,9 @@ export default function BookingFormScreen({ navigation, route }) {
           <Calc l="GST" sub={gstSub} val={v.gst} />
           <Fld l={`Maintenance Rate (₹/${unit}${formulaSet === 'industrial' ? '' : '/mo'})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
           {formulaSet !== 'industrial' && <Fld l="Maintenance Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />}
-          <Calc l="Maintenance Amount" sub={maintSub} val={v.maint} />
-          {flags.hasMaintDeposit && <Calc l="Maintenance Deposit" sub="= Maintenance Amount" val={v.maintDeposit} />}
-          {flags.hasMaintAdvance && <Calc l="Maintenance Advance" sub="= Maintenance Amount" val={v.maintAdvance} />}
+          {flags.hasMaintDeposit && <Calc l="Maintenance Deposit" sub={maintSub} val={v.maintDeposit} />}
+          {flags.hasMaintAdvance && <Calc l="Maintenance Advance" sub={maintSub} val={v.maintAdvance} />}
+          <Calc l="Maintenance Amount" sub={(flags.hasMaintDeposit || flags.hasMaintAdvance) ? '= Maintenance Deposit + Maintenance Advance' : maintSub} val={v.maint} />
           <Fld l="Legal Documentation charge (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
         </Sec>
 
