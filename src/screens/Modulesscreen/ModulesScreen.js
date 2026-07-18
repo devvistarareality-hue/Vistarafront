@@ -49,6 +49,13 @@ const MODULE_CONFIG = {
     screen:    'ModuleHome',
     getParams: () => ({ module: 'Land', name: 'Land' }),
   },
+  'Club 1000': {
+    label:     'Club 1000',
+    sub:       'Investment Schemes',
+    icon:      'trending-up',
+    screen:    'Club1000Hub',
+    getParams: () => ({}),
+  },
 };
 
 const ModulesScreen = () => {
