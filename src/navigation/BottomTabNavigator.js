@@ -21,6 +21,11 @@ import BookingApprovalsScreen from '../screens/Sales/BookingApprovalsScreen';
 import SalesReportsScreen from '../screens/Sales/SalesReportsScreen';
 import ClosureProjectsScreen from '../screens/Sales/ClosureProjectsScreen';
 import ClosureViewerScreen from '../screens/Sales/ClosureViewerScreen';
+import Club1000HubScreen from '../screens/Club1000/Club1000HubScreen';
+import Club1000SchemesScreen from '../screens/Club1000/Club1000SchemesScreen';
+import Club1000InvestorsScreen from '../screens/Club1000/Club1000InvestorsScreen';
+import Club1000PayoutsScreen from '../screens/Club1000/Club1000PayoutsScreen';
+import Club1000ReferralRewardsScreen from '../screens/Club1000/Club1000ReferralRewardsScreen';
 
 const Tab = createBottomTabNavigator();
 const ModulesStack = createNativeStackNavigator();
@@ -43,6 +48,11 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="SalesReports"  component={SalesReportsScreen} />
       <ModulesStack.Screen name="ClosureProjects" component={ClosureProjectsScreen} />
       <ModulesStack.Screen name="ClosureViewer" component={ClosureViewerScreen} />
+      <ModulesStack.Screen name="Club1000Hub" component={Club1000HubScreen} />
+      <ModulesStack.Screen name="Club1000Schemes" component={Club1000SchemesScreen} />
+      <ModulesStack.Screen name="Club1000Investors" component={Club1000InvestorsScreen} />
+      <ModulesStack.Screen name="Club1000Payouts" component={Club1000PayoutsScreen} />
+      <ModulesStack.Screen name="Club1000ReferralRewards" component={Club1000ReferralRewardsScreen} />
     </ModulesStack.Navigator>
   );
 }
