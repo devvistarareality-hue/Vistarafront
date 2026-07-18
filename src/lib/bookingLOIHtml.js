@@ -16,6 +16,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const isEOI = meta.plotNo && meta.plotNo.toString().trim().toUpperCase().indexOf('EOI') === 0;
   const isAnkhol = fs === 'ankhol', isIndustrial = fs === 'industrial';
   const isTundav = isIndustrial && projName.trim().toLowerCase() === 'tundav';
+  const isKalrav3 = fs === 'kalrav' && projName.trim().toLowerCase() === 'kalrav 3';
   // Honour the booking form's unit toggle; fall back to the formula default.
   const chosenUnit = opts.areaUnit || meta.areaUnit || '';
   const areaUnit = chosenUnit === 'sq.m' ? 'sq.mtr'
@@ -85,7 +86,9 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   } else {
     extra += mrow(v.applyStampDuty === 'No' ? 'Stamp Duty (Not Applicable)' : 'Stamp Duty (4.9% of Land Sale Deed)', v.applyStampDuty === 'No' ? 0 : v.stampDuty);
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (' + (v.gender === 'Female' ? ('Female - ' + (v.applyPageFee === 'No' ? 'Rs.0' : 'Rs.1,500')) : ('Male - 1% LSD' + (v.applyPageFee === 'No' ? '' : ' + Rs.1,500'))) + ')'), v.applyRegFee === 'No' ? 0 : v.regFees);
-    extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : 'GST (18% of Construction Agreement)', v.applyGst === 'No' ? 0 : v.gst) + mrow('Maintenance', v.maint) + mrow('Legal Documentation charge', v.legal);
+    extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : 'GST (18% of Construction Agreement)', v.applyGst === 'No' ? 0 : v.gst)
+      + (isKalrav3 ? (mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance)) : mrow('Maintenance', v.maint))
+      + mrow('Legal Documentation charge', v.legal);
   }
   extra += mrow('Total Legal & Other Charges', v.totalExtra, { sub: true });
 
