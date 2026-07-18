@@ -48,6 +48,13 @@ import SalesImportScreen       from '../screens/Sales/SalesImportScreen';
 import SalesDataResetScreen    from '../screens/Sales/SalesDataResetScreen';
 import NotificationsScreen      from '../screens/Sales/NotificationsScreen';
 
+// Club 1000 screens
+import Club1000HubScreen        from '../screens/Club1000/Club1000HubScreen';
+import Club1000SchemesScreen    from '../screens/Club1000/Club1000SchemesScreen';
+import Club1000InvestorsScreen  from '../screens/Club1000/Club1000InvestorsScreen';
+import Club1000PayoutsScreen    from '../screens/Club1000/Club1000PayoutsScreen';
+import Club1000ReferralRewardsScreen from '../screens/Club1000/Club1000ReferralRewardsScreen';
+
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
 import PostSignOutScreen  from '../screens/PostSignOut/PostSignOutScreen';
@@ -106,6 +113,11 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
             <Stack.Screen name="SalesDataReset"      component={SalesDataResetScreen} />
             <Stack.Screen name="SalesNotifications"  component={NotificationsScreen} />
+            <Stack.Screen name="Club1000Hub"         component={Club1000HubScreen} />
+            <Stack.Screen name="Club1000Schemes"     component={Club1000SchemesScreen} />
+            <Stack.Screen name="Club1000Investors"   component={Club1000InvestorsScreen} />
+            <Stack.Screen name="Club1000Payouts"     component={Club1000PayoutsScreen} />
+            <Stack.Screen name="Club1000ReferralRewards" component={Club1000ReferralRewardsScreen} />
             <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
           </>
 
