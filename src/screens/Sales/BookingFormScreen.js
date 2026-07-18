@@ -37,6 +37,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const eoiMode = !reviseId && (p.eoi === '1' || p.eoi === true || p.eoi === 'true');
   const [eoiNo, setEoiNo] = useState('');
   const [eoiType, setEoiType] = useState('');   // selected EOI standard unit type
+  const [eoiUnits, setEoiUnits] = useState('1'); // no. of units — multiplies the standard area
 
   const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
   const [plotNo, setPlotNo] = useState(p.plotNumber || '');
@@ -159,6 +160,14 @@ export default function BookingFormScreen({ navigation, route }) {
   // In EOI, area is locked only when the project defines standard unit types (Unit Type
   // dropdown). Sets without unit types (e.g. Industrial) keep the area editable.
   const eoiLocked = eoiMode && (project?.eoi_unit_types || []).length > 0;
+  // EOI standard sizes are per-unit; the No. of Units field multiplies Plot/Construction Area.
+  const applyEoiUnit = (name, unitsStr) => {
+    const t = (project?.eoi_unit_types || []).find((x) => x.type === name);
+    const n = Math.max(1, parseInt(unitsStr, 10) || 1);
+    setF((s) => ({ ...s, villa_type: name,
+      area:       t ? String((+t.plot_area  || 0) * n) : s.area,
+      const_area: t ? String((+t.const_area || 0) * n) : s.const_area }));
+  };
   const v = useMemo(() => computeFormulas({
     formulaSet, projectName: project?.name,
     area: f.area, landRate: f.land_rate, devRate: f.dev_rate, constArea: f.const_area, constRate: f.const_rate,
@@ -502,12 +511,14 @@ export default function BookingFormScreen({ navigation, route }) {
             </View>
           </View>
           {eoiMode && (project?.eoi_unit_types || []).length > 0 && (
-            <Pick l="Unit Type" val={eoiType} on={(name) => {
-              setEoiType(name);
-              const t = (project.eoi_unit_types || []).find((x) => x.type === name);
-              // Standard EOI sizes prefill Plot/Construction Area (locked in EOI mode).
-              setF((s) => ({ ...s, villa_type: name, area: t ? String(t.plot_area) : s.area, const_area: t ? String(t.const_area) : s.const_area }));
-            }} opts={(project.eoi_unit_types || []).map((x) => x.type)} />
+            <>
+              <Pick l="Unit Type" val={eoiType} on={(name) => {
+                setEoiType(name);
+                // Standard EOI sizes prefill Plot/Construction Area (× No. of Units, locked in EOI mode).
+                applyEoiUnit(name, eoiUnits);
+              }} opts={(project.eoi_unit_types || []).map((x) => x.type)} />
+              <Fld l="No. of Units" val={eoiUnits} on={(u) => { setEoiUnits(u); applyEoiUnit(eoiType, u); }} kb="numeric" />
+            </>
           )}
           {eoiLocked ? (
             <>
@@ -588,9 +599,9 @@ export default function BookingFormScreen({ navigation, route }) {
           <Calc l="GST" sub={gstSub} val={v.gst} />
           <Fld l={`Maintenance Rate (₹/${unit}${formulaSet === 'industrial' ? '' : '/mo'})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
           {formulaSet !== 'industrial' && <Fld l="Maintenance Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />}
-          {flags.hasMaintDeposit && <Calc l="Maintenance Deposit" sub={maintSub} val={v.maintDeposit} />}
-          {flags.hasMaintAdvance && <Calc l="Maintenance Advance" sub={maintSub} val={v.maintAdvance} />}
-          <Calc l="Maintenance Amount" sub={(flags.hasMaintDeposit || flags.hasMaintAdvance) ? '= Maintenance Deposit + Maintenance Advance' : maintSub} val={v.maint} />
+          {(flags.hasMaintDeposit || v.isKalrav3) && <Calc l="Maintenance Deposit" sub={v.isKalrav3 ? '½ × Maintenance Amount' : maintSub} val={v.maintDeposit} />}
+          {(flags.hasMaintAdvance || v.isKalrav3) && <Calc l="Maintenance Advance" sub={v.isKalrav3 ? '½ × Maintenance Amount' : maintSub} val={v.maintAdvance} />}
+          <Calc l="Maintenance Amount" sub={(flags.hasMaintDeposit || flags.hasMaintAdvance || v.isKalrav3) ? '= Maintenance Deposit + Maintenance Advance' : maintSub} val={v.maint} />
           <Fld l="Legal Documentation charge (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
         </Sec>
 
