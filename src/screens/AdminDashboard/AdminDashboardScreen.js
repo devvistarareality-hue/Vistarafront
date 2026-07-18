@@ -22,6 +22,7 @@ const ADMIN_MODULES = [
   { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Execution', name: 'Execution' } },
   { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'ModuleHome',  params: { module: 'Purchase', name: 'Purchase' } },
   { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'ModuleHome',  params: { module: 'Land', name: 'Land' } },
+  { name: 'Club 1000',          icon: 'trending-up',          color: '#00838F', iconBg: '#80DEEA', screen: 'Club1000Hub', params: undefined },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
