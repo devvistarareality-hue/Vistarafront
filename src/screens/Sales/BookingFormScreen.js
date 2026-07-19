@@ -157,9 +157,6 @@ export default function BookingFormScreen({ navigation, route }) {
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
   // All pricing sets share the sale-deed % split (Unit Price + Additional Extra Work Amount).
   const hasSaleDeedSplit = formulaSet === 'ankhol' || formulaSet === 'kalrav' || formulaSet === 'industrial';
-  // In EOI, area is locked only when the project defines standard unit types (Unit Type
-  // dropdown). Sets without unit types (e.g. Industrial) keep the area editable.
-  const eoiLocked = eoiMode && (project?.eoi_unit_types || []).length > 0;
   // EOI standard sizes are per-unit; the No. of Units field multiplies Plot/Construction Area.
   const applyEoiUnit = (name, unitsStr) => {
     const t = (project?.eoi_unit_types || []).find((x) => x.type === name);
@@ -520,25 +517,8 @@ export default function BookingFormScreen({ navigation, route }) {
               <Fld l="No. of Units" val={eoiUnits} on={(u) => { setEoiUnits(u); applyEoiUnit(eoiType, u); }} kb="numeric" />
             </>
           )}
-          {eoiLocked ? (
-            <>
-              <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{`Plot Area (${unit})`}</Text>
-                <TextInput value={String(f.area || '')} editable={false} style={[inpS, { backgroundColor: '#F3F4F6', color: MUTED }]} />
-              </View>
-              {flags.hasConstructionFields && (
-                <View style={{ marginBottom: 10 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{`Construction Area (${unit})`}</Text>
-                  <TextInput value={String(f.const_area || '')} editable={false} style={[inpS, { backgroundColor: '#F3F4F6', color: MUTED }]} />
-                </View>
-              )}
-            </>
-          ) : (
-            <>
-              <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} />
-              {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
-            </>
-          )}
+          <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} />
+          {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
           {flags.bunglowTypeIsDropdown && !eoiMode && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
         </Sec>
 
