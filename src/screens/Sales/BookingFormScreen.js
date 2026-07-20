@@ -34,7 +34,8 @@ export default function BookingFormScreen({ navigation, route }) {
   const leadId = p.lead || '';
   // EOI (Expression of Interest): a booking on a project with no plots yet. No plot is
   // selected; a sequential per-project EOI code (EOI-1, EOI-2…) stands in for the plot no.
-  const eoiMode = !reviseId && (p.eoi === '1' || p.eoi === true || p.eoi === 'true');
+  // EOI mode applies when creating an EOI (eoi=1) OR revising an existing EOI (revise + eoi=1).
+  const eoiMode = p.eoi === '1' || p.eoi === true || p.eoi === 'true';
   const [eoiNo, setEoiNo] = useState('');
   const [eoiType, setEoiType] = useState('');   // selected EOI standard unit type
   const [eoiUnits, setEoiUnits] = useState('1'); // no. of units — multiplies the standard area
@@ -95,7 +96,7 @@ export default function BookingFormScreen({ navigation, route }) {
     }).catch(() => {});
     apiFetch(SALES_ENDPOINTS.sources + cq('?')).then(r => r.json()).then((d) => setSources(Array.isArray(d) ? d : [])).catch(() => {});
     // EOI: fetch the next per-project EOI code to show in the form + the EOI PDF.
-    if (eoiMode && projectId) apiFetch(`${SALES_ENDPOINTS.bookings}next-eoi/?project=${projectId}${cq('&')}`)
+    if (eoiMode && !reviseId && projectId) apiFetch(`${SALES_ENDPOINTS.bookings}next-eoi/?project=${projectId}${cq('&')}`)
       .then(r => (r.ok ? r.json() : null)).then((d) => { if (d && d.eoi_no) { setEoiNo(d.eoi_no); setPlotNo(d.eoi_no); } }).catch(() => {});
   }, [projectId, plotIds.join(','), companyId, eoiMode]);
 
@@ -107,6 +108,8 @@ export default function BookingFormScreen({ navigation, route }) {
       if (!b) return;
       setProjectId(String(b.project));
       setPlotIds(((b.plot_ids && b.plot_ids.length ? b.plot_ids : [b.plot]).filter(Boolean)).map(String));
+      // Revising an EOI: keep its existing EOI code (no plot, no next-EOI fetch).
+      if (String(b.plot_numbers || '').toUpperCase().startsWith('EOI')) { setEoiNo(b.plot_numbers); setPlotNo(b.plot_numbers); }
       const srcDisp = (n) => { if (!n) return n; if (/^referral$/i.test(n)) return 'Reference'; if (/^other$/i.test(n)) return 'Other'; return n; };
       setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: srcDisp(b.source || ''),
         area: b.area || '', area_unit: b.area_unit || 'sq.yd', const_area: b.const_area || '', villa_type: b.villa_type || '',
@@ -476,7 +479,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? 'Revise Booking' : eoiMode ? 'Create EOI' : (plotIds.length > 1 ? 'Book Units' : 'Book Unit')} <Text style={eoiMode ? { color: '#E4571A' } : null}>{eoiMode ? (eoiNo || '…') : plotNo}</Text></Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? (eoiMode ? 'Revise EOI' : 'Revise Booking') : eoiMode ? 'Create EOI' : (plotIds.length > 1 ? 'Book Units' : 'Book Unit')} <Text style={eoiMode ? { color: '#E4571A' } : null}>{eoiMode ? (eoiNo || '…') : plotNo}</Text></Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{project?.name || '…'} · {formulaSet.toUpperCase()}{eoiMode ? ' · EOI · no plot' : ''}</Text>
         </View>
       </View>

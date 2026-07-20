@@ -35,7 +35,7 @@ function generateUserCodePrefix(companyCode) {
   return (c1 + c2 + c3).toUpperCase();
 }
 
-const ROLES   = ['Admin', 'Manager', 'Employee', 'Intern'];
+const ROLES   = ['Manager', 'Employee', 'Intern'];
 
 function AppDropdown({ label, value, options, onChange, placeholder = 'Select…', disabled = false }) {
   const [open, setOpen] = React.useState(false);
@@ -113,6 +113,7 @@ export default function CreateUserScreen({ navigation, route }) {
   const [designation,     setDesignation]     = useState(editUser?.designation     ?? '');
   const [modules,         setModules]         = useState(editUser?.modules         ?? []);
   const [managerModules,  setManagerModules]  = useState(editUser?.manager_modules ?? []);
+  const [adminModules,    setAdminModules]    = useState(editUser?.admin_modules   ?? []);
   const [allDesignations, setAllDesignations] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [reportingManager,    setReportingManager]    = useState(editUser?.reporting_manager ?? null);
@@ -182,13 +183,20 @@ export default function CreateUserScreen({ navigation, route }) {
     if (!isEdit) setReportingManager(null);
   }, [selectedCompany]);
 
-  // Remove manager access for deselected modules
+  // Managers get Manager Access auto-mirrored from Module Access — any Module
+  // Access change overwrites Manager Access to match. Other roles just keep
+  // Manager Access pruned to a subset of the selected modules.
   useEffect(() => {
-    setManagerModules((prev) => prev.filter((m) => modules.includes(m)));
-  }, [modules]);
+    if (role === 'Manager') {
+      setManagerModules(modules);
+    } else {
+      setManagerModules((prev) => prev.filter((m) => modules.includes(m)));
+    }
+  }, [modules, role]);
 
   const toggleModule  = (mod) => setModules((p) => p.includes(mod) ? p.filter((m) => m !== mod) : [...p, mod]);
   const toggleManager = (mod) => setManagerModules((p) => p.includes(mod) ? p.filter((m) => m !== mod) : [...p, mod]);
+  const toggleAdmin   = (mod) => setAdminModules((p) => p.includes(mod) ? p.filter((m) => m !== mod) : [...p, mod]);
 
   const handleSubmit = () => {
     if (!name.trim())                               return Alert.alert('Validation', 'Full name is required.');
@@ -199,12 +207,12 @@ export default function CreateUserScreen({ navigation, route }) {
 
     if (isEdit) {
       setUserCodeError('');
-      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, reporting_manager_id: reportingManager?.id ?? null };
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
       if (isVRLAdmin && !selectedCompany) return Alert.alert('Validation', 'Please select a company.');
-      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
       if (isVRLAdmin && selectedCompany) payload.company_id = selectedCompany.id;
       dispatch(createUser(payload));
     }
@@ -457,7 +465,9 @@ export default function CreateUserScreen({ navigation, route }) {
         {modules.length > 0 && (
           <>
             <Text style={styles.label}>MANAGER ACCESS</Text>
-            <Text style={styles.managerSubtitle}>Elevated view for modules assigned above</Text>
+            <Text style={styles.managerSubtitle}>
+              {role === 'Manager' ? 'Auto-matches Module Access above' : 'Elevated view for modules assigned above'}
+            </Text>
             <View style={styles.pillGrid}>
               {modules.map((mod) => {
                 const isMgr = managerModules.includes(mod);
@@ -465,6 +475,25 @@ export default function CreateUserScreen({ navigation, route }) {
                   <TouchableOpacity key={mod} style={[styles.managerPill, isMgr && styles.managerPillActive]} onPress={() => toggleManager(mod)}>
                     <Ionicons name="shield-checkmark-outline" size={13} color={isMgr ? COLORS.warningAlt : COLORS.textSecondary} />
                     <Text style={[styles.managerPillText, isMgr && styles.managerPillTextActive]}>{mod}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
+
+        {/* Admin Access — only for Managers */}
+        {role === 'Manager' && (
+          <>
+            <Text style={styles.label}>ADMIN ACCESS</Text>
+            <Text style={styles.managerSubtitle}>Grant admin-level control over selected modules</Text>
+            <View style={styles.pillGrid}>
+              {MODULES.map((mod) => {
+                const isAdmin = adminModules.includes(mod);
+                return (
+                  <TouchableOpacity key={mod} style={[styles.adminPill, isAdmin && styles.adminPillActive]} onPress={() => toggleAdmin(mod)}>
+                    <Ionicons name="shield-outline" size={13} color={isAdmin ? COLORS.white : COLORS.textSecondary} />
+                    <Text style={[styles.adminPillText, isAdmin && styles.adminPillTextActive]}>{mod}</Text>
                   </TouchableOpacity>
                 );
               })}
