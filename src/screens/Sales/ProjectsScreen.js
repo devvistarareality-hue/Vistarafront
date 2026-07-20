@@ -203,7 +203,7 @@ function FormulaDropdown({ value, onChange }) {
 }
 
 /* ─── Plot Wizard (shared between Add and Edit) ─── */
-function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTypes, updateType, addType, removeType }) {
+function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTypes, updateType, addType, removeType, startNo = 1 }) {
   const validTypes     = plotTypes.filter(pt => pt.name.trim() && Number(pt.from) && Number(pt.to) && Number(pt.to) >= Number(pt.from));
   const totalTypePlots = validTypes.reduce((s, pt) => s + Number(pt.to) - Number(pt.from) + 1, 0);
 
@@ -231,7 +231,7 @@ function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTy
             placeholder="e.g. 20" style={{ ...inp, maxWidth: 160 }} />
           {Number(noTypePlots) > 0 && (
             <View style={{ marginTop: 8, padding: 10, backgroundColor: COLORS.screenBg, borderRadius: 8 }}>
-              <Text style={{ fontSize: 12, color: BLUE }}>Will create <Text style={{ fontWeight: '700' }}>{noTypePlots}</Text> plots numbered 1 to {noTypePlots}</Text>
+              <Text style={{ fontSize: 12, color: BLUE }}>Will create <Text style={{ fontWeight: '700' }}>{noTypePlots}</Text> plots numbered {startNo} to {startNo + Number(noTypePlots) - 1}</Text>
             </View>
           )}
         </View>
@@ -301,6 +301,22 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const [noTypePlots, setNoTypePlots] = useState('');
   const [plotTypes,   setPlotTypes]   = useState([{ name: '', from: '1', to: '' }]);
   const [addingMore,  setAddingMore]  = useState(false);
+  // Highest existing plot number so "Add More Plots" (no types) continues numbering
+  // from where the project left off (e.g. 70 existing → new plots start at 71).
+  const [existingMaxNo, setExistingMaxNo] = useState(0);
+  useEffect(() => {
+    if (!editing) return;
+    apiFetch(`${SALES_ENDPOINTS.plots}?project=${project.id}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(arr => {
+        const max = (Array.isArray(arr) ? arr : []).reduce((m, p) => {
+          const n = parseInt(String(p.number).match(/\d+/g)?.pop() || '0', 10);
+          return n > m ? n : m;
+        }, 0);
+        setExistingMaxNo(max);
+      })
+      .catch(() => {});
+  }, [editing, project?.id]);
 
   // Editable type names for edit mode
   const [editableTypes, setEditableTypes] = useState([]);
@@ -356,7 +372,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     }
     const count = Number(noTypePlots);
     if (!count || count < 1) return [];
-    return Array.from({ length: count }, (_, i) => ({ number: String(i + 1), cluster_type: '' }));
+    // Continue numbering after the highest existing plot (0 for a new project).
+    return Array.from({ length: count }, (_, i) => ({ number: String(existingMaxNo + i + 1), cluster_type: '' }));
   }
 
   async function save() {
@@ -636,7 +653,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                   {addingMore && (
                     <PlotWizard hasTypes={hasTypes} setHasTypes={setHasTypes}
                       noTypePlots={noTypePlots} setNoTypePlots={setNoTypePlots}
-                      plotTypes={plotTypes} updateType={updateType} addType={addType} removeType={removeType} />
+                      plotTypes={plotTypes} updateType={updateType} addType={addType} removeType={removeType}
+                      startNo={existingMaxNo + 1} />
                   )}
                 </View>
               ) : (
