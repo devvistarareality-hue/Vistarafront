@@ -203,7 +203,7 @@ function FormulaDropdown({ value, onChange }) {
 }
 
 /* ─── Plot Wizard (shared between Add and Edit) ─── */
-function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTypes, updateType, addType, removeType }) {
+function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTypes, updateType, addType, removeType, startNo = 1 }) {
   const validTypes     = plotTypes.filter(pt => pt.name.trim() && Number(pt.from) && Number(pt.to) && Number(pt.to) >= Number(pt.from));
   const totalTypePlots = validTypes.reduce((s, pt) => s + Number(pt.to) - Number(pt.from) + 1, 0);
 
@@ -231,7 +231,7 @@ function PlotWizard({ hasTypes, setHasTypes, noTypePlots, setNoTypePlots, plotTy
             placeholder="e.g. 20" style={{ ...inp, maxWidth: 160 }} />
           {Number(noTypePlots) > 0 && (
             <View style={{ marginTop: 8, padding: 10, backgroundColor: COLORS.screenBg, borderRadius: 8 }}>
-              <Text style={{ fontSize: 12, color: BLUE }}>Will create <Text style={{ fontWeight: '700' }}>{noTypePlots}</Text> plots numbered 1 to {noTypePlots}</Text>
+              <Text style={{ fontSize: 12, color: BLUE }}>Will create <Text style={{ fontWeight: '700' }}>{noTypePlots}</Text> plots numbered {startNo} to {startNo + Number(noTypePlots) - 1}</Text>
             </View>
           )}
         </View>
@@ -301,6 +301,22 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const [noTypePlots, setNoTypePlots] = useState('');
   const [plotTypes,   setPlotTypes]   = useState([{ name: '', from: '1', to: '' }]);
   const [addingMore,  setAddingMore]  = useState(false);
+  // Highest existing plot number so "Add More Plots" (no types) continues numbering
+  // from where the project left off (e.g. 70 existing → new plots start at 71).
+  const [existingMaxNo, setExistingMaxNo] = useState(0);
+  useEffect(() => {
+    if (!editing) return;
+    apiFetch(`${SALES_ENDPOINTS.plots}?project=${project.id}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(arr => {
+        const max = (Array.isArray(arr) ? arr : []).reduce((m, p) => {
+          const n = parseInt(String(p.number).match(/\d+/g)?.pop() || '0', 10);
+          return n > m ? n : m;
+        }, 0);
+        setExistingMaxNo(max);
+      })
+      .catch(() => {});
+  }, [editing, project?.id]);
 
   // Editable type names for edit mode
   const [editableTypes, setEditableTypes] = useState([]);
@@ -317,7 +333,9 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           tagline:         project.tagline         || '',
           rera:            project.rera            || '',
           total_area:      project.total_area      || '',
-          total_plots:     project.total_plots     ? String(project.total_plots) : '',
+          // Show the real number of plot records (plot_counts.total). The stored total_plots
+          // field can drift (e.g. a double "Add More Plots"); actual plots are the truth.
+          total_plots:     (project.plot_counts?.total ?? project.total_plots) ? String(project.plot_counts?.total ?? project.total_plots) : '',
           price_range:     project.price_range     || '',
           possession:      project.possession      || '',
           description:     project.description     || '',
@@ -354,7 +372,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     }
     const count = Number(noTypePlots);
     if (!count || count < 1) return [];
-    return Array.from({ length: count }, (_, i) => ({ number: String(i + 1), cluster_type: '' }));
+    // Continue numbering after the highest existing plot (0 for a new project).
+    return Array.from({ length: count }, (_, i) => ({ number: String(existingMaxNo + i + 1), cluster_type: '' }));
   }
 
   async function save() {
@@ -362,7 +381,10 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     setSaving(true);
     try {
       const plots      = (!editing || addingMore) ? buildPlots() : [];
-      const totalPlots = editing ? (form.total_plots ? parseInt(form.total_plots) : 0) : plots.length;
+      // On edit, the stored total always mirrors the real plot count (prevents drift/doubling);
+      // extra plots added this save are counted below. On create it's the wizard count.
+      const realCount  = project?.plot_counts?.total ?? 0;
+      const totalPlots = editing ? realCount : plots.length;
 
       // New project: send total_plots=0 so backend _sync_plots() skips auto-creation
       const body = { ...form, total_plots: editing ? totalPlots : 0,
@@ -615,7 +637,10 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                   <View>
                     <FieldLabel label="Total Plots / Units" />
                     <TextInput value={form.total_plots} onChangeText={v => set('total_plots', v)} keyboardType="numeric"
-                      placeholder="e.g. 36" style={{ ...inp, maxWidth: 200 }} />
+                      editable={!editing}
+                      placeholder="e.g. 36"
+                      style={{ ...inp, maxWidth: 200, ...(editing ? { backgroundColor: '#F3F4F6', color: MUTED } : {}) }} />
+                    {editing && <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Reflects actual plots — use "Add More Plots" to change.</Text>}
                   </View>
 
                   <TouchableOpacity onPress={() => setAddingMore(m => !m)}
@@ -628,7 +653,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                   {addingMore && (
                     <PlotWizard hasTypes={hasTypes} setHasTypes={setHasTypes}
                       noTypePlots={noTypePlots} setNoTypePlots={setNoTypePlots}
-                      plotTypes={plotTypes} updateType={updateType} addType={addType} removeType={removeType} />
+                      plotTypes={plotTypes} updateType={updateType} addType={addType} removeType={removeType}
+                      startNo={existingMaxNo + 1} />
                   )}
                 </View>
               ) : (
