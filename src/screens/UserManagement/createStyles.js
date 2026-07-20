@@ -45,6 +45,12 @@ export default StyleSheet.create({
   managerPillText:      { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   managerPillTextActive:{ color: COLORS.warningAlt },
 
+  /* Admin pills */
+  adminPill:          { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 22, backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.divider },
+  adminPillActive:    { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
+  adminPillText:      { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  adminPillTextActive:{ color: COLORS.white },
+
   /* Edit mode extras */
   inputDisabled:   { backgroundColor: COLORS.screenBg, opacity: 0.8 },
   editBadge:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: COLORS.linkBg, borderWidth: 1, borderColor: COLORS.powderBlue },
