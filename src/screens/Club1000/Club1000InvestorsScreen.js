@@ -495,7 +495,7 @@ export default function Club1000InvestorsScreen({ navigation }) {
         </Text>
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, gap: 8 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, gap: 8, alignItems: 'center' }}>
         {[{ key: '', label: 'All' }, { key: 'active', label: 'Active' }, { key: 'matured', label: 'Matured' }, { key: 'redeemed', label: 'Redeemed' }, { key: 'premature_redeemed', label: 'Premature' }].map((f) => (
           <TouchableOpacity key={f.key} onPress={() => setStatusFilter(f.key)}
             style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: statusFilter === f.key ? NAVY : COLORS.white, borderWidth: 1, borderColor: statusFilter === f.key ? NAVY : COLORS.border }}>
