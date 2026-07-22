@@ -285,7 +285,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const [form, setForm] = useState({
     name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '',
     total_area: '', total_plots: '', price_range: '', possession: '', description: '',
-    cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [],
+    cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false,
   });
   // EOI standard unit types (pre-approval sizes) — [{type, plot_area, const_area}].
   const addEoiType    = () => setForm(f => ({ ...f, eoi_unit_types: [...(f.eoi_unit_types || []), { type: '', plot_area: '', const_area: '' }] }));
@@ -343,10 +343,11 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           logo_url: project.logo_url || '',
           master_plan_url: project.master_plan_url || '',
           is_active:       project.is_active !== undefined ? project.is_active : true,
+          kiosk_enabled:   !!project.kiosk_enabled,
         });
         setEditableTypes((project.plot_type_plans || []).map(pt => ({ original: pt.name, current: pt.name })));
       } else {
-        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [] });
+        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false });
         setHasTypes(false); setNoTypePlots(''); setPlotTypes([{ name: '', from: '1', to: '' }]);
         setEditableTypes([]);
       }
@@ -590,6 +591,15 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 <Text style={{ fontSize: 11, color: MUTED }}>Visible to sales team</Text>
               </View>
               <Switch value={form.is_active} onValueChange={v => set('is_active', v)} trackColor={{ false: COLORS.border, true: NAVY }} />
+            </View>
+
+            {/* Kiosk self-booking toggle */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.white, borderRadius: 10, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 14 }}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Enable Kiosk self-booking</Text>
+                <Text style={{ fontSize: 11, color: MUTED }}>Client can self-book this project at a Kiosk</Text>
+              </View>
+              <Switch value={!!form.kiosk_enabled} onValueChange={v => set('kiosk_enabled', v)} trackColor={{ false: COLORS.border, true: '#4F46E5' }} />
             </View>
 
             {/* ── PLOT SETUP ── */}

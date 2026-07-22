@@ -35,7 +35,7 @@ function generateUserCodePrefix(companyCode) {
   return (c1 + c2 + c3).toUpperCase();
 }
 
-const ROLES   = ['Manager', 'Employee', 'Intern'];
+const ROLES   = ['Manager', 'Employee', 'Intern', 'Kiosk'];
 
 function AppDropdown({ label, value, options, onChange, placeholder = 'Select…', disabled = false }) {
   const [open, setOpen] = React.useState(false);

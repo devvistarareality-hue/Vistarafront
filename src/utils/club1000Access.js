@@ -14,12 +14,13 @@ function isSuperAdmin(user) {
 }
 
 // Manager-level Club 1000 access: platform admins, company Admins, or anyone
-// explicitly granted Club 1000 in their manager_modules.
+// explicitly granted Club 1000 in their manager_modules or admin_modules.
 export function isClub1000Manager(user) {
   if (!user) return false;
   return !!(
     user.is_staff || isSuperAdmin(user) || user.role === 'Admin'
     || (user.manager_modules || []).includes('Club 1000')
+    || (user.admin_modules || []).includes('Club 1000')
   );
 }
 
