@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import Svg, { Rect, Polygon, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
@@ -8,9 +9,18 @@ import { logout } from '../../redux/actions/authActions';
 
 // Client-facing full-screen Kiosk self-booking (mirrors the web /kiosk flow).
 // Kiosk-role device is logged in; walk-in client self-serves:
-//   project (kiosk-enabled) -> plot (or EOI if no plots) -> details -> submit (PENDING approval).
+//   project (kiosk-enabled) -> plot(s) on interactive map (or EOI if no plots) -> booking form.
 const NAVY = '#182350', BLUE = '#3D5AFE', BLUEBG = '#E8EEFF', MUTED = '#8492A6', GREEN = '#16A34A';
 const STEPS = [{ key: 'project', label: 'Project' }, { key: 'select', label: 'Unit' }, { key: 'details', label: 'Details' }];
+const KSTATUS = {
+  available: { label: 'Available', dot: '#16A34A', bg: '#DCFCE7' },
+  hold:      { label: 'On Hold',   dot: '#F59E0B', bg: '#FEF3C7' },
+  sold:      { label: 'Sold',      dot: '#EF4444', bg: '#FEE2E2' },
+};
+const isImageUrl = (u) => !!u && /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i.test(u);
+const zoneCenter = (z) => (z.points?.length
+  ? { cx: z.points.reduce((s, p) => s + p.x, 0) / z.points.length, cy: z.points.reduce((s, p) => s + p.y, 0) / z.points.length }
+  : { cx: (z.x || 0) + (z.width || 0) / 2, cy: (z.y || 0) + (z.height || 0) / 2 });
 
 export default function KioskScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -19,12 +29,14 @@ export default function KioskScreen({ navigation }) {
   const [step, setStep]         = useState('project');
   const [projects, setProjects] = useState(null);
   const [project,  setProject]  = useState(null);
-  const [plots,    setPlots]    = useState([]);
-  const [plot,     setPlot]     = useState(null);
+  const [plots,    setPlots]    = useState([]);   // ALL plots (map needs sold/hold too)
+  const [selIds,   setSelIds]   = useState([]);   // chosen plot ids (multi-select for LOI)
   const [eoiType,  setEoiType]  = useState('');
   const [eoiUnits, setEoiUnits] = useState('1');
 
   const isEoi = project && plots.length === 0;
+  const isSelected = (pl) => selIds.includes(pl.id);
+  const togglePlot = (pl) => { if (!pl || pl.status !== 'available') return; setSelIds((s) => s.includes(pl.id) ? s.filter((x) => x !== pl.id) : [...s, pl.id]); };
 
   useEffect(() => {
     apiFetch(SALES_ENDPOINTS.projects)
@@ -36,37 +48,43 @@ export default function KioskScreen({ navigation }) {
   // Reset to the project picker whenever the kiosk regains focus (e.g. after a booking),
   // so the next walk-in client starts fresh.
   useEffect(() => navigation.addListener('focus', () => {
-    setProject(null); setPlots([]); setPlot(null); setEoiType(''); setEoiUnits('1'); setStep('project');
+    setProject(null); setPlots([]); setSelIds([]); setEoiType(''); setEoiUnits('1'); setStep('project');
   }), [navigation]);
 
   const pickProject = async (p) => {
-    setProject(p); setPlot(null); setEoiType(''); setEoiUnits('1');
+    setProject(p); setSelIds([]); setEoiType(''); setEoiUnits('1');
     try {
       const r = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${p.id}`);
       const arr = r.ok ? await r.json() : [];
-      setPlots((Array.isArray(arr) ? arr : []).filter((x) => x.status === 'available'));
+      setPlots(Array.isArray(arr) ? arr : []);
     } catch { setPlots([]); }
     setStep('select');
   };
+
+  const availablePlots = plots.filter((x) => x.status === 'available');
+  const plotByNumber   = {}; plots.forEach((p) => { plotByNumber[String(p.number)] = p; });
+  const zones          = project?.site_map_zones || [];
+  const mapImage       = project?.site_map_image_url || (isImageUrl(project?.master_plan_url) ? project?.master_plan_url : '');
+  const hasMap         = !!mapImage && zones.length > 0;
 
   const unitTypes = project?.eoi_unit_types || [];
   const selType   = unitTypes.find((t) => t.type === eoiType);
   const nUnits    = Math.max(1, parseInt(eoiUnits, 10) || 1);
   const eoiArea   = selType ? (+selType.plot_area || 0) * nUnits : 0;
   const eoiConst  = selType ? (+selType.const_area || 0) * nUnits : 0;
-  const canContinueSelect = isEoi ? (unitTypes.length === 0 || !!eoiType) : !!plot;
+  const canContinueSelect = isEoi ? (unitTypes.length === 0 || !!eoiType) : selIds.length > 0;
 
   // Open the real booking/LOI form for this project (client self-fills). Returns to Kiosk after submit.
   const openBookingForm = () => {
     navigation.navigate('BookingForm', {
       project: project.id,
-      ...(isEoi ? { eoi: '1' } : { plot: plot.id }),
+      ...(isEoi ? { eoi: '1' } : { plots: selIds.join(',') }),
       projectName: project.name, formulaSet: project.formula_set, kiosk: '1',
     });
   };
 
   const restart = () => {
-    setProject(null); setPlots([]); setPlot(null); setEoiType(''); setEoiUnits('1'); setStep('project');
+    setProject(null); setPlots([]); setSelIds([]); setEoiType(''); setEoiUnits('1'); setStep('project');
   };
 
   const stepIdx = STEPS.findIndex((s) => s.key === step);
@@ -128,7 +146,8 @@ export default function KioskScreen({ navigation }) {
           <View>
             <TouchableOpacity onPress={restart}><Text style={s.back}>← Projects</Text></TouchableOpacity>
             <Text style={s.h1}>{project.name}</Text>
-            {!!project.master_plan_url && <Image source={{ uri: project.master_plan_url }} style={s.master} resizeMode="contain" />}
+            {/* Master plan only when there's no interactive map (avoid showing twice) */}
+            {!hasMap && !!project.master_plan_url && <Image source={{ uri: project.master_plan_url }} style={s.master} resizeMode="contain" />}
 
             {isEoi ? (
               <View>
@@ -154,13 +173,51 @@ export default function KioskScreen({ navigation }) {
                   </>
                 )}
               </View>
+            ) : hasMap ? (
+              <View>
+                <Text style={s.label}>TAP AVAILABLE (GREEN) UNITS — PICK ONE OR SEVERAL</Text>
+                <View style={{ flexDirection: 'row', gap: 16, marginBottom: 10 }}>
+                  {['available', 'hold', 'sold'].map((k) => (
+                    <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: KSTATUS[k].dot }} />
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>{KSTATUS[k].label}</Text>
+                    </View>
+                  ))}
+                </View>
+                <View style={s.mapWrap}>
+                  <Image source={{ uri: mapImage }} style={{ width: '100%', aspectRatio: 16 / 10 }} resizeMode="contain" />
+                  <Svg style={StyleSheet.absoluteFill} viewBox="0 0 100 100" preserveAspectRatio="none">
+                    {zones.map((zone) => {
+                      const pl = plotByNumber[String(zone.plotNumber)];
+                      if (!pl) return null;
+                      const cfg = KSTATUS[pl.status] || KSTATUS.available;
+                      const isSel = isSelected(pl);
+                      const { cx, cy } = zoneCenter(zone);
+                      const label = String(zone.plotNumber).replace(/^[^\d]+/, '') || String(zone.plotNumber);
+                      const press = () => togglePlot(pl);
+                      const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
+                      const strokeC = isSel ? '#1A237E' : cfg.dot;
+                      const sw = isSel ? '0.9' : '0.5';
+                      return (
+                        <React.Fragment key={zone.id}>
+                          {zone.points?.length
+                            ? <Polygon points={zone.points.map((p) => `${p.x},${p.y}`).join(' ')} fill={fillC} stroke={strokeC} strokeWidth={sw} onPress={press} />
+                            : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={fillC} stroke={strokeC} strokeWidth={sw} onPress={press} />}
+                          <SvgText x={cx} y={cy} textAnchor="middle" fontSize="2.6" fontWeight="bold" fill="#fff" onPress={press}>{isSel ? `✓${label}` : label}</SvgText>
+                        </React.Fragment>
+                      );
+                    })}
+                  </Svg>
+                </View>
+                {selIds.length > 0 && <Text style={s.summary}>Selected {selIds.length} unit{selIds.length > 1 ? 's' : ''} · {plots.filter((p) => selIds.includes(p.id)).map((p) => p.number).join(', ')}</Text>}
+              </View>
             ) : (
               <View>
-                <Text style={s.label}>CHOOSE AN AVAILABLE PLOT</Text>
+                <Text style={s.label}>CHOOSE AVAILABLE PLOTS — PICK ONE OR SEVERAL</Text>
                 <View style={s.chips}>
-                  {plots.map((pl) => (
-                    <TouchableOpacity key={pl.id} onPress={() => setPlot(pl)} style={[s.plot, plot?.id === pl.id ? s.chipOn : null]}>
-                      <Text style={[s.plotNo, plot?.id === pl.id ? { color: BLUE } : null]}>{pl.number}</Text>
+                  {availablePlots.map((pl) => (
+                    <TouchableOpacity key={pl.id} onPress={() => togglePlot(pl)} style={[s.plot, isSelected(pl) ? s.chipOn : null]}>
+                      <Text style={[s.plotNo, isSelected(pl) ? { color: BLUE } : null]}>{isSelected(pl) ? `✓ ${pl.number}` : pl.number}</Text>
                       {!!pl.size && <Text style={s.chipS}>{pl.size} sq.yd</Text>}
                     </TouchableOpacity>
                   ))}
@@ -207,6 +264,7 @@ const s = StyleSheet.create({
 
   back: { color: '#6B7391', fontSize: 14, fontWeight: '700', marginBottom: 4 },
   master: { width: '100%', height: 220, backgroundColor: '#F5F7FC', borderRadius: 14, marginBottom: 18 },
+  mapWrap: { width: '100%', borderRadius: 14, overflow: 'hidden', backgroundColor: '#F5F7FC', borderWidth: 1, borderColor: '#E6EBF4' },
   note: { fontSize: 15, color: '#4B5468', lineHeight: 22, marginBottom: 14 },
   label: { fontSize: 12, fontWeight: '800', letterSpacing: 0.4, color: MUTED, marginTop: 16, marginBottom: 8 },
 
