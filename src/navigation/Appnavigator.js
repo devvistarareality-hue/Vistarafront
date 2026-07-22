@@ -59,6 +59,9 @@ import Club1000ReferralRewardsScreen from '../screens/Club1000/Club1000ReferralR
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
 import PostSignOutScreen  from '../screens/PostSignOut/PostSignOutScreen';
 
+// Kiosk — client-facing self-booking (role=Kiosk)
+import KioskScreen        from '../screens/Kiosk/KioskScreen';
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -71,6 +74,8 @@ const AppNavigator = () => {
   const isSalesAdmin = _isModuleAdmin && _mods[0] === 'Sales';
   // VRL platform super-admin (full module access) — excludes single-module admins.
   const isVRLAdmin  = user?.role === 'Admin' && user?.company_code === 'VRL' && !_isModuleAdmin;
+  // Kiosk device — client-facing self-booking only, no other screens.
+  const isKiosk     = user?.role === 'Kiosk';
 
   return (
     <NavigationContainer ref={navigationRef}>
@@ -81,6 +86,12 @@ const AppNavigator = () => {
           <>
             <Stack.Screen name="Home"  component={Companyscreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
+          </>
+
+        ) : isKiosk ? (
+          // ── Kiosk device — client-facing self-booking only ──────
+          <>
+            <Stack.Screen name="Kiosk" component={KioskScreen} />
           </>
 
         ) : isVRLAdmin ? (
