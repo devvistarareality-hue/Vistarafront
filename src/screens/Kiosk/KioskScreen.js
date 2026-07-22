@@ -175,15 +175,20 @@ export default function KioskScreen({ navigation }) {
               </View>
             ) : hasMap ? (
               <View>
-                <Text style={s.label}>TAP AVAILABLE (GREEN) UNITS — PICK ONE OR SEVERAL</Text>
-                <View style={{ flexDirection: 'row', gap: 16, marginBottom: 10 }}>
-                  {['available', 'hold', 'sold'].map((k) => (
-                    <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: KSTATUS[k].dot }} />
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>{KSTATUS[k].label}</Text>
-                    </View>
-                  ))}
+                {/* Availability counts */}
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+                  {['available', 'hold', 'sold'].map((k) => {
+                    const n = plots.filter((p) => p.status === k).length;
+                    return (
+                      <View key={k} style={[s.statCard, { borderColor: KSTATUS[k].dot + '55' }]}>
+                        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: KSTATUS[k].dot }} />
+                        <Text style={s.statN}>{n}</Text>
+                        <Text style={s.statL}>{KSTATUS[k].label}</Text>
+                      </View>
+                    );
+                  })}
                 </View>
+                <Text style={s.label}>TAP AVAILABLE (GREEN) UNITS — PICK ONE OR SEVERAL</Text>
                 <View style={s.mapWrap}>
                   <Image source={{ uri: mapImage }} style={{ width: '100%', aspectRatio: 16 / 10 }} resizeMode="contain" />
                   <Svg style={StyleSheet.absoluteFill} viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -265,6 +270,9 @@ const s = StyleSheet.create({
   back: { color: '#6B7391', fontSize: 14, fontWeight: '700', marginBottom: 4 },
   master: { width: '100%', height: 220, backgroundColor: '#F5F7FC', borderRadius: 14, marginBottom: 18 },
   mapWrap: { width: '100%', borderRadius: 14, overflow: 'hidden', backgroundColor: '#F5F7FC', borderWidth: 1, borderColor: '#E6EBF4' },
+  statCard: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  statN: { fontSize: 18, fontWeight: '800', color: NAVY },
+  statL: { fontSize: 11, fontWeight: '600', color: '#6B7391' },
   note: { fontSize: 15, color: '#4B5468', lineHeight: 22, marginBottom: 14 },
   label: { fontSize: 12, fontWeight: '800', letterSpacing: 0.4, color: MUTED, marginTop: 16, marginBottom: 8 },
 
