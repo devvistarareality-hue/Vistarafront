@@ -1460,9 +1460,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
               </View>
               <StatusBadge status={item.status} />
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 8 }}>
-              <Text style={{ fontSize: 12, color: MUTED, flex: 1 }}>{item.phone}</Text>
-              {!!item.phone && (
+            {!!item.phone && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 8 }}>
                 <TouchableOpacity
                   onPress={e => { e.stopPropagation?.(); Linking.openURL(`tel:${item.phone}`); }}
                   style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.successBg, justifyContent: 'center', alignItems: 'center' }}
@@ -1470,8 +1469,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
                 >
                   <Ionicons name="call" size={14} color={COLORS.success} />
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            )}
             {!!metaLine && (
               <Text style={{ fontSize: 10, color: COLORS.textSecondary, marginTop: 2 }} numberOfLines={1}>{metaLine}</Text>
             )}
