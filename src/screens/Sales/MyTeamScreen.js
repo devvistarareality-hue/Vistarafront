@@ -107,7 +107,7 @@ export default function MyTeamScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const companies = useSelector((s) => s.companies?.companies || []);
-  const isAdmin = me?.role === 'Admin' || me?.is_staff;
+  const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
   const companyName = (companyId && companies.find((c) => c.id === companyId)?.name) || me?.company_name || 'Organisation';
   const { module = '', scope = '', title = 'My Team' } = route?.params || {};
   const query = (() => {

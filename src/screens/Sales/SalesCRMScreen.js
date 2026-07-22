@@ -52,7 +52,13 @@ export default function SalesCRMScreen({ navigation }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const dispatch  = useDispatch();
-  const isAdmin   = user?.role === 'Admin' || user?.is_staff;
+  // True/hardcoded admins (Chinmay, Prince, platform staff) keep the flat,
+  // always-visible menu exactly as before. The collapsible "Admin" tile is only for
+  // module-scoped admins (e.g. a Manager granted Sales in Admin Modules) — it never
+  // changes behavior for real admins.
+  const isTrueAdmin = user?.role === 'Admin' || user?.is_staff;
+  const isSalesModuleAdmin = !isTrueAdmin && (user?.admin_modules || []).includes('Sales');
+  const isAdmin   = isTrueAdmin || isSalesModuleAdmin;
   // A module (Sales) admin is locked to their own company — clear any stale company
   // filter a previous super-admin session may have persisted on this device.
   const isModuleAdmin = user?.role === 'Admin' && !user?.is_staff && (user?.modules || []).length === 1;
@@ -64,7 +70,27 @@ export default function SalesCRMScreen({ navigation }) {
   const isManager = user?.role === 'Manager';
   // CP Executive works their own leads like an STM (no Meta) → same modules.
   const isCp = _des.includes('cp executive') || _des.includes('channel partner');
-  const visibleMenu = MENU.filter(m => (!m.adminOnly || isAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp));
+  const baseFilter = m => (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp);
+  // Real admins get the exact original flat menu (every admin-only tile inline, in
+  // MENU's own order) — unchanged. Only a Sales-module-scoped admin gets the
+  // collapsed "Admin" tile (right after Approvals) that expands on tap.
+  let visibleMenu;
+  if (isTrueAdmin) {
+    visibleMenu = MENU.filter(baseFilter);
+  } else {
+    const nonAdminMenu = MENU.filter(m => !m.adminOnly && baseFilter(m));
+    visibleMenu = nonAdminMenu;
+    if (isSalesModuleAdmin) {
+      const approvalsIdx = nonAdminMenu.findIndex(m => m.key === 'BookingApprovals');
+      const adminTile = {
+        key: '__ADMIN__', label: 'Admin', icon: adminMenuOpen ? 'chevron-up-outline' : 'shield-checkmark-outline',
+        color: COLORS.navy, bg: COLORS.surfaceAlt,
+      };
+      const expandedTiles = adminMenuOpen ? MENU.filter(m => m.adminOnly) : [];
+      visibleMenu = [...nonAdminMenu];
+      visibleMenu.splice(approvalsIdx + 1, 0, adminTile, ...expandedTiles);
+    }
+  }
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
   const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -84,6 +110,7 @@ export default function SalesCRMScreen({ navigation }) {
   const [pendingTo,    setPendingTo]    = useState(null);
   const [showFromPick, setShowFromPick] = useState(false);
   const [showToPick,   setShowToPick]   = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const openFilter = () => { setPendingFrom(dateFrom); setPendingTo(dateTo); setShowFilter(true); };
   const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setShowFilter(false); };
@@ -289,13 +316,16 @@ export default function SalesCRMScreen({ navigation }) {
           <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Modules</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {visibleMenu.map(m => (
-              <TouchableOpacity key={m.key} onPress={() => navigation.navigate(m.key, m.navParams)}
+              <TouchableOpacity key={m.key}
+                onPress={() => m.key === '__ADMIN__' ? setAdminMenuOpen(o => !o) : navigation.navigate(m.key, m.navParams)}
                 style={[CARD, { width: '47%', padding: 16 }]} activeOpacity={0.8}>
                 <View style={{ width: 46, height: 46, borderRadius: 13, backgroundColor: m.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
                   <Ionicons name={m.icon} size={22} color={m.color} />
                 </View>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 6 }}>{m.label}</Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: m.color }}>Open →</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: m.color }}>
+                  {m.key === '__ADMIN__' ? (adminMenuOpen ? 'Collapse ↑' : 'Expand →') : 'Open →'}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>

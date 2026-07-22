@@ -19,7 +19,7 @@ export default function BookingApprovalsScreen({ navigation }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
   const isApprover = me?.role === 'Admin' || me?.role === 'Manager' || me?.is_staff;
-  const isAdmin = me?.role === 'Admin' || me?.is_staff;
+  const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
   const [tab, setTab] = useState('pending');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
