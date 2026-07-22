@@ -26,6 +26,8 @@ export default function BookingFormScreen({ navigation, route }) {
   const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
   const p = route?.params || {};
   const reviseId = p.revise || '';
+  // Kiosk context: this form was opened from the client Kiosk — after submit, return to Kiosk.
+  const kioskCtx = p.kiosk === '1' || p.kiosk === true;
   const convertEoiId = p.convertEoi || '';   // converting an EOI into a plot booking
   const [projectId, setProjectId] = useState(p.project ? String(p.project) : '');
   // Multi-plot: `plots` route param is a comma list of ids; fall back to single `plot`.
@@ -463,7 +465,7 @@ export default function BookingFormScreen({ navigation, route }) {
       const res = await apiFetch(SALES_ENDPOINTS.bookings + cq('?'), { method: 'POST', body: JSON.stringify(payload) });
       if (res.ok) {
         Alert.alert('Booking submitted ✅', 'Your booking has been submitted and sent for approval.', [
-          { text: 'OK', onPress: () => navigation.navigate('ClosureProjects') },
+          { text: 'OK', onPress: () => navigation.navigate(kioskCtx ? 'Kiosk' : 'ClosureProjects') },
         ]);
       }
       else setMsg('Error: ' + JSON.stringify(await res.json().catch(() => ({}))));

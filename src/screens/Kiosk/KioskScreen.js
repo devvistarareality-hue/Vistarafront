@@ -12,7 +12,7 @@ import { logout } from '../../redux/actions/authActions';
 const NAVY = '#182350', BLUE = '#3D5AFE', BLUEBG = '#E8EEFF', MUTED = '#8492A6', GREEN = '#16A34A';
 const STEPS = [{ key: 'project', label: 'Project' }, { key: 'select', label: 'Unit' }, { key: 'details', label: 'Details' }];
 
-export default function KioskScreen() {
+export default function KioskScreen({ navigation }) {
   const dispatch = useDispatch();
   const user     = useSelector((s) => s.auth.user);
 
@@ -23,10 +23,6 @@ export default function KioskScreen() {
   const [plot,     setPlot]     = useState(null);
   const [eoiType,  setEoiType]  = useState('');
   const [eoiUnits, setEoiUnits] = useState('1');
-  const [form, setForm]         = useState({ client_name: '', gender: '', phone: '', address: '' });
-  const [saving, setSaving]     = useState(false);
-  const [err, setErr]           = useState('');
-  const [ref, setRef]           = useState('');
 
   const isEoi = project && plots.length === 0;
 
@@ -37,8 +33,14 @@ export default function KioskScreen() {
       .catch(() => setProjects([]));
   }, []);
 
+  // Reset to the project picker whenever the kiosk regains focus (e.g. after a booking),
+  // so the next walk-in client starts fresh.
+  useEffect(() => navigation.addListener('focus', () => {
+    setProject(null); setPlots([]); setPlot(null); setEoiType(''); setEoiUnits('1'); setStep('project');
+  }), [navigation]);
+
   const pickProject = async (p) => {
-    setProject(p); setPlot(null); setEoiType(''); setEoiUnits('1'); setErr('');
+    setProject(p); setPlot(null); setEoiType(''); setEoiUnits('1');
     try {
       const r = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${p.id}`);
       const arr = r.ok ? await r.json() : [];
@@ -54,32 +56,17 @@ export default function KioskScreen() {
   const eoiConst  = selType ? (+selType.const_area || 0) * nUnits : 0;
   const canContinueSelect = isEoi ? (unitTypes.length === 0 || !!eoiType) : !!plot;
 
-  const submit = async () => {
-    if (!form.client_name.trim() || !form.phone.trim() || !form.gender) { setErr('Please enter your name, gender and phone.'); return; }
-    setSaving(true); setErr('');
-    const area      = isEoi ? String(eoiArea || '') : String(plot?.size || '');
-    const constArea = isEoi ? String(eoiConst || '') : String(plot?.construction_area || '0');
-    const payload = {
-      project: project.id, plot: isEoi ? undefined : plot.id, plot_ids: isEoi ? [] : [plot.id],
-      ...(isEoi ? { eoi: true } : {}),
-      client_name: form.client_name.trim(), gender: form.gender, phone: form.phone.trim(),
-      address: form.address.trim(), source: 'Kiosk',
-      formula_set: project.formula_set || 'kalrav',
-      area, area_unit: 'sq.yd', const_area: constArea || '0', sale_deed_pct: 60,
-    };
-    try {
-      const r = await apiFetch(SALES_ENDPOINTS.bookings, { method: 'POST', body: JSON.stringify(payload) });
-      const data = await r.json();
-      if (!r.ok) { setErr(data.detail || 'Could not submit. Please call staff.'); setSaving(false); return; }
-      setRef(data.plot_numbers || (isEoi ? 'EOI' : plot?.number) || '');
-      setStep('done');
-    } catch { setErr('Network error. Please call staff.'); }
-    setSaving(false);
+  // Open the real booking/LOI form for this project (client self-fills). Returns to Kiosk after submit.
+  const openBookingForm = () => {
+    navigation.navigate('BookingForm', {
+      project: project.id,
+      ...(isEoi ? { eoi: '1' } : { plot: plot.id }),
+      projectName: project.name, formulaSet: project.formula_set, kiosk: '1',
+    });
   };
 
   const restart = () => {
-    setProject(null); setPlots([]); setPlot(null); setEoiType(''); setEoiUnits('1');
-    setForm({ client_name: '', gender: '', phone: '', address: '' }); setErr(''); setRef(''); setStep('project');
+    setProject(null); setPlots([]); setPlot(null); setEoiType(''); setEoiUnits('1'); setStep('project');
   };
 
   const stepIdx = STEPS.findIndex((s) => s.key === step);
@@ -181,52 +168,12 @@ export default function KioskScreen() {
               </View>
             )}
 
-            <TouchableOpacity disabled={!canContinueSelect} onPress={() => setStep('details')} style={[s.primary, !canContinueSelect ? { opacity: 0.45 } : null]}>
+            <TouchableOpacity disabled={!canContinueSelect} onPress={openBookingForm} style={[s.primary, !canContinueSelect ? { opacity: 0.45 } : null]}>
               <Text style={s.primaryT}>Continue →</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* STEP details */}
-        {step === 'details' && (
-          <View>
-            <TouchableOpacity onPress={() => setStep('select')}><Text style={s.back}>← Back</Text></TouchableOpacity>
-            <Text style={s.h1}>Your details</Text>
-            <Text style={s.note}>We’ll use these to confirm your {isEoi ? 'interest' : 'booking'}.</Text>
-
-            <Text style={s.label}>FULL NAME *</Text>
-            <TextInput style={s.input} value={form.client_name} onChangeText={(t) => setForm((f) => ({ ...f, client_name: t }))} placeholder="Your name" placeholderTextColor="#AEB6C7" />
-            <Text style={s.label}>GENDER *</Text>
-            <View style={s.chips}>
-              {['Male', 'Female', 'Other'].map((g) => (
-                <TouchableOpacity key={g} onPress={() => setForm((f) => ({ ...f, gender: g }))} style={[s.chip, form.gender === g ? s.chipOn : null]}>
-                  <Text style={[s.chipT, form.gender === g ? { color: BLUE } : null]}>{g}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={s.label}>PHONE *</Text>
-            <TextInput style={s.input} value={form.phone} onChangeText={(t) => setForm((f) => ({ ...f, phone: t }))} placeholder="10-digit mobile" keyboardType="phone-pad" placeholderTextColor="#AEB6C7" />
-            <Text style={s.label}>CITY / ADDRESS</Text>
-            <TextInput style={s.input} value={form.address} onChangeText={(t) => setForm((f) => ({ ...f, address: t }))} placeholder="Optional" placeholderTextColor="#AEB6C7" />
-
-            {!!err && <Text style={s.err}>{err}</Text>}
-            <TouchableOpacity disabled={saving} onPress={submit} style={[s.primary, saving ? { opacity: 0.6 } : null]}>
-              <Text style={s.primaryT}>{saving ? 'Submitting…' : 'Submit booking'}</Text>
-            </TouchableOpacity>
-            <Text style={s.fine}>Your request will be reviewed and confirmed by our team.</Text>
-          </View>
-        )}
-
-        {/* STEP done */}
-        {step === 'done' && (
-          <View style={{ alignItems: 'center', paddingTop: 30 }}>
-            <View style={s.check}><Text style={{ fontSize: 42, color: GREEN }}>✓</Text></View>
-            <Text style={s.h1}>Thank you, {form.client_name.split(' ')[0]}!</Text>
-            <Text style={s.doneMsg}>Your {isEoi ? 'Expression of Interest' : 'booking'} for {project?.name}{ref ? ` · ${ref}` : ''} has been submitted.</Text>
-            <Text style={[s.note, { textAlign: 'center' }]}>Our team will contact you shortly to confirm.</Text>
-            <TouchableOpacity onPress={restart} style={[s.primary, { marginTop: 20, alignSelf: 'center', paddingHorizontal: 34 }]}><Text style={s.primaryT}>Start a new booking</Text></TouchableOpacity>
-          </View>
-        )}
       </ScrollView>
 
       {/* Staff exit */}

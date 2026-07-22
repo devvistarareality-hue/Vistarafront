@@ -91,7 +91,8 @@ const AppNavigator = () => {
         ) : isKiosk ? (
           // ── Kiosk device — client-facing self-booking only ──────
           <>
-            <Stack.Screen name="Kiosk" component={KioskScreen} />
+            <Stack.Screen name="Kiosk"       component={KioskScreen} />
+            <Stack.Screen name="BookingForm" component={BookingFormScreen} />
           </>
 
         ) : isVRLAdmin ? (
