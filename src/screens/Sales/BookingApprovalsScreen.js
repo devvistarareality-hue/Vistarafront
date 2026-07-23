@@ -14,12 +14,14 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ..
 const TABS = [['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected'], ['', 'All']];
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function BookingApprovalsScreen({ navigation }) {
+export default function BookingApprovalsScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
   const isApprover = me?.role === 'Admin' || me?.role === 'Manager' || me?.is_staff;
   const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
+  // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
+  const adminView = !!route?.params?.adminView;
   const [tab, setTab] = useState('pending');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,12 +34,12 @@ export default function BookingApprovalsScreen({ navigation }) {
 
   const load = useCallback(async () => {
     try {
-      const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : ''].filter(Boolean).join('&');
+      const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : ''].filter(Boolean).join('&');
       const res = await apiFetch(SALES_ENDPOINTS.bookings + q);
       if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
-  }, [tab, companyId]);
+  }, [tab, companyId, adminView]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   useEffect(() => {

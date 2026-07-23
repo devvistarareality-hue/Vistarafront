@@ -109,13 +109,16 @@ export default function MyTeamScreen({ navigation, route }) {
   const companies = useSelector((s) => s.companies?.companies || []);
   const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
   const companyName = (companyId && companies.find((c) => c.id === companyId)?.name) || me?.company_name || 'Organisation';
-  const { module = '', scope = '', title = 'My Team' } = route?.params || {};
+  const { module = '', scope = '', title = 'My Team', adminView = false } = route?.params || {};
   const query = (() => {
     const parts = [];
     if (isAdmin) {
       if (scope === 'all') parts.push('scope=all');
       else if (module) parts.push(`module=${encodeURIComponent(module)}`);
     }
+    // Pushed from the Admin section (see SalesCRMScreen) — request the full company
+    // org regardless of reporting hierarchy (see backend's admin_view=1).
+    if (adminView) parts.push('admin_view=1');
     if (companyId) parts.push(`company_id=${companyId}`);   // honour "Viewing Company" filter
     return parts.length ? '?' + parts.join('&') : '';
   })();
