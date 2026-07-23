@@ -40,6 +40,8 @@ const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 's
 export default function SalesSiteVisitsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
+  const adminView = !!route?.params?.adminView;
 
   const [visits,     setVisits]     = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -65,12 +67,15 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
-      const url = companyId ? `${SALES_ENDPOINTS.siteVisits}?company_id=${companyId}` : SALES_ENDPOINTS.siteVisits;
+      const params = [];
+      if (companyId) params.push(`company_id=${companyId}`);
+      if (adminView) params.push('admin_view=1');
+      const url = params.length ? `${SALES_ENDPOINTS.siteVisits}?${params.join('&')}` : SALES_ENDPOINTS.siteVisits;
       const res = await apiFetch(url);
       if (res.ok) setVisits(await res.json());
     } catch (e) {}
     setLoading(false); setRefreshing(false);
-  }, [companyId]);
+  }, [companyId, adminView]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 

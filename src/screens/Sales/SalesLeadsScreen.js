@@ -1251,6 +1251,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const user      = useSelector((s) => s.auth.user);
+  // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
+  const adminView = !!route?.params?.adminView;
 
   // Telecaller / STM portals get a "To Call" vs "Called" split so they can tell
   // which of their assigned leads are still pending vs already actioned.
@@ -1327,6 +1329,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (filters.date_from)     url += `&date_from=${filters.date_from}`;
     if (filters.date_to)       url += `&date_to=${filters.date_to}`;
     if (filters.is_duplicate)  url += `&is_duplicate=true`;
+    if (adminView)             url += `&admin_view=1`;
     return url;
   }
 
@@ -1458,19 +1461,19 @@ export default function SalesLeadsScreen({ navigation, route }) {
                   </View>
                 )}
               </View>
-              <StatusBadge status={item.status} />
-            </View>
-            {!!item.phone && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 8 }}>
-                <TouchableOpacity
-                  onPress={e => { e.stopPropagation?.(); Linking.openURL(`tel:${item.phone}`); }}
-                  style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.successBg, justifyContent: 'center', alignItems: 'center' }}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Ionicons name="call" size={14} color={COLORS.success} />
-                </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                {!!item.phone && (
+                  <TouchableOpacity
+                    onPress={e => { e.stopPropagation?.(); Linking.openURL(`tel:${item.phone}`); }}
+                    style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: COLORS.successBg, justifyContent: 'center', alignItems: 'center' }}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  >
+                    <Ionicons name="call" size={13} color={COLORS.success} />
+                  </TouchableOpacity>
+                )}
+                <StatusBadge status={item.status} />
               </View>
-            )}
+            </View>
             {!!metaLine && (
               <Text style={{ fontSize: 10, color: COLORS.textSecondary, marginTop: 2 }} numberOfLines={1}>{metaLine}</Text>
             )}

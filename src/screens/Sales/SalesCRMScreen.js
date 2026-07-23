@@ -48,10 +48,14 @@ function getDesignationLabel(user) {
   return { title: 'Sales CRM', sub: 'Vistara Realty' };
 }
 
-export default function SalesCRMScreen({ navigation }) {
+export default function SalesCRMScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const dispatch  = useDispatch();
+  // Pushed as a second instance of this same screen when a Sales Admin-Modules
+  // user taps "Admin" — mirrors web's /sales/admin: full company data, full menu,
+  // and the stack's own back button returns to the normal (team-scoped) dashboard.
+  const adminView = !!route?.params?.adminView;
   // True/hardcoded admins (Chinmay, Prince, platform staff) keep the flat,
   // always-visible menu exactly as before. The collapsible "Admin" tile is only for
   // module-scoped admins (e.g. a Manager granted Sales in Admin Modules) — it never
@@ -71,24 +75,26 @@ export default function SalesCRMScreen({ navigation }) {
   // CP Executive works their own leads like an STM (no Meta) → same modules.
   const isCp = _des.includes('cp executive') || _des.includes('channel partner');
   const baseFilter = m => (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp);
+  // Tiles that pull hierarchy-scoped data need adminView threaded into their own
+  // params so THEY request full company data too (see backend's admin_view=1).
+  const withAdminParams = (m) => ({ ...m, navParams: { ...(m.navParams || {}), adminView: true } });
   // Real admins get the exact original flat menu (every admin-only tile inline, in
-  // MENU's own order) — unchanged. Only a Sales-module-scoped admin gets the
-  // collapsed "Admin" tile (right after Approvals) that expands on tap.
+  // MENU's own order) — unchanged, never affected by adminView.
   let visibleMenu;
   if (isTrueAdmin) {
     visibleMenu = MENU.filter(baseFilter);
+  } else if (adminView) {
+    // Inside the pushed Admin-section instance — full menu (mirrors a real admin's),
+    // every tile passing adminView through so its own screen requests full data.
+    visibleMenu = MENU.filter(baseFilter).map(withAdminParams);
   } else {
     const nonAdminMenu = MENU.filter(m => !m.adminOnly && baseFilter(m));
     visibleMenu = nonAdminMenu;
     if (isSalesModuleAdmin) {
       const approvalsIdx = nonAdminMenu.findIndex(m => m.key === 'BookingApprovals');
-      const adminTile = {
-        key: '__ADMIN__', label: 'Admin', icon: adminMenuOpen ? 'chevron-up-outline' : 'shield-checkmark-outline',
-        color: COLORS.navy, bg: COLORS.surfaceAlt,
-      };
-      const expandedTiles = adminMenuOpen ? MENU.filter(m => m.adminOnly) : [];
+      const adminTile = { key: '__ADMIN__', label: 'Admin', icon: 'shield-checkmark-outline', color: COLORS.navy, bg: COLORS.surfaceAlt };
       visibleMenu = [...nonAdminMenu];
-      visibleMenu.splice(approvalsIdx + 1, 0, adminTile, ...expandedTiles);
+      visibleMenu.splice(approvalsIdx + 1, 0, adminTile);
     }
   }
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
@@ -110,7 +116,6 @@ export default function SalesCRMScreen({ navigation }) {
   const [pendingTo,    setPendingTo]    = useState(null);
   const [showFromPick, setShowFromPick] = useState(false);
   const [showToPick,   setShowToPick]   = useState(false);
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const openFilter = () => { setPendingFrom(dateFrom); setPendingTo(dateTo); setShowFilter(true); };
   const applyFilter = () => { setDateFrom(pendingFrom); setDateTo(pendingTo); setShowFilter(false); };
@@ -127,6 +132,7 @@ export default function SalesCRMScreen({ navigation }) {
         if (dateFrom) params.set('date_from', fmtDate(dateFrom));
         if (dateTo)   params.set('date_to',   fmtDate(dateTo));
         if (companyId) params.set('company_id', companyId);
+        if (adminView) params.set('admin_view', '1');
         const qs = params.toString() ? `?${params}` : '';
         const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
         if (cancelled) return;
@@ -135,7 +141,7 @@ export default function SalesCRMScreen({ navigation }) {
       if (!cancelled) { setLoading(false); setRefreshing(false); }
     })();
     return () => { cancelled = true; };
-  }, [companyId, dateFrom, dateTo]);
+  }, [companyId, dateFrom, dateTo, adminView]);
 
   async function loadStats(refresh = false) {
     if (refresh) {
@@ -145,6 +151,7 @@ export default function SalesCRMScreen({ navigation }) {
         if (dateFrom) params.set('date_from', fmtDate(dateFrom));
         if (dateTo)   params.set('date_to',   fmtDate(dateTo));
         if (companyId) params.set('company_id', companyId);
+        if (adminView) params.set('admin_view', '1');
         const qs = params.toString() ? `?${params}` : '';
         const res = await apiFetch(`${SALES_ENDPOINTS.stats}${qs}`);
         if (res.ok) { const data = await res.json(); setStats(data); }
@@ -199,8 +206,8 @@ export default function SalesCRMScreen({ navigation }) {
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{screenTitle}</Text>
-          <Text style={{ fontSize: 13, color: MUTED }}>{screenSub}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{adminView ? 'Admin' : screenTitle}</Text>
+          <Text style={{ fontSize: 13, color: MUTED }}>{adminView ? 'Full company data' : screenSub}</Text>
         </View>
         <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
@@ -313,19 +320,19 @@ export default function SalesCRMScreen({ navigation }) {
 
         {/* Menu */}
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Modules</Text>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>
+            {adminView ? 'Admin — All Modules' : 'Modules'}
+          </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {visibleMenu.map(m => (
               <TouchableOpacity key={m.key}
-                onPress={() => m.key === '__ADMIN__' ? setAdminMenuOpen(o => !o) : navigation.navigate(m.key, m.navParams)}
+                onPress={() => m.key === '__ADMIN__' ? navigation.push('SalesCRM', { adminView: true }) : navigation.navigate(m.key, m.navParams)}
                 style={[CARD, { width: '47%', padding: 16 }]} activeOpacity={0.8}>
                 <View style={{ width: 46, height: 46, borderRadius: 13, backgroundColor: m.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
                   <Ionicons name={m.icon} size={22} color={m.color} />
                 </View>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 6 }}>{m.label}</Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: m.color }}>
-                  {m.key === '__ADMIN__' ? (adminMenuOpen ? 'Collapse ↑' : 'Expand →') : 'Open →'}
-                </Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: m.color }}>Open →</Text>
               </TouchableOpacity>
             ))}
           </View>
