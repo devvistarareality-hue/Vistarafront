@@ -31,9 +31,11 @@ function fmtDateTime(iso) {
 const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 const endOfToday   = () => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; };
 
-export default function SalesFollowUpsScreen({ navigation }) {
+export default function SalesFollowUpsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
+  const adminView = !!route?.params?.adminView;
 
   const [items,      setItems]      = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -43,13 +45,16 @@ export default function SalesFollowUpsScreen({ navigation }) {
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
-      const url = companyId ? `${SALES_ENDPOINTS.followUps}?company_id=${companyId}` : SALES_ENDPOINTS.followUps;
+      const params = [];
+      if (companyId) params.push(`company_id=${companyId}`);
+      if (adminView) params.push('admin_view=1');
+      const url = params.length ? `${SALES_ENDPOINTS.followUps}?${params.join('&')}` : SALES_ENDPOINTS.followUps;
       const res = await apiFetch(url);
       if (res.ok) setItems(await res.json());
     } catch (e) {}
     setLoading(false);
     setRefreshing(false);
-  }, [companyId]);
+  }, [companyId, adminView]);
 
   useFocusEffect(useCallback(() => { load(); }, [load, companyId]));
 
