@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -41,6 +42,16 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter,     setFilter]     = useState('today');
+  // Completion modal: remarks + optional next follow-up.
+  const [done,       setDone]       = useState(null);
+  const [outcome,    setOutcome]    = useState('');
+  const [schedNext,  setSchedNext]  = useState(false);
+  const [nextAt,     setNextAt]     = useState(null);   // Date | null
+  const [showDate,   setShowDate]   = useState(false);
+  const [showTime,   setShowTime]   = useState(false);
+  const [nextRemarks, setNextRemarks] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const defaultNext = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
@@ -58,17 +69,34 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
 
   useFocusEffect(useCallback(() => { load(); }, [load, companyId]));
 
-  async function markDone(id) {
+  function openDone(fu) {
+    setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks('');
+  }
+
+  async function completeFollowUp() {
+    if (!done) return;
+    if (schedNext && !(nextAt instanceof Date)) return;
+    setSubmitting(true);
     try {
-      const res = await apiFetch(SALES_ENDPOINTS.followUp(id), {
+      const res = await apiFetch(SALES_ENDPOINTS.followUp(done.id), {
         method: 'PATCH',
-        body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString() }),
+        body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString(), outcome: outcome.trim() }),
       });
-      if (res.ok) {
-        const updated = await res.json();
-        setItems((list) => list.map((f) => (f.id === id ? updated : f)));
+      if (res.ok) { const updated = await res.json(); setItems((list) => list.map((f) => (f.id === done.id ? updated : f))); }
+      if (schedNext && nextAt instanceof Date) {
+        const r2 = await apiFetch(SALES_ENDPOINTS.followUps, {
+          method: 'POST',
+          body: JSON.stringify({
+            lead: done.lead, assigned_to: done.assigned_to, role_context: done.role_context,
+            scheduled_at: nextAt.toISOString(), remarks: nextRemarks.trim(), status: 'pending',
+          }),
+        });
+        if (r2.ok) { const created = await r2.json(); setItems((list) => [...list, created]); }
       }
+      setDone(null);
+      load();
     } catch (e) {}
+    setSubmitting(false);
   }
 
   const now = new Date();
@@ -141,9 +169,10 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                     <Text style={{ fontSize: 13, fontWeight: '600', color: overdue ? COLORS.error : MUTED, marginTop: 6 }}>{fmtDateTime(fu.scheduled_at)}</Text>
                     {!!fu.assigned_to_name && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Assigned to: {fu.assigned_to_name}</Text>}
                     {!!fu.remarks && <Text style={{ fontSize: 12, color: COLORS.textPrimary, marginTop: 6, fontStyle: 'italic' }}>“{fu.remarks}”</Text>}
+                    {!!fu.outcome && <Text style={{ fontSize: 12, color: COLORS.success, marginTop: 6 }}><Text style={{ fontWeight: '700' }}>Remarks: </Text>{fu.outcome}</Text>}
                   </View>
                   {fu.status === 'pending' && (
-                    <TouchableOpacity onPress={() => markDone(fu.id)}
+                    <TouchableOpacity onPress={() => openDone(fu)}
                       style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success }}>Mark Done</Text>
                     </TouchableOpacity>
@@ -154,6 +183,58 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           })}
         </ScrollView>
       )}
+
+      {/* Complete follow-up: remarks + optional next follow-up */}
+      <Modal visible={!!done} transparent animationType="slide" onRequestClose={() => !submitting && setDone(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(10,18,30,0.45)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Complete follow-up</Text>
+            {!!done && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2, marginBottom: 14 }}>{done.lead_name} · {fmtDateTime(done.scheduled_at)}</Text>}
+
+            <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6 }}>Remarks</Text>
+            <TextInput value={outcome} onChangeText={setOutcome} multiline placeholder="Outcome of this follow-up…" placeholderTextColor="#AEB6C7"
+              style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, fontSize: 13, minHeight: 64, textAlignVertical: 'top', color: TEXT }} />
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>Schedule next follow-up</Text>
+              <Switch value={schedNext} onValueChange={(v) => { setSchedNext(v); if (v && !nextAt) setNextAt(defaultNext()); }} trackColor={{ false: COLORS.border, true: BLUE }} />
+            </View>
+
+            {schedNext && (
+              <View style={{ marginTop: 12 }}>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TouchableOpacity onPress={() => setShowDate(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, color: BLUE, fontWeight: '600' }}>{nextAt instanceof Date ? nextAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Pick Date'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowTime(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, color: BLUE, fontWeight: '600' }}>{nextAt instanceof Date ? nextAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Pick Time'}</Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput value={nextRemarks} onChangeText={setNextRemarks} multiline placeholder="What to discuss next…" placeholderTextColor="#AEB6C7"
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, fontSize: 13, minHeight: 48, textAlignVertical: 'top', marginTop: 10, color: TEXT }} />
+                {showDate && (
+                  <DateTimePicker value={nextAt instanceof Date ? nextAt : defaultNext()} mode="date" display="default"
+                    onChange={(e, d) => { setShowDate(false); if (e.type === 'dismissed') return; if (d) { const cur = nextAt instanceof Date ? nextAt : defaultNext(); const m = new Date(d); m.setHours(cur.getHours(), cur.getMinutes(), 0, 0); setNextAt(m); if (Platform.OS === 'android') setShowTime(true); } }} />
+                )}
+                {showTime && (
+                  <DateTimePicker value={nextAt instanceof Date ? nextAt : defaultNext()} mode="time" display="default" is24Hour={false}
+                    onChange={(e, d) => { setShowTime(false); if (e.type === 'dismissed') return; if (d) { const cur = nextAt instanceof Date ? nextAt : defaultNext(); const m = new Date(cur); m.setHours(d.getHours(), d.getMinutes(), 0, 0); setNextAt(m); } }} />
+                )}
+              </View>
+            )}
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+              <TouchableOpacity onPress={() => setDone(null)} disabled={submitting} style={{ flex: 1, backgroundColor: COLORS.screenBg, borderRadius: 10, padding: 13, alignItems: 'center' }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: MUTED }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={completeFollowUp} disabled={submitting || (schedNext && !(nextAt instanceof Date))}
+                style={{ flex: 1, backgroundColor: COLORS.success, borderRadius: 10, padding: 13, alignItems: 'center', opacity: (submitting || (schedNext && !(nextAt instanceof Date))) ? 0.6 : 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{submitting ? 'Saving…' : 'Mark Done'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
