@@ -100,18 +100,23 @@ export default function KioskScreen({ navigation }) {
             <Text style={s.brandSub}>Self-Service Booking Kiosk</Text>
           </View>
         </View>
-        {step !== 'done' && (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {STEPS.map((st, i) => (
-              <View key={st.key} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={[s.dot, i < stepIdx ? s.dotDone : i === stepIdx ? s.dotActive : null]}>
-                  <Text style={[s.dotTxt, (i <= stepIdx) ? { color: '#fff' } : null]}>{i < stepIdx ? '✓' : i + 1}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          {step !== 'done' && (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {STEPS.map((st, i) => (
+                <View key={st.key} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={[s.dot, i < stepIdx ? s.dotDone : i === stepIdx ? s.dotActive : null]}>
+                    <Text style={[s.dotTxt, (i <= stepIdx) ? { color: '#fff' } : null]}>{i < stepIdx ? '✓' : i + 1}</Text>
+                  </View>
+                  {i < STEPS.length - 1 && <View style={s.stepBar} />}
                 </View>
-                {i < STEPS.length - 1 && <View style={s.stepBar} />}
-              </View>
-            ))}
-          </View>
-        )}
+              ))}
+            </View>
+          )}
+          <TouchableOpacity onPress={() => dispatch(logout())} style={s.signout}>
+            <Text style={s.signoutT}>⎋ Sign out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
@@ -254,6 +259,8 @@ const s = StyleSheet.create({
   dotActive: { backgroundColor: BLUE }, dotDone: { backgroundColor: GREEN },
   dotTxt: { fontSize: 11, fontWeight: '800', color: '#9AA4B8' },
   stepBar: { width: 18, height: 2, backgroundColor: '#E1E6F1', marginHorizontal: 6 },
+  signout: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA' },
+  signoutT: { fontSize: 13, fontWeight: '700', color: '#DC2626' },
 
   hero: { fontSize: 30, fontWeight: '800', color: NAVY, letterSpacing: -0.5 },
   heroSub: { fontSize: 15, color: '#6B7391', marginTop: 4, marginBottom: 20 },
