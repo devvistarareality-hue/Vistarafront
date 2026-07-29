@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../../utils/apiFetch';
 import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -14,6 +16,7 @@ import { isClub1000Manager } from '../../utils/club1000Access';
 import { formatDMY } from '../../utils/dateFormat';
 import FormSheet from '../../components/FormSheet';
 import { TextField, inputStyle } from '../../components/Field';
+import { buildInvestorLOIHtml } from '../../lib/investorLOIHtml';
 
 const NAVY = COLORS.navy; const TEAL = '#00838F'; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -112,7 +115,7 @@ function lastDayOfMonthISO(y, m) { // m is 1-indexed
 const INTEREST_PAYOUT_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', maturity: 'At Maturity' };
 
 // ── Add Investor sheet ──────────────────────────────────────────────────────
-function AddInvestorSheet({ visible, onClose, onSaved, schemes }) {
+function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
   const [form, setForm] = useState(null);
   const [documentFile, setDocumentFile] = useState(null);
   const [schedule, setSchedule] = useState([]);
@@ -123,17 +126,24 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes }) {
   const [saving, setSaving] = useState(false);
   const [refSuggestions, setRefSuggestions] = useState([]);
   const [refOpen, setRefOpen] = useState(false);
+  const [loiDone, setLoiDone] = useState(false);
+  const [loiDownloading, setLoiDownloading] = useState(false);
+  const [loiFile, setLoiFile] = useState(null); // signed scan, {name, type, data(base64)}
 
   // (Re)initialise the form whenever the sheet is opened.
   useEffect(() => {
     if (visible) {
-      const s = schemes[0];
+      const s = prefillLead?.scheme_interest
+        ? schemes.find((sc) => String(sc.id) === String(prefillLead.scheme_interest)) || schemes[0]
+        : schemes[0];
       setForm({
-        scheme: s?.id || '', reference_name: '', reference_phone: '', name: '', phone: '', email: '', pan: '',
-        amount_invested: '', investment_date: new Date(),
+        scheme: s?.id || '',
+        reference_name: prefillLead?.reference_name || '', reference_phone: prefillLead?.reference_phone || '',
+        name: prefillLead?.name || '', phone: prefillLead?.phone || '', email: prefillLead?.email || '', pan: '',
+        amount_invested: prefillLead?.amount_interested ? String(prefillLead.amount_interested) : '', investment_date: new Date(),
         interest_payout: s?.interest_payout_options?.[0] || 'maturity',
         total_return_pct: s?.total_return_pct != null ? String(s.total_return_pct) : '',
-        notes: '',
+        notes: '', security: '',
       });
       apiFetch(CLUB1000_ENDPOINTS.investorReferences)
         .then((r) => (r.ok ? r.json() : []))
@@ -142,6 +152,8 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes }) {
       setDocumentFile(null);
       setSchedule([]);
       setScheduleDirty(false);
+      setLoiDone(false);
+      setLoiFile(null);
     }
   }, [visible]);
 
@@ -215,6 +227,46 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes }) {
     }
   }
 
+  // Generate & share/download the Investment Proposal Form (LOI) from the
+  // form's current values — client-side only, no API call except previewing
+  // the stable LOI number so it's baked into the PDF (the real number is
+  // (re)computed the same way at actual submit time).
+  async function doDownloadLoi() {
+    if (!scheme) { Alert.alert('Select a scheme', 'Choose a scheme before generating the LOI.'); return; }
+    if (!form.name.trim()) { Alert.alert('Missing name', 'Investor name is required before generating the LOI.'); return; }
+    if (Number(form.amount_invested) < Number(scheme.min_ticket_size)) {
+      Alert.alert('Amount too low', `Minimum ticket size for ${scheme.name} is ${fmtMoney(scheme.min_ticket_size)}.`);
+      return;
+    }
+    setLoiDownloading(true);
+    try {
+      const noRes = await apiFetch(`${CLUB1000_ENDPOINTS.investorNextLoiNo}?scheme_id=${scheme.id}`);
+      const { loi_no } = noRes.ok ? await noRes.json() : { loi_no: '' };
+      const html = buildInvestorLOIHtml({ ...form, investment_date: toISODate(form.investment_date), loi_no }, scheme);
+      const { uri } = await Print.printToFileAsync({ html });
+      const name = `LOI_${loi_no || form.name}.pdf`.replace(/\s+/g, '_');
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
+      else await Print.printAsync({ uri });
+      setLoiDone(true);
+    } catch (e) {
+      Alert.alert('Could not generate the LOI', e.message);
+    } finally {
+      setLoiDownloading(false);
+    }
+  }
+
+  async function pickSignedLoi() {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
+      if (res.canceled || !res.assets?.[0]) return;
+      const a = res.assets[0];
+      const data = await FileSystem.readAsStringAsync(a.uri, { encoding: FileSystem.EncodingType.Base64 });
+      setLoiFile({ name: a.name || 'signed_loi', type: a.mimeType || 'application/pdf', data });
+    } catch (e) {
+      Alert.alert('Attach failed', e.message);
+    }
+  }
+
   async function submit() {
     if (!form.name.trim() || !form.phone.trim() || !form.amount_invested || !scheme) {
       Alert.alert('Missing fields', 'Scheme, Name, Mobile Number and Amount Invested are required.');
@@ -222,6 +274,10 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes }) {
     }
     if (Number(form.amount_invested) < Number(scheme.min_ticket_size)) {
       Alert.alert('Amount too low', `Minimum ticket size for ${scheme.name} is ${fmtMoney(scheme.min_ticket_size)}.`);
+      return;
+    }
+    if (!loiFile) {
+      Alert.alert('Signed LOI required', 'Download the LOI, get it signed, and attach it before submitting.');
       return;
     }
     setSaving(true);
@@ -239,9 +295,12 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes }) {
         interest_payout: form.interest_payout,
         total_return_pct: form.total_return_pct,
         notes: form.notes.trim(),
+        security: (form.security || '').trim(),
+        loi_file: loiFile,
       };
       if (documentFile) payload.document_file = documentFile;
       if ((form.interest_payout === 'quarterly' || form.interest_payout === 'monthly') && schedule.length) payload.payout_schedule = schedule;
+      if (prefillLead?.id) payload.lead = prefillLead.id;
       const res = await apiFetch(CLUB1000_ENDPOINTS.investors, { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json();
       if (!res.ok) {
@@ -418,12 +477,29 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes }) {
           </TouchableOpacity>
         </View>
 
+        <TextField label="Security (for LOI — optional)" value={form.security} onChangeText={(v) => set('security', v)} placeholder="NA" />
         <TextField label="Notes" value={form.notes} onChangeText={(v) => set('notes', v)} />
 
-        <TouchableOpacity onPress={submit} disabled={saving}
-          style={{ backgroundColor: TEAL, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: saving ? 0.7 : 1, marginTop: 8 }}>
+        <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 12, marginTop: 4, marginBottom: 16 }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 8 }}>Investment Proposal Form (LOI)</Text>
+          <TouchableOpacity onPress={doDownloadLoi} disabled={loiDownloading}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: TEAL, borderRadius: 10, height: 44, opacity: loiDownloading ? 0.7 : 1 }}>
+            {loiDownloading ? <ActivityIndicator color={TEAL} /> : <Ionicons name="download-outline" size={17} color={TEAL} />}
+            <Text style={{ color: TEAL, fontSize: 13, fontWeight: '700' }}>{loiDownloading ? 'Generating…' : 'Download LOI PDF (Print → Sign → Upload)'}</Text>
+          </TouchableOpacity>
+          {loiDone && <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 6 }}>LOI downloaded — get it signed and upload below.</Text>}
+          <TouchableOpacity onPress={pickSignedLoi} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, marginTop: 10 }}>
+            <Ionicons name="attach-outline" size={18} color={TEAL} />
+            <Text style={{ fontSize: 13, color: loiFile ? TEXT : MUTED, flex: 1 }} numberOfLines={1}>
+              {loiFile ? loiFile.name : 'Attach the signed LOI (image / PDF) *'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
+          style={{ backgroundColor: TEAL, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
           {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Add Investor</Text>
+          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Submit for Approval</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -431,7 +507,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes }) {
 }
 
 // ── Main screen ──────────────────────────────────────────────────────────────
-export default function Club1000InvestorsScreen({ navigation }) {
+export default function Club1000InvestorsScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
   const manager = isClub1000Manager(user);
 
@@ -441,13 +517,27 @@ export default function Club1000InvestorsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [showAdd,    setShowAdd]    = useState(false);
+  // Opened from a Lead's "Convert to Investor" action (see Club1000LeadsScreen).
+  const [prefillLead, setPrefillLead] = useState(route?.params?.prefillLead || null);
+
+  useEffect(() => {
+    if (route?.params?.prefillLead) {
+      setPrefillLead(route.params.prefillLead);
+      setShowAdd(true);
+      navigation.setParams({ prefillLead: undefined });
+    }
+  }, [route?.params?.prefillLead]);
 
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
-      const qs = statusFilter ? `?status=${statusFilter}` : '';
+      const params = new URLSearchParams();
+      if (statusFilter) params.set('status', statusFilter);
+      // The approved portfolio only — pending/rejected submissions live on the
+      // dedicated Investor Approvals screen (managers) until they're actioned.
+      params.set('approval_status', 'approved');
       const [invRes, schemesRes] = await Promise.all([
-        apiFetch(`${CLUB1000_ENDPOINTS.investors}${qs}`),
+        apiFetch(`${CLUB1000_ENDPOINTS.investors}?${params.toString()}`),
         apiFetch(CLUB1000_ENDPOINTS.schemes),
       ]);
       if (invRes.ok) setInvestors(await invRes.json());
@@ -470,10 +560,19 @@ export default function Club1000InvestorsScreen({ navigation }) {
     ]);
   }
 
+  async function viewLoi(id) {
+    try {
+      const res = await apiFetch(CLUB1000_ENDPOINTS.investorLoiUrl(id));
+      const d = await res.json();
+      if (res.ok && d.url) Linking.openURL(d.url);
+      else Alert.alert('LOI unavailable', d?.detail || 'Could not open the LOI.');
+    } catch (e) { Alert.alert('LOI unavailable', e.message); }
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
-      <AddInvestorSheet visible={showAdd} onClose={() => setShowAdd(false)} onSaved={() => load()} schemes={schemes} />
+      <AddInvestorSheet visible={showAdd} onClose={() => { setShowAdd(false); setPrefillLead(null); }} onSaved={() => load()} schemes={schemes} prefillLead={prefillLead} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
@@ -531,11 +630,18 @@ export default function Club1000InvestorsScreen({ navigation }) {
               {manager && (
                 <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>Added by {inv.added_by_name || '—'}</Text>
               )}
-              {manager && inv.status === 'active' && (
-                <TouchableOpacity onPress={() => redeem(inv.id)} style={{ alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.warning }}>Redeem</Text>
-                </TouchableOpacity>
-              )}
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                {!!inv.loi_document_url && (
+                  <TouchableOpacity onPress={() => viewLoi(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.link }}>View LOI</Text>
+                  </TouchableOpacity>
+                )}
+                {manager && inv.status === 'active' && (
+                  <TouchableOpacity onPress={() => redeem(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.warning }}>Redeem</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           );
         })}
