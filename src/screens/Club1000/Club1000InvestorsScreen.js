@@ -142,7 +142,9 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         name: prefillLead?.name || '', phone: prefillLead?.phone || '', email: prefillLead?.email || '', pan: '',
         amount_invested: prefillLead?.amount_interested ? String(prefillLead.amount_interested) : '', investment_date: new Date(),
         interest_payout: s?.interest_payout_options?.[0] || 'maturity',
-        total_return_pct: s?.total_return_pct != null ? String(s.total_return_pct) : '',
+        // The lead's negotiated rate wins over the scheme default, if one was set.
+        total_return_pct: prefillLead?.total_return_pct != null ? String(prefillLead.total_return_pct)
+          : s?.total_return_pct != null ? String(s.total_return_pct) : '',
         notes: '', security: '',
       });
       apiFetch(CLUB1000_ENDPOINTS.investorReferences)

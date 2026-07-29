@@ -38,6 +38,12 @@ function fmtDateTime(iso) {
     + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
+// <input type="date">-equivalent: "YYYY-MM-DD" in LOCAL time.
+function toISODate(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 /* ── Dropdown Picker (mirrors SalesLeadsScreen's) ── */
 function DropdownPicker({ value, onChange, options, placeholder, triggerStyle }) {
   const [open, setOpen] = useState(false);
@@ -152,10 +158,11 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
 function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
   const [form, setForm] = useState({
     name: '', phone: '', alt_phone: '', email: '', reference_name: '', reference_phone: '',
-    source: 'referral', scheme_interest: '', amount_interested: '', remarks: '',
+    source: 'referral', lead_date: new Date(), scheme_interest: '', amount_interested: '', remarks: '',
   });
   const [sourceOpen, setSourceOpen] = useState(false);
   const [schemeOpen, setSchemeOpen] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
@@ -164,7 +171,8 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
     if (!form.name.trim()) { Alert.alert('Missing name', 'Name is required.'); return; }
     setSaving(true);
     try {
-      const payload = { ...form };
+      const payload = { ...form, lead_date: toISODate(form.lead_date) };
+      if (form.source !== 'referral') { delete payload.reference_name; delete payload.reference_phone; }
       if (!payload.scheme_interest) delete payload.scheme_interest;
       if (!payload.amount_interested) delete payload.amount_interested;
       const res = await apiFetch(CLUB1000_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(payload) });
@@ -172,7 +180,7 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
       if (!res.ok) { Alert.alert('Could not add lead', d?.detail || 'Please check the fields.'); return; }
       onSaved(d);
       onClose();
-      setForm({ name: '', phone: '', alt_phone: '', email: '', reference_name: '', reference_phone: '', source: 'referral', scheme_interest: '', amount_interested: '', remarks: '' });
+      setForm({ name: '', phone: '', alt_phone: '', email: '', reference_name: '', reference_phone: '', source: 'referral', lead_date: new Date(), scheme_interest: '', amount_interested: '', remarks: '' });
     } finally {
       setSaving(false);
     }
@@ -195,27 +203,45 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
           <View style={{ flex: 1 }}><TextField label="Alt Phone" value={form.alt_phone} onChangeText={(v) => set('alt_phone', v)} keyboardType="phone-pad" /></View>
         </View>
         <TextField label="Email" value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" />
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1 }}><TextField label="Reference Name" value={form.reference_name} onChangeText={(v) => set('reference_name', v)} /></View>
-          <View style={{ flex: 1 }}><TextField label="Reference Phone" value={form.reference_phone} onChangeText={(v) => set('reference_phone', v)} keyboardType="phone-pad" /></View>
-        </View>
 
-        <Field label="Source">
-          <TouchableOpacity onPress={() => setSourceOpen((v) => !v)} style={[inputStyle, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-            <Text style={{ fontSize: 15, color: TEXT }}>{SOURCE_LABELS[form.source]}</Text>
-            <Ionicons name={sourceOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
-          </TouchableOpacity>
-          {sourceOpen && (
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
-              {Object.entries(SOURCE_LABELS).map(([v, label], i) => (
-                <TouchableOpacity key={v} onPress={() => { set('source', v); setSourceOpen(false); }}
-                  style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
-                  <Text style={{ fontSize: 14, color: TEXT }}>{label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </Field>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <Field label="Source">
+              <TouchableOpacity onPress={() => setSourceOpen((v) => !v)} style={[inputStyle, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                <Text style={{ fontSize: 15, color: TEXT }}>{SOURCE_LABELS[form.source]}</Text>
+                <Ionicons name={sourceOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
+              </TouchableOpacity>
+              {sourceOpen && (
+                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+                  {Object.entries(SOURCE_LABELS).map(([v, label], i) => (
+                    <TouchableOpacity key={v} onPress={() => { set('source', v); setSourceOpen(false); }}
+                      style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
+                      <Text style={{ fontSize: 14, color: TEXT }}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </Field>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Field label="Date">
+              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={inputStyle}>
+                <Text style={{ fontSize: 15, color: TEXT }}>{toISODate(form.lead_date)}</Text>
+              </TouchableOpacity>
+            </Field>
+          </View>
+        </View>
+        {showDatePicker && (
+          <DateTimePicker value={form.lead_date} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            onChange={(_, d) => { setShowDatePicker(false); if (d) set('lead_date', d); }} />
+        )}
+
+        {form.source === 'referral' && (
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}><TextField label="Reference Name" value={form.reference_name} onChangeText={(v) => set('reference_name', v)} /></View>
+            <View style={{ flex: 1 }}><TextField label="Reference Phone" value={form.reference_phone} onChangeText={(v) => set('reference_phone', v)} keyboardType="phone-pad" /></View>
+          </View>
+        )}
 
         <Field label="Scheme Interest">
           <TouchableOpacity onPress={() => setSchemeOpen((v) => !v)} style={[inputStyle, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
@@ -288,6 +314,10 @@ function LeadDetailSheet({ lead, onClose, onStatusChange, onConvert, onScheduleF
             <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{SOURCE_LABELS[lead.source] || lead.source}</Text>
           </View>
           <View style={{ minWidth: '45%' }}>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Date</Text>
+            <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{lead.lead_date ? new Date(`${lead.lead_date}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</Text>
+          </View>
+          <View style={{ minWidth: '45%' }}>
             <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Scheme Interest</Text>
             <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{lead.scheme_interest_name || '—'}</Text>
           </View>
@@ -299,6 +329,12 @@ function LeadDetailSheet({ lead, onClose, onStatusChange, onConvert, onScheduleF
             <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Assigned To</Text>
             <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{lead.assigned_to_name || '—'}</Text>
           </View>
+          {lead.source === 'referral' && (
+            <View style={{ minWidth: '45%' }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Reference</Text>
+              <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{lead.reference_name || '—'}</Text>
+            </View>
+          )}
         </View>
         {!!lead.remarks && (
           <View style={{ marginBottom: 16 }}>
