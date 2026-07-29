@@ -54,6 +54,9 @@ import Club1000SchemesScreen    from '../screens/Club1000/Club1000SchemesScreen'
 import Club1000InvestorsScreen  from '../screens/Club1000/Club1000InvestorsScreen';
 import Club1000PayoutsScreen    from '../screens/Club1000/Club1000PayoutsScreen';
 import Club1000ReferralRewardsScreen from '../screens/Club1000/Club1000ReferralRewardsScreen';
+import Club1000LeadsScreen      from '../screens/Club1000/Club1000LeadsScreen';
+import Club1000FollowUpsScreen  from '../screens/Club1000/Club1000FollowUpsScreen';
+import Club1000InvestorApprovalsScreen from '../screens/Club1000/Club1000InvestorApprovalsScreen';
 
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
@@ -130,6 +133,9 @@ const AppNavigator = () => {
             <Stack.Screen name="Club1000Investors"   component={Club1000InvestorsScreen} />
             <Stack.Screen name="Club1000Payouts"     component={Club1000PayoutsScreen} />
             <Stack.Screen name="Club1000ReferralRewards" component={Club1000ReferralRewardsScreen} />
+            <Stack.Screen name="Club1000Leads"       component={Club1000LeadsScreen} />
+            <Stack.Screen name="Club1000FollowUps"   component={Club1000FollowUpsScreen} />
+            <Stack.Screen name="Club1000InvestorApprovals" component={Club1000InvestorApprovalsScreen} />
             <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
           </>
 

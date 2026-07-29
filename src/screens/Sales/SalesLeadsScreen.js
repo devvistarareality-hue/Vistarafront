@@ -250,6 +250,13 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   async function save() {
+    // Telecaller / STM portals must record their status + remarks before saving.
+    if (_isTelecaller && (!form.telecaller_status || !(form.telecaller_remarks || '').trim())) {
+      Alert.alert('Required', 'Please set TC Status and add TC Remarks before saving.'); return;
+    }
+    if (_isStm && (!form.stm_status || !(form.stm_remarks || '').trim())) {
+      Alert.alert('Required', 'Please set STM Status and add STM Remarks before saving.'); return;
+    }
     setSaving(true);
     try {
       // "closed" is NOT persisted from the dropdown — a lead only becomes CLOSED
@@ -532,7 +539,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
                 )}
                 <View style={half}>
-                  <Text style={lblS}>TC Status</Text>
+                  <Text style={lblS}>TC Status {_isTelecaller ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
                   <PickerDropdown
                     items={['warm','cold','not_interested','not_reachable','callback'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
                     value={form.telecaller_status} onChange={v => set('telecaller_status', v)}
@@ -540,7 +547,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
               </View>
 
-              <Text style={lblS}>TC Remarks</Text>
+              <Text style={lblS}>TC Remarks {_isTelecaller ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
               <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
                 multiline placeholder="Call notes…" placeholderTextColor="#666666"
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
@@ -561,7 +568,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
                 )}
                 <View style={half}>
-                  <Text style={lblS}>{_isCp ? 'CP Status' : 'STM Status'}</Text>
+                  <Text style={lblS}>{_isCp ? 'CP Status' : 'STM Status'} {_isStm ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
                   <PickerDropdown
                     items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
                     value={form.stm_status} onChange={v => set('stm_status', v)}
@@ -569,7 +576,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
               </View>
 
-              <Text style={lblS}>{_isCp ? 'CP Remarks' : 'STM Remarks'}</Text>
+              <Text style={lblS}>{_isCp ? 'CP Remarks' : 'STM Remarks'} {_isStm ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
                 multiline placeholder="Notes…" placeholderTextColor="#666666"
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />

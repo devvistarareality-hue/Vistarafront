@@ -17,7 +17,10 @@ const MUTED = COLORS.textSecondary;
 const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
 
 const MENU = [
+  { key: 'Club1000Leads',      label: 'Leads',        icon: 'person-add-outline',    color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },
+  { key: 'Club1000FollowUps',  label: 'Follow-Ups',   icon: 'calendar-outline',      color: COLORS.warning,  bg: COLORS.warningBg, managerOnly: false },
   { key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: '#E0F7FA',        managerOnly: false },
+  { key: 'Club1000InvestorApprovals', label: 'Approvals', icon: 'checkmark-done-outline', color: COLORS.success, bg: COLORS.successBg, managerOnly: true },
   { key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: true },
   { key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
   { key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: true },
@@ -29,11 +32,26 @@ function fmtMoney(n) {
   return `₹${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 }
 
-export default function Club1000HubScreen({ navigation }) {
+export default function Club1000HubScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const manager   = isClub1000Manager(user);
-  const visibleMenu = MENU.filter((m) => !m.managerOnly || manager);
+  // Pushed as a second instance of this same screen when a Club 1000 Admin-Modules
+  // user taps "Admin" — mirrors Sales' Admin section. Data is unaffected either way
+  // (isClub1000Manager already grants full company visibility from admin_modules
+  // alone); this only changes where the manager-only tiles live in the nav.
+  const adminView = !!route?.params?.adminView;
+  const isTrueManager = user?.role === 'Admin' || user?.is_staff || (user?.manager_modules || []).includes('Club 1000');
+  const isAdminModulesOnly = !isTrueManager && (user?.admin_modules || []).includes('Club 1000');
+  let visibleMenu;
+  if (isTrueManager || adminView) {
+    visibleMenu = MENU.filter((m) => !m.managerOnly || manager);
+  } else {
+    visibleMenu = MENU.filter((m) => !m.managerOnly);
+    if (isAdminModulesOnly) {
+      visibleMenu = [...visibleMenu, { key: '__ADMIN__', label: 'Admin', icon: 'shield-checkmark-outline', color: NAVY, bg: COLORS.surfaceAlt }];
+    }
+  }
 
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);
@@ -157,8 +175,8 @@ export default function Club1000HubScreen({ navigation }) {
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Club 1000</Text>
-          <Text style={{ fontSize: 13, color: MUTED }}>Investment portfolio and returns tracking</Text>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{adminView ? 'Admin' : 'Club 1000'}</Text>
+          <Text style={{ fontSize: 13, color: MUTED }}>{adminView ? 'All sections' : 'Investment portfolio and returns tracking'}</Text>
         </View>
         <TouchableOpacity onPress={openFilter} style={{ padding: 6, backgroundColor: filterActive ? NAVY : BG, borderWidth: 1, borderColor: filterActive ? NAVY : COLORS.border, borderRadius: 8 }}>
           <Ionicons name="filter-outline" size={20} color={filterActive ? COLORS.white : NAVY} />
@@ -342,10 +360,13 @@ export default function Club1000HubScreen({ navigation }) {
         </View>
 
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Menu</Text>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>
+            {adminView ? 'Admin — All Sections' : 'Menu'}
+          </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {visibleMenu.map((m) => (
-              <TouchableOpacity key={m.key} onPress={() => navigation.navigate(m.key, m.navParams)}
+              <TouchableOpacity key={m.key}
+                onPress={() => m.key === '__ADMIN__' ? navigation.push('Club1000Hub', { adminView: true }) : navigation.navigate(m.key, m.navParams)}
                 style={[CARD, { width: '47%', padding: 16 }]} activeOpacity={0.8}>
                 <View style={{ width: 46, height: 46, borderRadius: 13, backgroundColor: m.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
                   <Ionicons name={m.icon} size={22} color={m.color} />

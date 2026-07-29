@@ -71,7 +71,7 @@ export default function UserManagementScreen({ navigation }) {
       u.phone?.toLowerCase().includes(search.toLowerCase()) ||
       u.designation?.toLowerCase().includes(search.toLowerCase());
     return matchDept && matchCompany && matchSearch;
-  });
+  }).sort((a, b) => String(a.user_code || '').localeCompare(String(b.user_code || ''), undefined, { numeric: true }));
 
   const activeCount   = users.filter((u) => u.is_active).length;
   const inactiveCount = users.filter((u) => !u.is_active).length;

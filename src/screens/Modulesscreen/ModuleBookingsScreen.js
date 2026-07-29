@@ -25,8 +25,15 @@ const DRow = ({ l, v }) => (
     <Text style={{ fontSize: 12, color: '#1A1A2E', fontWeight: '700', textAlign: 'right' }}>{v}</Text>
   </View>
 );
+// Due dates are stored yyyy-mm-dd; show them as dd-mm-yyyy for the accounts view.
+const fmtDate = (d) => {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(d || ''));
+  return m ? `${m[3].padStart(2, '0')}-${m[2].padStart(2, '0')}-${m[1]}` : (d || '—');
+};
 function BookingDetails({ b }) {
-  const insts = Array.isArray(b.installments) ? b.installments : [];
+  const rawInsts = Array.isArray(b.installments) ? b.installments : [];
+  // Sort the payment schedule by due date ascending (yyyy-mm-dd sorts chronologically).
+  const insts = [...rawInsts].sort((a, x) => String(a.date || '').localeCompare(String(x.date || '')));
   const Head = ({ t }) => <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 10, marginBottom: 4 }}>{t}</Text>;
   return (
     <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', borderStyle: 'dashed' }}>
@@ -69,7 +76,7 @@ function BookingDetails({ b }) {
       <DRow l="Final Amount" v={money0(b.final_amount)} />
       {insts.length > 0 && <Head t="Payment Schedule" />}
       {insts.map((i, idx) => (
-        <DRow key={idx} l={`${i.no || idx + 1}. ${i.date || '—'}  ${i.pct != null ? i.pct + '%' : ''}  ${i.isNsd ? '(Extra Work)' : i.isExtra ? '(Legal & Other)' : ''}`.trim()} v={money0(i.amt)} />
+        <DRow key={idx} l={`${idx + 1}. ${fmtDate(i.date)}  ${i.pct != null ? i.pct + '%' : ''}  ${i.isNsd ? '(Extra Work)' : i.isExtra ? '(Legal & Other)' : ''}`.trim()} v={money0(i.amt)} />
       ))}
     </View>
   );
@@ -100,8 +107,10 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   }, [companyId]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // Accounts view excludes rejected bookings — only real (pending/approved) ones matter here.
+  const isRejected = (b) => b.status === 'rejected' || String(b.approval_status || '').toUpperCase().includes('REJECT');
   const groups = {};
-  rows.forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
+  rows.filter((b) => !isRejected(b)).forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
   projectNames.forEach((pn) => groups[pn].sort((a, b) => String(b.booking_date || '').localeCompare(String(a.booking_date || ''))));
 

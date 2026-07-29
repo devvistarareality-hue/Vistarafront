@@ -399,13 +399,21 @@ function MetaTab() {
                   <View style={{ padding: 8, gap: 4 }}>
                     {pg.forms.map(f => {
                       const mapped = mappingMap[f.id];
+                      const leads = (cfg?.form_lead_counts || {})[f.id] || 0;
+                      // Highlight forms bringing in leads but not yet routed to a project.
+                      const leadBg = leads ? (mapped ? '#E8EEFF' : '#FEF3C7') : COLORS.screenBg;
+                      const leadFg = leads ? (mapped ? '#3D5AFE' : '#B45309') : COLORS.textSecondary;
+                      const rowBg  = mapped ? COLORS.screenBg : (leads ? '#FFFBEB' : COLORS.screenBg);
                       return (
-                        <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 8, backgroundColor: mapped ? COLORS.screenBg : COLORS.screenBg }}>
+                        <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 8, backgroundColor: rowBg }}>
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }} numberOfLines={1}>{f.name || 'Unnamed'}</Text>
                             <Text style={{ fontSize: 10, color: COLORS.textTertiary, fontFamily: 'monospace' }}>{f.id}</Text>
                           </View>
                           <CopyButton text={f.id} label="ID" />
+                          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: leadBg }}>
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: leadFg }}>{leads} lead{leads === 1 ? '' : 's'}</Text>
+                          </View>
                           <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: mapped ? COLORS.successBg : COLORS.screenBg }}>
                             <Text style={{ fontSize: 10, fontWeight: '700', color: mapped ? COLORS.success : COLORS.textSecondary }}>
                               {mapped ? mapped.project_name : 'No project'}
