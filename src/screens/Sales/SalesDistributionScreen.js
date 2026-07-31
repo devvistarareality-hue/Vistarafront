@@ -63,6 +63,75 @@ function ProjectTags({ projects }) {
   );
 }
 
+// Ratio panel grouped BY PROJECT: a project's leads only split among the members
+// assigned to it, so shares are computed within each project group. Weight is one
+// value per person, shared across every project they belong to.
+function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, stepBg, members, weights, setWeights }) {
+  const byProject = {};
+  const noProject = [];
+  members.forEach(m => {
+    if (!m.projects || m.projects.length === 0) { noProject.push(m); return; }
+    m.projects.forEach(p => { (byProject[p] = byProject[p] || []).push(m); });
+  });
+  const projectNames = Object.keys(byProject).sort();
+  return (
+    <View style={{ marginHorizontal: 16, marginBottom: 12, borderWidth: 1.5, borderColor: border, borderRadius: 12, padding: 14, backgroundColor: COLORS.screenBg }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+        <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: dotColor }} />
+        <SectionLabel color={headColor}>{title}</SectionLabel>
+      </View>
+      {members.length === 0
+        ? <Text style={{ fontSize: 13, color: MUTED }}>No active {title.toLowerCase()}</Text>
+        : projectNames.length === 0
+          ? <Text style={{ fontSize: 13, color: MUTED }}>No projects assigned yet — assign projects so leads can route.</Text>
+          : projectNames.map(pn => {
+              const grp   = byProject[pn];
+              const total = grp.reduce((s, m) => s + (weights[m.user_id] ?? 1), 0);
+              return (
+                <View key={pn} style={{ marginBottom: 14 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: headColor }}>{pn}</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: headColor, backgroundColor: stepBg, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, overflow: 'hidden' }}>{grp.length}</Text>
+                  </View>
+                  {grp.map(m => {
+                    const w   = weights[m.user_id] ?? 1;
+                    const pct = total > 0 ? Math.round((w / total) * 100) : 0;
+                    return (
+                      <View key={m.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.white, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: border, marginBottom: 7 }}>
+                        <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{m.name}</Text>
+                        <WeightBar pct={pct} color={barColor} />
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: headColor, width: 36, textAlign: 'right' }}>{pct}%</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: border, borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
+                          <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [m.user_id]: Math.max(1, (prev[m.user_id] ?? 1) - 1) }))}
+                            style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: stepBg }}>
+                            <Text style={{ color: headColor, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
+                          </TouchableOpacity>
+                          <Text style={{ paddingHorizontal: 10, fontSize: 15, fontWeight: '700', color: TEXT }}>{w}</Text>
+                          <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [m.user_id]: Math.min(20, (prev[m.user_id] ?? 1) + 1) }))}
+                            style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: stepBg }}>
+                            <Text style={{ color: headColor, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  })}
+                  <Text style={{ fontSize: 13, color: headColor, fontWeight: '600', marginTop: 2 }}>
+                    Ratio: {grp.map(m => weights[m.user_id] ?? 1).join(' : ')}
+                  </Text>
+                </View>
+              );
+            })
+      }
+      {noProject.length > 0 && (
+        <View style={{ marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: '#FEF3F2', borderWidth: 1, borderColor: '#FECDCA' }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#B42318', marginBottom: 3 }}>Not assigned to any project — won&apos;t receive leads:</Text>
+          <Text style={{ fontSize: 13, color: '#912018' }}>{noProject.map(m => m.name).join(', ')}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function SalesDistributionScreen({ navigation }) {
   const [settings,       setSettings]       = useState({ tc_signin_time: '10:20', tc_signout_time: '22:00', stm_signin_time: '10:20', stm_signout_time: '22:00' });
   const [settingsForm,   setSettingsForm]   = useState(null);
@@ -123,6 +192,9 @@ export default function SalesDistributionScreen({ navigation }) {
 
   const tcUsers  = allUsers.filter(u => (u.dist_type || u.role || '').toLowerCase() === 'telecaller');
   const stmUsers = allUsers.filter(u => (u.dist_type || u.role || '').toLowerCase() === 'stm');
+  // Project-grouped ratio: availability feed carries each user's assigned projects.
+  const tcMembers  = availability.filter(a => (a.dist_type || a.role || '').toLowerCase() === 'telecaller');
+  const stmMembers = availability.filter(a => (a.dist_type || a.role || '').toLowerCase() === 'stm');
   const weightsChanged = Object.keys(weights).some(id => weights[id] !== savedWeights[id]);
 
   async function toggleAvailability(userId, current) {
@@ -346,81 +418,15 @@ export default function SalesDistributionScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
 
-              {/* Telecallers panel */}
-              {tcUsers.length > 0 && (() => {
-                const total = tcUsers.reduce((s, u) => s + (weights[u.user_id] ?? 1), 0);
-                return (
-                  <View style={{ marginHorizontal: 16, marginBottom: 10, borderWidth: 1.5, borderColor: COLORS.divider, borderRadius: 12, padding: 14, backgroundColor: COLORS.screenBg }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.successAlt }} />
-                      <SectionLabel color={COLORS.success}>Telecallers</SectionLabel>
-                    </View>
-                    {tcUsers.map(u => {
-                      const w   = weights[u.user_id] ?? 1;
-                      const pct = total > 0 ? Math.round((w / total) * 100) : 0;
-                      return (
-                        <View key={u.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.white, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.divider, marginBottom: 7 }}>
-                          <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{u.name}</Text>
-                          <WeightBar pct={pct} color={COLORS.successAlt} />
-                          <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.success, width: 36, textAlign: 'right' }}>{pct}%</Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.divider, borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
-                            <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: Math.max(1, (prev[u.user_id] ?? 1) - 1) }))}
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.successBg }}>
-                              <Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
-                            </TouchableOpacity>
-                            <Text style={{ paddingHorizontal: 10, fontSize: 15, fontWeight: '700', color: TEXT }}>{w}</Text>
-                            <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: (prev[u.user_id] ?? 1) + 1 }))}
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.successBg }}>
-                              <Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      );
-                    })}
-                    <Text style={{ fontSize: 13, color: COLORS.success, fontWeight: '600', marginTop: 5 }}>
-                      Ratio: {tcUsers.map(u => weights[u.user_id] ?? 1).join(' : ')}
-                    </Text>
-                  </View>
-                );
-              })()}
+              {/* Telecallers panel — grouped by project */}
+              <ProjectRatioPanel title="Telecallers" dotColor={COLORS.successAlt} headColor={COLORS.success}
+                border={COLORS.divider} bg={COLORS.screenBg} barColor={COLORS.successAlt} stepBg={COLORS.successBg}
+                members={tcMembers} weights={weights} setWeights={setWeights} />
 
-              {/* STMs panel */}
-              {stmUsers.length > 0 && (() => {
-                const total = stmUsers.reduce((s, u) => s + (weights[u.user_id] ?? 1), 0);
-                return (
-                  <View style={{ marginHorizontal: 16, marginBottom: 16, borderWidth: 1.5, borderColor: COLORS.powderBlue, borderRadius: 12, padding: 14, backgroundColor: COLORS.screenBg }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.link }} />
-                      <SectionLabel color={COLORS.linkPressed}>STMs</SectionLabel>
-                    </View>
-                    {stmUsers.map(u => {
-                      const w   = weights[u.user_id] ?? 1;
-                      const pct = total > 0 ? Math.round((w / total) * 100) : 0;
-                      return (
-                        <View key={u.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.white, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.powderBlue, marginBottom: 7 }}>
-                          <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{u.name}</Text>
-                          <WeightBar pct={pct} color={COLORS.link} />
-                          <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.linkPressed, width: 36, textAlign: 'right' }}>{pct}%</Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.powderBlue, borderRadius: 7, overflow: 'hidden', marginLeft: 2 }}>
-                            <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: Math.max(1, (prev[u.user_id] ?? 1) - 1) }))}
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.linkBg }}>
-                              <Text style={{ color: COLORS.linkPressed, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>−</Text>
-                            </TouchableOpacity>
-                            <Text style={{ paddingHorizontal: 10, fontSize: 15, fontWeight: '700', color: TEXT }}>{w}</Text>
-                            <TouchableOpacity onPress={() => setWeights(prev => ({ ...prev, [u.user_id]: (prev[u.user_id] ?? 1) + 1 }))}
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.linkBg }}>
-                              <Text style={{ color: COLORS.linkPressed, fontWeight: '700', fontSize: 17, lineHeight: 20 }}>+</Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      );
-                    })}
-                    <Text style={{ fontSize: 13, color: COLORS.linkPressed, fontWeight: '600', marginTop: 5 }}>
-                      Ratio: {stmUsers.map(u => weights[u.user_id] ?? 1).join(' : ')}
-                    </Text>
-                  </View>
-                );
-              })()}
+              {/* STMs panel — grouped by project */}
+              <ProjectRatioPanel title="STMs" dotColor={COLORS.link} headColor={COLORS.linkPressed}
+                border={COLORS.powderBlue} bg={COLORS.screenBg} barColor={COLORS.link} stepBg={COLORS.linkBg}
+                members={stmMembers} weights={weights} setWeights={setWeights} />
             </View>
           )}
 
