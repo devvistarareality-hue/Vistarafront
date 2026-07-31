@@ -201,11 +201,9 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
   // Followup form
   const defaultPickerDate = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
-  const [fuForm,   setFuForm]   = useState({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
+  const [fuForm,   setFuForm]   = useState({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: null, remarks: '' });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [savingFu, setSavingFu] = useState(false);
-  const [fuErr,    setFuErr]    = useState('');
   // Inline "schedule site visit" when STM sets stm_status = sv_scheduled
   const [svAt,       setSvAt]       = useState(null);   // Date | null
   const [svRemarks,  setSvRemarks]  = useState('');
@@ -235,6 +233,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         budget_bucket: lead.budget_bucket || '',
       });
       setCityOther(!!lead.city && !CITY_OPTIONS.includes(lead.city));
+      setFuForm({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: null, remarks: '' });
       setTab('detail');
       setDetail(null);
       async function loadDetail() {
@@ -267,6 +266,22 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
+
+        // Auto-create a follow-up if one was filled in the inline Schedule Follow-up form.
+        if (fuForm.scheduled_at instanceof Date) {
+          const assignedTo = fuForm.role_context === 'telecaller' ? (form.telecaller || user?.id) : (form.stm || user?.id);
+          if (assignedTo) {
+            try {
+              await apiFetch(SALES_ENDPOINTS.followUps, {
+                method: 'POST',
+                body: JSON.stringify({
+                  lead: lead.id, assigned_to: assignedTo, role_context: fuForm.role_context,
+                  scheduled_at: fuForm.scheduled_at.toISOString(), remarks: fuForm.remarks, status: 'pending',
+                }),
+              });
+            } catch (_) {}
+          }
+        }
 
         // STM scheduled a visit → auto-create the site-visit entry
         if (form.stm_status === 'sv_scheduled' && svAt instanceof Date) {
@@ -322,36 +337,6 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       else { Alert.alert('Error', 'Could not save lead.'); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
-  }
-
-  async function addFollowup() {
-    if (!fuForm.scheduled_at) { setFuErr('Date & time required.'); return; }
-
-    const assignedTo = fuForm.role_context === 'telecaller' ? form.telecaller : form.stm;
-    if (!assignedTo) { setFuErr('Assign a telecaller/STM to the lead first.'); return; }
-    setFuErr('');
-    setSavingFu(true);
-    try {
-      const res = await apiFetch(SALES_ENDPOINTS.followUps, {
-        method: 'POST',
-        body: JSON.stringify({
-          lead: lead.id,
-          assigned_to: assignedTo,
-          role_context: fuForm.role_context,
-          scheduled_at: fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at.toISOString() : fuForm.scheduled_at,
-          remarks: fuForm.remarks,
-          status: 'pending',
-        }),
-      });
-      if (res.ok) {
-        const newFu = await res.json();
-        setDetail(d => ({ ...d, follow_ups: [newFu, ...(d?.follow_ups || [])] }));
-        setFuForm({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
-      } else {
-        setFuErr('Could not save follow-up.');
-      }
-    } catch (e) { setFuErr(e.message); }
-    setSavingFu(false);
   }
 
   async function markFollowupDone(fuId) {
@@ -871,11 +856,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 <Text style={lblS}>Remarks</Text>
                 <TextInput value={fuForm.remarks} onChangeText={v => setFuForm(f => ({ ...f, remarks: v }))}
                   placeholder="Call notes, instructions…" placeholderTextColor="#666666" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
-                {!!fuErr && <Text style={{ color: COLORS.error, fontSize: 12, marginBottom: 8 }}>{fuErr}</Text>}
-                <TouchableOpacity onPress={addFollowup} disabled={savingFu}
-                  style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', opacity: savingFu ? 0.6 : 1 }}>
-                  {savingFu ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14 }}>+ Add Follow-up</Text>}
-                </TouchableOpacity>
+                <Text style={{ fontSize: 11, color: MUTED, fontStyle: 'italic' }}>Pick a date &amp; time and it's added when you tap Save.</Text>
               </View>
 
               {!detail && <ActivityIndicator size="small" color={MUTED} />}
