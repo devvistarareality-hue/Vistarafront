@@ -77,7 +77,9 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   useFocusEffect(useCallback(() => { load(); }, [load, companyId]));
 
   function openDone(fu) {
-    setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks(''); setNewStatus('');
+    // Pre-select the lead's current TC/STM status so the caller sees where it stands.
+    const cur = (fu.role_context === 'stm' ? fu.lead_stm_status : fu.lead_telecaller_status) || '';
+    setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks(''); setNewStatus(cur);
   }
 
   async function completeFollowUp() {
@@ -90,8 +92,9 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
         body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString(), outcome: outcome.trim() }),
       });
       if (res.ok) { const updated = await res.json(); setItems((list) => list.map((f) => (f.id === done.id ? updated : f))); }
-      // Optionally update the lead's status (TC or STM, per the follow-up's role).
-      if (newStatus && done.lead) {
+      // Update the lead's status (TC or STM, per the follow-up's role) — only if changed.
+      const origStatus = (done.role_context === 'stm' ? done.lead_stm_status : done.lead_telecaller_status) || '';
+      if (newStatus && newStatus !== origStatus && done.lead) {
         const field = done.role_context === 'stm' ? 'stm_status' : 'telecaller_status';
         await apiFetch(SALES_ENDPOINTS.lead(done.lead), {
           method: 'PATCH', body: JSON.stringify({ [field]: newStatus }),
@@ -221,7 +224,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                 );
               })}
             </View>
-            {newStatus === 'warm' && done?.role_context !== 'stm' && (
+            {newStatus === 'warm' && done?.role_context !== 'stm' && (done?.lead_telecaller_status || '') !== 'warm' && (
               <Text style={{ fontSize: 11, color: COLORS.warning, marginBottom: 6 }}>Marking warm will transfer this lead to the STM pipeline.</Text>
             )}
 
