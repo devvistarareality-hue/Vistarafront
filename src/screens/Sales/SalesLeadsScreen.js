@@ -402,7 +402,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
           {/* Tabs — 3 tabs matching web */}
           <View style={{ flexDirection: 'row', backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-            {[['detail','Detail'],['history','History'],['followups','Follow-ups']].map(([key, lbl]) => (
+            {[['detail','Detail'],['history','History']].map(([key, lbl]) => (
               <TouchableOpacity key={key} onPress={() => setTab(key)} style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: tab === key ? BLUE : 'transparent' }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: tab === key ? BLUE : MUTED }}>{lbl}</Text>
               </TouchableOpacity>
@@ -739,8 +739,11 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               })}
             </>}
 
-            {/* ── FOLLOWUPS TAB ── */}
-            {tab === 'followups' && <>
+            {/* ── FOLLOW-UPS (moved inline under Detail) ── */}
+            {tab === 'detail' && <>
+              <View style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, marginTop: 8, paddingTop: 16, marginBottom: 12 }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.8 }}>Follow-ups</Text>
+              </View>
               {/* Add form */}
               <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 12, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 20 }}>
                 <Text style={[lblS, { marginBottom: 10 }]}>Schedule Follow-up</Text>
