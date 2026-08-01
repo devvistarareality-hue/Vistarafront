@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -198,8 +198,7 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   const cq = cqParts.length ? `?${cqParts.join('&')}` : '';
   const des = (user?.designation || '').toLowerCase();
   const isStm = des.includes('stm') || des.includes('sales team') || des.includes('sales executive');
-  // Only an approver (admin/manager) may cancel a booking.
-  const isApprover = !!user && (user.role === 'Admin' || user.role === 'Manager' || user.is_staff);
+  // Cancelling a booking lives on Bookings & Approvals — this screen is read-only.
   const [tab, setTab] = useState(route?.params?.initialTab === 'closures' ? 'closures' : 'sv');
   const [visits, setVisits] = useState([]);
   const [closures, setClosures] = useState([]);
@@ -225,18 +224,6 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   }, [cq]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const cancelClosure = useCallback((id) => {
-    Alert.alert('Cancel Closure', 'This frees the unit and permanently deletes its signed LOI from storage. This cannot be undone.', [
-      { text: 'Keep', style: 'cancel' },
-      { text: 'Cancel Closure', style: 'destructive', onPress: async () => {
-        try {
-          const r = await apiFetch(SALES_ENDPOINTS.closureCancel(id), { method: 'POST' });
-          if (r.ok) load(); else Alert.alert('Failed', ((await r.json().catch(() => ({}))).detail) || 'Could not cancel.');
-        } catch (e) { Alert.alert('Error', e.message); }
-      } },
-    ]);
-  }, [load]);
 
   const svCompleted = visits.filter(v => v.status === 'completed');
   const svScheduled = visits.filter(v => v.status === 'scheduled');
@@ -367,11 +354,6 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
                         </Text>
                       </View>
                     </View>
-                    {isApprover && (
-                      <TouchableOpacity onPress={() => cancelClosure(c.id)} style={{ alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: COLORS.error, backgroundColor: COLORS.errorBg }}>
-                        <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 12 }}>Cancel Closure</Text>
-                      </TouchableOpacity>
-                    )}
                   </TouchableOpacity>
                 ))}
               </View>
