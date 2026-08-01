@@ -44,7 +44,9 @@ export default function SalesDataResetScreen({ navigation }) {
   const allOn = selected.size === ITEMS.length;
   const toggleAll = () => setSelected(allOn ? new Set() : new Set(ITEMS.map(([k]) => k)));
   // Deleting leads cascades their children in the DB — show those as implied.
-  const CASCADE = ['closures', 'site_visits', 'follow_ups', 'lead_history'];
+  // Closures are NOT one of them: they own their company and only detach from the
+  // lead, so the conversion history stays in step with the bookings pointing at it.
+  const CASCADE = ['site_visits', 'follow_ups', 'lead_history'];
   const implied = (k) => selected.has('leads') && CASCADE.includes(k);
   const nothingSelected = selected.size === 0;
 
@@ -132,8 +134,14 @@ export default function SalesDataResetScreen({ navigation }) {
             );
           })}
           {!loading && selected.has('leads') && (
-            <Text style={{ fontSize: 11, color: MUTED, marginTop: 8 }}>
-              Deleting Leads also removes their history, follow-ups, site visits & closures.
+            <Text style={{ fontSize: 11, color: MUTED, marginTop: 8, lineHeight: 17 }}>
+              Deleting Leads also removes their history, follow-ups & site visits.
+              Closures are kept — they stay in step with your bookings.
+            </Text>
+          )}
+          {!loading && selected.has('bookings') && (
+            <Text style={{ fontSize: 11, color: MUTED, marginTop: 6, lineHeight: 17 }}>
+              Deleting Bookings also removes the closures those bookings created.
             </Text>
           )}
         </View>

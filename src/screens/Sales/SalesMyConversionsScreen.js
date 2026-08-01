@@ -333,8 +333,10 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
               </View>
             ) : (
               <View style={{ paddingHorizontal: 16 }}>
+                {/* A closure outlives its lead (trial reset) — don't fake a tap when
+                    there's no lead history left to open. */}
                 {closures.map(c => (
-                  <TouchableOpacity key={c.id} activeOpacity={0.7}
+                  <TouchableOpacity key={c.id} activeOpacity={c.lead ? 0.7 : 1}
                     onPress={() => showHistory(c.lead, c.lead_name, c.lead_phone)}
                     style={[CARD, { padding: 14, marginBottom: 10 }]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
