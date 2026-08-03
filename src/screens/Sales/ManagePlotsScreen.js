@@ -26,7 +26,9 @@ const STATUS_CFG = {
   sold:      { label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg, border: COLORS.error, zone: COLORS.error },
 };
 
-const UNITS  = ['sqft', 'sqmtr', 'sqyrds', 'bigha'];
+// Must match the web's UNITS and the strings actually stored — 'sqyrds' here meant a
+// size saved in the app parsed as unknown on the web and silently reverted to sqft.
+const UNITS  = ['sqft', 'sqyrd', 'sqmtr', 'bigha'];
 const BLOCKS = ['A','B','C','D','E','F','G','H'];
 
 async function authHeaders() {
