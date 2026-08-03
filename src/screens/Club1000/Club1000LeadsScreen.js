@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { apiFetch } from '../../utils/apiFetch';
-import { CLUB1000_ENDPOINTS, SALES_ENDPOINTS } from '../../constants/api';
+import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import FormSheet from '../../components/FormSheet';
@@ -31,11 +31,20 @@ const STATUS_OPTIONS = ['new', 'contacted', 'interested', 'not_interested', 'con
 const TERMINAL_STATUSES = ['not_interested', 'lost', 'converted'];
 const EMPTY_FILTERS = { status: '', source: '', scheme_interest: '', assigned_to: '', date_from: '', date_to: '' };
 
+const HISTORY_LABEL = { created: 'Lead Created', status: 'Status', assigned_to: 'Assigned To' };
+const HISTORY_COLOR = { created: COLORS.textSecondary, status: COLORS.link, assigned_to: COLORS.purple };
+
 function fmtDateTime(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
     + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+// <input type="date">-equivalent: "YYYY-MM-DD" in LOCAL time.
+function toISODate(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 /* ── Dropdown Picker (mirrors SalesLeadsScreen's) ── */
@@ -149,13 +158,15 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
   );
 }
 
-function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
+function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }) {
   const [form, setForm] = useState({
     name: '', phone: '', alt_phone: '', email: '', reference_name: '', reference_phone: '',
-    source: 'referral', scheme_interest: '', amount_interested: '', remarks: '',
+    source: 'referral', lead_date: new Date(), scheme_interest: '', amount_interested: '', assigned_to: '', remarks: '',
   });
   const [sourceOpen, setSourceOpen] = useState(false);
   const [schemeOpen, setSchemeOpen] = useState(false);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
@@ -164,15 +175,17 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
     if (!form.name.trim()) { Alert.alert('Missing name', 'Name is required.'); return; }
     setSaving(true);
     try {
-      const payload = { ...form };
+      const payload = { ...form, lead_date: toISODate(form.lead_date) };
+      if (form.source !== 'referral') { delete payload.reference_name; delete payload.reference_phone; }
       if (!payload.scheme_interest) delete payload.scheme_interest;
       if (!payload.amount_interested) delete payload.amount_interested;
+      if (!payload.assigned_to) delete payload.assigned_to;
       const res = await apiFetch(CLUB1000_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json();
       if (!res.ok) { Alert.alert('Could not add lead', d?.detail || 'Please check the fields.'); return; }
       onSaved(d);
       onClose();
-      setForm({ name: '', phone: '', alt_phone: '', email: '', reference_name: '', reference_phone: '', source: 'referral', scheme_interest: '', amount_interested: '', remarks: '' });
+      setForm({ name: '', phone: '', alt_phone: '', email: '', reference_name: '', reference_phone: '', source: 'referral', lead_date: new Date(), scheme_interest: '', amount_interested: '', assigned_to: '', remarks: '' });
     } finally {
       setSaving(false);
     }
@@ -195,27 +208,45 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
           <View style={{ flex: 1 }}><TextField label="Alt Phone" value={form.alt_phone} onChangeText={(v) => set('alt_phone', v)} keyboardType="phone-pad" /></View>
         </View>
         <TextField label="Email" value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" />
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1 }}><TextField label="Reference Name" value={form.reference_name} onChangeText={(v) => set('reference_name', v)} /></View>
-          <View style={{ flex: 1 }}><TextField label="Reference Phone" value={form.reference_phone} onChangeText={(v) => set('reference_phone', v)} keyboardType="phone-pad" /></View>
-        </View>
 
-        <Field label="Source">
-          <TouchableOpacity onPress={() => setSourceOpen((v) => !v)} style={[inputStyle, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-            <Text style={{ fontSize: 15, color: TEXT }}>{SOURCE_LABELS[form.source]}</Text>
-            <Ionicons name={sourceOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
-          </TouchableOpacity>
-          {sourceOpen && (
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
-              {Object.entries(SOURCE_LABELS).map(([v, label], i) => (
-                <TouchableOpacity key={v} onPress={() => { set('source', v); setSourceOpen(false); }}
-                  style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
-                  <Text style={{ fontSize: 14, color: TEXT }}>{label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </Field>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <Field label="Source">
+              <TouchableOpacity onPress={() => setSourceOpen((v) => !v)} style={[inputStyle, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                <Text style={{ fontSize: 15, color: TEXT }}>{SOURCE_LABELS[form.source]}</Text>
+                <Ionicons name={sourceOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
+              </TouchableOpacity>
+              {sourceOpen && (
+                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+                  {Object.entries(SOURCE_LABELS).map(([v, label], i) => (
+                    <TouchableOpacity key={v} onPress={() => { set('source', v); setSourceOpen(false); }}
+                      style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
+                      <Text style={{ fontSize: 14, color: TEXT }}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </Field>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Field label="Date">
+              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={inputStyle}>
+                <Text style={{ fontSize: 15, color: TEXT }}>{toISODate(form.lead_date)}</Text>
+              </TouchableOpacity>
+            </Field>
+          </View>
+        </View>
+        {showDatePicker && (
+          <DateTimePicker value={form.lead_date} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            onChange={(_, d) => { setShowDatePicker(false); if (d) set('lead_date', d); }} />
+        )}
+
+        {form.source === 'referral' && (
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}><TextField label="Reference Name" value={form.reference_name} onChangeText={(v) => set('reference_name', v)} /></View>
+            <View style={{ flex: 1 }}><TextField label="Reference Phone" value={form.reference_phone} onChangeText={(v) => set('reference_phone', v)} keyboardType="phone-pad" /></View>
+          </View>
+        )}
 
         <Field label="Scheme Interest">
           <TouchableOpacity onPress={() => setSchemeOpen((v) => !v)} style={[inputStyle, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
@@ -238,6 +269,31 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
         </Field>
 
         <TextField label="Amount Interested (₹)" value={form.amount_interested} onChangeText={(v) => set('amount_interested', v)} keyboardType="number-pad" />
+
+        {manager && (
+          <Field label="Assigned To">
+            <TouchableOpacity onPress={() => setAssigneeOpen((v) => !v)} style={[inputStyle, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+              <Text style={{ fontSize: 15, color: form.assigned_to ? TEXT : MUTED }}>
+                {form.assigned_to ? (assignees.find((u) => String(u.id) === String(form.assigned_to))?.name || '—') : 'Myself'}
+              </Text>
+              <Ionicons name={assigneeOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
+            </TouchableOpacity>
+            {assigneeOpen && (
+              <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+                <TouchableOpacity onPress={() => { set('assigned_to', ''); setAssigneeOpen(false); }} style={{ padding: 12 }}>
+                  <Text style={{ fontSize: 14, color: TEXT }}>Myself</Text>
+                </TouchableOpacity>
+                {assignees.map((u) => (
+                  <TouchableOpacity key={u.id} onPress={() => { set('assigned_to', u.id); setAssigneeOpen(false); }}
+                    style={{ padding: 12, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
+                    <Text style={{ fontSize: 14, color: TEXT }}>{u.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </Field>
+        )}
+
         <TextField label="Remarks" value={form.remarks} onChangeText={(v) => set('remarks', v)} />
 
         <TouchableOpacity onPress={submit} disabled={saving}
@@ -250,13 +306,25 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes }) {
   );
 }
 
-function LeadDetailSheet({ lead, onClose, onStatusChange, onConvert, onScheduleFollowUp }) {
+function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, onConvert, onScheduleFollowUp, onAssigneeChange }) {
+  const [tab, setTab] = useState('detail');
+  const [detail, setDetail] = useState(null);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
   const [schedOpen, setSchedOpen] = useState(false);
   const [schedAt, setSchedAt] = useState(() => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; });
-  const [showPicker, setShowPicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [schedRemarks, setSchedRemarks] = useState('');
   const [schedBusy, setSchedBusy] = useState(false);
+
+  useEffect(() => {
+    if (!lead) return;
+    setTab('detail');
+    setDetail(null);
+    apiFetch(CLUB1000_ENDPOINTS.lead(lead.id)).then((r) => (r.ok ? r.json() : null)).then(setDetail).catch(() => {});
+  }, [lead?.id]);
+
   if (!lead) return null;
   const isTerminal = TERMINAL_STATUSES.includes(lead.status);
 
@@ -281,11 +349,26 @@ function LeadDetailSheet({ lead, onClose, onStatusChange, onConvert, onScheduleF
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
       </View>
+
+      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        {[['detail', 'Detail'], ['history', 'History']].map(([k, label]) => (
+          <TouchableOpacity key={k} onPress={() => setTab(k)}
+            style={{ paddingHorizontal: 18, paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: tab === k ? TEAL : 'transparent' }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: tab === k ? TEAL : MUTED }}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+        {tab === 'detail' && <>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
           <View style={{ minWidth: '45%' }}>
             <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Source</Text>
             <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{SOURCE_LABELS[lead.source] || lead.source}</Text>
+          </View>
+          <View style={{ minWidth: '45%' }}>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Date</Text>
+            <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{lead.lead_date ? new Date(`${lead.lead_date}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</Text>
           </View>
           <View style={{ minWidth: '45%' }}>
             <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Scheme Interest</Text>
@@ -297,8 +380,31 @@ function LeadDetailSheet({ lead, onClose, onStatusChange, onConvert, onScheduleF
           </View>
           <View style={{ minWidth: '45%' }}>
             <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Assigned To</Text>
-            <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{lead.assigned_to_name || '—'}</Text>
+            {manager ? (
+              <TouchableOpacity onPress={() => setAssigneeOpen((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                <Text style={{ fontSize: 14, color: TEXT, fontWeight: '700' }}>{lead.assigned_to_name || '—'}</Text>
+                <Ionicons name={assigneeOpen ? 'chevron-up' : 'chevron-down'} size={14} color={MUTED} />
+              </TouchableOpacity>
+            ) : (
+              <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{lead.assigned_to_name || '—'}</Text>
+            )}
           </View>
+          {manager && assigneeOpen && (
+            <View style={{ width: '100%', borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden', marginTop: -8 }}>
+              {assignees.map((u, i) => (
+                <TouchableOpacity key={u.id} onPress={() => { onAssigneeChange(lead.id, u.id); setAssigneeOpen(false); }}
+                  style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
+                  <Text style={{ fontSize: 14, color: TEXT }}>{u.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          {lead.source === 'referral' && (
+            <View style={{ minWidth: '45%' }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Reference</Text>
+              <Text style={{ fontSize: 14, color: TEXT, marginTop: 2 }}>{lead.reference_name || '—'}</Text>
+            </View>
+          )}
         </View>
         {!!lead.remarks && (
           <View style={{ marginBottom: 16 }}>
@@ -342,12 +448,32 @@ function LeadDetailSheet({ lead, onClose, onStatusChange, onConvert, onScheduleF
             </View>
             {schedOpen && (
               <View style={{ marginTop: 12 }}>
-                <TouchableOpacity onPress={() => setShowPicker(true)} style={[inputStyle, { marginBottom: 10 }]}>
-                  <Text style={{ fontSize: 14, color: TEXT }}>{fmtDateTime(schedAt.toISOString())}</Text>
-                </TouchableOpacity>
-                {showPicker && (
-                  <DateTimePicker value={schedAt} mode="datetime" display={Platform.OS === 'ios' ? 'inline' : 'default'}
-                    onChange={(_, d) => { setShowPicker(false); if (d) setSchedAt(d); }} />
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+                  <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[inputStyle, { flex: 1 }]}>
+                    <Text style={{ fontSize: 14, color: TEXT }}>{schedAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowTimePicker(true)} style={[inputStyle, { flex: 1 }]}>
+                    <Text style={{ fontSize: 14, color: TEXT }}>{schedAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</Text>
+                  </TouchableOpacity>
+                </View>
+                {showDatePicker && (
+                  <DateTimePicker value={schedAt} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                    onChange={(e, d) => {
+                      setShowDatePicker(false);
+                      if (e.type === 'dismissed' || !d) return;
+                      const merged = new Date(schedAt); merged.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
+                      setSchedAt(merged);
+                      if (Platform.OS === 'android') setShowTimePicker(true);
+                    }} />
+                )}
+                {showTimePicker && (
+                  <DateTimePicker value={schedAt} mode="time" display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                    onChange={(e, d) => {
+                      setShowTimePicker(false);
+                      if (e.type === 'dismissed' || !d) return;
+                      const merged = new Date(schedAt); merged.setHours(d.getHours(), d.getMinutes(), 0, 0);
+                      setSchedAt(merged);
+                    }} />
                 )}
                 <TextField label="Remarks" value={schedRemarks} onChangeText={setSchedRemarks} placeholder="Optional" />
                 <TouchableOpacity onPress={submitSchedule} disabled={schedBusy}
@@ -366,6 +492,47 @@ function LeadDetailSheet({ lead, onClose, onStatusChange, onConvert, onScheduleF
             <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Convert to Investor</Text>
           </TouchableOpacity>
         )}
+        </>}
+
+        {tab === 'history' && <>
+          {!detail && <ActivityIndicator size="small" color={MUTED} style={{ marginTop: 20 }} />}
+          {detail && (!detail.history || detail.history.length === 0) && (
+            <Text style={{ fontSize: 13, color: COLORS.textTertiary || MUTED, textAlign: 'center', marginTop: 24 }}>No changes recorded yet.</Text>
+          )}
+          {(detail?.history || []).map((h, idx, arr) => {
+            const isLast = idx === arr.length - 1;
+            const color = HISTORY_COLOR[h.field_changed] || MUTED;
+            const icon = h.field_changed === 'created' ? '📥' : h.field_changed === 'assigned_to' ? '👤' : '🔄';
+            const singleValue = h.field_changed === 'created' || !h.old_value;
+            const byLabel = h.changed_by_name || (h.field_changed === 'created' ? 'System (auto)' : null);
+            return (
+              <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
+                <View style={{ alignItems: 'center' }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 16 }}>{icon}</Text>
+                  </View>
+                  {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}
+                </View>
+                <View style={{ flex: 1, paddingBottom: isLast ? 0 : 16 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{HISTORY_LABEL[h.field_changed] || h.field_changed}</Text>
+                  <Text style={{ fontSize: 12, color: TEXT, marginTop: 2 }}>
+                    {singleValue ? (
+                      <Text style={{ color, fontWeight: '700', textTransform: 'capitalize' }}>{(h.new_value || '—').replace(/_/g, ' ')}</Text>
+                    ) : (
+                      <>
+                        <Text style={{ color: MUTED, textTransform: 'capitalize' }}>{(h.old_value || '—').replace(/_/g, ' ')}</Text>
+                        <Text> → </Text>
+                        <Text style={{ color, fontWeight: '700', textTransform: 'capitalize' }}>{(h.new_value || '—').replace(/_/g, ' ')}</Text>
+                      </>
+                    )}
+                  </Text>
+                  {!!byLabel && <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>by {byLabel}</Text>}
+                  <Text style={{ fontSize: 11, color: COLORS.textTertiary || MUTED, marginTop: 2 }}>{fmtDateTime(h.created_at)}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </>}
       </ScrollView>
     </FormSheet>
   );
@@ -380,6 +547,7 @@ export default function Club1000LeadsScreen({ navigation }) {
   const [assignees, setAssignees] = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [search,     setSearch]     = useState('');
   const [searchText, setSearchText] = useState('');
   const [filters,     setFilters]     = useState(EMPTY_FILTERS);
@@ -411,15 +579,18 @@ export default function Club1000LeadsScreen({ navigation }) {
       const [leadsRes, schemesRes, usersRes] = await Promise.all([
         apiFetch(`${CLUB1000_ENDPOINTS.leads}${qs}`),
         apiFetch(CLUB1000_ENDPOINTS.schemes),
-        manager ? apiFetch(SALES_ENDPOINTS.usersSlim) : Promise.resolve(null),
+        manager ? apiFetch(CLUB1000_ENDPOINTS.users) : Promise.resolve(null),
       ]);
-      if (leadsRes.ok) setLeads(await leadsRes.json());
+      if (leadsRes.ok) { setLeads(await leadsRes.json()); setLoadError(false); }
+      else setLoadError(true);
       if (schemesRes.ok) setSchemes(await schemesRes.json());
       if (usersRes && usersRes.ok) {
         const d = await usersRes.json();
         setAssignees(Array.isArray(d) ? d : []);
       }
-    } catch (_) {}
+    } catch (_) {
+      setLoadError(true);
+    }
     setLoading(false); setRefreshing(false);
   }
 
@@ -427,6 +598,15 @@ export default function Club1000LeadsScreen({ navigation }) {
 
   async function changeStatus(id, status) {
     const res = await apiFetch(CLUB1000_ENDPOINTS.lead(id), { method: 'PATCH', body: JSON.stringify({ status }) });
+    if (res.ok) {
+      const updated = await res.json();
+      setLeads((prev) => prev.map((l) => (l.id === id ? updated : l)));
+      setSelected(updated);
+    }
+  }
+
+  async function changeAssignee(id, assignedTo) {
+    const res = await apiFetch(CLUB1000_ENDPOINTS.lead(id), { method: 'PATCH', body: JSON.stringify({ assigned_to: assignedTo }) });
     if (res.ok) {
       const updated = await res.json();
       setLeads((prev) => prev.map((l) => (l.id === id ? updated : l)));
@@ -458,8 +638,8 @@ export default function Club1000LeadsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
-      <AddLeadSheet visible={showAdd} onClose={() => setShowAdd(false)} onSaved={() => load()} schemes={schemes} />
-      <LeadDetailSheet lead={selected} onClose={() => setSelected(null)} onStatusChange={changeStatus} onConvert={convert} onScheduleFollowUp={scheduleFollowUp} />
+      <AddLeadSheet visible={showAdd} onClose={() => setShowAdd(false)} onSaved={() => load()} schemes={schemes} assignees={assignees} manager={manager} />
+      <LeadDetailSheet lead={selected} assignees={assignees} manager={manager} onClose={() => setSelected(null)} onStatusChange={changeStatus} onConvert={convert} onScheduleFollowUp={scheduleFollowUp} onAssigneeChange={changeAssignee} />
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters} schemes={schemes} assignees={assignees} showAssignees={manager} />
 
@@ -498,7 +678,13 @@ export default function Club1000LeadsScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : leads.length === 0 ? (
+        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : loadError ? (
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
+            <Ionicons name="cloud-offline-outline" size={48} color={COLORS.divider} />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: MUTED, marginTop: 12 }}>Couldn't load leads</Text>
+            <Text style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Pull down to try again</Text>
+          </View>
+        ) : leads.length === 0 ? (
           <View style={{ alignItems: 'center', marginTop: 60 }}>
             <Ionicons name="people-outline" size={48} color={COLORS.divider} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: MUTED, marginTop: 12 }}>No leads found</Text>

@@ -16,6 +16,9 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
 import { Field, TextField } from '../../components/Field';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+// Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
+const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.white, marginBottom: 8 };
+const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 3, letterSpacing: 0.4 };
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 async function authHeaders() {
@@ -201,11 +204,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
   // Followup form
   const defaultPickerDate = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
-  const [fuForm,   setFuForm]   = useState({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [savingFu, setSavingFu] = useState(false);
-  const [fuErr,    setFuErr]    = useState('');
+  const [fuForm,   setFuForm]   = useState({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: null, remarks: '' });
   // Inline "schedule site visit" when STM sets stm_status = sv_scheduled
   const [svAt,       setSvAt]       = useState(null);   // Date | null
   const [svRemarks,  setSvRemarks]  = useState('');
@@ -235,6 +234,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         budget_bucket: lead.budget_bucket || '',
       });
       setCityOther(!!lead.city && !CITY_OPTIONS.includes(lead.city));
+      setFuForm({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: null, remarks: '' });
       setTab('detail');
       setDetail(null);
       async function loadDetail() {
@@ -267,6 +267,22 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
+
+        // Auto-create a follow-up if one was filled in the inline Schedule Follow-up form.
+        if (fuForm.scheduled_at instanceof Date) {
+          const assignedTo = fuForm.role_context === 'telecaller' ? (form.telecaller || user?.id) : (form.stm || user?.id);
+          if (assignedTo) {
+            try {
+              await apiFetch(SALES_ENDPOINTS.followUps, {
+                method: 'POST',
+                body: JSON.stringify({
+                  lead: lead.id, assigned_to: assignedTo, role_context: fuForm.role_context,
+                  scheduled_at: fuForm.scheduled_at.toISOString(), remarks: fuForm.remarks, status: 'pending',
+                }),
+              });
+            } catch (_) {}
+          }
+        }
 
         // STM scheduled a visit → auto-create the site-visit entry
         if (form.stm_status === 'sv_scheduled' && svAt instanceof Date) {
@@ -324,36 +340,6 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     setSaving(false);
   }
 
-  async function addFollowup() {
-    if (!fuForm.scheduled_at) { setFuErr('Date & time required.'); return; }
-
-    const assignedTo = fuForm.role_context === 'telecaller' ? form.telecaller : form.stm;
-    if (!assignedTo) { setFuErr('Assign a telecaller/STM to the lead first.'); return; }
-    setFuErr('');
-    setSavingFu(true);
-    try {
-      const res = await apiFetch(SALES_ENDPOINTS.followUps, {
-        method: 'POST',
-        body: JSON.stringify({
-          lead: lead.id,
-          assigned_to: assignedTo,
-          role_context: fuForm.role_context,
-          scheduled_at: fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at.toISOString() : fuForm.scheduled_at,
-          remarks: fuForm.remarks,
-          status: 'pending',
-        }),
-      });
-      if (res.ok) {
-        const newFu = await res.json();
-        setDetail(d => ({ ...d, follow_ups: [newFu, ...(d?.follow_ups || [])] }));
-        setFuForm({ role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: defaultPickerDate(), remarks: '' });
-      } else {
-        setFuErr('Could not save follow-up.');
-      }
-    } catch (e) { setFuErr(e.message); }
-    setSavingFu(false);
-  }
-
   async function markFollowupDone(fuId) {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.followUp(fuId), {
@@ -377,8 +363,6 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     ]);
   }
 
-  const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.white, marginBottom: 8 };
-  const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 3, letterSpacing: 0.4 };
   const secH = { fontSize: 11, fontWeight: '800', color: NAVY, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 };
   const row2 = { flexDirection: 'row', gap: 10 };
   const half = { flex: 1 };
@@ -402,7 +386,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
           {/* Tabs — 3 tabs matching web */}
           <View style={{ flexDirection: 'row', backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-            {[['detail','Detail'],['history','History'],['followups','Follow-ups']].map(([key, lbl]) => (
+            {[['detail','Detail'],['history','History']].map(([key, lbl]) => (
               <TouchableOpacity key={key} onPress={() => setTab(key)} style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: tab === key ? BLUE : 'transparent' }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: tab === key ? BLUE : MUTED }}>{lbl}</Text>
               </TouchableOpacity>
@@ -739,141 +723,14 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               })}
             </>}
 
-            {/* ── FOLLOWUPS TAB ── */}
-            {tab === 'followups' && <>
-              {/* Add form */}
-              <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 12, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 20 }}>
-                <Text style={[lblS, { marginBottom: 10 }]}>Schedule Follow-up</Text>
-                {/* Role picker only for admins/managers — telecaller/STM portals auto-set their own role */}
-                {canAssign && (
-                  <>
-                    <Text style={lblS}>Role</Text>
-                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-                      {['telecaller','stm'].map(r => (
-                        <TouchableOpacity key={r} onPress={() => setFuForm(f => ({ ...f, role_context: r }))}
-                          style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: fuForm.role_context === r ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: fuForm.role_context === r ? NAVY : COLORS.border, alignItems: 'center' }}>
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: fuForm.role_context === r ? COLORS.white : MUTED }}>{r.toUpperCase()}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </>
-                )}
-                <Text style={lblS}>Date & Time</Text>
-                {/* Date button */}
-                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-                  <TouchableOpacity onPress={() => setShowDatePicker(true)}
-                    style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.screenBg, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="calendar-outline" size={16} color={BLUE} />
-                    <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>
-                      {fuForm.scheduled_at instanceof Date
-                        ? fuForm.scheduled_at.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                        : 'Pick Date'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setShowTimePicker(true)}
-                    style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.screenBg, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="time-outline" size={16} color={BLUE} />
-                    <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>
-                      {fuForm.scheduled_at instanceof Date
-                        ? fuForm.scheduled_at.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-                        : 'Pick Time'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* iOS: inline pickers inside modals */}
-                {Platform.OS === 'ios' && showDatePicker && (
-                  <Modal transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
-                    <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowDatePicker(false)}>
-                      <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-                          <TouchableOpacity onPress={() => setShowDatePicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
-                          <Text style={{ fontWeight: '700', color: TEXT }}>Pick Date</Text>
-                          <TouchableOpacity onPress={() => setShowDatePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
-                        </View>
-                        <DateTimePicker
-                          value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
-                          mode="date" display="spinner" textColor={TEXT}
-                          onChange={(_, d) => d && setFuForm(f => {
-                            const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
-                            const merged = new Date(d);
-                            merged.setHours(cur.getHours(), cur.getMinutes(), 0, 0);
-                            return { ...f, scheduled_at: merged };
-                          })}
-                        />
-                      </View>
-                    </TouchableOpacity>
-                  </Modal>
-                )}
-                {Platform.OS === 'ios' && showTimePicker && (
-                  <Modal transparent animationType="slide" onRequestClose={() => setShowTimePicker(false)}>
-                    <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
-                      <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-                          <TouchableOpacity onPress={() => setShowTimePicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
-                          <Text style={{ fontWeight: '700', color: TEXT }}>Pick Time</Text>
-                          <TouchableOpacity onPress={() => setShowTimePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
-                        </View>
-                        <DateTimePicker
-                          value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
-                          mode="time" display="spinner" textColor={TEXT}
-                          onChange={(_, d) => d && setFuForm(f => {
-                            const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
-                            const merged = new Date(cur);
-                            merged.setHours(d.getHours(), d.getMinutes(), 0, 0);
-                            return { ...f, scheduled_at: merged };
-                          })}
-                        />
-                      </View>
-                    </TouchableOpacity>
-                  </Modal>
-                )}
-
-                {/* Android: native dialog pickers */}
-                {Platform.OS === 'android' && showDatePicker && (
-                  <DateTimePicker
-                    value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
-                    mode="date" display="default"
-                    onChange={(e, d) => {
-                      setShowDatePicker(false);
-                      if (e.type === 'dismissed') return;
-                      if (d) {
-                        setFuForm(f => {
-                          const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
-                          const merged = new Date(d);
-                          merged.setHours(cur.getHours(), cur.getMinutes(), 0, 0);
-                          return { ...f, scheduled_at: merged };
-                        });
-                        setShowTimePicker(true);
-                      }
-                    }}
-                  />
-                )}
-                {Platform.OS === 'android' && showTimePicker && (
-                  <DateTimePicker
-                    value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
-                    mode="time" display="default" is24Hour={false}
-                    onChange={(e, d) => {
-                      setShowTimePicker(false);
-                      if (e.type === 'dismissed') return;
-                      if (d) setFuForm(f => {
-                        const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
-                        const merged = new Date(cur);
-                        merged.setHours(d.getHours(), d.getMinutes(), 0, 0);
-                        return { ...f, scheduled_at: merged };
-                      });
-                    }}
-                  />
-                )}
-                <Text style={lblS}>Remarks</Text>
-                <TextInput value={fuForm.remarks} onChangeText={v => setFuForm(f => ({ ...f, remarks: v }))}
-                  placeholder="Call notes, instructions…" placeholderTextColor="#666666" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
-                {!!fuErr && <Text style={{ color: COLORS.error, fontSize: 12, marginBottom: 8 }}>{fuErr}</Text>}
-                <TouchableOpacity onPress={addFollowup} disabled={savingFu}
-                  style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', opacity: savingFu ? 0.6 : 1 }}>
-                  {savingFu ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14 }}>+ Add Follow-up</Text>}
-                </TouchableOpacity>
+            {/* ── FOLLOW-UPS (moved inline under Detail) ── */}
+            {tab === 'detail' && <>
+              <View style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, marginTop: 8, paddingTop: 16, marginBottom: 12 }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.8 }}>Follow-ups</Text>
               </View>
+              {/* Add form */}
+              <FollowUpScheduler fuForm={fuForm} setFuForm={setFuForm} canAssign={canAssign}
+                hint="Pick a date &amp; time and it's added when you tap Save." />
 
               {!detail && <ActivityIndicator size="small" color={MUTED} />}
               {detail && (!detail.follow_ups || detail.follow_ups.length === 0) && (
@@ -947,6 +804,144 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
   );
 }
 
+/* ── Schedule Follow-up card ──
+   Shared by the Lead Detail modal and Add Lead, so the two stay identical and the
+   platform-specific date/time picker plumbing lives in exactly one place. */
+function FollowUpScheduler({ fuForm, setFuForm, canAssign, hint }) {
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  return (
+      <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 12, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 20 }}>
+        <Text style={[lblS, { marginBottom: 10 }]}>Schedule Follow-up</Text>
+        {/* Role picker only for admins/managers — telecaller/STM portals auto-set their own role */}
+        {canAssign && (
+          <>
+            <Text style={lblS}>Role</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+              {['telecaller','stm'].map(r => (
+                <TouchableOpacity key={r} onPress={() => setFuForm(f => ({ ...f, role_context: r }))}
+                  style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: fuForm.role_context === r ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: fuForm.role_context === r ? NAVY : COLORS.border, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: fuForm.role_context === r ? COLORS.white : MUTED }}>{r.toUpperCase()}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+        <Text style={lblS}>Date & Time</Text>
+        {/* Date button */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+          <TouchableOpacity onPress={() => setShowDatePicker(true)}
+            style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.screenBg, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="calendar-outline" size={16} color={BLUE} />
+            <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>
+              {fuForm.scheduled_at instanceof Date
+                ? fuForm.scheduled_at.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                : 'Pick Date'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowTimePicker(true)}
+            style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.screenBg, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="time-outline" size={16} color={BLUE} />
+            <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>
+              {fuForm.scheduled_at instanceof Date
+                ? fuForm.scheduled_at.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                : 'Pick Time'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* iOS: inline pickers inside modals */}
+        {Platform.OS === 'ios' && showDatePicker && (
+          <Modal transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
+            <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowDatePicker(false)}>
+              <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                  <TouchableOpacity onPress={() => setShowDatePicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                  <Text style={{ fontWeight: '700', color: TEXT }}>Pick Date</Text>
+                  <TouchableOpacity onPress={() => setShowDatePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
+                  mode="date" display="spinner" textColor={TEXT}
+                  onChange={(_, d) => d && setFuForm(f => {
+                    const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
+                    const merged = new Date(d);
+                    merged.setHours(cur.getHours(), cur.getMinutes(), 0, 0);
+                    return { ...f, scheduled_at: merged };
+                  })}
+                />
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        )}
+        {Platform.OS === 'ios' && showTimePicker && (
+          <Modal transparent animationType="slide" onRequestClose={() => setShowTimePicker(false)}>
+            <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
+              <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                  <TouchableOpacity onPress={() => setShowTimePicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                  <Text style={{ fontWeight: '700', color: TEXT }}>Pick Time</Text>
+                  <TouchableOpacity onPress={() => setShowTimePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
+                  mode="time" display="spinner" textColor={TEXT}
+                  onChange={(_, d) => d && setFuForm(f => {
+                    const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
+                    const merged = new Date(cur);
+                    merged.setHours(d.getHours(), d.getMinutes(), 0, 0);
+                    return { ...f, scheduled_at: merged };
+                  })}
+                />
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        )}
+
+        {/* Android: native dialog pickers */}
+        {Platform.OS === 'android' && showDatePicker && (
+          <DateTimePicker
+            value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
+            mode="date" display="default"
+            onChange={(e, d) => {
+              setShowDatePicker(false);
+              if (e.type === 'dismissed') return;
+              if (d) {
+                setFuForm(f => {
+                  const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
+                  const merged = new Date(d);
+                  merged.setHours(cur.getHours(), cur.getMinutes(), 0, 0);
+                  return { ...f, scheduled_at: merged };
+                });
+                setShowTimePicker(true);
+              }
+            }}
+          />
+        )}
+        {Platform.OS === 'android' && showTimePicker && (
+          <DateTimePicker
+            value={fuForm.scheduled_at instanceof Date ? fuForm.scheduled_at : new Date()}
+            mode="time" display="default" is24Hour={false}
+            onChange={(e, d) => {
+              setShowTimePicker(false);
+              if (e.type === 'dismissed') return;
+              if (d) setFuForm(f => {
+                const cur = f.scheduled_at instanceof Date ? f.scheduled_at : new Date();
+                const merged = new Date(cur);
+                merged.setHours(d.getHours(), d.getMinutes(), 0, 0);
+                return { ...f, scheduled_at: merged };
+              });
+            }}
+          />
+        )}
+        <Text style={lblS}>Remarks</Text>
+        <TextInput value={fuForm.remarks} onChangeText={v => setFuForm(f => ({ ...f, remarks: v }))}
+          placeholder="Call notes, instructions…" placeholderTextColor="#666666" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+        <Text style={{ fontSize: 11, color: MUTED, fontStyle: 'italic' }}>{hint}</Text>
+      </View>
+  );
+}
+
 /* ── Create Lead Modal ── */
 function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps = [], visible, onClose, onCreated }) {
   const user = useSelector((s) => s.auth.user);
@@ -963,13 +958,38 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  // Same inline scheduler as the Lead Detail modal — filled in here it's created right
+  // after the lead itself, so a manual lead can arrive with its first call booked.
+  const emptyFu = { role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: null, remarks: '' };
+  const [fuForm, setFuForm] = useState(emptyFu);
 
   async function create() {
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
+    if (!form.project) { Alert.alert('Required', 'Project is required.'); return; }
+    if (!form.source)  { Alert.alert('Required', 'Source is required.'); return; }
     setSaving(true);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
-      if (res.ok) { onCreated(await res.json()); onClose(); setForm(emptyForm); setCityOther(false); }
+      if (res.ok) {
+        const lead = await res.json();
+        // Best-effort: the lead is already saved, so a failure here must not read
+        // back to the user as "lead not added".
+        if (fuForm.scheduled_at instanceof Date && lead?.id) {
+          const assignedTo = fuForm.role_context === 'telecaller' ? (form.telecaller || user?.id) : (form.stm || user?.id);
+          if (assignedTo) {
+            try {
+              await apiFetch(SALES_ENDPOINTS.followUps, {
+                method: 'POST',
+                body: JSON.stringify({
+                  lead: lead.id, assigned_to: assignedTo, role_context: fuForm.role_context,
+                  scheduled_at: fuForm.scheduled_at.toISOString(), remarks: fuForm.remarks, status: 'pending',
+                }),
+              });
+            } catch (_) {}
+          }
+        }
+        onCreated(lead); onClose(); setForm(emptyForm); setFuForm(emptyFu); setCityOther(false);
+      }
       else { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
@@ -1031,7 +1051,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 })}
               </View>
             </Field>
-            <Field label="Project">
+            <Field label="Project" required>
               <DropdownPicker
                 value={form.project}
                 onChange={v => set('project', v)}
@@ -1040,7 +1060,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 triggerStyle={{ marginBottom: 0 }}
               />
             </Field>
-            <Field label="Source">
+            <Field label="Source" required>
               <DropdownPicker
                 value={form.source}
                 onChange={v => set('source', v)}
@@ -1094,6 +1114,10 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 <TextField label={_isCp ? 'CP Remarks' : 'STM Remarks'} value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
               </>
             )}
+
+            <Text style={{ fontSize: 12, fontWeight: '800', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>Follow-ups</Text>
+            <FollowUpScheduler fuForm={fuForm} setFuForm={setFuForm} canAssign={_isAdminMgr}
+              hint="Optional — pick a date &amp; time and it's scheduled when you tap Add Lead." />
           </ScrollView>
     </FormSheet>
   );

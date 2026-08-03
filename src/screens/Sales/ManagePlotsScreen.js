@@ -13,6 +13,7 @@ import Svg, { Rect, Polygon, Circle, Text as SvgText, Polyline } from 'react-nat
 import * as ImagePicker from 'expo-image-picker';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { uploadToSupabase } from '../../utils/supabaseStorage';
+import TowerFloorBuilder from '../../components/TowerFloorBuilder';
 
 const { width: SW } = Dimensions.get('window');
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -250,6 +251,73 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
 /* ────────────────────────────────────────────────
    PLOT TYPE FLOOR PLANS EDITOR
 ──────────────────────────────────────────────── */
+/* ── Floor Map Editor ──
+   The tower equivalent of the site map: pick a floor, then draw a zone over each unit
+   on that floor's plan. Zones live inside the floor's own floor_plans entry, so every
+   floor keeps its own mapping against its own drawing. */
+function unitsForFloorNumbers(f) {
+  const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to < from || to - from > 200) return [];
+  const out = [];
+  for (let n = from; n <= to; n++) out.push(`${f.prefix || ''}${n}`);
+  return out;
+}
+
+function FloorMapEditor({ project, plots, floors, onFloorsChange }) {
+  const withPlan = floors.filter((f) => f.image_url);
+  const [sel, setSel] = useState(0);
+  if (!floors.length) return null;
+  if (!withPlan.length) {
+    return (
+      <View style={[CARD, { marginHorizontal: 16, marginBottom: 16, padding: 16 }]}>
+        <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6 }}>Floor Plan Mapping</Text>
+        <Text style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>Upload a plan for at least one floor above to start mapping its units.</Text>
+      </View>
+    );
+  }
+  const active = withPlan[Math.min(sel, withPlan.length - 1)];
+  const idxInAll = floors.indexOf(active);
+  // Only this floor's units are mappable — matched by the floor field, falling back to
+  // the floor's own numbering run for units created before `floor` was recorded.
+  const names = new Set(unitsForFloorNumbers(active));
+  const floorPlots = plots.filter((p) => (p.floor !== null && p.floor !== undefined)
+    ? Number(p.floor) === Number(active.floor)
+    : names.has(String(p.number)));
+
+  const picker = (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+      {withPlan.map((f, i) => {
+        const on = i === Math.min(sel, withPlan.length - 1);
+        return (
+          <TouchableOpacity key={i} onPress={() => setSel(i)}
+            style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, borderWidth: 1.5,
+              borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>
+              {f.label || `Floor ${f.floor}`} · {(f.zones || []).length}/{unitsForFloorNumbers(f).length}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+
+  return (
+    <SiteMapEditor
+      key={idxInAll}
+      project={project}
+      plots={floorPlots}
+      onProjectUpdate={() => {}}
+      zonesOverride={active.zones || []}
+      onZonesChange={(zones) => onFloorsChange(floors.map((f, i) => (i === idxInAll ? { ...f, zones } : f)))}
+      imageOverride={active.image_url}
+      onImageChange={(image_url) => onFloorsChange(floors.map((f, i) => (i === idxInAll ? { ...f, image_url, zones: [] } : f)))}
+      heading="Floor Plan Mapping"
+      blurb={`Upload the ${active.label || 'floor'} plan to draw zones`}
+      extraHeader={picker}
+    />
+  );
+}
+
 function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
   const seedPlans = () => {
     const saved = project.plot_type_plans || [];
@@ -418,7 +486,12 @@ function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
 /* ────────────────────────────────────────────────
    SITE MAP EDITOR
 ──────────────────────────────────────────────── */
-function SiteMapEditor({ project, plots, onProjectUpdate }) {
+/* Drives both the whole-project site map and a single floor's plan. Left unparameterised
+   it reads/writes project.site_map_*; a floor passes its own image + zones in and keeps
+   them inside its floor_plans entry. Same drawing engine either way. */
+function SiteMapEditor({ project, plots, onProjectUpdate, zonesOverride, onZonesChange,
+                         imageOverride, onImageChange, heading, blurb, extraHeader }) {
+  const scoped = zonesOverride !== undefined;   // a floor supplies its own data
   const imgContainerRef = useRef(null);
   const [imgLayout,    setImgLayout]    = useState({ width: 1, height: 1 });
   const [imgNatSize,   setImgNatSize]   = useState({ w: 1, h: 1 });
@@ -431,11 +504,10 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
   const [uploading,    setUploading]    = useState(false);
   const touchStartRef = useRef(null);
 
-  const zones         = project.site_map_zones    || [];
+  const zones         = scoped ? (zonesOverride || []) : (project.site_map_zones || []);
   const isImageUrl    = url => url && /\.(jpg|jpeg|png|webp|gif|svg)(\?|$)/i.test(url);
-  const siteMapImage  = isImageUrl(project.master_plan_url)
-    ? project.master_plan_url
-    : (project.site_map_image_url || '');
+  const siteMapImage  = scoped ? (imageOverride || '')
+    : (isImageUrl(project.master_plan_url) ? project.master_plan_url : (project.site_map_image_url || ''));
 
   const mappedCount = zones.length;
   const totalPlots  = plots.length;
@@ -447,6 +519,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
     .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
 
   async function persistZones(newZones) {
+    if (scoped) { onZonesChange(newZones); return; }
     setSaving(true);
     const res = await apiFetch(SALES_ENDPOINTS.project(project.id), {
       method: 'PATCH', body: JSON.stringify({ site_map_zones: newZones }),
@@ -464,10 +537,13 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
     try {
       const asset = result.assets[0];
       const url   = await uploadToSupabase(asset.uri, asset.mimeType || 'image/jpeg', 'erp/projects/sitemaps');
-      const res   = await apiFetch(SALES_ENDPOINTS.project(project.id), {
-        method: 'PATCH', body: JSON.stringify({ site_map_image_url: url, site_map_zones: [] }),
-      });
-      if (res.ok) onProjectUpdate(await res.json());
+      if (scoped) { onImageChange(url); }
+      else {
+        const res = await apiFetch(SALES_ENDPOINTS.project(project.id), {
+          method: 'PATCH', body: JSON.stringify({ site_map_image_url: url, site_map_zones: [] }),
+        });
+        if (res.ok) onProjectUpdate(await res.json());
+      }
     } catch (e) { Alert.alert('Upload failed', e.message); }
     finally { setUploading(false); }
   }
@@ -549,10 +625,11 @@ function SiteMapEditor({ project, plots, onProjectUpdate }) {
       {/* Header */}
       <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.white }}>
         <View>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6 }}>Interactive Site Map</Text>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6 }}>{heading || 'Interactive Site Map'}</Text>
           <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
-            {siteMapImage ? `${mappedCount}/${totalPlots} zones mapped` : 'Upload master plan to draw zones'}
+            {siteMapImage ? `${mappedCount}/${totalPlots} zones mapped` : (blurb || 'Upload master plan to draw zones')}
           </Text>
+          {extraHeader}
         </View>
         {siteMapImage && totalPlots > 0 ? (
           <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
@@ -813,6 +890,10 @@ export default function ManagePlotsScreen({ route, navigation }) {
   const [loading,  setLoading]  = useState(true);
   const [editPlot, setEditPlot] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  // Floor-wise projects: the builder edits these, this screen persists them and turns
+  // them into unit records.
+  const [floorPlans, setFloorPlans] = useState([]);
+  const [genBusy, setGenBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -822,7 +903,14 @@ export default function ManagePlotsScreen({ route, navigation }) {
           apiFetch(SALES_ENDPOINTS.project(projectId)),
           apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`),
         ]);
-        if (projRes.ok)  setProject(await projRes.json());
+        if (projRes.ok) {
+          const proj = await projRes.json();
+          setProject(proj);
+          // Seed the builder: saved floors, else a sensible ground-floor starting row.
+          const saved = proj?.floor_plans || [];
+          setFloorPlans(saved.length ? saved.map((f) => ({ prefix: '', from: '', to: '', ...f }))
+            : [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }]);
+        }
         if (plotsRes.ok) {
           const d = await plotsRes.json();
           setPlots(Array.isArray(d) ? d : (d.results || []));
@@ -830,6 +918,27 @@ export default function ManagePlotsScreen({ route, navigation }) {
       } catch (e) { console.warn(e); }
       finally { setLoading(false); }
     })();
+  }, [projectId]);
+
+  const saveFloorPlans = useCallback(async (next) => {
+    const res = await apiFetch(SALES_ENDPOINTS.project(projectId), {
+      method: 'PATCH', body: JSON.stringify({ floor_plans: next }),
+    });
+    if (res.ok) setProject(await res.json());
+  }, [projectId]);
+
+  const generateUnits = useCallback(async (toCreate) => {
+    if (!toCreate.length) return;
+    setGenBusy(true);
+    try {
+      await apiFetch(SALES_ENDPOINTS.plotsBulk, {
+        method: 'POST',
+        body: JSON.stringify({ project_id: projectId, plots: toCreate.map((u) => ({ number: u.number, floor: u.floor })) }),
+      });
+      const fresh = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then((r) => r.json());
+      setPlots(Array.isArray(fresh) ? fresh : (fresh.results || []));
+    } catch (e) { Alert.alert('Could not create units', e.message); }
+    setGenBusy(false);
   }, [projectId]);
 
   const handleStatusChange = useCallback(async (plotId, newStatus) => {
@@ -936,14 +1045,34 @@ export default function ManagePlotsScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* Master Plan */}
-            <MasterPlanSection project={project} onProjectUpdate={setProject} />
+            {/* Master Plan — plotted schemes only; a tower is described by its per-floor plans. */}
+            {!project.floor_wise && <MasterPlanSection project={project} onProjectUpdate={setProject} />}
 
-            {/* Site Map Editor */}
-            <SiteMapEditor project={project} plots={plots} onProjectUpdate={setProject} />
+            {/* Layout mode decides which editor applies: a tower is built floor by
+                floor, a plotted scheme is positioned on a site map. Set it in Edit Project. */}
+            {project.floor_wise ? (
+              <>
+              <View style={[CARD, { margin: 16, padding: 16 }]}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>🏢 Floor-wise Setup</Text>
+                <TowerFloorBuilder
+                  floors={floorPlans} setFloors={setFloorPlans}
+                  folder={`erp/projects/${project.id}/floor-plans`}
+                  existing={new Set(plots.map((p) => String(p.number)))}
+                  onPersist={saveFloorPlans}
+                  onGenerate={generateUnits} generating={genBusy} />
+                </View>
+                <FloorMapEditor project={project} plots={plots} floors={floorPlans}
+                  onFloorsChange={(next) => { setFloorPlans(next); saveFloorPlans(next); }} />
+              </>
+            ) : (
+              <>
+                {/* Site Map Editor */}
+                <SiteMapEditor project={project} plots={plots} onProjectUpdate={setProject} />
 
-            {/* Plot Type Floor Plans */}
-            <PlotTypePlansEditor project={project} plots={plots} onProjectUpdate={setProject} />
+                {/* Plot Type Floor Plans */}
+                <PlotTypePlansEditor project={project} plots={plots} onProjectUpdate={setProject} />
+              </>
+            )}
 
             {/* Filter tabs + Delete All */}
             <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>

@@ -15,6 +15,12 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW 
 
 const STATUS_COLOR = { pending: COLORS.warning, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
 
+// Lead-status options a follow-up can set when completed, by the follow-up's role.
+// Telecaller updates TC Status; STM updates STM Status. Marking a TC lead "warm"
+// auto-transfers it into the STM pipeline (backend handles the transfer).
+const TC_STATUS_OPTS  = [['warm', 'Warm'], ['cold', 'Cold'], ['not_interested', 'Not Interested'], ['not_reachable', 'Not Reachable'], ['callback', 'Callback']];
+const STM_STATUS_OPTS = [['hot', 'Hot'], ['warm', 'Warm'], ['cold', 'Cold'], ['not_interested', 'Not Interested'], ['sv_scheduled', 'SV Scheduled'], ['sv_done', 'SV Done'], ['closed', 'Closed']];
+
 const TABS = [
   { key: 'today',   label: "Today's" },
   { key: 'overdue', label: 'Overdue' },
@@ -42,6 +48,10 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter,     setFilter]     = useState('today');
+  const [dateFrom,   setDateFrom]   = useState(null);   // Date | null
+  const [dateTo,     setDateTo]     = useState(null);   // Date | null
+  const [showFrom,   setShowFrom]   = useState(false);
+  const [showTo,     setShowTo]     = useState(false);
   // Completion modal: remarks + optional next follow-up.
   const [done,       setDone]       = useState(null);
   const [outcome,    setOutcome]    = useState('');
@@ -50,6 +60,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [showDate,   setShowDate]   = useState(false);
   const [showTime,   setShowTime]   = useState(false);
   const [nextRemarks, setNextRemarks] = useState('');
+  const [newStatus,  setNewStatus]  = useState('');    // optional lead status to set on completion
   const [submitting, setSubmitting] = useState(false);
   const defaultNext = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
 
@@ -70,7 +81,9 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   useFocusEffect(useCallback(() => { load(); }, [load, companyId]));
 
   function openDone(fu) {
-    setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks('');
+    // Pre-select the lead's current TC/STM status so the caller sees where it stands.
+    const cur = (fu.role_context === 'stm' ? fu.lead_stm_status : fu.lead_telecaller_status) || '';
+    setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks(''); setNewStatus(cur);
   }
 
   async function completeFollowUp() {
@@ -83,6 +96,14 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
         body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString(), outcome: outcome.trim() }),
       });
       if (res.ok) { const updated = await res.json(); setItems((list) => list.map((f) => (f.id === done.id ? updated : f))); }
+      // Update the lead's status (TC or STM, per the follow-up's role) — only if changed.
+      const origStatus = (done.role_context === 'stm' ? done.lead_stm_status : done.lead_telecaller_status) || '';
+      if (newStatus && newStatus !== origStatus && done.lead) {
+        const field = done.role_context === 'stm' ? 'stm_status' : 'telecaller_status';
+        await apiFetch(SALES_ENDPOINTS.lead(done.lead), {
+          method: 'PATCH', body: JSON.stringify({ [field]: newStatus }),
+        });
+      }
       if (schedNext && nextAt instanceof Date) {
         const r2 = await apiFetch(SALES_ENDPOINTS.followUps, {
           method: 'POST',
@@ -100,7 +121,25 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   }
 
   const now = new Date();
-  const visible = items.filter((fu) => {
+  // Date-range filter on the scheduled date (applies before the tab filter).
+  const inDateRange = (fu) => {
+    if (!dateFrom && !dateTo) return true;
+    const d = new Date(fu.scheduled_at);
+    if (dateFrom) { const s = new Date(dateFrom); s.setHours(0, 0, 0, 0); if (d < s) return false; }
+    if (dateTo)   { const e = new Date(dateTo);   e.setHours(23, 59, 59, 999); if (d > e) return false; }
+    return true;
+  };
+  const dateItems = items.filter(inDateRange);
+
+  // Status-wise counts for the selected date range (independent of the tab).
+  const counts = {
+    total:     dateItems.length,
+    pending:   dateItems.filter((f) => f.status === 'pending').length,
+    completed: dateItems.filter((f) => f.status === 'completed').length,
+    overdue:   dateItems.filter((f) => f.status === 'pending' && new Date(f.scheduled_at) < now).length,
+  };
+
+  const visible = dateItems.filter((fu) => {
     const at = new Date(fu.scheduled_at);
     if (filter === 'all')     return true;
     if (filter === 'pending') return fu.status === 'pending';
@@ -108,6 +147,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     if (filter === 'overdue') return fu.status === 'pending' && at < now;
     return true;
   });
+  const fmtD = (d) => d instanceof Date ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -128,6 +168,46 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
       </View>
+
+      {/* Date range filter + status-wise counts */}
+      <View style={{ backgroundColor: COLORS.white, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Date</Text>
+          <TouchableOpacity onPress={() => setShowFrom(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }}>
+            <Text style={{ fontSize: 12.5, color: dateFrom ? TEXT : MUTED }}>{fmtD(dateFrom) || 'From'}</Text>
+          </TouchableOpacity>
+          <Text style={{ color: COLORS.textTertiary }}>→</Text>
+          <TouchableOpacity onPress={() => setShowTo(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }}>
+            <Text style={{ fontSize: 12.5, color: dateTo ? TEXT : MUTED }}>{fmtD(dateTo) || 'To'}</Text>
+          </TouchableOpacity>
+          {(dateFrom || dateTo) && (
+            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }} style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+          {[
+            { label: 'Total',     n: counts.total,     c: BLUE,          bg: COLORS.linkBg },
+            { label: 'Pending',   n: counts.pending,   c: COLORS.warning, bg: COLORS.warningBg },
+            { label: 'Overdue',   n: counts.overdue,   c: COLORS.error,   bg: COLORS.errorBg },
+            { label: 'Completed', n: counts.completed, c: COLORS.success, bg: COLORS.successBg },
+          ].map((s) => (
+            <View key={s.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 5, borderRadius: 20, backgroundColor: s.bg }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: s.c }}>{s.n}</Text>
+              <Text style={{ fontSize: 10.5, fontWeight: '700', color: s.c, textTransform: 'uppercase', letterSpacing: 0.3 }}>{s.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+      {showFrom && (
+        <DateTimePicker value={dateFrom instanceof Date ? dateFrom : new Date()} mode="date" display="default"
+          onChange={(e, d) => { setShowFrom(false); if (e.type === 'dismissed') return; if (d) setDateFrom(d); }} />
+      )}
+      {showTo && (
+        <DateTimePicker value={dateTo instanceof Date ? dateTo : new Date()} mode="date" display="default"
+          onChange={(e, d) => { setShowTo(false); if (e.type === 'dismissed') return; if (d) setDateTo(d); }} />
+      )}
 
       {/* Tabs */}
       <View style={{ flexDirection: 'row', backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
@@ -191,7 +271,27 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Complete follow-up</Text>
             {!!done && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2, marginBottom: 14 }}>{done.lead_name} · {fmtDateTime(done.scheduled_at)}</Text>}
 
-            <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6 }}>Remarks</Text>
+            {/* Update the lead's status after this call (TC or STM, per the follow-up's role). */}
+            <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6 }}>
+              {done?.role_context === 'stm' ? 'Update STM Status' : 'Update TC Status'}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
+              {(done?.role_context === 'stm' ? STM_STATUS_OPTS : TC_STATUS_OPTS).map(([v, l]) => {
+                const sel = newStatus === v;
+                return (
+                  <TouchableOpacity key={v} onPress={() => setNewStatus(sel ? '' : v)}
+                    style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
+                      borderColor: sel ? BLUE : COLORS.border, backgroundColor: sel ? BLUE : COLORS.white }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: sel ? '#fff' : MUTED }}>{l}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {newStatus === 'warm' && done?.role_context !== 'stm' && (done?.lead_telecaller_status || '') !== 'warm' && (
+              <Text style={{ fontSize: 11, color: COLORS.warning, marginBottom: 6 }}>Marking warm will transfer this lead to the STM pipeline.</Text>
+            )}
+
+            <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6, marginTop: 14 }}>Remarks</Text>
             <TextInput value={outcome} onChangeText={setOutcome} multiline placeholder="Outcome of this follow-up…" placeholderTextColor="#AEB6C7"
               style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, fontSize: 13, minHeight: 64, textAlignVertical: 'top', color: TEXT }} />
 

@@ -13,6 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { uploadToSupabase } from '../../utils/supabaseStorage';
+import TowerFloorBuilder from '../../components/TowerFloorBuilder';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
 
@@ -286,6 +287,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '',
     total_area: '', total_plots: '', price_range: '', possession: '', description: '',
     cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false,
+    floor_wise: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }],
   });
   // EOI standard unit types (pre-approval sizes) — [{type, plot_area, const_area}].
   const addEoiType    = () => setForm(f => ({ ...f, eoi_unit_types: [...(f.eoi_unit_types || []), { type: '', plot_area: '', const_area: '' }] }));
@@ -304,16 +306,20 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   // Highest existing plot number so "Add More Plots" (no types) continues numbering
   // from where the project left off (e.g. 70 existing → new plots start at 71).
   const [existingMaxNo, setExistingMaxNo] = useState(0);
+  // Unit numbers already created — lets the floor builder show what's new vs existing.
+  const [existingNumbers, setExistingNumbers] = useState(() => new Set());
   useEffect(() => {
     if (!editing) return;
     apiFetch(`${SALES_ENDPOINTS.plots}?project=${project.id}`)
       .then(r => r.ok ? r.json() : [])
       .then(arr => {
-        const max = (Array.isArray(arr) ? arr : []).reduce((m, p) => {
+        const list = Array.isArray(arr) ? arr : [];
+        const max = list.reduce((m, p) => {
           const n = parseInt(String(p.number).match(/\d+/g)?.pop() || '0', 10);
           return n > m ? n : m;
         }, 0);
         setExistingMaxNo(max);
+        setExistingNumbers(new Set(list.map(p => String(p.number))));
       })
       .catch(() => {});
   }, [editing, project?.id]);
@@ -344,10 +350,12 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           master_plan_url: project.master_plan_url || '',
           is_active:       project.is_active !== undefined ? project.is_active : true,
           kiosk_enabled:   !!project.kiosk_enabled,
+          floor_wise:      !!project.floor_wise,
+          floor_plans:     (project.floor_plans?.length ? project.floor_plans : [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }]),
         });
         setEditableTypes((project.plot_type_plans || []).map(pt => ({ original: pt.name, current: pt.name })));
       } else {
-        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false });
+        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false, floor_wise: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
         setHasTypes(false); setNoTypePlots(''); setPlotTypes([{ name: '', from: '1', to: '' }]);
         setEditableTypes([]);
       }
@@ -361,6 +369,18 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const updateType = (i, k, v) => setPlotTypes(p => p.map((t, idx) => idx === i ? { ...t, [k]: v } : t));
 
   function buildPlots() {
+    // A floor-wise project's units come from the Floor-wise Setup builder above, not
+    // the plot wizard. Send every planned unit — the bulk endpoint ignores conflicts,
+    // so re-saving simply tops up whatever is missing.
+    if (form.floor_wise) {
+      return (form.floor_plans || []).flatMap((f) => {
+        const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
+        if (!Number.isFinite(from) || !Number.isFinite(to) || to < from || to - from > 200) return [];
+        const out = [];
+        for (let n = from; n <= to; n++) out.push({ number: `${f.prefix || ''}${n}`, floor: Number(f.floor) || 0, cluster_type: '' });
+        return out;
+      });
+    }
     if (hasTypes) {
       const arr = [];
       for (const pt of plotTypes) {
@@ -381,7 +401,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     if (!form.name.trim()) { Alert.alert('Required', 'Project name is required.'); return; }
     setSaving(true);
     try {
-      const plots      = (!editing || addingMore) ? buildPlots() : [];
+      const plots      = (!editing || addingMore || form.floor_wise) ? buildPlots() : [];
       // On edit, the stored total always mirrors the real plot count (prevents drift/doubling);
       // extra plots added this save are counted below. On create it's the wizard count.
       const realCount  = project?.plot_counts?.total ?? 0;
@@ -490,6 +510,28 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
               <Text style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>Drives the booking / EOI pricing formulas — separate from the display Type.</Text>
             </Field>
 
+            {/* Layout decides which setup the project uses: a flat plot list with a site
+                map, or units built floor by floor (tower). */}
+            <Field label="Layout">
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {[[false, 'Plotted scheme'], [true, 'Floor-wise (tower)']].map(([val, label]) => {
+                  const on = !!form.floor_wise === val;
+                  return (
+                    <TouchableOpacity key={String(val)} onPress={() => set('floor_wise', val)}
+                      style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center',
+                        borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{on ? '\u2713 ' : ''}{label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>
+                {form.floor_wise
+                  ? "Units are built floor by floor (e.g. Ground = Shop1\u201312, 1st = 101\u2013107), each floor with its own plan."
+                  : 'Plots are added as a flat list and positioned on an interactive site map.'}
+              </Text>
+            </Field>
+
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
                 <Field label="RERA No.">
@@ -563,7 +605,9 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
               )}
             </Field>
 
-            {/* Master Plan */}
+            {/* Master Plan is a plotted-scheme concept — a tower is described by its
+                per-floor plans instead, set up below. */}
+            {!form.floor_wise && (
             <Field label="Master Plan">
               {form.master_plan_url ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }}>
@@ -583,6 +627,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 </TouchableOpacity>
               )}
             </Field>
+            )}
 
             {/* Active toggle */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.white, borderRadius: 10, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 14 }}>
@@ -602,7 +647,21 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
               <Switch value={!!form.kiosk_enabled} onValueChange={v => set('kiosk_enabled', v)} trackColor={{ false: COLORS.border, true: '#4F46E5' }} />
             </View>
 
-            {/* ── PLOT SETUP ── */}
+            {/* ── PLOT SETUP ── a tower's units come from the floor-wise builder on the
+                Manage Plots screen, so this flat-list wizard doesn't apply. */}
+            {form.floor_wise ? (
+              <View style={{ borderTopWidth: 1.5, borderTopColor: COLORS.surfaceAlt, paddingTop: 16, marginBottom: 8 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+                  Unit Setup
+                </Text>
+                <TowerFloorBuilder
+                  floors={form.floor_plans || []}
+                  setFloors={(next) => set('floor_plans', next)}
+                  folder={`erp/projects/${editing?.id || 'new'}/floor-plans`}
+                  existing={existingNumbers}
+                  note={`Units are created when you ${editing ? 'save' : 'add the project'} — existing ones are left alone.`} />
+              </View>
+            ) : (
             <View style={{ borderTopWidth: 1.5, borderTopColor: COLORS.surfaceAlt, paddingTop: 16, marginBottom: 8 }}>
               <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>
                 Plot Setup
@@ -674,6 +733,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                   plotTypes={plotTypes} updateType={updateType} addType={addType} removeType={removeType} />
               )}
             </View>
+            )}
 
             {/* EOI Unit Types — standard pre-approval sizes to prefill the EOI form */}
             <View style={{ marginTop: 6 }}>

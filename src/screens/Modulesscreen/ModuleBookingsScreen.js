@@ -67,8 +67,18 @@ function BookingDetails({ b }) {
       <DRow l="Stamp Duty" v={money0(b.stamp_duty)} />
       <DRow l="Registration" v={money0(b.reg_fees)} />
       <DRow l="GST" v={money0(b.gst)} />
-      <DRow l="Maintenance Deposit" v={money0(b.maint_deposit || b.maintenance)} />
-      {Number(b.maint_advance) ? <DRow l="Maintenance Advance" v={money0(b.maint_advance)} /> : null}
+      {/* Kalrav-3 / Ankhol / Industrial split maintenance into deposit + advance; plain
+          Kalrav books a single Maintenance amount and leaves both at 0. Test numerically —
+          DRF serialises decimals as strings, so "0.00" is truthy and a
+          `maint_deposit || maintenance` fallback would never fire. */}
+      {(Number(b.maint_deposit) || Number(b.maint_advance)) ? (
+        <>
+          <DRow l="Maintenance Deposit" v={money0(b.maint_deposit)} />
+          {Number(b.maint_advance) ? <DRow l="Maintenance Advance" v={money0(b.maint_advance)} /> : null}
+        </>
+      ) : (
+        <DRow l="Maintenance" v={money0(b.maintenance)} />
+      )}
       <DRow l="Legal Charges" v={money0(b.legal_charges)} />
       <DRow l="Total Legal & Other" v={money0(b.total_extra)} />
       {Number(b.discount) ? <DRow l="Discount" v={money0(b.discount)} /> : null}
@@ -107,12 +117,21 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   }, [companyId]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // Accounts view excludes rejected bookings — only real (pending/approved) ones matter here.
-  const isRejected = (b) => b.status === 'rejected' || String(b.approval_status || '').toUpperCase().includes('REJECT');
+  // Accounts view shows ONLY bookings approved by an approver — pending / revision-pending,
+  // rejected and cancelled are all excluded (money is only real once approved).
+  const isApproved = (b) => {
+    const a = String(b.approval_status || '').toUpperCase();
+    if (a.includes('REJECT') || a.includes('CANCEL') || a.includes('PENDING')) return false;
+    return a.includes('APPROVED') || b.status === 'sold';
+  };
   const groups = {};
-  rows.filter((b) => !isRejected(b)).forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
+  rows.filter(isApproved).forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
   projectNames.forEach((pn) => groups[pn].sort((a, b) => String(b.booking_date || '').localeCompare(String(a.booking_date || ''))));
+  // Project-wise total booking value (sum of approved final_amount) + grand total.
+  const projectTotal = (pn) => groups[pn].reduce((s, b) => s + (Number(b.final_amount) || 0), 0);
+  const grandTotal = projectNames.reduce((s, pn) => s + projectTotal(pn), 0);
+  const grandCount = projectNames.reduce((s, pn) => s + groups[pn].length, 0);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -123,7 +142,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Bookings</Text>
-          <Text style={{ fontSize: 13, color: MUTED }}>All sales bookings · view only</Text>
+          <Text style={{ fontSize: 13, color: MUTED }}>Approved bookings only · view only</Text>
         </View>
       </View>
 
@@ -133,13 +152,21 @@ export default function ModuleBookingsScreen({ navigation, route }) {
         : err ? <View style={[CARD, { alignItems: 'center' }]}><Text style={{ color: COLORS.error }}>{err}</Text></View>
         : projectNames.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 28 }]}><Text style={{ color: MUTED }}>No bookings yet.</Text></View>
-        ) : projectNames.map((pn) => (
+        ) : <>
+          <View style={{ marginBottom: 12, borderRadius: 14, padding: 16, backgroundColor: TEAL }}>
+            <Text style={{ color: '#CCFBF1', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Total Approved · {grandCount} booking{grandCount === 1 ? '' : 's'} · {projectNames.length} project{projectNames.length === 1 ? '' : 's'}
+            </Text>
+            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
+          </View>
+          {projectNames.map((pn) => (
           <View key={pn} style={{ marginBottom: 12 }}>
             <TouchableOpacity onPress={() => toggle(pn)} activeOpacity={0.7}
               style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: open[pn] ? '#99F6E4' : 'transparent' }]}>
-              <Text style={{ fontSize: 12, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+              <Text style={{ flex: 1, fontSize: 12, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.4 }}>
                 🏢 {pn} · {groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}
               </Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1', marginRight: 10 }}>{rupee(projectTotal(pn))}</Text>
               <Text style={{ fontSize: 16, fontWeight: '800', color: MUTED }}>{open[pn] ? '⌄' : '›'}</Text>
             </TouchableOpacity>
             {open[pn] && <View style={{ marginTop: 10 }}>
@@ -153,7 +180,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                         <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL }}>  {isEoi(b) ? 'EOI' : 'LOI'}</Text>
                         {b.revision_no > 0 ? <Text style={{ fontSize: 10, color: '#B45309' }}>  R{b.revision_no}</Text> : null}
                       </Text>
-                      <Text style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>{b.phone} · Booked {b.booking_date || '—'} · STM {b.stm_name || '—'}</Text>
+                      <Text style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>{b.phone} · Booked {fmtDate(b.booking_date)} · STM {b.stm_name || '—'}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
@@ -176,6 +203,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
             </View>}
           </View>
         ))}
+        </>}
       </ScrollView>
     </SafeAreaView>
   );
