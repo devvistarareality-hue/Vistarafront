@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -246,17 +246,29 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                         <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLOR[fu.status] || MUTED }}>{fu.status}</Text>
                       </View>
                     </View>
+                    {!!fu.lead_phone && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{fu.lead_phone}</Text>}
                     <Text style={{ fontSize: 13, fontWeight: '600', color: overdue ? COLORS.error : MUTED, marginTop: 6 }}>{fmtDateTime(fu.scheduled_at)}</Text>
                     {!!fu.assigned_to_name && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Assigned to: {fu.assigned_to_name}</Text>}
                     {!!fu.remarks && <Text style={{ fontSize: 12, color: COLORS.textPrimary, marginTop: 6, fontStyle: 'italic' }}>“{fu.remarks}”</Text>}
                     {!!fu.outcome && <Text style={{ fontSize: 12, color: COLORS.success, marginTop: 6 }}><Text style={{ fontWeight: '700' }}>Remarks: </Text>{fu.outcome}</Text>}
                   </View>
-                  {fu.status === 'pending' && (
-                    <TouchableOpacity onPress={() => openDone(fu)}
-                      style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success }}>Mark Done</Text>
-                    </TouchableOpacity>
-                  )}
+                  <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                    {fu.status === 'pending' && (
+                      <TouchableOpacity onPress={() => openDone(fu)}
+                        style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success }}>Mark Done</Text>
+                      </TouchableOpacity>
+                    )}
+                    {!!fu.lead_phone && (
+                      <TouchableOpacity
+                        onPress={() => Linking.openURL(`tel:${fu.lead_phone}`)}
+                        style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: COLORS.successBg, justifyContent: 'center', alignItems: 'center' }}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      >
+                        <Ionicons name="call" size={13} color={COLORS.success} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               </View>
             );
