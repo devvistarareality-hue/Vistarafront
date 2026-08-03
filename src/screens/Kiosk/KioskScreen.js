@@ -30,6 +30,7 @@ export default function KioskScreen({ navigation }) {
   const [projects, setProjects] = useState(null);
   const [project,  setProject]  = useState(null);
   const [plots,    setPlots]    = useState([]);   // ALL plots (map needs sold/hold too)
+  const [floorIdx, setFloorIdx] = useState(0);    // tower: which floor is on screen
   const [selIds,   setSelIds]   = useState([]);   // chosen plot ids (multi-select for LOI)
   const [eoiType,  setEoiType]  = useState('');
   const [eoiUnits, setEoiUnits] = useState('1');
@@ -53,6 +54,10 @@ export default function KioskScreen({ navigation }) {
 
   const pickProject = async (p) => {
     setProject(p); setSelIds([]); setEoiType(''); setEoiUnits('1');
+    // Open a tower on its ground floor — that's where a walk-in starts.
+    const fl = (p?.floor_plans || []).slice().sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0));
+    const g = fl.findIndex((f) => Number(f.floor) === 0);
+    setFloorIdx(g >= 0 ? g : 0);
     try {
       const r = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${p.id}`);
       const arr = r.ok ? await r.json() : [];
@@ -61,10 +66,28 @@ export default function KioskScreen({ navigation }) {
     setStep('select');
   };
 
-  const availablePlots = plots.filter((x) => x.status === 'available');
-  const plotByNumber   = {}; plots.forEach((p) => { plotByNumber[String(p.number)] = p; });
-  const zones          = project?.site_map_zones || [];
-  const mapImage       = project?.site_map_image_url || (isImageUrl(project?.master_plan_url) ? project?.master_plan_url : '');
+  // A tower is browsed one floor at a time: each floor has its own plan and zones, so
+  // the map, the unit list and the counts are all scoped to the chosen floor.
+  const floorWise = !!project?.floor_wise;
+  const floors = (project?.floor_plans || []).slice().sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0));
+  const activeFloor = floorWise ? floors[Math.min(floorIdx, Math.max(floors.length - 1, 0))] : null;
+  const onFloor = (pl, f) => {
+    if (!f) return true;
+    if (pl.floor !== null && pl.floor !== undefined) return Number(pl.floor) === Number(f.floor);
+    const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) return false;
+    const n = String(pl.number);
+    for (let i = from; i <= to; i++) if (`${f.prefix || ''}${i}` === n) return true;
+    return false;
+  };
+  const visiblePlots = floorWise && activeFloor ? plots.filter((pl) => onFloor(pl, activeFloor)) : plots;
+
+  const availablePlots = visiblePlots.filter((x) => x.status === 'available');
+  const plotByNumber   = {}; visiblePlots.forEach((p) => { plotByNumber[String(p.number)] = p; });
+  const zones          = floorWise ? (activeFloor?.zones || []) : (project?.site_map_zones || []);
+  const mapImage       = floorWise
+    ? (activeFloor?.image_url || '')
+    : (project?.site_map_image_url || (isImageUrl(project?.master_plan_url) ? project?.master_plan_url : ''));
   const hasMap         = !!mapImage && zones.length > 0;
 
   const unitTypes = project?.eoi_unit_types || [];
@@ -180,10 +203,28 @@ export default function KioskScreen({ navigation }) {
               </View>
             ) : hasMap ? (
               <View>
+                {floorWise && floors.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 12, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: MUTED }}>FLOOR</Text>
+                    {floors.map((f, i) => {
+                      const on = i === Math.min(floorIdx, floors.length - 1);
+                      const n = plots.filter((pl) => onFloor(pl, f)).length;
+                      return (
+                        <TouchableOpacity key={i} onPress={() => { setFloorIdx(i); setSelIds([]); }}
+                          style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
+                            borderColor: on ? BLUE : '#E1E6F1', backgroundColor: on ? BLUEBG : '#fff' }}>
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>
+                            {f.label || `Floor ${f.floor}`} · {n}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                )}
                 {/* Availability counts */}
                 <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
                   {['available', 'hold', 'sold'].map((k) => {
-                    const n = plots.filter((p) => p.status === k).length;
+                    const n = visiblePlots.filter((p) => p.status === k).length;
                     return (
                       <View key={k} style={[s.statCard, { borderColor: KSTATUS[k].dot + '55' }]}>
                         <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: KSTATUS[k].dot }} />
