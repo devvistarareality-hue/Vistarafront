@@ -250,6 +250,208 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
 /* ────────────────────────────────────────────────
    PLOT TYPE FLOOR PLANS EDITOR
 ──────────────────────────────────────────────── */
+/* ── Tower Floor Builder ──
+   Plotted schemes get a flat list of plot numbers; a tower (Pratishtha: G+13) is
+   defined floor by floor — each floor has its own numbering run and plan drawing.
+   Ground is floor 0, so "Shop1-Shop12" on the ground and "101-107" / "201-207"
+   upward all come out of the same prefix + from/to rule. Mirrors the web builder. */
+const ordinal = (n) => {
+  if (n === 0) return 'Ground';
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]) + ' Floor';
+};
+
+function unitsForFloor(f) {
+  const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) return [];
+  if (to - from > 200) return [];   // guard against a stray keystroke generating thousands
+  const out = [];
+  for (let n = from; n <= to; n++) out.push(`${f.prefix || ''}${n}`);
+  return out;
+}
+
+function TowerFloorBuilder({ project, plots, onProjectUpdate, onPlotsChanged }) {
+  const existing = new Set(plots.map((p) => String(p.number)));
+  const seed = () => {
+    const saved = project.floor_plans || [];
+    if (saved.length) return saved.map((f) => ({ prefix: '', from: '', to: '', ...f }));
+    return [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }];
+  };
+  const [floors, setFloors] = useState(seed);
+  const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(null);
+  const [msg, setMsg] = useState('');
+
+  async function persist(updated) {
+    const res = await apiFetch(SALES_ENDPOINTS.project(project.id), {
+      method: 'PATCH', body: JSON.stringify({ floor_plans: updated }),
+    });
+    if (res.ok) onProjectUpdate(await res.json());
+  }
+  const commit = (next) => { setFloors(next); persist(next); };
+  const edit = (i, patch) => setFloors((fs) => fs.map((f, ix) => (ix === i ? { ...f, ...patch } : f)));
+
+  function addFloorRow() {
+    const top = floors.reduce((m, f) => Math.max(m, Number(f.floor) || 0), -1) + 1;
+    commit([...floors, { floor: top, label: ordinal(top), prefix: '', from: top * 100 + 1, to: top * 100 + 7, image_url: '' }]);
+  }
+
+  // Towers repeat: floors 2..13 are usually floor 1 with a different hundreds digit.
+  function repeatUpTo(i, topFloor) {
+    const src = floors[i], base = Number(src.floor) || 0;
+    const span = (parseInt(src.to, 10) || 0) - (parseInt(src.from, 10) || 0);
+    const offset = (parseInt(src.from, 10) || 0) - base * 100;
+    const next = [...floors];
+    for (let fl = base + 1; fl <= topFloor; fl++) {
+      if (next.some((f) => Number(f.floor) === fl)) continue;
+      next.push({ floor: fl, label: ordinal(fl), prefix: src.prefix || '',
+        from: fl * 100 + offset, to: fl * 100 + offset + span, image_url: src.image_url || '' });
+    }
+    next.sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0));
+    commit(next);
+  }
+
+  function askRepeat(i) {
+    Alert.prompt
+      ? Alert.prompt('Repeat floor', "Repeat this floor's layout up to which floor?", (v) => { const n = Number(v); if (n) repeatUpTo(i, n); }, 'plain-text', '13', 'number-pad')
+      : repeatUpTo(i, 13);   // Android has no Alert.prompt — default to a G+13 tower
+  }
+
+  function removeFloor(i) {
+    Alert.alert('Remove floor', `Remove ${floors[i].label} from the plan? Units already generated are kept.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => commit(floors.filter((_, ix) => ix !== i)) },
+    ]);
+  }
+
+  // Plans are shown as images to the buyer, and RN can't rasterise a PDF — so the app
+  // takes images only. Use the web for PDF plans; it renders them to PNG on upload.
+  async function uploadPlan(i) {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('Permission needed'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+    if (result.canceled) return;
+    setUploading(i);
+    try {
+      const url = await uploadToSupabase(result.assets[0].uri, result.assets[0].mimeType || 'image/jpeg', `erp/projects/${project.id}/floor-plans`);
+      commit(floors.map((x, ix) => (ix === i ? { ...x, image_url: url } : x)));
+    } catch (e) { Alert.alert('Upload failed', e.message); }
+    setUploading(null);
+  }
+
+  const planned = floors.flatMap((f) => unitsForFloor(f).map((number) => ({ number, floor: Number(f.floor) || 0 })));
+  const toCreate = planned.filter((u) => !existing.has(u.number));
+  const dupes = planned.length - new Set(planned.map((u) => u.number)).size;
+
+  async function generate() {
+    if (!toCreate.length) return;
+    setBusy(true); setMsg('');
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.plotsBulk, {
+        method: 'POST',
+        body: JSON.stringify({ project_id: project.id, plots: toCreate.map((u) => ({ number: u.number, floor: u.floor })) }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setMsg(`\u2705 Created ${d.created ?? toCreate.length} units.`);
+        const fresh = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${project.id}`).then((r) => r.json());
+        onPlotsChanged(Array.isArray(fresh) ? fresh : []);
+      } else setMsg('Error: ' + (d.detail || res.status));
+    } catch (e) { setMsg(e.message); }
+    setBusy(false);
+  }
+
+  const cell = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 7, fontSize: 13, color: TEXT, backgroundColor: COLORS.white };
+  const lbl = { fontSize: 9, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 };
+
+  return (
+    <View style={[CARD, { margin: 16, padding: 16 }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>🏢 Floor-wise Setup</Text>
+          <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Define each floor's unit numbering and plan. Ground is floor 0.</Text>
+        </View>
+        <TouchableOpacity onPress={addFloorRow} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: '#C7D2FE' }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>+ Floor</Text>
+        </TouchableOpacity>
+      </View>
+
+      {floors.map((f, i) => {
+        const units = unitsForFloor(f);
+        const isNew = units.filter((n) => !existing.has(n)).length;
+        return (
+          <View key={i} style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 12, padding: 12, marginTop: 12 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ width: 52 }}><Text style={lbl}>Floor</Text>
+                <TextInput value={String(f.floor ?? '')} onChangeText={(v) => edit(i, { floor: v })} onBlur={() => persist(floors)} keyboardType="number-pad" style={cell} /></View>
+              <View style={{ flex: 1 }}><Text style={lbl}>Label</Text>
+                <TextInput value={f.label || ''} onChangeText={(v) => edit(i, { label: v })} onBlur={() => persist(floors)} style={cell} /></View>
+              <TouchableOpacity onPress={() => removeFloor(i)} style={{ justifyContent: 'flex-end', paddingBottom: 7 }}>
+                <Ionicons name="trash-outline" size={18} color={COLORS.error} />
+              </TouchableOpacity>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+              <View style={{ flex: 1 }}><Text style={lbl}>Prefix</Text>
+                <TextInput value={f.prefix || ''} placeholder="e.g. Shop" placeholderTextColor="#9CA3AF" onChangeText={(v) => edit(i, { prefix: v })} onBlur={() => persist(floors)} style={cell} /></View>
+              <View style={{ width: 72 }}><Text style={lbl}>From</Text>
+                <TextInput value={String(f.from ?? '')} onChangeText={(v) => edit(i, { from: v })} onBlur={() => persist(floors)} keyboardType="number-pad" style={cell} /></View>
+              <View style={{ width: 72 }}><Text style={lbl}>To</Text>
+                <TextInput value={String(f.to ?? '')} onChangeText={(v) => edit(i, { to: v })} onBlur={() => persist(floors)} keyboardType="number-pad" style={cell} /></View>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 9, flexWrap: 'wrap' }}>
+              <Text style={{ fontSize: 12, color: units.length ? '#374151' : COLORS.error, flex: 1 }}>
+                {units.length
+                  ? `${units.length} unit${units.length === 1 ? '' : 's'}: ${units.slice(0, 3).join(', ')}${units.length > 3 ? ` … ${units[units.length - 1]}` : ''}`
+                  : 'Set From / To to generate unit numbers.'}
+                {units.length && isNew === 0 ? '  · all exist' : ''}
+              </Text>
+              <TouchableOpacity onPress={() => askRepeat(i)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 7, borderWidth: 1.5, borderColor: COLORS.border }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: BLUE }}>↓ Repeat up to…</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 9 }}>
+              {uploading === i ? <ActivityIndicator size="small" color={BLUE} />
+                : f.image_url ? (
+                  <>
+                    <Image source={{ uri: f.image_url }} style={{ width: 66, height: 48, borderRadius: 8, backgroundColor: COLORS.surfaceAlt }} />
+                    <TouchableOpacity onPress={() => commit(floors.map((x, ix) => (ix === i ? { ...x, image_url: '' } : x)))}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.error }}>Remove plan</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity onPress={() => uploadPlan(i)} style={{ flex: 1, borderWidth: 1.5, borderStyle: 'dashed', borderColor: COLORS.border, borderRadius: 9, paddingVertical: 12, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 12, color: MUTED, fontWeight: '600' }}>Upload {f.label || 'floor'} plan</Text>
+                  </TouchableOpacity>
+                )}
+            </View>
+          </View>
+        );
+      })}
+
+      {planned.length > 0 && (
+        <View style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, marginTop: 14, paddingTop: 12 }}>
+          <Text style={{ fontSize: 13, color: '#374151', marginBottom: 10 }}>
+            <Text style={{ fontWeight: '800' }}>{planned.length}</Text> units planned across{' '}
+            <Text style={{ fontWeight: '800' }}>{floors.length}</Text> floors ·{' '}
+            <Text style={{ fontWeight: '800', color: toCreate.length ? '#B45309' : COLORS.success }}>
+              {toCreate.length ? `${toCreate.length} to create` : 'all already created'}
+            </Text>
+            {dupes > 0 ? <Text style={{ fontWeight: '800', color: COLORS.error }}>{`  · ${dupes} duplicate number${dupes === 1 ? '' : 's'}`}</Text> : null}
+          </Text>
+          <TouchableOpacity onPress={generate} disabled={busy || !toCreate.length}
+            style={{ backgroundColor: toCreate.length && !busy ? NAVY : '#C7D2FE', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}>
+            {busy ? <ActivityIndicator size="small" color="#fff" />
+              : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>{`Generate ${toCreate.length} Units`}</Text>}
+          </TouchableOpacity>
+        </View>
+      )}
+      {!!msg && <Text style={{ marginTop: 10, fontSize: 12, fontWeight: '600', color: msg[0] === '\u2705' ? COLORS.success : COLORS.error }}>{msg}</Text>}
+    </View>
+  );
+}
+
 function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
   const seedPlans = () => {
     const saved = project.plot_type_plans || [];
@@ -939,11 +1141,19 @@ export default function ManagePlotsScreen({ route, navigation }) {
             {/* Master Plan */}
             <MasterPlanSection project={project} onProjectUpdate={setProject} />
 
-            {/* Site Map Editor */}
-            <SiteMapEditor project={project} plots={plots} onProjectUpdate={setProject} />
+            {/* Layout mode decides which editor applies: a tower is built floor by
+                floor, a plotted scheme is positioned on a site map. Set it in Edit Project. */}
+            {project.floor_wise ? (
+              <TowerFloorBuilder project={project} plots={plots} onProjectUpdate={setProject} onPlotsChanged={setPlots} />
+            ) : (
+              <>
+                {/* Site Map Editor */}
+                <SiteMapEditor project={project} plots={plots} onProjectUpdate={setProject} />
 
-            {/* Plot Type Floor Plans */}
-            <PlotTypePlansEditor project={project} plots={plots} onProjectUpdate={setProject} />
+                {/* Plot Type Floor Plans */}
+                <PlotTypePlansEditor project={project} plots={plots} onProjectUpdate={setProject} />
+              </>
+            )}
 
             {/* Filter tabs + Delete All */}
             <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
