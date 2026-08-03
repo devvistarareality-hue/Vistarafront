@@ -16,6 +16,9 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypnmUmBmBIrL5rC6xqSEbLFDvSw1XvES6D-JyL1beY8-AeEREnfvVM_TbbbV1t1i883g/exec';
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
+// Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
+const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
+
 const STATUS = {
   available: { label: 'Available', dot: COLORS.success, bg: COLORS.successBg },
   hold:      { label: 'On Hold',   dot: COLORS.warning, bg: COLORS.warningBg },
@@ -361,7 +364,10 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
             {/* Unit info */}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
               {!!plot.size   && <InfoBox label="Unit Area" value={plot.size} />}
-              {!!plot.facing && <InfoBox label="Facing" value={plot.facing} />}
+              {/* Facing and terrace both move the price, so show them here — facing is
+                  stored as 'road'/'garden', which reads poorly raw. */}
+              {!!plot.facing && <InfoBox label="Facing" value={FACING_LABEL[plot.facing] || plot.facing} />}
+              {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.ft`} />}
               {!!plot.price  && <InfoBox label="Price" value={plot.price} />}
             </View>
 
