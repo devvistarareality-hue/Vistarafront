@@ -60,27 +60,61 @@ export default function ClosureViewerScreen({ navigation, route }) {
     });
   }, [projectId]);
 
-  const zones    = project?.site_map_zones || [];
-  const mapImage = project?.site_map_image_url || (isImageUrl(project?.master_plan_url) ? project.master_plan_url : '');
+  // A tower is browsed one floor at a time: each floor has its own plan and its own
+  // zones, so the map, the unit list and the counts are all scoped to the chosen floor.
+  const floorWise = !!project?.floor_wise;
+  const floors = useMemo(
+    () => (project?.floor_plans || []).slice().sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0)),
+    [project],
+  );
+  const [floorIdx, setFloorIdx] = useState(0);
+  // Open on the ground floor — that's where a walk-in starts.
+  useEffect(() => {
+    if (!floorWise || !floors.length) return;
+    const g = floors.findIndex(f => Number(f.floor) === 0);
+    setFloorIdx(g >= 0 ? g : 0);
+  }, [floorWise, floors.length]);
+  const activeFloor = floorWise ? floors[Math.min(floorIdx, Math.max(floors.length - 1, 0))] : null;
+
+  // Units belonging to the chosen floor — by the floor field, falling back to the
+  // floor's own numbering run for units created before that field existed.
+  const onFloor = (p, f) => {
+    if (!f) return true;
+    if (p.floor !== null && p.floor !== undefined) return Number(p.floor) === Number(f.floor);
+    const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) return false;
+    const n = String(p.number);
+    for (let i = from; i <= to; i++) if (`${f.prefix || ''}${i}` === n) return true;
+    return false;
+  };
+  const visiblePlots = useMemo(
+    () => (floorWise && activeFloor ? plots.filter(p => onFloor(p, activeFloor)) : plots),
+    [plots, floorWise, activeFloor],
+  );
+
+  const zones    = floorWise ? (activeFloor?.zones || []) : (project?.site_map_zones || []);
+  const mapImage = floorWise
+    ? (activeFloor?.image_url || '')
+    : (project?.site_map_image_url || (isImageUrl(project?.master_plan_url) ? project.master_plan_url : ''));
   const hasMap   = !!mapImage && zones.length > 0;
 
   const counts = useMemo(() => {
     const c = { available: 0, hold: 0, sold: 0 };
-    plots.forEach(p => { if (c[p.status] != null) c[p.status]++; });
+    visiblePlots.forEach(p => { if (c[p.status] != null) c[p.status]++; });
     return c;
-  }, [plots]);
-  const total = plots.length;
+  }, [visiblePlots]);
+  const total = visiblePlots.length;
   const pct   = (n) => (total ? Math.round(n / total * 100) : 0);
 
   const plotByNumber = useMemo(() => {
-    const m = {}; plots.forEach(p => { m[String(p.number)] = p; }); return m;
-  }, [plots]);
+    const m = {}; visiblePlots.forEach(p => { m[String(p.number)] = p; }); return m;
+  }, [visiblePlots]);
 
-  const types = useMemo(() => [...new Set(plots.map(p => p.cluster_type).filter(Boolean))].sort(), [plots]);
+  const types = useMemo(() => [...new Set(visiblePlots.map(p => p.cluster_type).filter(Boolean))].sort(), [visiblePlots]);
   const isHidden = (plot) =>
     (filter !== 'all' && plot.status !== filter) ||
     (typeFilter !== 'all' && plot.cluster_type !== typeFilter);
-  const shownCount = plots.filter(p => !isHidden(p)).length;
+  const shownCount = visiblePlots.filter(p => !isHidden(p)).length;
 
   // Multi-select: a client can buy several plots in one booking. Tapping an
   // available unit toggles it; the action bar books all selected together.
@@ -135,6 +169,25 @@ export default function ClosureViewerScreen({ navigation, route }) {
             );
           })}
         </ScrollView>
+        {/* Tower: choose the floor first — its plan and its units are what's shown below. */}
+        {floorWise && floors.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 14 }}>
+            {floors.map((f, i) => {
+              const active = i === Math.min(floorIdx, floors.length - 1);
+              const n = plots.filter((p) => onFloor(p, f)).length;
+              return (
+                <TouchableOpacity key={i} onPress={() => { setFloorIdx(i); setSelectedIds([]); }}
+                  style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
+                    borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#EEF1FF' : COLORS.white }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>
+                    {f.label || `Floor ${f.floor}`} · {n}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
+
         {/* Type filters */}
         {types.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 14 }}>
@@ -211,11 +264,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
           <View style={[CARD, { padding: 14 }]}>
             <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Units</Text>
             <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>No site map drawn. Tap an available unit below.</Text>
-            {!plots.length ? (
+            {!visiblePlots.length ? (
               <Text style={{ color: MUTED, fontSize: 13, textAlign: 'center', paddingVertical: 16 }}>No units defined.</Text>
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {plots.filter(p => !isHidden(p)).map(plot => {
+                {visiblePlots.filter(p => !isHidden(p)).map(plot => {
                   const cfg = STATUS[plot.status] || STATUS.available;
                   const clickable = plot.status === 'available';
                   const isSel = selectedSet.has(plot.id);
