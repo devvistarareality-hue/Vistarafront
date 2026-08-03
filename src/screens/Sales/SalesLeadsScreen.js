@@ -965,6 +965,8 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
 
   async function create() {
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
+    if (!form.project) { Alert.alert('Required', 'Project is required.'); return; }
+    if (!form.source)  { Alert.alert('Required', 'Source is required.'); return; }
     setSaving(true);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
@@ -1049,7 +1051,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 })}
               </View>
             </Field>
-            <Field label="Project">
+            <Field label="Project" required>
               <DropdownPicker
                 value={form.project}
                 onChange={v => set('project', v)}
@@ -1058,7 +1060,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 triggerStyle={{ marginBottom: 0 }}
               />
             </Field>
-            <Field label="Source">
+            <Field label="Source" required>
               <DropdownPicker
                 value={form.source}
                 onChange={v => set('source', v)}
