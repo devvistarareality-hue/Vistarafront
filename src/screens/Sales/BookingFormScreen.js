@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -475,11 +475,16 @@ export default function BookingFormScreen({ navigation, route }) {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.bookings + cq('?'), { method: 'POST', body: JSON.stringify(payload) });
       if (res.ok) {
+        // Leave the button disabled (saving stays true) — the Alert is modal, but
+        // resetting saving here left a window where a stray tap could still
+        // re-fire submit before the screen navigates away, producing an
+        // identical duplicate booking (confirmed in production).
         Alert.alert('Booking submitted ✅', 'Your booking has been submitted and sent for approval.', [
           { text: 'OK', onPress: () => navigation.navigate(kioskCtx ? 'Kiosk' : 'ClosureProjects') },
         ]);
+        return;
       }
-      else setMsg('Error: ' + JSON.stringify(await res.json().catch(() => ({}))));
+      setMsg('Error: ' + JSON.stringify(await res.json().catch(() => ({}))));
     } catch (e) { setMsg(e.message); }
     setSaving(false);
   }
@@ -487,6 +492,13 @@ export default function BookingFormScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+
+      <Modal visible={saving} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+          <ActivityIndicator size="large" color={COLORS.navy} />
+          <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Submitting booking…</Text>
+        </View>
+      </Modal>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
