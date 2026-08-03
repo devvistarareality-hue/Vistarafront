@@ -16,14 +16,26 @@ const SplashScreen = ({ onFinish }) => {
   const scaleAnim = new Animated.Value(0.7);
 
   useEffect(() => {
-    discoverServer(API_PROXY_URL)
+    let cancelled = false;
+
+    // discoverServer() (LAN scan) can legitimately take a few seconds — it
+    // used to race against a fixed 3s timer here, so on a slow scan the app
+    // would enter with BASE_URL still on the production fallback and the
+    // first screen's requests would silently hit production instead of the
+    // local backend. Wait for discovery (bounded by its own internal
+    // per-probe timeouts, so this can't hang forever) instead of racing it.
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 1200));
+    const discovery = discoverServer(API_PROXY_URL)
       .then((url) => { if (url) setBaseUrl(url); })
-      .catch(() => {})
+      .catch(() => {});
+
+    Promise.all([discovery, minDelay]).then(() => {
+      if (cancelled) return;
       // Refresh the cached user (picks up is_approver, role changes, etc.)
-      .finally(() => {
-        dispatch(restoreAdminFilter());
-        dispatch(loadUser());
-      });
+      dispatch(restoreAdminFilter());
+      dispatch(loadUser());
+      onFinish();
+    });
 
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -34,8 +46,7 @@ const SplashScreen = ({ onFinish }) => {
       }),
     ]).start();
 
-    const timer = setTimeout(() => onFinish(), 3000);
-    return () => clearTimeout(timer);
+    return () => { cancelled = true; };
   }, []);
 
   return (
