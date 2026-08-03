@@ -12,15 +12,36 @@ import { logout } from '../../redux/actions/authActions';
 //   project (kiosk-enabled) -> plot(s) on interactive map (or EOI if no plots) -> booking form.
 const NAVY = '#182350', BLUE = '#3D5AFE', BLUEBG = '#E8EEFF', MUTED = '#8492A6', GREEN = '#16A34A';
 const STEPS = [{ key: 'project', label: 'Project' }, { key: 'select', label: 'Unit' }, { key: 'details', label: 'Details' }];
+// Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
+const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
+
 const KSTATUS = {
   available: { label: 'Available', dot: '#16A34A', bg: '#DCFCE7' },
   hold:      { label: 'On Hold',   dot: '#F59E0B', bg: '#FEF3C7' },
   sold:      { label: 'Sold',      dot: '#EF4444', bg: '#FEE2E2' },
 };
 const isImageUrl = (u) => !!u && /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i.test(u);
-const zoneCenter = (z) => (z.points?.length
-  ? { cx: z.points.reduce((s, p) => s + p.x, 0) / z.points.length, cy: z.points.reduce((s, p) => s + p.y, 0) / z.points.length }
-  : { cx: (z.x || 0) + (z.width || 0) / 2, cy: (z.y || 0) + (z.height || 0) / 2 });
+// Visual centre of a zone. Uses the polygon's area centroid (shoelace), not the average
+// of its vertices — unit outlines are notched, and a vertex average drifts toward
+// wherever points cluster, which floated labels above their unit. Falls back to the
+// bounding box for degenerate (zero-area) shapes.
+function zoneCenter(zone) {
+  const pts = zone.points || [];
+  if (pts.length) {
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const bbox = { cx: (Math.min(...xs) + Math.max(...xs)) / 2, cy: (Math.min(...ys) + Math.max(...ys)) / 2 };
+    let a = 0, cx = 0, cy = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p0 = pts[i], p1 = pts[(i + 1) % pts.length];
+      const cross = p0.x * p1.y - p1.x * p0.y;
+      a += cross; cx += (p0.x + p1.x) * cross; cy += (p0.y + p1.y) * cross;
+    }
+    a *= 0.5;
+    if (Math.abs(a) < 1e-9) return bbox;
+    return { cx: cx / (6 * a), cy: cy / (6 * a) };
+  }
+  return { cx: (zone.x || 0) + (zone.width || zone.w || 0) / 2, cy: (zone.y || 0) + (zone.height || zone.h || 0) / 2 };
+}
 
 export default function KioskScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -269,7 +290,11 @@ export default function KioskScreen({ navigation }) {
                   {availablePlots.map((pl) => (
                     <TouchableOpacity key={pl.id} onPress={() => togglePlot(pl)} style={[s.plot, isSelected(pl) ? s.chipOn : null]}>
                       <Text style={[s.plotNo, isSelected(pl) ? { color: BLUE } : null]}>{isSelected(pl) ? `✓ ${pl.number}` : pl.number}</Text>
-                      {!!pl.size && <Text style={s.chipS}>{pl.size} sq.yd</Text>}
+                      {/* size already carries its own unit (e.g. "84 sqyrd") — don't append another */}
+                      {!!pl.size && <Text style={s.chipS}>{pl.size}</Text>}
+                      {/* Facing and terrace both move the price, so surface them here. */}
+                      {!!pl.facing && <Text style={[s.chipS, { color: '#2563EB' }]}>{FACING_LABEL[pl.facing] || pl.facing}</Text>}
+                      {!!(pl.terrace_area || '').trim() && <Text style={[s.chipS, { color: '#059669' }]}>Terrace {pl.terrace_area} sq.ft</Text>}
                     </TouchableOpacity>
                   ))}
                 </View>

@@ -43,12 +43,26 @@ function parseSizeUnit(str) {
   return { sizeVal: str.trim(), unit: 'sqft' };
 }
 
+// Visual centre of a zone. Uses the polygon's area centroid (shoelace), not the average
+// of its vertices — unit outlines are notched, and a vertex average drifts toward
+// wherever points cluster, which floated labels above their unit. Falls back to the
+// bounding box for degenerate (zero-area) shapes.
 function zoneCenter(zone) {
-  if (zone.points?.length) {
-    return { cx: zone.points.reduce((s, p) => s + p.x, 0) / zone.points.length,
-             cy: zone.points.reduce((s, p) => s + p.y, 0) / zone.points.length };
+  const pts = zone.points || [];
+  if (pts.length) {
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const bbox = { cx: (Math.min(...xs) + Math.max(...xs)) / 2, cy: (Math.min(...ys) + Math.max(...ys)) / 2 };
+    let a = 0, cx = 0, cy = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p0 = pts[i], p1 = pts[(i + 1) % pts.length];
+      const cross = p0.x * p1.y - p1.x * p0.y;
+      a += cross; cx += (p0.x + p1.x) * cross; cy += (p0.y + p1.y) * cross;
+    }
+    a *= 0.5;
+    if (Math.abs(a) < 1e-9) return bbox;
+    return { cx: cx / (6 * a), cy: cy / (6 * a) };
   }
-  return { cx: zone.x + zone.width / 2, cy: zone.y + zone.height / 2 };
+  return { cx: (zone.x || 0) + (zone.width || zone.w || 0) / 2, cy: (zone.y || 0) + (zone.height || zone.h || 0) / 2 };
 }
 
 /* ────────────────────────────────────────────────
