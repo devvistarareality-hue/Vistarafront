@@ -246,7 +246,6 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                         <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLOR[fu.status] || MUTED }}>{fu.status}</Text>
                       </View>
                     </View>
-                    {!!fu.lead_phone && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{fu.lead_phone}</Text>}
                     <Text style={{ fontSize: 13, fontWeight: '600', color: overdue ? COLORS.error : MUTED, marginTop: 6 }}>{fmtDateTime(fu.scheduled_at)}</Text>
                     {!!fu.assigned_to_name && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Assigned to: {fu.assigned_to_name}</Text>}
                     {!!fu.remarks && <Text style={{ fontSize: 12, color: COLORS.textPrimary, marginTop: 6, fontStyle: 'italic' }}>“{fu.remarks}”</Text>}
@@ -281,7 +280,11 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
         <View style={{ flex: 1, backgroundColor: 'rgba(10,18,30,0.45)', justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Complete follow-up</Text>
-            {!!done && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2, marginBottom: 14 }}>{done.lead_name} · {fmtDateTime(done.scheduled_at)}</Text>}
+            {!!done && (
+              <Text style={{ fontSize: 12, color: MUTED, marginTop: 2, marginBottom: 14 }}>
+                {done.lead_name}{!!done.lead_phone && ` · ${done.lead_phone}`} · {fmtDateTime(done.scheduled_at)}
+              </Text>
+            )}
 
             {/* Update the lead's status after this call (TC or STM, per the follow-up's role). */}
             <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6 }}>
