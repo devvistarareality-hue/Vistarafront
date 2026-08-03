@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,9 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
 import { buildLOIHtml } from '../../lib/bookingLOIHtml';
+
+const MAX_LOI_FILE_SIZE_MB = 100;
+const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 12, ...CARD_SHADOW };
@@ -405,6 +408,11 @@ export default function BookingFormScreen({ navigation, route }) {
       </style></head><body>${imgs.map(b =>
         `<div class="pg"><img src="data:image/jpeg;base64,${b}"/></div>`).join('')}</body></html>`;
       const { uri } = await Print.printToFileAsync({ html });
+      const info = await FileSystem.getInfoAsync(uri);
+      if (info.exists && info.size > MAX_LOI_FILE_SIZE) {
+        setMsg(`File too large — max ${MAX_LOI_FILE_SIZE_MB} MB.`);
+        return;
+      }
       const data = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
       const name = `LOI_signed_${(f.client_name || '').trim().replace(/\s+/g, '_') || 'capture'}.pdf`;
       setLoiFile({ name, type: 'application/pdf', data });
@@ -417,6 +425,9 @@ export default function BookingFormScreen({ navigation, route }) {
       const res = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
       if (res.canceled || !res.assets?.[0]) return;
       const a = res.assets[0];
+      let size = a.size;
+      if (size == null) { const info = await FileSystem.getInfoAsync(a.uri); size = info.exists ? info.size : 0; }
+      if (size > MAX_LOI_FILE_SIZE) { setMsg(`File too large — max ${MAX_LOI_FILE_SIZE_MB} MB.`); return; }
       const data = await FileSystem.readAsStringAsync(a.uri, { encoding: FileSystem.EncodingType.Base64 });
       setLoiFile({ name: a.name || 'signed_loi.pdf', type: a.mimeType || 'application/pdf', data });
       setMsg('📎 Attached ' + (a.name || 'file'));
@@ -464,11 +475,16 @@ export default function BookingFormScreen({ navigation, route }) {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.bookings + cq('?'), { method: 'POST', body: JSON.stringify(payload) });
       if (res.ok) {
+        // Leave the button disabled (saving stays true) — the Alert is modal, but
+        // resetting saving here left a window where a stray tap could still
+        // re-fire submit before the screen navigates away, producing an
+        // identical duplicate booking (confirmed in production).
         Alert.alert('Booking submitted ✅', 'Your booking has been submitted and sent for approval.', [
           { text: 'OK', onPress: () => navigation.navigate(kioskCtx ? 'Kiosk' : 'ClosureProjects') },
         ]);
+        return;
       }
-      else setMsg('Error: ' + JSON.stringify(await res.json().catch(() => ({}))));
+      setMsg('Error: ' + JSON.stringify(await res.json().catch(() => ({}))));
     } catch (e) { setMsg(e.message); }
     setSaving(false);
   }
@@ -476,6 +492,13 @@ export default function BookingFormScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+
+      <Modal visible={saving} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+          <ActivityIndicator size="large" color={COLORS.navy} />
+          <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Submitting booking…</Text>
+        </View>
+      </Modal>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
