@@ -23,7 +23,7 @@ const MENU = [
   { key: 'Club1000InvestorApprovals', label: 'Approvals', icon: 'checkmark-done-outline', color: COLORS.success, bg: COLORS.successBg, managerOnly: true },
   { key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: true },
   { key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
-  { key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: true },
+  { key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: false },
   { key: 'MyTeam',             label: 'My Team',      icon: 'people-circle-outline', color: COLORS.purple,   bg: COLORS.purpleBg,  managerOnly: true, navParams: { module: 'Club 1000', title: 'My Team' } },
 ];
 
@@ -151,6 +151,8 @@ export default function Club1000HubScreen({ navigation, route }) {
 
   const STAT_CARDS = manager
     ? [
+        { label: 'Leads',            value: stats?.leads_count ?? '—',        color: COLORS.link,    target: 'Club1000Leads' },
+        { label: 'Converted',        value: stats?.converted_count ?? '—',    color: COLORS.success, target: 'Club1000Leads' },
         { label: 'Total Invested',   value: fmtMoney(stats?.total_invested),  color: TEAL,           target: 'Club1000Investors' },
         { label: 'Investors',        value: stats?.investor_count ?? '—',     color: COLORS.link,    target: 'Club1000Investors' },
         { label: 'Active Schemes',   value: stats?.active_scheme_count ?? '—', color: COLORS.success, target: 'Club1000Schemes' },
@@ -158,6 +160,8 @@ export default function Club1000HubScreen({ navigation, route }) {
         { label: 'Paid Payouts',     value: stats?.paid_payout_count ?? '—',   color: COLORS.success, target: 'Club1000Payouts', params: { initialFilter: 'paid' } },
       ]
     : [
+        { label: 'My Leads',         value: stats?.leads_count ?? '—',        color: COLORS.link,    target: 'Club1000Leads' },
+        { label: 'Converted',        value: stats?.converted_count ?? '—',    color: COLORS.success, target: 'Club1000Leads' },
         { label: 'My Investors',     value: stats?.investor_count ?? '—',     color: COLORS.link,    target: 'Club1000Investors' },
         { label: 'Total Invested',   value: fmtMoney(stats?.total_invested),  color: TEAL,           target: 'Club1000Investors' },
         { label: 'Pending Payouts',  value: stats?.pending_payout_count ?? '—', color: COLORS.warning },

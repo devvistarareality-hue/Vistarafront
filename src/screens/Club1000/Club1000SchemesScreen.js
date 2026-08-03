@@ -16,20 +16,36 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 const EMPTY_FORM = {
-  name: '', tenure_months: '12', fixed_return_pct: '', loyalty_benefit_pct: '0',
-  min_ticket_size: '', premature_redemption_allowed: false,
+  name: '', tenure_months: '12', min_ticket_size: '',
+  premature_redemption_allowed: false,
   premature_redemption_lock_months: '', premature_redemption_rate_pct_per_month: '1.00',
   interest_payout_options: ['maturity'],
+  payout_rates: { maturity: '' },
 };
 
 const INTEREST_PAYOUT_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', maturity: 'At Maturity' };
 
-function NewSchemeSheet({ visible, onClose, onSaved }) {
+function NewSchemeSheet({ visible, scheme, onClose, onSaved }) {
+  const isEdit = !!scheme;
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-  const total = (Number(form.fixed_return_pct) || 0) + (Number(form.loyalty_benefit_pct) || 0);
+
+  // (Re)initialise whenever the sheet opens, from the scheme being edited (if any).
+  useEffect(() => {
+    if (!visible) return;
+    setForm(scheme ? {
+      name: scheme.name, tenure_months: String(scheme.tenure_months),
+      min_ticket_size: String(scheme.min_ticket_size),
+      premature_redemption_allowed: scheme.premature_redemption_allowed,
+      premature_redemption_lock_months: scheme.premature_redemption_lock_months ? String(scheme.premature_redemption_lock_months) : '',
+      premature_redemption_rate_pct_per_month: String(scheme.premature_redemption_rate_pct_per_month),
+      interest_payout_options: scheme.interest_payout_options || ['maturity'],
+      payout_rates: { ...(scheme.payout_rates || {}) },
+    } : EMPTY_FORM);
+  }, [visible, scheme]);
 
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function setRate(key, v) { setForm((f) => ({ ...f, payout_rates: { ...f.payout_rates, [key]: v } })); }
 
   function toggleInterestPayoutOption(key) {
     setForm((f) => ({
@@ -41,23 +57,29 @@ function NewSchemeSheet({ visible, onClose, onSaved }) {
   }
 
   async function submit() {
-    if (!form.name.trim() || !form.fixed_return_pct || !form.min_ticket_size) {
-      Alert.alert('Missing fields', 'Name, Fixed Return % and Min Ticket Size are required.');
+    if (!form.name.trim() || !form.min_ticket_size) {
+      Alert.alert('Missing fields', 'Name and Min Ticket Size are required.');
       return;
     }
     if (!form.interest_payout_options.length) {
       Alert.alert('Missing fields', 'Select at least one interest payout option.');
       return;
     }
+    const missingRate = form.interest_payout_options.find((k) => !form.payout_rates[k]);
+    if (missingRate) {
+      Alert.alert('Missing fields', `Enter a return % for ${INTEREST_PAYOUT_LABELS[missingRate] || missingRate}.`);
+      return;
+    }
     setSaving(true);
     try {
-      const res = await apiFetch(CLUB1000_ENDPOINTS.schemes, {
-        method: 'POST',
-        body: JSON.stringify({ ...form, total_return_pct: total }),
+      const payout_rates = Object.fromEntries(form.interest_payout_options.map((k) => [k, form.payout_rates[k]]));
+      const res = await apiFetch(isEdit ? CLUB1000_ENDPOINTS.scheme(scheme.id) : CLUB1000_ENDPOINTS.schemes, {
+        method: isEdit ? 'PATCH' : 'POST',
+        body: JSON.stringify({ ...form, payout_rates }),
       });
       const d = await res.json();
       if (!res.ok) {
-        Alert.alert('Could not create scheme', d?.detail || Object.values(d || {})[0]?.toString() || 'Please check the fields.');
+        Alert.alert(`Could not ${isEdit ? 'save' : 'create'} scheme`, d?.detail || Object.values(d || {})[0]?.toString() || 'Please check the fields.');
         return;
       }
       onSaved(d);
@@ -71,7 +93,7 @@ function NewSchemeSheet({ visible, onClose, onSaved }) {
   return (
     <FormSheet visible={visible} onClose={onClose}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: TEXT }}>New Scheme</Text>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: TEXT }}>{isEdit ? 'Edit Scheme' : 'New Scheme'}</Text>
         <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
@@ -86,30 +108,32 @@ function NewSchemeSheet({ visible, onClose, onSaved }) {
             <TextField label="Min Ticket Size (₹)" required value={form.min_ticket_size} onChangeText={(v) => set('min_ticket_size', v)} keyboardType="number-pad" />
           </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <TextField label="Fixed Return %" required value={form.fixed_return_pct} onChangeText={(v) => set('fixed_return_pct', v)} keyboardType="decimal-pad" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <TextField label="Loyalty Benefit %" value={form.loyalty_benefit_pct} onChangeText={(v) => set('loyalty_benefit_pct', v)} keyboardType="decimal-pad" />
-          </View>
-        </View>
-        <Text style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>Total Return: <Text style={{ fontWeight: '800', color: TEAL }}>{total}%</Text></Text>
-
         <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 8 }}>Interest Payout Options</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 8 }}>Interest Payout Options &amp; Return %</Text>
+          <View style={{ gap: 8 }}>
             {Object.entries(INTEREST_PAYOUT_LABELS).map(([key, label]) => {
               const checked = form.interest_payout_options.includes(key);
               return (
-                <TouchableOpacity key={key} onPress={() => toggleInterestPayoutOption(key)}
-                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: checked ? TEAL : COLORS.border, backgroundColor: checked ? TEAL : COLORS.white }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: checked ? COLORS.white : MUTED }}>{label}</Text>
-                </TouchableOpacity>
+                <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <TouchableOpacity onPress={() => toggleInterestPayoutOption(key)}
+                    style={{ width: 110, paddingVertical: 11, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: checked ? TEAL : COLORS.border, backgroundColor: checked ? TEAL : COLORS.white }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: checked ? COLORS.white : MUTED }}>{label}</Text>
+                  </TouchableOpacity>
+                  <View style={{ flex: 1 }}>
+                    <TextField
+                      placeholder="Return %"
+                      editable={checked}
+                      value={form.payout_rates[key] != null ? String(form.payout_rates[key]) : ''}
+                      onChangeText={(v) => setRate(key, v)}
+                      keyboardType="decimal-pad"
+                      style={{ opacity: checked ? 1 : 0.5 }}
+                    />
+                  </View>
+                </View>
               );
             })}
           </View>
-          <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Only the selected option(s) will be selectable when adding investors to this scheme.</Text>
+          <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Only the selected option(s) will be selectable when adding investors to this scheme — each carries its own annual return %.</Text>
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -130,7 +154,7 @@ function NewSchemeSheet({ visible, onClose, onSaved }) {
         <TouchableOpacity onPress={submit} disabled={saving}
           style={{ backgroundColor: TEAL, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: saving ? 0.7 : 1, marginTop: 8 }}>
           {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Create Scheme</Text>
+          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>{isEdit ? 'Save Changes' : 'Create Scheme'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -145,6 +169,7 @@ export default function Club1000SchemesScreen({ navigation }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showNew,    setShowNew]    = useState(false);
+  const [editing,    setEditing]    = useState(null);
 
   useEffect(() => { if (!manager) navigation.goBack(); }, [manager]);
 
@@ -175,6 +200,7 @@ export default function Club1000SchemesScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
       <NewSchemeSheet visible={showNew} onClose={() => setShowNew(false)} onSaved={() => load()} />
+      <NewSchemeSheet visible={!!editing} scheme={editing} onClose={() => setEditing(null)} onSaved={() => load()} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
@@ -193,19 +219,23 @@ export default function Club1000SchemesScreen({ navigation }) {
           <Text style={{ textAlign: 'center', color: MUTED, marginTop: 30 }}>No schemes yet — create one to get started.</Text>
         ) : schemes.map((s) => (
           <View key={s.id} style={[CARD, { padding: 14, marginBottom: 10 }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>{s.name}</Text>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: TEAL }}>{s.total_return_pct}%</Text>
-            </View>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 6 }}>{s.name}</Text>
             <Text style={{ fontSize: 12, color: MUTED, marginBottom: 4 }}>
               {s.tenure_months}mo · Min ₹{Number(s.min_ticket_size).toLocaleString('en-IN')} · {s.premature_redemption_allowed ? `Exit after ${s.premature_redemption_lock_months || 0}mo` : 'No premature exit'}
             </Text>
             <Text style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}>
-              Payout: {(s.interest_payout_options || []).map((k) => INTEREST_PAYOUT_LABELS[k] || k).join(', ') || '—'}
+              {(s.interest_payout_options || []).length
+                ? (s.interest_payout_options || []).map((k) => `${INTEREST_PAYOUT_LABELS[k] || k}: ${s.payout_rates?.[k] ?? '—'}%`).join('  ·  ')
+                : '—'}
             </Text>
-            <TouchableOpacity onPress={() => disableScheme(s.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.errorBg }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.error }}>Disable</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity onPress={() => setEditing(s)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => disableScheme(s.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.errorBg }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.error }}>Disable</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ))}
       </ScrollView>

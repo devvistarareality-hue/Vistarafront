@@ -44,8 +44,6 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [filter,     setFilter]     = useState('pending');
 
-  React.useEffect(() => { if (!manager) navigation.goBack(); }, [manager]);
-
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
@@ -56,7 +54,7 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
     setLoading(false); setRefreshing(false);
   }
 
-  useFocusEffect(React.useCallback(() => { if (manager) load(); }, [manager, filter]));
+  useFocusEffect(React.useCallback(() => { load(); }, [filter]));
 
   function markPaid(id) {
     Alert.alert('Mark as paid?', 'This confirms the referral reward has been disbursed.', [
@@ -67,8 +65,6 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
       } },
     ]);
   }
-
-  if (!manager) return null;
 
   const referrers = groupByReferrer(rewards);
 
@@ -128,7 +124,7 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
                       {r.status === 'paid' ? 'Paid' : 'Pending'}
                     </Text>
                   </View>
-                  {r.status === 'pending' && (
+                  {manager && r.status === 'pending' && (
                     <TouchableOpacity onPress={() => markPaid(r.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: TEAL }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.white }}>Mark Paid</Text>
                     </TouchableOpacity>
