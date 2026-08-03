@@ -16,6 +16,9 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
 import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 
+const MAX_LOI_FILE_SIZE_MB = 100;
+const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
+
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 12, ...CARD_SHADOW };
 const safeDate = (s) => { const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s || '')); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; };
@@ -405,6 +408,11 @@ export default function BookingFormScreen({ navigation, route }) {
       </style></head><body>${imgs.map(b =>
         `<div class="pg"><img src="data:image/jpeg;base64,${b}"/></div>`).join('')}</body></html>`;
       const { uri } = await Print.printToFileAsync({ html });
+      const info = await FileSystem.getInfoAsync(uri);
+      if (info.exists && info.size > MAX_LOI_FILE_SIZE) {
+        setMsg(`File too large — max ${MAX_LOI_FILE_SIZE_MB} MB.`);
+        return;
+      }
       const data = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
       const name = `LOI_signed_${(f.client_name || '').trim().replace(/\s+/g, '_') || 'capture'}.pdf`;
       setLoiFile({ name, type: 'application/pdf', data });
@@ -417,6 +425,9 @@ export default function BookingFormScreen({ navigation, route }) {
       const res = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
       if (res.canceled || !res.assets?.[0]) return;
       const a = res.assets[0];
+      let size = a.size;
+      if (size == null) { const info = await FileSystem.getInfoAsync(a.uri); size = info.exists ? info.size : 0; }
+      if (size > MAX_LOI_FILE_SIZE) { setMsg(`File too large — max ${MAX_LOI_FILE_SIZE_MB} MB.`); return; }
       const data = await FileSystem.readAsStringAsync(a.uri, { encoding: FileSystem.EncodingType.Base64 });
       setLoiFile({ name: a.name || 'signed_loi.pdf', type: a.mimeType || 'application/pdf', data });
       setMsg('📎 Attached ' + (a.name || 'file'));
