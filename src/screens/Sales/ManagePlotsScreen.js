@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, Modal, ScrollView,
   TextInput, StyleSheet, ActivityIndicator, Alert, StatusBar,
-  Image, Dimensions, Platform,
+  Image, Dimensions, Platform, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,7 +52,7 @@ function zoneCenter(zone) {
 /* ────────────────────────────────────────────────
    PLOT EDIT MODAL
 ──────────────────────────────────────────────── */
-function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
+function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], floorWise = false }) {
   const [plotNo,   setPlotNo]   = useState('');
   const [sizeVal,  setSizeVal]  = useState('');
   const [unit,     setUnit]     = useState('sqft');
@@ -61,6 +61,11 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
   const [saving,   setSaving]   = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [unitOpen, setUnitOpen] = useState(false);
+  // Tower units: which way the flat faces (road commands a premium) and the private
+  // terrace area, if any. Both are per-unit and feed the unit's price.
+  const [facing, setFacing] = useState('');
+  const [hasTerrace, setHasTerrace] = useState(false);
+  const [terraceArea, setTerraceArea] = useState('');
 
   useEffect(() => {
     if (plot) {
@@ -74,6 +79,9 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
       setUnit(UNITS.includes(p.unit) ? p.unit : 'sqft');
       setConstArea(plot.construction_area || '');
       setEditType(plot.cluster_type || '');
+      setFacing(plot.facing || '');
+      setHasTerrace(!!(plot.terrace_area || '').trim());
+      setTerraceArea(plot.terrace_area || '');
     }
   }, [plot, visible]);
 
@@ -85,7 +93,12 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
       const fullNumber = editType ? `${editType}${plotNo}` : plotNo;
       const res = await apiFetch(SALES_ENDPOINTS.plot(plot.id), {
         method: 'PATCH',
-        body: JSON.stringify({ number: fullNumber, size: combined, construction_area: (constArea || '').trim(), cluster_type: editType }),
+        body: JSON.stringify({
+          number: fullNumber, size: combined, construction_area: (constArea || '').trim(), cluster_type: editType,
+          // Clearing the terrace toggle wipes the stored area, so a unit can't keep a
+          // stale terrace charge after being switched back.
+          ...(floorWise ? { facing, terrace_area: hasTerrace ? (terraceArea || '').trim() : '' } : {}),
+        }),
       });
       if (res.ok) { onSaved(await res.json()); onClose(); }
       else { Alert.alert('Error', 'Could not save plot.'); }
@@ -134,6 +147,33 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [] }) {
           <Text style={lblS}>Construction Area (sq.ft)</Text>
           <TextInput value={constArea} onChangeText={setConstArea} placeholder="e.g. 1200" keyboardType="numeric"
             style={[inpS, { marginBottom: 14 }]} />
+
+          {/* Tower units: facing drives a price premium, terrace is charged separately. */}
+          {floorWise && (
+            <>
+              <Text style={lblS}>Facing</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+                {[['road', 'Road Facing'], ['garden', 'Garden Facing']].map(([val, label]) => {
+                  const on = facing === val;
+                  return (
+                    <TouchableOpacity key={val} onPress={() => setFacing(on ? '' : val)}
+                      style={{ flex: 1, paddingVertical: 11, borderRadius: 10, alignItems: 'center',
+                        borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{on ? '\u2713 ' : ''}{label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasTerrace ? 8 : 14 }}>
+                <Text style={[lblS, { marginBottom: 0 }]}>Has Terrace</Text>
+                <Switch value={hasTerrace} onValueChange={setHasTerrace} trackColor={{ false: COLORS.border, true: BLUE }} />
+              </View>
+              {hasTerrace && (
+                <TextInput value={terraceArea} onChangeText={setTerraceArea} placeholder="Terrace area (sq.ft) — e.g. 300"
+                  placeholderTextColor="#9CA3AF" keyboardType="numeric" style={[inpS, { marginBottom: 14 }]} />
+              )}
+            </>
+          )}
 
           {/* Cluster/Type + Number */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
@@ -1136,6 +1176,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
         onClose={() => setEditModalVisible(false)}
         onSaved={handlePlotUpdate}
         clusterTypes={clusterTypes}
+        floorWise={!!project?.floor_wise}
       />
     </SafeAreaView>
   );
