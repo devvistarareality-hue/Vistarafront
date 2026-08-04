@@ -167,6 +167,28 @@ export default function BookingFormScreen({ navigation, route }) {
   const formulaSet = project?.formula_set || 'kalrav';
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
   // All pricing sets share the sale-deed % split (Unit Price + Additional Extra Work Amount).
+  // Pratishtha prices from the unit's fixed price book — nothing on this form is
+  // editable for it, and there is no instalment schedule.
+  const prat = (formulaSet === 'pratishtha' && priceBook && Object.keys(priceBook).length) ? priceBook : null;
+  const pratRows = !prat ? [] : (prat.kind === 'shop'
+    ? [['Shop Area', `${prat.sq_feet} sq.ft`], ['Rate', rupee(prat.rate) + ' / sq.ft'],
+       ['Shop Amount', rupee(prat.amount)], ['Loan Amount', rupee(prat.loan_amount)],
+       ['Stamp Duty & Registration (6% of Loan)', rupee(prat.stamp_duty_reg)],
+       ['GST (5% of Loan)', rupee(prat.gst)], ['AUDA (Rs.400/sq.ft)', rupee(prat.auda)],
+       ['6 Months Maintenance Advance', rupee(prat.maint_adv_6m)],
+       ['12 Months Maintenance Deposit', rupee(prat.maint_dep_12m)],
+       ['Legal Charges', rupee(prat.legal)], ['Total Legal & Other Charges', rupee(prat.total_extra)]]
+    : [['Flat Area', `${prat.flat_area} sq.yd`],
+       ['Terrace Area', prat.terrace_area ? `${prat.terrace_area} sq.yd` : '—'],
+       ['Facing', prat.facing === 'road' ? 'Road Facing' : prat.facing === 'garden' ? 'Garden Facing' : '—'],
+       ['Flat Price', rupee(prat.flat_price)],
+       ...(prat.terrace_area ? [['Additional Terrace Price', rupee(prat.terrace_price)]] : []),
+       ['Token', rupee(prat.token)], ['Bank Loan', rupee(prat.bank_loan)],
+       ['Dastavej Value (approx.)', rupee(prat.dastavej_value)],
+       ['Stamp Duty + Registration', rupee(prat.stamp_duty_reg)], ['GST', rupee(prat.gst)],
+       ['Bank Processing Fees & Insurance', rupee(prat.bank_processing)]]);
+  const pratTotal = prat ? (prat.grand_total ?? prat.box_price) : 0;
+
   const hasSaleDeedSplit = formulaSet === 'ankhol' || formulaSet === 'kalrav' || formulaSet === 'industrial';
   // EOI standard sizes are per-unit; the No. of Units field multiplies Plot/Construction Area.
   const applyEoiUnit = (name, unitsStr) => {
@@ -466,9 +488,11 @@ export default function BookingFormScreen({ navigation, route }) {
       stamp_duty: Math.round(v.stampDuty), reg_fees: Math.round(v.regFees), gst: Math.round(v.gst),
       maintenance: Math.round(v.maint), maint_deposit: Math.round(v.maintDeposit), maint_advance: Math.round(v.maintAdvance),
       legal_charges: f.legal_charges || 0, premium_location: f.premium_location || 0,
-      total_extra: Math.round(v.totalExtra), discount: f.discount || 0, final_amount: Math.round(v.finalAmt),
+      total_extra: Math.round(prat ? (prat.total_extra || 0) : v.totalExtra), discount: f.discount || 0,
+      final_amount: Math.round(prat ? pratTotal : v.finalAmt),
       apply_reg_fee: f.apply_reg_fee, apply_page_fee: f.apply_page_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
-      installments: instArr(), booking_date: f.booking_date, cp_name: f.cp_name,
+      installments: prat ? [] : instArr(),   // fixed box price — no staged payments
+      booking_date: f.booking_date, cp_name: f.cp_name,
       extra_work_desc: reviseId ? (ew.desc || '') : '',
       extra_work_amount: reviseId ? Math.round(parseFloat(ew.amt) || 0) : 0,
       extra_work_inst: reviseId ? ewArr() : [],
@@ -523,6 +547,31 @@ export default function BookingFormScreen({ navigation, route }) {
           {/^other$/i.test(f.source) && <Fld l="Other" val={f.cp_name} on={(t) => set('cp_name', t)} />}
         </Sec>
 
+        {prat ? (
+          /* Pratishtha: every figure is fixed in the unit's price book — shown, not entered. */
+          <Sec title={`Unit Pricing · ${prat.kind === 'shop' ? 'Shop' : 'Flat'} ${prat.unit} (fixed)`}>
+            <Text style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
+              These figures come from the approved Pratishtha price book and cannot be edited here.
+            </Text>
+            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+              {pratRows.map(([k, val], i) => (
+                <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                  paddingHorizontal: 12, paddingVertical: 9,
+                  backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                  <Text style={{ fontSize: 12, color: MUTED, flexShrink: 1 }}>{k}</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{val}</Text>
+                </View>
+              ))}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                paddingHorizontal: 12, paddingVertical: 12, backgroundColor: COLORS.navy }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff', flexShrink: 1 }}>
+                  {prat.kind === 'shop' ? 'Grand Total' : 'Total All Inclusive Amount (Box Price)'}
+                </Text>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>{rupee(pratTotal)}</Text>
+              </View>
+            </View>
+          </Sec>
+        ) : (<>
         <Sec title="Plot & Type">
           <View style={{ marginBottom: 10 }}>
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Area Unit</Text>
@@ -639,9 +688,12 @@ export default function BookingFormScreen({ navigation, route }) {
           {!hasSaleDeedSplit && <Tot l="Discount" val={-v.discount} />}
           <Tot l="Total Box Price" val={v.finalAmt} big />
         </View>
+        </>)}
 
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
+          {/* Pratishtha is an all-inclusive fixed box price — no staged payments. */}
+          {!prat && (<>
           {/* Extra Work Amount Installments — shown ABOVE the sale-deed installments */}
           {hasSaleDeedSplit && nsdBase > 0 && (
             <View style={{ marginBottom: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 }}>
@@ -682,6 +734,7 @@ export default function BookingFormScreen({ navigation, route }) {
             </View>
           )}
           {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}%</Text>}
+          </>)}
         </Sec>
 
         {!!reviseId && (
