@@ -66,6 +66,7 @@ export default function BookingFormScreen({ navigation, route }) {
 
   const [f, setF] = useState({
     client_name: p.client || '', gender: '', phone: p.phone || '', address: '', source: '',
+    manual_stm_name: '',   // kiosk: the salesperson assisting, typed in
     area: '', area_unit: 'sq.yd', const_area: '', villa_type: '',
     land_rate: '', dev_rate: '', const_rate: '', sale_deed_rate: '', dev_agreement_rate: '',
     sale_deed_pct: '60', sale_deed_amount: '',
@@ -366,7 +367,7 @@ export default function BookingFormScreen({ navigation, route }) {
     const meta = {
       clientName: f.client_name, phoneNumber: f.phone, gender: f.gender, address: f.address,
       project: project?.name, plotNo: plotNo, bookingDate: f.booking_date,
-      villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: me?.name, source: f.source,
+      villaType: f.villa_type, bunglowType: flags.bunglowTypeFixed || '', cpName: f.cp_name, loggedInUser: (f.manual_stm_name || '').trim() || me?.name, source: f.source,
       areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
@@ -485,6 +486,7 @@ export default function BookingFormScreen({ navigation, route }) {
       project: projectId, plot: eoiMode ? undefined : plotId, plot_ids: eoiMode ? [] : plotIds, lead: leadId || undefined,
       ...(eoiMode ? { eoi: true, eoi_no: eoiNo } : {}),
       client_name: f.client_name.trim(), gender: f.gender, phone: f.phone.trim(), address: f.address, source: f.source,
+      manual_stm_name: (f.manual_stm_name || '').trim(),
       formula_set: formulaSet, area: f.area, area_unit: f.area_unit, const_area: f.const_area || '0',
       villa_type: flags.bunglowTypeIsDropdown ? f.villa_type : '', bunglow_type: flags.bunglowTypeFixed || '',
       land_rate: f.land_rate || 0, dev_rate: f.dev_rate || 0, const_rate: f.const_rate || 0,
@@ -555,6 +557,9 @@ export default function BookingFormScreen({ navigation, route }) {
           {/^reference$/i.test(f.source) && <Fld l="Reference Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
           {/^channel partner$/i.test(f.source) && <Fld l="Channel Partner Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
           {/^other$/i.test(f.source) && <Fld l="Other" val={f.cp_name} on={(t) => set('cp_name', t)} />}
+          {/* Kiosk: the booking is created by the kiosk account, so the salesperson
+              assisting types their own name — it's what the LOI prints as STM Name. */}
+          {kioskCtx && <Fld l="STM Name" val={f.manual_stm_name} on={(t) => set('manual_stm_name', t)} ph="Sales team member assisting" />}
         </Sec>
 
         {!pricingReady ? (
