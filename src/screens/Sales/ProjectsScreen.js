@@ -174,6 +174,7 @@ const FORMULA_OPTIONS = [
   { value: 'kalrav', label: 'Kalrav (villa / plots)' },
   { value: 'ankhol', label: 'Ankhol (bunglow · sale-deed %)' },
   { value: 'industrial', label: 'Industrial' },
+  { value: 'pratishtha', label: 'Pratishtha (tower · fixed price book)' },
 ];
 function FormulaDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);

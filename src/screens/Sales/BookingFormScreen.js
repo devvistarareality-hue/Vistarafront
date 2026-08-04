@@ -34,6 +34,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const convertEoiId = p.convertEoi || '';   // converting an EOI into a plot booking
   const [projectId, setProjectId] = useState(p.project ? String(p.project) : '');
   // Multi-plot: `plots` route param is a comma list of ids; fall back to single `plot`.
+  const [priceBook, setPriceBook] = useState(null);   // Pratishtha: fixed per-unit figures
   const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
   const plotId = plotIds[0] || '';
   const leadId = p.lead || '';
@@ -86,6 +87,8 @@ export default function BookingFormScreen({ navigation, route }) {
       // Resolve every selected plot (preserve order) and sum their areas.
       const picked = plotIds.map((pid) => all.find((x) => String(x.id) === String(pid))).filter(Boolean);
       if (picked.length) {
+        // Pratishtha prices from the unit's fixed price book, not the form's rates.
+        setPriceBook(picked[0].price_book && Object.keys(picked[0].price_book).length ? picked[0].price_book : null);
         const stripNum = (n) => { const s = (n || '').toString(); return s.replace(/^[^0-9]*/, '') || s; };
         setPlotNo(picked.map((x) => stripNum(x.number)).join(', '));
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
@@ -164,6 +167,28 @@ export default function BookingFormScreen({ navigation, route }) {
   const formulaSet = project?.formula_set || 'kalrav';
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
   // All pricing sets share the sale-deed % split (Unit Price + Additional Extra Work Amount).
+  // Pratishtha prices from the unit's fixed price book — nothing on this form is
+  // editable for it, and there is no instalment schedule.
+  const prat = (formulaSet === 'pratishtha' && priceBook && Object.keys(priceBook).length) ? priceBook : null;
+  const pratRows = !prat ? [] : (prat.kind === 'shop'
+    ? [['Shop Area', `${prat.sq_feet} sq.ft`], ['Rate', rupee(prat.rate) + ' / sq.ft'],
+       ['Shop Amount', rupee(prat.amount)], ['Loan Amount', rupee(prat.loan_amount)],
+       ['Stamp Duty & Registration (6% of Loan)', rupee(prat.stamp_duty_reg)],
+       ['GST (5% of Loan)', rupee(prat.gst)], ['AUDA (Rs.400/sq.ft)', rupee(prat.auda)],
+       ['6 Months Maintenance Advance', rupee(prat.maint_adv_6m)],
+       ['12 Months Maintenance Deposit', rupee(prat.maint_dep_12m)],
+       ['Legal Charges', rupee(prat.legal)], ['Total Legal & Other Charges', rupee(prat.total_extra)]]
+    : [['Flat Area', `${prat.flat_area} sq.yd`],
+       ['Terrace Area', prat.terrace_area ? `${prat.terrace_area} sq.yd` : '—'],
+       ['Facing', prat.facing === 'road' ? 'Road Facing' : prat.facing === 'garden' ? 'Garden Facing' : '—'],
+       ['Flat Price', rupee(prat.flat_price)],
+       ...(prat.terrace_area ? [['Additional Terrace Price', rupee(prat.terrace_price)]] : []),
+       ['Token', rupee(prat.token)], ['Bank Loan', rupee(prat.bank_loan)],
+       ['Dastavej Value (approx.)', rupee(prat.dastavej_value)],
+       ['Stamp Duty + Registration', rupee(prat.stamp_duty_reg)], ['GST', rupee(prat.gst)],
+       ['Bank Processing Fees & Insurance', rupee(prat.bank_processing)]]);
+  const pratTotal = prat ? (prat.grand_total ?? prat.box_price) : 0;
+
   const hasSaleDeedSplit = formulaSet === 'ankhol' || formulaSet === 'kalrav' || formulaSet === 'industrial';
   // EOI standard sizes are per-unit; the No. of Units field multiplies Plot/Construction Area.
   const applyEoiUnit = (name, unitsStr) => {
@@ -315,13 +340,15 @@ export default function BookingFormScreen({ navigation, route }) {
       const e = {};
       if (!f.client_name.trim()) e.client_name = true;
       if (!f.phone.trim()) e.phone = true;
-      if (!v.plotBasic) { if (!f.area) e.area = true; if (!f.land_rate) e.land_rate = true; }
+      // Pratishtha has no rate fields — its amounts come from the unit's price book, so
+      // requiring area/land rate would flag inputs that aren't on the form.
+      if (!prat && !v.plotBasic) { if (!f.area) e.area = true; if (!f.land_rate) e.land_rate = true; }
       if (Object.keys(e).length) { setErrs(e); setMsg('Please fill the highlighted fields.'); return; }
       setErrs({});
     }
     // Installments must total 100% before the LOI — EXCEPT for an EOI, where a partial
     // (token) schedule is allowed and the 100% rule does not apply.
-    if (!eoiMode) {
+    if (!prat && !eoiMode) {
       if (!insts.length) { setMsg('Add the payment installments before downloading the LOI.'); return; }
       if (Math.abs(pctTotal - 100) > 0.01) { setMsg('Payment installments must total 100% before downloading the LOI.'); return; }
       if (hasSaleDeedSplit && nsdBase > 0 && (!nsdInsts.length || Math.abs(nsdPctTotal - 100) > 0.01)) {
@@ -335,7 +362,7 @@ export default function BookingFormScreen({ navigation, route }) {
       areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
-      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit });
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit, priceBook });
       const { uri } = await Print.printToFileAsync({ html });
       // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
@@ -439,11 +466,11 @@ export default function BookingFormScreen({ navigation, route }) {
       const e = {};
       if (!f.client_name.trim()) e.client_name = true;
       if (!f.phone.trim()) e.phone = true;
-      if (!f.land_rate || !v.plotBasic) { e.land_rate = true; if (!f.area) e.area = true; }
+      if (!prat && (!f.land_rate || !v.plotBasic)) { e.land_rate = true; if (!f.area) e.area = true; }
       if (Object.keys(e).length) { setErrs(e); setMsg('Please fill the highlighted fields.'); return; }
       setErrs({});
     }
-    if (!eoiMode && insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
+    if (!prat && !eoiMode && insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
     if (!loiFile) { setMsg('Generate the LOI, get it signed, and attach it before submitting.'); return; }
     setSaving(true); setMsg('');
     const payload = {
@@ -463,9 +490,11 @@ export default function BookingFormScreen({ navigation, route }) {
       stamp_duty: Math.round(v.stampDuty), reg_fees: Math.round(v.regFees), gst: Math.round(v.gst),
       maintenance: Math.round(v.maint), maint_deposit: Math.round(v.maintDeposit), maint_advance: Math.round(v.maintAdvance),
       legal_charges: f.legal_charges || 0, premium_location: f.premium_location || 0,
-      total_extra: Math.round(v.totalExtra), discount: f.discount || 0, final_amount: Math.round(v.finalAmt),
+      total_extra: Math.round(prat ? (prat.total_extra || 0) : v.totalExtra), discount: f.discount || 0,
+      final_amount: Math.round(prat ? pratTotal : v.finalAmt),
       apply_reg_fee: f.apply_reg_fee, apply_page_fee: f.apply_page_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
-      installments: instArr(), booking_date: f.booking_date, cp_name: f.cp_name,
+      installments: prat ? [] : instArr(),   // fixed box price — no staged payments
+      booking_date: f.booking_date, cp_name: f.cp_name,
       extra_work_desc: reviseId ? (ew.desc || '') : '',
       extra_work_amount: reviseId ? Math.round(parseFloat(ew.amt) || 0) : 0,
       extra_work_inst: reviseId ? ewArr() : [],
@@ -520,6 +549,31 @@ export default function BookingFormScreen({ navigation, route }) {
           {/^other$/i.test(f.source) && <Fld l="Other" val={f.cp_name} on={(t) => set('cp_name', t)} />}
         </Sec>
 
+        {prat ? (
+          /* Pratishtha: every figure is fixed in the unit's price book — shown, not entered. */
+          <Sec title={`Unit Pricing · ${prat.kind === 'shop' ? 'Shop' : 'Flat'} ${prat.unit} (fixed)`}>
+            <Text style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
+              These figures come from the approved Pratishtha price book and cannot be edited here.
+            </Text>
+            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+              {pratRows.map(([k, val], i) => (
+                <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                  paddingHorizontal: 12, paddingVertical: 9,
+                  backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                  <Text style={{ fontSize: 12, color: MUTED, flexShrink: 1 }}>{k}</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{val}</Text>
+                </View>
+              ))}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                paddingHorizontal: 12, paddingVertical: 12, backgroundColor: COLORS.navy }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff', flexShrink: 1 }}>
+                  {prat.kind === 'shop' ? 'Grand Total' : 'Total All Inclusive Amount (Box Price)'}
+                </Text>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>{rupee(pratTotal)}</Text>
+              </View>
+            </View>
+          </Sec>
+        ) : (<>
         <Sec title="Plot & Type">
           <View style={{ marginBottom: 10 }}>
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Area Unit</Text>
@@ -636,9 +690,12 @@ export default function BookingFormScreen({ navigation, route }) {
           {!hasSaleDeedSplit && <Tot l="Discount" val={-v.discount} />}
           <Tot l="Total Box Price" val={v.finalAmt} big />
         </View>
+        </>)}
 
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
+          {/* Pratishtha is an all-inclusive fixed box price — no staged payments. */}
+          {!prat && (<>
           {/* Extra Work Amount Installments — shown ABOVE the sale-deed installments */}
           {hasSaleDeedSplit && nsdBase > 0 && (
             <View style={{ marginBottom: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 }}>
@@ -679,6 +736,7 @@ export default function BookingFormScreen({ navigation, route }) {
             </View>
           )}
           {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}%</Text>}
+          </>)}
         </Sec>
 
         {!!reviseId && (

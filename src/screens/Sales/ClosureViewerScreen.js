@@ -16,6 +16,9 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypnmUmBmBIrL5rC6xqSEbLFDvSw1XvES6D-JyL1beY8-AeEREnfvVM_TbbbV1t1i883g/exec';
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
+// Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
+const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
+
 const STATUS = {
   available: { label: 'Available', dot: COLORS.success, bg: COLORS.successBg },
   hold:      { label: 'On Hold',   dot: COLORS.warning, bg: COLORS.warningBg },
@@ -25,12 +28,26 @@ const STATUS = {
 const isPdfUrl   = (u) => !!u && u.split('?')[0].toLowerCase().endsWith('.pdf');
 const isImageUrl = (u) => !!u && /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(u);
 
+// Visual centre of a zone. Uses the polygon's area centroid (shoelace), not the average
+// of its vertices — unit outlines are notched, and a vertex average drifts toward
+// wherever points cluster, which floated labels above their unit. Falls back to the
+// bounding box for degenerate (zero-area) shapes.
 function zoneCenter(zone) {
-  if (zone.points?.length) {
-    return { cx: zone.points.reduce((s, p) => s + p.x, 0) / zone.points.length,
-             cy: zone.points.reduce((s, p) => s + p.y, 0) / zone.points.length };
+  const pts = zone.points || [];
+  if (pts.length) {
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const bbox = { cx: (Math.min(...xs) + Math.max(...xs)) / 2, cy: (Math.min(...ys) + Math.max(...ys)) / 2 };
+    let a = 0, cx = 0, cy = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p0 = pts[i], p1 = pts[(i + 1) % pts.length];
+      const cross = p0.x * p1.y - p1.x * p0.y;
+      a += cross; cx += (p0.x + p1.x) * cross; cy += (p0.y + p1.y) * cross;
+    }
+    a *= 0.5;
+    if (Math.abs(a) < 1e-9) return bbox;
+    return { cx: cx / (6 * a), cy: cy / (6 * a) };
   }
-  return { cx: zone.x + zone.width / 2, cy: zone.y + zone.height / 2 };
+  return { cx: (zone.x || 0) + (zone.width || zone.w || 0) / 2, cy: (zone.y || 0) + (zone.height || zone.h || 0) / 2 };
 }
 
 export default function ClosureViewerScreen({ navigation, route }) {
@@ -361,7 +378,10 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
             {/* Unit info */}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
               {!!plot.size   && <InfoBox label="Unit Area" value={plot.size} />}
-              {!!plot.facing && <InfoBox label="Facing" value={plot.facing} />}
+              {/* Facing and terrace both move the price, so show them here — facing is
+                  stored as 'road'/'garden', which reads poorly raw. */}
+              {!!plot.facing && <InfoBox label="Facing" value={FACING_LABEL[plot.facing] || plot.facing} />}
+              {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.ft`} />}
               {!!plot.price  && <InfoBox label="Price" value={plot.price} />}
             </View>
 

@@ -15,6 +15,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const projName = (opts.projectName || meta.project || '').toString();
   const isEOI = meta.plotNo && meta.plotNo.toString().trim().toUpperCase().indexOf('EOI') === 0;
   const isAnkhol = fs === 'ankhol', isIndustrial = fs === 'industrial';
+  // Pratishtha is priced from a fixed per-unit price book rather than a formula;
+  // its LOI renders those figures verbatim using the same visual blocks.
+  const isPratishtha = fs === 'pratishtha';
+  const pb = opts.priceBook || null;
   const isTundav = isIndustrial && projName.trim().toLowerCase() === 'tundav';
   const isKalrav3 = fs === 'kalrav' && projName.trim().toLowerCase() === 'kalrav 3';
   // Honour the booking form's unit toggle; fall back to the formula default.
@@ -48,7 +52,17 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     : /^other$/i.test(meta.source) ? 'Other'
     : 'CP / Channel Partner';
   let details;
-  if (isIndustrial) {
+  if (isPratishtha && pb) {
+    const isShop = pb.kind === 'shop';
+    details = [
+      ...(isShop
+        ? [['Shop Area', num(pb.sq_feet) + ' sq.ft.'], ['Rate', 'Rs. ' + num(pb.rate) + ' per sq.ft.']]
+        : [['Flat Area', num(pb.flat_area) + ' sq.yd.'],
+           ['Terrace Area', pb.terrace_area ? num(pb.terrace_area) + ' sq.yd.' : 'Not applicable'],
+           ['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—']]),
+      ...(showCp ? [[cpLabel, meta.cpName || '—']] : []),
+      ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
+  } else if (isIndustrial) {
     const sqm = v.area > 0 ? (v.area / 10.764).toFixed(2) + ' sq.mtr' : '—';
     details = [
       ...((chosenUnit && chosenUnit !== 'sq.ft') ? [['Plot Area', v.area + ' ' + areaUnit]] : [['Plot Area (sq.ft)', v.area + ' sq.ft.'], ['Plot Area (sq.mtr)', sqm]]),
@@ -91,6 +105,39 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
       + mrow('Legal Documentation charge', v.legal);
   }
   extra += mrow('Total Legal & Other Charges', v.totalExtra, { sub: true });
+
+  // Pratishtha: its own Deal Value / charges blocks, built from the price book.
+  let pratAgreement = '', pratExtra = '', pratExtraTitle = 'Payment & Charges';
+  if (isPratishtha && pb) {
+    if (pb.kind === 'shop') {
+      pratAgreement = sec('Deal Value') + grid([
+        ['Shop Amount', 'Rs. ' + num(pb.amount)], ['Loan Amount', 'Rs. ' + num(pb.loan_amount)],
+      ]);
+      pratExtraTitle = 'Legal & Other Charges';
+      pratExtra = mrow('Stamp Duty & Registration (6% of Loan Amount)', pb.stamp_duty_reg)
+        + mrow('GST (5% of Loan Amount)', pb.gst)
+        + mrow('AUDA (Rs. 400 per sq.ft.)', pb.auda)
+        + mrow('6 Months Maintenance Advance (Rs. 1.5 per sq.ft. p.m.)', pb.maint_adv_6m)
+        + mrow('12 Months Maintenance Deposit (Rs. 1.5 per sq.ft. p.m.)', pb.maint_dep_12m)
+        + mrow('Legal Charges', pb.legal)
+        + mrow('Total Legal & Other Charges', pb.total_extra, { sub: true })
+        + mrow('Grand Total', pb.grand_total, { total: true });
+    } else {
+      pratAgreement = sec('Deal Value')
+        + `<table class="money">${mrow('Flat Price', pb.flat_price)}`
+        + (pb.terrace_area ? mrow('Additional Terrace Price', pb.terrace_price,
+            { subline: num(pb.terrace_area) + ' sq.yd. private terrace' }) : '')
+        + mrow('Total All Inclusive Amount (Box Price)', pb.box_price, { sub: true })
+        + '</table>';
+      pratExtra = mrow('Token', pb.token)
+        + mrow('Bank Loan', pb.bank_loan)
+        + mrow('Dastavej Value (approx.)', pb.dastavej_value)
+        + mrow('Stamp Duty + Registration', pb.stamp_duty_reg)
+        + mrow('GST', pb.gst)
+        + mrow('Bank Processing Fees & Insurance', pb.bank_processing)
+        + mrow('Total', pb.total, { total: true });
+    }
+  }
 
   const extraWork = (v.extraWorkAmt > 0)
     ? sec('Extra Work', '#16a34a') + `<table class="money">${mrow(v.extraWorkDesc || 'Extra Work Amount', v.extraWorkAmt)}</table>`
@@ -142,7 +189,16 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const scheduleHtml = schedBlocks.join('');
 
   // ── Terms ──
-  const terms = (isEOI && isKalrav) ? [
+  // Pratishtha has its own terms — the deal is an all-inclusive box price, so the
+  // inclusions are spelled out rather than itemised as separate charges.
+  const PRATISHTHA_TERMS = [
+    ['Payment Mode', 'All payments are received via cheque or bank transfer only. No cash is accepted.'],
+    ['Booking Token', 'Token amount for booking is subject to approval of loan from the bank. In case of disapproval from the bank, the token amount will be refunded back into the buyer\'s account within forty-eight hours.'],
+    ['Cancellation', 'If the buyer cancels the flat after booking, the token amount will be forfeited by the builder.'],
+    ['Inclusions', 'The above proposal is inclusive of:\n\u2022 Stamp duty and registration\n\u2022 GST\n\u2022 Bank processing fees and insurance\n\u2022 Gas meter charge\n\u2022 Electricity meter charge\n\u2022 Maintenance advance\n\u2022 Maintenance deposit'],
+  ];
+
+  const terms = isPratishtha ? PRATISHTHA_TERMS : (isEOI && isKalrav) ? [
     ['Minimum Plot Area', 'The area of the minimum plot is subject to change at max. 10%.'],
     ['Construction Area', 'Const. area is subject to change and will be finalised at the time of disclosure of master layout.'],
     ['Booking Order', 'The EOI will be booked in a chronological manner and the selection of the plots will be done accordingly.'],
@@ -272,15 +328,15 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   <div class="block">${sec('Details', '#0d2f61')}${grid(details)}</div>
 
-  <div class="block">${agreement}</div>
+  <div class="block">${isPratishtha && pb ? pratAgreement : agreement}</div>
 
-  <div class="block">${sec('Legal & Other Charges', '#7c3aed')}<table class="money">${extra}</table></div>
+  <div class="block">${sec(isPratishtha && pb ? pratExtraTitle : 'Legal & Other Charges', '#7c3aed')}<table class="money">${isPratishtha && pb ? pratExtra : extra}</table></div>
 
-  ${extraWork ? `<div class="block">${extraWork}</div>` : ''}
+  ${(!isPratishtha && extraWork) ? `<div class="block">${extraWork}</div>` : ''}
 
-  ${scheduleHtml}
+  ${isPratishtha && pb ? '' : scheduleHtml}
 
-  <div class="block">${sec('Terms & Conditions')}${terms.map((t, i) => `<div class="term${i % 2 ? '' : ' alt'}"><span class="tl">${esc(t[0])}</span><span class="td2">${esc(t[1])}</span></div>`).join('')}</div>
+  <div class="block">${sec('Terms & Conditions')}${terms.map((t, i) => `<div class="term${i % 2 ? '' : ' alt'}"><span class="tl">${esc(t[0])}</span><span class="td2">${esc(t[1]).replace(/\n/g, '<br>')}</span></div>`).join('')}</div>
 
   <div class="block">
     <div class="sign">
