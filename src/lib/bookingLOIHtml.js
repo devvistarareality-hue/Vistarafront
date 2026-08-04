@@ -61,7 +61,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     const isShop = pb.kind === 'shop';
     details = [
       ...(isShop
-        ? [['Shop Area', num(pb.sq_feet) + ' sq.ft.'], ['Rate', 'Rs. ' + num(pb.rate) + ' per sq.ft.']]
+        ? [['Shop Area', num(pb.sq_feet) + ' sq.ft.']]
         : [['Flat Area', num(pb.flat_area) + ' sq.yd.'],
            ['Terrace Area', pb.terrace_area ? num(pb.terrace_area) + ' sq.yd.' : 'Not applicable'],
            ['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—']]),
@@ -127,8 +127,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   if (isPratishtha && pb) {
     pbs.forEach((pb) => {
     if (pb.kind === 'shop') {
+      // The shop LOI states the area, the unit price, the charge bifurcation and the
+      // extra work amount. Rate and Shop Amount are working figures, not contract terms,
+      // so they stay on the booking form and off the document.
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value') + grid([
-        ['Shop Amount', 'Rs. ' + num(pb.amount)], ['Final Unit Price', 'Rs. ' + num(pb.loan_amount)],
+        ['Shop Area', num(pb.sq_feet) + ' sq.ft.'], ['Final Unit Price', 'Rs. ' + num(pb.loan_amount)],
       ]);
       pratExtraTitle = 'Legal & Other Charges';
       pratExtra += mrow('Stamp Duty & Registration (6% of Final Unit Price)', pb.stamp_duty_reg)
@@ -138,8 +141,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         + mrow('12 Months Maintenance Deposit (Rs. 1.5 per sq.ft. p.m.)', pb.maint_dep_12m)
         + mrow('Legal Charges', pb.legal)
         + mrow('Total Legal & Other Charges', pb.total_extra, { sub: true })
-        + mrow('Extra Work Amount', pb.extra_work_amount,
-            { subline: 'Final Unit Price - Total Legal & Other Charges' })
+        + mrow('Extra Work Amount', 0, {
+            valStr: (Number(pb.extra_work_amount || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            subline: 'Final Unit Price - Total Legal & Other Charges',
+          })
         + mrow('Grand Total', pb.grand_total, { total: !multi, sub: multi });
     } else {
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value')
