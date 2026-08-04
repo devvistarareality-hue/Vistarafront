@@ -185,7 +185,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
                 <Switch value={hasTerrace} onValueChange={setHasTerrace} trackColor={{ false: COLORS.border, true: BLUE }} />
               </View>
               {hasTerrace && (
-                <TextInput value={terraceArea} onChangeText={setTerraceArea} placeholder="Terrace area (sq.ft) — e.g. 300"
+                <TextInput value={terraceArea} onChangeText={setTerraceArea} placeholder="Terrace area (sq.yd) — e.g. 21"
                   placeholderTextColor="#9CA3AF" keyboardType="numeric" style={[inpS, { marginBottom: 14 }]} />
               )}
             </>

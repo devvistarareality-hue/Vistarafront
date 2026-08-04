@@ -300,7 +300,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                           price-affecting details can surface. */}
                       {!!plot.size && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E8EEFF' : MUTED }}>{plot.size}</Text>}
                       {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
-                      {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>Terrace {plot.terrace_area} sq.ft</Text>}
+                      {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -394,7 +394,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
               {/* Facing and terrace both move the price, so show them here — facing is
                   stored as 'road'/'garden', which reads poorly raw. */}
               {!!plot.facing && <InfoBox label="Facing" value={FACING_LABEL[plot.facing] || plot.facing} />}
-              {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.ft`} />}
+              {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.yd`} />}
               {!!plot.price  && <InfoBox label="Price" value={plot.price} />}
             </View>
 
