@@ -198,6 +198,14 @@ export default function BookingFormScreen({ navigation, route }) {
        ['Dastavej Value (approx.)', rupee(pb.dastavej_value)],
        ['Stamp Duty + Registration', rupee(pb.stamp_duty_reg)], ['GST', rupee(pb.gst)],
        ['Bank Processing Fees & Insurance', rupee(pb.bank_processing)]]);
+  // The stored unit number may already carry the word ("Shop1"), so don't repeat it:
+  // "Shop1" -> "Shop 1", "101" -> "Flat 101".
+  const unitTitle = (pb) => {
+    const kind = pb.kind === 'shop' ? 'Shop' : 'Flat';
+    const n = String(pb.unit || '').trim();
+    const bare = n.replace(new RegExp('^' + kind + '\\s*', 'i'), '');
+    return kind + ' ' + (bare || n);
+  };
   const pbTotal = (pb) => (pb.grand_total ?? pb.box_price ?? 0);
   const pratTotal = pratBooks.reduce((sum, pb) => sum + pbTotal(pb), 0);
   const pratExtraTotal = pratBooks.reduce((sum, pb) => sum + (pb.total_extra || 0), 0);
@@ -575,7 +583,7 @@ export default function BookingFormScreen({ navigation, route }) {
              A booking can cover several units, so each is priced separately and summed. */
           <>
             {pratBooks.map((pb, idx) => (
-              <Sec key={idx} title={`Unit Pricing · ${pb.kind === 'shop' ? 'Shop' : 'Flat'} ${pb.unit} (fixed)`}>
+              <Sec key={idx} title={`Unit Pricing · ${unitTitle(pb)} (fixed)`}>
                 {idx === 0 ? (
                   <Text style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
                     These figures come from the approved Pratishtha price book and cannot be edited here.
@@ -609,7 +617,7 @@ export default function BookingFormScreen({ navigation, route }) {
                     <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
                       paddingHorizontal: 12, paddingVertical: 9,
                       backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-                      <Text style={{ fontSize: 12, color: MUTED }}>{pb.kind === 'shop' ? 'Shop' : 'Flat'} {pb.unit}</Text>
+                      <Text style={{ fontSize: 12, color: MUTED }}>{unitTitle(pb)}</Text>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{rupee(pbTotal(pb))}</Text>
                     </View>
                   ))}

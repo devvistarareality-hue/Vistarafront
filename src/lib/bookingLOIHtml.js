@@ -114,11 +114,20 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // Pratishtha: its own Deal Value / charges blocks, built from the price book.
   let pratAgreement = '', pratExtra = '', pratExtraTitle = 'Payment & Charges';
   const pbTot = (b) => ((b.grand_total != null ? b.grand_total : b.box_price) || 0);
+  // The stored unit number may already carry the word ("Shop1"), so don't repeat it:
+  // "Shop1" -> "Shop 1", "101" -> "Flat 101".
+  const unitTitle = (b) => {
+    const kind = b.kind === 'shop' ? 'Shop' : 'Flat';
+    const n = String(b.unit || '').trim();
+    const bare = n.replace(new RegExp('^' + kind + '\\s*', 'i'), '');
+    return kind + ' ' + (bare || n);
+  };
+
   const multi = pbs.length > 1;
   if (isPratishtha && pb) {
     pbs.forEach((pb) => {
     if (pb.kind === 'shop') {
-      pratAgreement += sec(multi ? ('Shop ' + pb.unit) : 'Deal Value') + grid([
+      pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value') + grid([
         ['Shop Amount', 'Rs. ' + num(pb.amount)], ['Loan Amount', 'Rs. ' + num(pb.loan_amount)],
       ]);
       pratExtraTitle = 'Legal & Other Charges';
@@ -131,7 +140,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         + mrow('Total Legal & Other Charges', pb.total_extra, { sub: true })
         + mrow('Grand Total', pb.grand_total, { total: !multi, sub: multi });
     } else {
-      pratAgreement += sec(multi ? ('Flat ' + pb.unit) : 'Deal Value')
+      pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value')
         + `<table class="money">${mrow('Flat Price', pb.flat_price)}`
         + (pb.terrace_area ? mrow('Additional Terrace Price', pb.terrace_price,
             { subline: num(pb.terrace_area) + ' sq.yd. private terrace' }) : '')
@@ -147,7 +156,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     }
     });
     if (multi) {
-      pratExtra += pbs.map((b) => mrow((b.kind === 'shop' ? 'Shop ' : 'Flat ') + b.unit, pbTot(b))).join('')
+      pratExtra += pbs.map((b) => mrow(unitTitle(b), pbTot(b))).join('')
         + mrow('Total All Inclusive Amount', pbs.reduce((s2, b) => s2 + pbTot(b), 0), { total: true });
     }
   }
