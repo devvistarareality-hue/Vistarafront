@@ -21,7 +21,9 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // "Plot" is wrong for a tower — Pratishtha sells flats and shops, so label it by kind.
   const unitLabel = (isPratishtha && opts.priceBook)
     ? (opts.priceBook.kind === 'shop' ? 'Shop No: ' : 'Flat No: ') : 'Plot No: ';
-  const pb = opts.priceBook || null;
+  const pbs = (opts.priceBooks && opts.priceBooks.length) ? opts.priceBooks
+    : (opts.priceBook ? [opts.priceBook] : []);
+  const pb = pbs[0] || null;   // Details block describes the first unit
   const isTundav = isIndustrial && projName.trim().toLowerCase() === 'tundav';
   const isKalrav3 = fs === 'kalrav' && projName.trim().toLowerCase() === 'kalrav 3';
   // Honour the booking form's unit toggle; fall back to the formula default.
@@ -111,34 +113,42 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   // Pratishtha: its own Deal Value / charges blocks, built from the price book.
   let pratAgreement = '', pratExtra = '', pratExtraTitle = 'Payment & Charges';
+  const pbTot = (b) => ((b.grand_total != null ? b.grand_total : b.box_price) || 0);
+  const multi = pbs.length > 1;
   if (isPratishtha && pb) {
+    pbs.forEach((pb) => {
     if (pb.kind === 'shop') {
-      pratAgreement = sec('Deal Value') + grid([
+      pratAgreement += sec(multi ? ('Shop ' + pb.unit) : 'Deal Value') + grid([
         ['Shop Amount', 'Rs. ' + num(pb.amount)], ['Loan Amount', 'Rs. ' + num(pb.loan_amount)],
       ]);
       pratExtraTitle = 'Legal & Other Charges';
-      pratExtra = mrow('Stamp Duty & Registration (6% of Loan Amount)', pb.stamp_duty_reg)
+      pratExtra += mrow('Stamp Duty & Registration (6% of Loan Amount)', pb.stamp_duty_reg)
         + mrow('GST (5% of Loan Amount)', pb.gst)
         + mrow('AUDA (Rs. 400 per sq.ft.)', pb.auda)
         + mrow('6 Months Maintenance Advance (Rs. 1.5 per sq.ft. p.m.)', pb.maint_adv_6m)
         + mrow('12 Months Maintenance Deposit (Rs. 1.5 per sq.ft. p.m.)', pb.maint_dep_12m)
         + mrow('Legal Charges', pb.legal)
         + mrow('Total Legal & Other Charges', pb.total_extra, { sub: true })
-        + mrow('Grand Total', pb.grand_total, { total: true });
+        + mrow('Grand Total', pb.grand_total, { total: !multi, sub: multi });
     } else {
-      pratAgreement = sec('Deal Value')
+      pratAgreement += sec(multi ? ('Flat ' + pb.unit) : 'Deal Value')
         + `<table class="money">${mrow('Flat Price', pb.flat_price)}`
         + (pb.terrace_area ? mrow('Additional Terrace Price', pb.terrace_price,
             { subline: num(pb.terrace_area) + ' sq.yd. private terrace' }) : '')
         + mrow('Total All Inclusive Amount (Box Price)', pb.box_price, { sub: true })
         + '</table>';
-      pratExtra = mrow('Token', pb.token)
+      pratExtra += mrow('Token', pb.token)
         + mrow('Bank Loan', pb.bank_loan)
         + mrow('Dastavej Value (approx.)', pb.dastavej_value)
         + mrow('Stamp Duty + Registration', pb.stamp_duty_reg)
         + mrow('GST', pb.gst)
         + mrow('Bank Processing Fees & Insurance', pb.bank_processing)
-        + mrow('Total', pb.total, { total: true });
+        + mrow('Total', pb.total, { total: !multi, sub: multi });
+    }
+    });
+    if (multi) {
+      pratExtra += pbs.map((b) => mrow((b.kind === 'shop' ? 'Shop ' : 'Flat ') + b.unit, pbTot(b))).join('')
+        + mrow('Total All Inclusive Amount', pbs.reduce((s2, b) => s2 + pbTot(b), 0), { total: true });
     }
   }
 

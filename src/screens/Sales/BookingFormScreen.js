@@ -34,7 +34,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const convertEoiId = p.convertEoi || '';   // converting an EOI into a plot booking
   const [projectId, setProjectId] = useState(p.project ? String(p.project) : '');
   // Multi-plot: `plots` route param is a comma list of ids; fall back to single `plot`.
-  const [priceBook, setPriceBook] = useState(null);   // Pratishtha: fixed per-unit figures
+  const [priceBooks, setPriceBooks] = useState([]);   // Pratishtha: fixed per-unit figures
   const [unitLoaded, setUnitLoaded] = useState(false);   // selected unit resolved from the API
   const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
   const plotId = plotIds[0] || '';
@@ -89,8 +89,8 @@ export default function BookingFormScreen({ navigation, route }) {
       // Resolve every selected plot (preserve order) and sum their areas.
       const picked = plotIds.map((pid) => all.find((x) => String(x.id) === String(pid))).filter(Boolean);
       if (picked.length) {
-        // Pratishtha prices from the unit's fixed price book, not the form's rates.
-        setPriceBook(picked[0].price_book && Object.keys(picked[0].price_book).length ? picked[0].price_book : null);
+        // Pratishtha prices from each unit's fixed price book, not the form's rates.
+        setPriceBooks(picked.map((x) => x.price_book).filter((b) => b && Object.keys(b).length));
         const stripNum = (n) => { const s = (n || '').toString(); return s.replace(/^[^0-9]*/, '') || s; };
         setPlotNo(picked.map((x) => stripNum(x.number)).join(', '));
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
@@ -176,27 +176,31 @@ export default function BookingFormScreen({ navigation, route }) {
   // then replaced.
   const pricingReady = !!project && (eoiMode || !plotIds.length || unitLoaded);
 
-  // Pratishtha prices from the unit's fixed price book — nothing on this form is
-  // editable for it, and there is no instalment schedule.
-  const prat = (formulaSet === 'pratishtha' && priceBook && Object.keys(priceBook).length) ? priceBook : null;
-  const pratRows = !prat ? [] : (prat.kind === 'shop'
-    ? [['Shop Area', `${prat.sq_feet} sq.ft`], ['Rate', rupee(prat.rate) + ' / sq.ft'],
-       ['Shop Amount', rupee(prat.amount)], ['Loan Amount', rupee(prat.loan_amount)],
-       ['Stamp Duty & Registration (6% of Loan)', rupee(prat.stamp_duty_reg)],
-       ['GST (5% of Loan)', rupee(prat.gst)], ['AUDA (Rs.400/sq.ft)', rupee(prat.auda)],
-       ['6 Months Maintenance Advance', rupee(prat.maint_adv_6m)],
-       ['12 Months Maintenance Deposit', rupee(prat.maint_dep_12m)],
-       ['Legal Charges', rupee(prat.legal)], ['Total Legal & Other Charges', rupee(prat.total_extra)]]
-    : [['Flat Area', `${prat.flat_area} sq.yd`],
-       ['Terrace Area', prat.terrace_area ? `${prat.terrace_area} sq.yd` : '—'],
-       ['Facing', prat.facing === 'road' ? 'Road Facing' : prat.facing === 'garden' ? 'Garden Facing' : '—'],
-       ['Flat Price', rupee(prat.flat_price)],
-       ...(prat.terrace_area ? [['Additional Terrace Price', rupee(prat.terrace_price)]] : []),
-       ['Token', rupee(prat.token)], ['Bank Loan', rupee(prat.bank_loan)],
-       ['Dastavej Value (approx.)', rupee(prat.dastavej_value)],
-       ['Stamp Duty + Registration', rupee(prat.stamp_duty_reg)], ['GST', rupee(prat.gst)],
-       ['Bank Processing Fees & Insurance', rupee(prat.bank_processing)]]);
-  const pratTotal = prat ? (prat.grand_total ?? prat.box_price) : 0;
+  // Pratishtha prices from each unit's fixed price book — nothing on this form is
+  // editable for it, and there is no instalment schedule. A booking can cover several
+  // units, so every selected one is priced and the totals are summed.
+  const pratBooks = formulaSet === 'pratishtha' ? priceBooks : [];
+  const prat = pratBooks[0] || null;
+  const pratRowsFor = (pb) => (pb.kind === 'shop'
+    ? [['Shop Area', `${pb.sq_feet} sq.ft`], ['Rate', rupee(pb.rate) + ' / sq.ft'],
+       ['Shop Amount', rupee(pb.amount)], ['Loan Amount', rupee(pb.loan_amount)],
+       ['Stamp Duty & Registration (6% of Loan)', rupee(pb.stamp_duty_reg)],
+       ['GST (5% of Loan)', rupee(pb.gst)], ['AUDA (Rs.400/sq.ft)', rupee(pb.auda)],
+       ['6 Months Maintenance Advance', rupee(pb.maint_adv_6m)],
+       ['12 Months Maintenance Deposit', rupee(pb.maint_dep_12m)],
+       ['Legal Charges', rupee(pb.legal)], ['Total Legal & Other Charges', rupee(pb.total_extra)]]
+    : [['Flat Area', `${pb.flat_area} sq.yd`],
+       ['Terrace Area', pb.terrace_area ? `${pb.terrace_area} sq.yd` : '—'],
+       ['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—'],
+       ['Flat Price', rupee(pb.flat_price)],
+       ...(pb.terrace_area ? [['Additional Terrace Price', rupee(pb.terrace_price)]] : []),
+       ['Token', rupee(pb.token)], ['Bank Loan', rupee(pb.bank_loan)],
+       ['Dastavej Value (approx.)', rupee(pb.dastavej_value)],
+       ['Stamp Duty + Registration', rupee(pb.stamp_duty_reg)], ['GST', rupee(pb.gst)],
+       ['Bank Processing Fees & Insurance', rupee(pb.bank_processing)]]);
+  const pbTotal = (pb) => (pb.grand_total ?? pb.box_price ?? 0);
+  const pratTotal = pratBooks.reduce((sum, pb) => sum + pbTotal(pb), 0);
+  const pratExtraTotal = pratBooks.reduce((sum, pb) => sum + (pb.total_extra || 0), 0);
 
   const hasSaleDeedSplit = formulaSet === 'ankhol' || formulaSet === 'kalrav' || formulaSet === 'industrial';
   // EOI standard sizes are per-unit; the No. of Units field multiplies Plot/Construction Area.
@@ -371,7 +375,7 @@ export default function BookingFormScreen({ navigation, route }) {
       areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
-      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit, priceBook });
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit, priceBooks: pratBooks });
       const { uri } = await Print.printToFileAsync({ html });
       // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
@@ -500,7 +504,7 @@ export default function BookingFormScreen({ navigation, route }) {
       stamp_duty: Math.round(v.stampDuty), reg_fees: Math.round(v.regFees), gst: Math.round(v.gst),
       maintenance: Math.round(v.maint), maint_deposit: Math.round(v.maintDeposit), maint_advance: Math.round(v.maintAdvance),
       legal_charges: f.legal_charges || 0, premium_location: f.premium_location || 0,
-      total_extra: Math.round(prat ? (prat.total_extra || 0) : v.totalExtra), discount: f.discount || 0,
+      total_extra: Math.round(prat ? pratExtraTotal : v.totalExtra), discount: f.discount || 0,
       final_amount: Math.round(prat ? pratTotal : v.finalAmt),
       apply_reg_fee: f.apply_reg_fee, apply_page_fee: f.apply_page_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
       installments: prat ? [] : instArr(),   // fixed box price — no staged payments
@@ -567,29 +571,57 @@ export default function BookingFormScreen({ navigation, route }) {
             <Text style={{ fontSize: 13, color: MUTED }}>Loading unit pricing…</Text>
           </Sec>
         ) : prat ? (
-          /* Pratishtha: every figure is fixed in the unit's price book — shown, not entered. */
-          <Sec title={`Unit Pricing · ${prat.kind === 'shop' ? 'Shop' : 'Flat'} ${prat.unit} (fixed)`}>
-            <Text style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
-              These figures come from the approved Pratishtha price book and cannot be edited here.
-            </Text>
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
-              {pratRows.map(([k, val], i) => (
-                <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
-                  paddingHorizontal: 12, paddingVertical: 9,
-                  backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-                  <Text style={{ fontSize: 12, color: MUTED, flexShrink: 1 }}>{k}</Text>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{val}</Text>
+          /* Pratishtha: every figure is fixed in each unit's price book — shown, not entered.
+             A booking can cover several units, so each is priced separately and summed. */
+          <>
+            {pratBooks.map((pb, idx) => (
+              <Sec key={idx} title={`Unit Pricing · ${pb.kind === 'shop' ? 'Shop' : 'Flat'} ${pb.unit} (fixed)`}>
+                {idx === 0 ? (
+                  <Text style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
+                    These figures come from the approved Pratishtha price book and cannot be edited here.
+                  </Text>
+                ) : null}
+                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+                  {pratRowsFor(pb).map(([k, val], i) => (
+                    <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                      paddingHorizontal: 12, paddingVertical: 9,
+                      backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                      <Text style={{ fontSize: 12, color: MUTED, flexShrink: 1 }}>{k}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{val}</Text>
+                    </View>
+                  ))}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                    paddingHorizontal: 12, paddingVertical: 12,
+                    backgroundColor: pratBooks.length > 1 ? '#4B5563' : COLORS.navy }}>
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff', flexShrink: 1 }}>
+                      {pb.kind === 'shop' ? 'Grand Total' : 'Total All Inclusive Amount (Box Price)'}
+                    </Text>
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>{rupee(pbTotal(pb))}</Text>
+                  </View>
                 </View>
-              ))}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
-                paddingHorizontal: 12, paddingVertical: 12, backgroundColor: COLORS.navy }}>
-                <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff', flexShrink: 1 }}>
-                  {prat.kind === 'shop' ? 'Grand Total' : 'Total All Inclusive Amount (Box Price)'}
-                </Text>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>{rupee(pratTotal)}</Text>
-              </View>
-            </View>
-          </Sec>
+              </Sec>
+            ))}
+            {/* Only meaningful with more than one unit — a single unit's total is above. */}
+            {pratBooks.length > 1 ? (
+              <Sec title={`Combined Total · ${pratBooks.length} units`}>
+                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+                  {pratBooks.map((pb, i) => (
+                    <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                      paddingHorizontal: 12, paddingVertical: 9,
+                      backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                      <Text style={{ fontSize: 12, color: MUTED }}>{pb.kind === 'shop' ? 'Shop' : 'Flat'} {pb.unit}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{rupee(pbTotal(pb))}</Text>
+                    </View>
+                  ))}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                    paddingHorizontal: 12, paddingVertical: 12, backgroundColor: COLORS.navy }}>
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff' }}>Total All Inclusive Amount</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>{rupee(pratTotal)}</Text>
+                  </View>
+                </View>
+              </Sec>
+            ) : null}
+          </>
         ) : (<>
         <Sec title="Plot & Type">
           <View style={{ marginBottom: 10 }}>
