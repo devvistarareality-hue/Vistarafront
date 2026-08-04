@@ -148,7 +148,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         + '</table>';
       pratExtra += mrow('Token', pb.token)
         + mrow('Bank Loan', pb.bank_loan)
-        + mrow('Dastavej Value (approx.)', pb.dastavej_value)
+        + mrow('Sale Deed', pb.dastavej_value)
         + mrow('Stamp Duty + Registration', pb.stamp_duty_reg)
         + mrow('GST', pb.gst)
         + mrow('Bank Processing Fees & Insurance', pb.bank_processing)
