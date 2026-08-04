@@ -61,6 +61,10 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [showTime,   setShowTime]   = useState(false);
   const [nextRemarks, setNextRemarks] = useState('');
   const [newStatus,  setNewStatus]  = useState('');    // optional lead status to set on completion
+  // Completing with sv_scheduled schedules the visit inline, the same way the lead modal does.
+  const [svAt, setSvAt] = useState(null);
+  const [svRemarks, setSvRemarks] = useState('');
+  const [svPickerOpen, setSvPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const defaultNext = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
 
@@ -84,6 +88,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     // Pre-select the lead's current TC/STM status so the caller sees where it stands.
     const cur = (fu.role_context === 'stm' ? fu.lead_stm_status : fu.lead_telecaller_status) || '';
     setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks(''); setNewStatus(cur);
+    setSvAt(null); setSvRemarks('');
   }
 
   async function completeFollowUp() {
@@ -104,6 +109,20 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           method: 'PATCH', body: JSON.stringify({ [field]: newStatus }),
         });
       }
+      // STM set sv_scheduled -> create the site visit, matching the lead modal.
+      if (newStatus === 'sv_scheduled' && svAt instanceof Date && done.lead) {
+        try {
+          await apiFetch(SALES_ENDPOINTS.siteVisits, {
+            method: 'POST',
+            body: JSON.stringify({
+              lead: done.lead, project: done.lead_project || null,
+              scheduled_at: svAt.toISOString(), status: 'scheduled',
+              stm: done.assigned_to, referred_by_telecaller: done.lead_telecaller || null,
+              remarks: svRemarks.trim(),
+            }),
+          });
+        } catch (e) {}
+      }
       if (schedNext && nextAt instanceof Date) {
         const r2 = await apiFetch(SALES_ENDPOINTS.followUps, {
           method: 'POST',
@@ -113,6 +132,16 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           }),
         });
         if (r2.ok) { const created = await r2.json(); setItems((list) => [...list, created]); }
+      }
+      // STM set closed -> hand off to the booking flow with this lead prefilled, exactly
+      // as the lead modal does, so a closure is recorded the same way from either screen.
+      if (newStatus === 'closed' && done.lead) {
+        const sv = { lead: done.lead, lead_name: done.lead_name || '', lead_phone: done.lead_phone || '' };
+        const proj = done.lead_project;
+        setDone(null); setSubmitting(false);
+        if (proj) navigation?.navigate('ClosureViewer', { projectId: proj, sv });
+        else navigation?.navigate('ClosureProjects', { sv });
+        return;
       }
       setDone(null);
       load();
@@ -306,6 +335,36 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
               <Text style={{ fontSize: 11, color: COLORS.warning, marginBottom: 6 }}>Marking warm will transfer this lead to the STM pipeline.</Text>
             )}
 
+            {/* Same two hand-offs the lead modal offers, so a status set here behaves
+                identically to one set on the lead. */}
+            {newStatus === 'sv_scheduled' ? (
+              <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 10 }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#166534', letterSpacing: 0.4, marginBottom: 8 }}>📍 SCHEDULE SITE VISIT</Text>
+                <TouchableOpacity onPress={() => setSvPickerOpen(true)}
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, backgroundColor: COLORS.white }}>
+                  <Text style={{ fontSize: 13, color: svAt instanceof Date ? TEXT : MUTED }}>
+                    {svAt instanceof Date ? fmtDateTime(svAt.toISOString()) : 'Pick date & time'}
+                  </Text>
+                </TouchableOpacity>
+                <TextInput value={svRemarks} onChangeText={setSvRemarks} placeholder="Location, notes…" placeholderTextColor="#AEB6C7"
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, fontSize: 13, marginTop: 8, color: TEXT, backgroundColor: COLORS.white }} />
+                {!(svAt instanceof Date) ? (
+                  <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 8 }}>Set a date &amp; time to create the site visit automatically.</Text>
+                ) : null}
+              </View>
+            ) : null}
+            {newStatus === 'closed' ? (
+              <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 10 }}>
+                <Text style={{ fontSize: 12, color: '#166534', fontWeight: '600' }}>
+                  ✅ Marking done takes you to the booking flow — pick the unit(s) and record the booking for this lead.
+                </Text>
+              </View>
+            ) : null}
+            {svPickerOpen ? (
+              <DateTimePicker value={svAt instanceof Date ? svAt : new Date()} mode="date" display="default"
+                onChange={(e, d) => { setSvPickerOpen(false); if (e.type !== 'dismissed' && d) setSvAt(d); }} />
+            ) : null}
+
             <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6, marginTop: 14 }}>Remarks</Text>
             <TextInput value={outcome} onChangeText={setOutcome} multiline placeholder="Outcome of this follow-up…" placeholderTextColor="#AEB6C7"
               style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, fontSize: 13, minHeight: 64, textAlignVertical: 'top', color: TEXT }} />
@@ -344,7 +403,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
               </TouchableOpacity>
               <TouchableOpacity onPress={completeFollowUp} disabled={submitting || (schedNext && !(nextAt instanceof Date))}
                 style={{ flex: 1, backgroundColor: COLORS.success, borderRadius: 10, padding: 13, alignItems: 'center', opacity: (submitting || (schedNext && !(nextAt instanceof Date))) ? 0.6 : 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{submitting ? 'Saving…' : 'Mark Done'}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{submitting ? 'Saving…' : newStatus === 'closed' ? 'Record Closure →' : 'Mark Done'}</Text>
               </TouchableOpacity>
             </View>
           </View>
