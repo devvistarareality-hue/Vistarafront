@@ -15,6 +15,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
 import { buildLOIHtml } from '../../lib/bookingLOIHtml';
+import { computeShop, impliedUnitPct } from '../../lib/pratishthaShop';
 
 const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
@@ -36,6 +37,8 @@ export default function BookingFormScreen({ navigation, route }) {
   // Multi-plot: `plots` route param is a comma list of ids; fall back to single `plot`.
   const [priceBooks, setPriceBooks] = useState([]);   // Pratishtha: fixed per-unit figures
   const [unitLoaded, setUnitLoaded] = useState(false);   // selected unit resolved from the API
+  // Per-shop overrides: { [unit]: { rate, mode: 'pct'|'amount', unitPct, unitAmount } }
+  const [shopEdits, setShopEdits] = useState({});
   const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
   const plotId = plotIds[0] || '';
   const leadId = p.lead || '';
@@ -179,7 +182,11 @@ export default function BookingFormScreen({ navigation, route }) {
   // Pratishtha prices from each unit's fixed price book — nothing on this form is
   // editable for it, and there is no instalment schedule. A booking can cover several
   // units, so every selected one is priced and the totals are summed.
-  const pratBooks = formulaSet === 'pratishtha' ? priceBooks : [];
+  // Shops are computed from an editable Rate and Total Unit Price; flats stay fixed.
+  const rawBooks = formulaSet === 'pratishtha' ? priceBooks : [];
+  const shopEdit = (pb) => shopEdits[pb.unit] || { rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') };
+  const setShopEdit = (unit, patch) => setShopEdits((m) => ({ ...m, [unit]: { ...(m[unit] || shopEdit({ unit })), ...patch } }));
+  const pratBooks = rawBooks.map((pb) => (pb.kind === 'shop' ? computeShop(pb, shopEdit(pb)) : pb));
   const prat = pratBooks[0] || null;
   const pratRowsFor = (pb) => (pb.kind === 'shop'
     ? [['Shop Area', `${pb.sq_feet} sq.ft`], ['Rate', rupee(pb.rate) + ' / sq.ft'],
@@ -589,6 +596,42 @@ export default function BookingFormScreen({ navigation, route }) {
                     These figures come from the approved Pratishtha price book and cannot be edited here.
                   </Text>
                 ) : null}
+                {pb.kind === 'shop' ? (() => {
+                  const e = shopEdit(pb);
+                  return (
+                    <View style={{ borderWidth: 1.5, borderColor: '#C7D2FE', backgroundColor: '#F5F7FF', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
+                        EDITABLE · EVERYTHING BELOW RECALCULATES
+                      </Text>
+                      <Fld l="Rate (Rs./sq.ft)" val={String(e.rate ?? '')} on={(t) => setShopEdit(pb.unit, { rate: t })} kb="numeric" />
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Total Unit Price</Text>
+                      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                        {[['pct', '%'], ['amount', 'Rs.']].map(([m, lbl]) => {
+                          const on = e.mode === m;
+                          return (
+                            <TouchableOpacity key={m} onPress={() => setShopEdit(pb.unit, { mode: m })}
+                              style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5,
+                                borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                              <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{lbl}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                        <View style={{ flex: 1 }}>
+                          <TextInput keyboardType="numeric"
+                            value={String((e.mode === 'amount' ? e.unitAmount : e.unitPct) ?? '')}
+                            onChangeText={(t) => setShopEdit(pb.unit, e.mode === 'amount' ? { unitAmount: t } : { unitPct: t })}
+                            placeholderTextColor="#9CA3AF"
+                            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white }} />
+                        </View>
+                      </View>
+                      <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
+                        {e.mode === 'amount'
+                          ? `Entered as an amount · ${pb.amount ? ((pb.loan_amount / pb.amount) * 100).toFixed(2) : '0'}% of the shop amount`
+                          : `${e.unitPct || 0}% of ${rupee(pb.amount)} = ${rupee(pb.loan_amount)}`}
+                      </Text>
+                    </View>
+                  );
+                })() : null}
                 <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
                   {pratRowsFor(pb).map(([k, val], i) => (
                     <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
