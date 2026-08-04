@@ -291,8 +291,13 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const isSel = selectedSet.has(plot.id);
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
-                      style={{ minWidth: 54, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
+                      style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
                       <Text style={{ fontWeight: '800', fontSize: 13, color: isSel ? '#fff' : cfg.dot }}>{isSel ? `✓ ${plot.number}` : plot.number}</Text>
+                      {/* No plan drawn for this floor, so the chip is the only place these
+                          price-affecting details can surface. */}
+                      {!!plot.size && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E8EEFF' : MUTED }}>{plot.size}</Text>}
+                      {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
+                      {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>Terrace {plot.terrace_area} sq.ft</Text>}
                     </TouchableOpacity>
                   );
                 })}
