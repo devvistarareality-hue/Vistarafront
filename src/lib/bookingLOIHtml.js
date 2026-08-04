@@ -138,6 +138,8 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         + mrow('12 Months Maintenance Deposit (Rs. 1.5 per sq.ft. p.m.)', pb.maint_dep_12m)
         + mrow('Legal Charges', pb.legal)
         + mrow('Total Legal & Other Charges', pb.total_extra, { sub: true })
+        + mrow('Extra Work Amount', pb.extra_work_amount,
+            { subline: 'Final Unit Price - Total Legal & Other Charges' })
         + mrow('Grand Total', pb.grand_total, { total: !multi, sub: multi });
     } else {
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value')
