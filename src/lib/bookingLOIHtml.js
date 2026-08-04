@@ -18,7 +18,12 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // Pratishtha is priced from a fixed per-unit price book rather than a formula;
   // its LOI renders those figures verbatim using the same visual blocks.
   const isPratishtha = fs === 'pratishtha';
-  const pb = opts.priceBook || null;
+  // "Plot" is wrong for a tower — Pratishtha sells flats and shops, so label it by kind.
+  const unitLabel = (isPratishtha && opts.priceBook)
+    ? (opts.priceBook.kind === 'shop' ? 'Shop No: ' : 'Flat No: ') : 'Plot No: ';
+  const pbs = (opts.priceBooks && opts.priceBooks.length) ? opts.priceBooks
+    : (opts.priceBook ? [opts.priceBook] : []);
+  const pb = pbs[0] || null;   // Details block describes the first unit
   const isTundav = isIndustrial && projName.trim().toLowerCase() === 'tundav';
   const isKalrav3 = fs === 'kalrav' && projName.trim().toLowerCase() === 'kalrav 3';
   // Honour the booking form's unit toggle; fall back to the formula default.
@@ -56,7 +61,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     const isShop = pb.kind === 'shop';
     details = [
       ...(isShop
-        ? [['Shop Area', num(pb.sq_feet) + ' sq.ft.'], ['Rate', 'Rs. ' + num(pb.rate) + ' per sq.ft.']]
+        ? [['Shop Area', num(pb.sq_feet) + ' sq.ft.']]
         : [['Flat Area', num(pb.flat_area) + ' sq.yd.'],
            ['Terrace Area', pb.terrace_area ? num(pb.terrace_area) + ' sq.yd.' : 'Not applicable'],
            ['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—']]),
@@ -108,34 +113,68 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   // Pratishtha: its own Deal Value / charges blocks, built from the price book.
   let pratAgreement = '', pratExtra = '', pratExtraTitle = 'Payment & Charges';
+  const pbTot = (b) => ((b.grand_total != null ? b.grand_total : b.box_price) || 0);
+  // The stored unit number may already carry the word ("Shop1"), so don't repeat it:
+  // "Shop1" -> "Shop 1", "101" -> "Flat 101".
+  const unitTitle = (b) => {
+    const kind = b.kind === 'shop' ? 'Shop' : 'Flat';
+    const n = String(b.unit || '').trim();
+    const bare = n.replace(new RegExp('^' + kind + '\\s*', 'i'), '');
+    return kind + ' ' + (bare || n);
+  };
+
+  const multi = pbs.length > 1;
   if (isPratishtha && pb) {
+    pbs.forEach((pb) => {
     if (pb.kind === 'shop') {
-      pratAgreement = sec('Deal Value') + grid([
-        ['Shop Amount', 'Rs. ' + num(pb.amount)], ['Loan Amount', 'Rs. ' + num(pb.loan_amount)],
+      // The shop LOI states the area, the unit price, the charge bifurcation and the
+      // extra work amount. Rate and Shop Amount are working figures, not contract terms,
+      // so they stay on the booking form and off the document.
+      pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value') + grid([
+        ['Shop Area', num(pb.sq_feet) + ' sq.ft.'], ['Final Unit Price', 'Rs. ' + num(pb.loan_amount)],
       ]);
       pratExtraTitle = 'Legal & Other Charges';
-      pratExtra = mrow('Stamp Duty & Registration (6% of Loan Amount)', pb.stamp_duty_reg)
-        + mrow('GST (5% of Loan Amount)', pb.gst)
+      pratExtra += mrow('Stamp Duty & Registration (6% of Final Unit Price)', pb.stamp_duty_reg)
+        + mrow('GST (5% of Final Unit Price)', pb.gst)
         + mrow('AUDA (Rs. 400 per sq.ft.)', pb.auda)
         + mrow('6 Months Maintenance Advance (Rs. 1.5 per sq.ft. p.m.)', pb.maint_adv_6m)
         + mrow('12 Months Maintenance Deposit (Rs. 1.5 per sq.ft. p.m.)', pb.maint_dep_12m)
         + mrow('Legal Charges', pb.legal)
         + mrow('Total Legal & Other Charges', pb.total_extra, { sub: true })
-        + mrow('Grand Total', pb.grand_total, { total: true });
+        + mrow('Extra Work Amount', 0, {
+            valStr: (Number(pb.extra_work_amount || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            subline: 'Final Unit Price - Total Legal & Other Charges',
+          })
+        + (() => {
+            // Document total = Final Unit Price + Total Legal & Other Charges + Extra
+            // Work Amount as printed (per hundred). The booking still records
+            // Amount + Total Extra.
+            const t = (Number(pb.loan_amount) || 0) + (Number(pb.total_extra) || 0)
+              + (Number(pb.extra_work_amount) || 0) / 100;
+            return mrow('Grand Total', 0, {
+              valStr: t.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              total: !multi, sub: multi,
+            });
+          })();
     } else {
-      pratAgreement = sec('Deal Value')
+      pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value')
         + `<table class="money">${mrow('Flat Price', pb.flat_price)}`
         + (pb.terrace_area ? mrow('Additional Terrace Price', pb.terrace_price,
             { subline: num(pb.terrace_area) + ' sq.yd. private terrace' }) : '')
         + mrow('Total All Inclusive Amount (Box Price)', pb.box_price, { sub: true })
         + '</table>';
-      pratExtra = mrow('Token', pb.token)
+      pratExtra += mrow('Token', pb.token)
         + mrow('Bank Loan', pb.bank_loan)
-        + mrow('Dastavej Value (approx.)', pb.dastavej_value)
+        + mrow('Final Unit Price', pb.dastavej_value)
         + mrow('Stamp Duty + Registration', pb.stamp_duty_reg)
         + mrow('GST', pb.gst)
         + mrow('Bank Processing Fees & Insurance', pb.bank_processing)
-        + mrow('Total', pb.total, { total: true });
+        + mrow('Total', pb.total, { total: !multi, sub: multi });
+    }
+    });
+    if (multi) {
+      pratExtra += pbs.map((b) => mrow(unitTitle(b), pbTot(b))).join('')
+        + mrow('Total All Inclusive Amount', pbs.reduce((s2, b) => s2 + pbTot(b), 0), { total: true });
     }
   }
 
@@ -195,7 +234,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     ['Payment Mode', 'All payments are received via cheque or bank transfer only. No cash is accepted.'],
     ['Booking Token', 'Token amount for booking is subject to approval of loan from the bank. In case of disapproval from the bank, the token amount will be refunded back into the buyer\'s account within forty-eight hours.'],
     ['Cancellation', 'If the buyer cancels the flat after booking, the token amount will be forfeited by the builder.'],
-    ['Inclusions', 'The above proposal is inclusive of:\n\u2022 Stamp duty and registration\n\u2022 GST\n\u2022 Bank processing fees and insurance\n\u2022 Gas meter charge\n\u2022 Electricity meter charge\n\u2022 Maintenance advance\n\u2022 Maintenance deposit'],
+    ['Inclusions', 'The above proposal is inclusive of:\n\u2022 Stamp duty charges\n\u2022 Registration charges\n\u2022 Loan charges including PF and insurance\n\u2022 Meter connection charges\n\u2022 Gas connection charges\n\u2022 6 months maintenance advance (@ Rs. 1.5 per sq.ft. p.m.)\n\u2022 12 months maintenance deposit (@ Rs. 1.5 per sq.ft. p.m.)'],
   ];
 
   const terms = isPratishtha ? PRATISHTHA_TERMS : (isEOI && isKalrav) ? [
@@ -315,7 +354,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
-  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : 'Plot No: ' + esc(((meta.plotNo || '').toString().replace(/^[^0-9]*/, '') || meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
+  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : unitLabel + esc(((meta.plotNo || '').toString().replace(/^[^0-9]*/, '') || meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>

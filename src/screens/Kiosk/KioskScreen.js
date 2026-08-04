@@ -231,7 +231,7 @@ export default function KioskScreen({ navigation }) {
                       const on = i === Math.min(floorIdx, floors.length - 1);
                       const n = plots.filter((pl) => onFloor(pl, f)).length;
                       return (
-                        <TouchableOpacity key={i} onPress={() => { setFloorIdx(i); setSelIds([]); }}
+                        <TouchableOpacity key={i} onPress={() => setFloorIdx(i)}
                           style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
                             borderColor: on ? BLUE : '#E1E6F1', backgroundColor: on ? BLUEBG : '#fff' }}>
                           <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>
@@ -281,7 +281,6 @@ export default function KioskScreen({ navigation }) {
                     })}
                   </Svg>
                 </View>
-                {selIds.length > 0 && <Text style={s.summary}>Selected {selIds.length} unit{selIds.length > 1 ? 's' : ''} · {plots.filter((p) => selIds.includes(p.id)).map((p) => p.number).join(', ')}</Text>}
               </View>
             ) : (
               <View>
@@ -301,6 +300,18 @@ export default function KioskScreen({ navigation }) {
               </View>
             )}
 
+            {/* Outside the map/chip branches so it's visible on every floor — a buyer can
+                pick a shop on the ground and a flat upstairs in one booking. */}
+            {selIds.length > 0 ? (
+              <Text style={s.summary}>Selected {selIds.length} unit{selIds.length > 1 ? 's' : ''} · {(() => {
+                const sel = plots.filter((p) => selIds.includes(p.id));
+                const floorOf = (p) => { const f = floors.find((x) => onFloor(p, x)); return f ? (f.label || `Floor ${f.floor}`) : ''; };
+                const fl = [...new Set(sel.map(floorOf).filter(Boolean))];
+                return (floorWise && fl.length > 1)
+                  ? fl.map((lbl) => `${lbl}: ${sel.filter((p) => floorOf(p) === lbl).map((p) => p.number).join(', ')}`).join('  ·  ')
+                  : sel.map((p) => p.number).join(', ');
+              })()}</Text>
+            ) : null}
             <TouchableOpacity disabled={!canContinueSelect} onPress={openBookingForm} style={[s.primary, !canContinueSelect ? { opacity: 0.45 } : null]}>
               <Text style={s.primaryT}>Continue →</Text>
             </TouchableOpacity>
