@@ -34,6 +34,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const convertEoiId = p.convertEoi || '';   // converting an EOI into a plot booking
   const [projectId, setProjectId] = useState(p.project ? String(p.project) : '');
   // Multi-plot: `plots` route param is a comma list of ids; fall back to single `plot`.
+  const [priceBook, setPriceBook] = useState(null);   // Pratishtha: fixed per-unit figures
   const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
   const plotId = plotIds[0] || '';
   const leadId = p.lead || '';
@@ -86,6 +87,8 @@ export default function BookingFormScreen({ navigation, route }) {
       // Resolve every selected plot (preserve order) and sum their areas.
       const picked = plotIds.map((pid) => all.find((x) => String(x.id) === String(pid))).filter(Boolean);
       if (picked.length) {
+        // Pratishtha prices from the unit's fixed price book, not the form's rates.
+        setPriceBook(picked[0].price_book && Object.keys(picked[0].price_book).length ? picked[0].price_book : null);
         const stripNum = (n) => { const s = (n || '').toString(); return s.replace(/^[^0-9]*/, '') || s; };
         setPlotNo(picked.map((x) => stripNum(x.number)).join(', '));
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
@@ -335,7 +338,7 @@ export default function BookingFormScreen({ navigation, route }) {
       areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
-      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit });
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit, priceBook });
       const { uri } = await Print.printToFileAsync({ html });
       // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
