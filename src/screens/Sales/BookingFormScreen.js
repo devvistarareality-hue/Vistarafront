@@ -35,6 +35,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const [projectId, setProjectId] = useState(p.project ? String(p.project) : '');
   // Multi-plot: `plots` route param is a comma list of ids; fall back to single `plot`.
   const [priceBook, setPriceBook] = useState(null);   // Pratishtha: fixed per-unit figures
+  const [unitLoaded, setUnitLoaded] = useState(false);   // selected unit resolved from the API
   const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
   const plotId = plotIds[0] || '';
   const leadId = p.lead || '';
@@ -101,7 +102,8 @@ export default function BookingFormScreen({ navigation, route }) {
           const_area: (sumConst && !convertEoiId) ? String(+sumConst.toFixed(2)) : s.const_area,
         }));
       }
-    }).catch(() => {});
+      setUnitLoaded(true);
+    }).catch(() => setUnitLoaded(true));
     apiFetch(SALES_ENDPOINTS.sources + cq('?')).then(r => r.json()).then((d) => setSources(Array.isArray(d) ? d : [])).catch(() => {});
     // EOI: fetch the next per-project EOI code to show in the form + the EOI PDF.
     if (eoiMode && !reviseId && projectId) apiFetch(`${SALES_ENDPOINTS.bookings}next-eoi/?project=${projectId}${cq('&')}`)
@@ -167,6 +169,12 @@ export default function BookingFormScreen({ navigation, route }) {
   const formulaSet = project?.formula_set || 'kalrav';
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
   // All pricing sets share the sale-deed % split (Unit Price + Additional Extra Work Amount).
+  // Which pricing sections apply depends on the project's formula set and, for a unit
+  // booking, on that unit's price book — the latter isn't known on the first paint.
+  // Render a placeholder until it resolves, otherwise the rate layout flashes up and is
+  // then replaced.
+  const pricingReady = !!project && (eoiMode || !plotIds.length || unitLoaded);
+
   // Pratishtha prices from the unit's fixed price book — nothing on this form is
   // editable for it, and there is no instalment schedule.
   const prat = (formulaSet === 'pratishtha' && priceBook && Object.keys(priceBook).length) ? priceBook : null;
@@ -549,7 +557,11 @@ export default function BookingFormScreen({ navigation, route }) {
           {/^other$/i.test(f.source) && <Fld l="Other" val={f.cp_name} on={(t) => set('cp_name', t)} />}
         </Sec>
 
-        {prat ? (
+        {!pricingReady ? (
+          <Sec title="Pricing">
+            <Text style={{ fontSize: 13, color: MUTED }}>Loading unit pricing…</Text>
+          </Sec>
+        ) : prat ? (
           /* Pratishtha: every figure is fixed in the unit's price book — shown, not entered. */
           <Sec title={`Unit Pricing · ${prat.kind === 'shop' ? 'Shop' : 'Flat'} ${prat.unit} (fixed)`}>
             <Text style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
@@ -695,7 +707,7 @@ export default function BookingFormScreen({ navigation, route }) {
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
           {/* Pratishtha is an all-inclusive fixed box price — no staged payments. */}
-          {!prat && (<>
+          {pricingReady && !prat && (<>
           {/* Extra Work Amount Installments — shown ABOVE the sale-deed installments */}
           {hasSaleDeedSplit && nsdBase > 0 && (
             <View style={{ marginBottom: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 }}>
