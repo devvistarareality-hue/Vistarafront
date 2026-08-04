@@ -145,7 +145,17 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
             valStr: (Number(pb.extra_work_amount || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             subline: 'Final Unit Price - Total Legal & Other Charges',
           })
-        + mrow('Grand Total', pb.grand_total, { total: !multi, sub: multi });
+        + (() => {
+            // Document total = Final Unit Price + Total Legal & Other Charges + Extra
+            // Work Amount as printed (per hundred). The booking still records
+            // Amount + Total Extra.
+            const t = (Number(pb.loan_amount) || 0) + (Number(pb.total_extra) || 0)
+              + (Number(pb.extra_work_amount) || 0) / 100;
+            return mrow('Grand Total', 0, {
+              valStr: t.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              total: !multi, sub: multi,
+            });
+          })();
     } else {
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value')
         + `<table class="money">${mrow('Flat Price', pb.flat_price)}`
