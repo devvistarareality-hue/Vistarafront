@@ -128,11 +128,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     pbs.forEach((pb) => {
     if (pb.kind === 'shop') {
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value') + grid([
-        ['Shop Amount', 'Rs. ' + num(pb.amount)], ['Loan Amount', 'Rs. ' + num(pb.loan_amount)],
+        ['Shop Amount', 'Rs. ' + num(pb.amount)], ['Final Unit Price', 'Rs. ' + num(pb.loan_amount)],
       ]);
       pratExtraTitle = 'Legal & Other Charges';
-      pratExtra += mrow('Stamp Duty & Registration (6% of Loan Amount)', pb.stamp_duty_reg)
-        + mrow('GST (5% of Loan Amount)', pb.gst)
+      pratExtra += mrow('Stamp Duty & Registration (6% of Final Unit Price)', pb.stamp_duty_reg)
+        + mrow('GST (5% of Final Unit Price)', pb.gst)
         + mrow('AUDA (Rs. 400 per sq.ft.)', pb.auda)
         + mrow('6 Months Maintenance Advance (Rs. 1.5 per sq.ft. p.m.)', pb.maint_adv_6m)
         + mrow('12 Months Maintenance Deposit (Rs. 1.5 per sq.ft. p.m.)', pb.maint_dep_12m)
