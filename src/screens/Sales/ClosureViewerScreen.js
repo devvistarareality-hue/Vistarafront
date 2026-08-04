@@ -131,6 +131,9 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const isHidden = (plot) =>
     (filter !== 'all' && plot.status !== filter) ||
     (typeFilter !== 'all' && plot.cluster_type !== typeFilter);
+  // Which floor each selected unit sits on — shown only when the selection spans
+  // several, so picking a shop and a flat together reads clearly.
+  const floorOf = (p) => { const f = floors.find((x) => onFloor(p, x)); return f ? (f.label || `Floor ${f.floor}`) : ''; };
   const shownCount = visiblePlots.filter(p => !isHidden(p)).length;
 
   // Multi-select: a client can buy several plots in one booking. Tapping an
@@ -193,7 +196,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
               const active = i === Math.min(floorIdx, floors.length - 1);
               const n = plots.filter((p) => onFloor(p, f)).length;
               return (
-                <TouchableOpacity key={i} onPress={() => { setFloorIdx(i); setSelectedIds([]); }}
+                <TouchableOpacity key={i} onPress={() => setFloorIdx(i)}
                   style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
                     borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#EEF1FF' : COLORS.white }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>
@@ -314,7 +317,12 @@ export default function ClosureViewerScreen({ navigation, route }) {
             <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>
               {selPlots.length} plot{selPlots.length > 1 ? 's' : ''} selected{selArea > 0 ? ` · ${+selArea.toFixed(2)} area` : ''}
             </Text>
-            <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>Plot {selPlots.map((p) => p.number).join(', ')}</Text>
+            <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={2}>{(() => {
+              const fl = [...new Set(selPlots.map(floorOf).filter(Boolean))];
+              return (floorWise && fl.length > 1)
+                ? fl.map((lbl) => `${lbl}: ${selPlots.filter((p) => floorOf(p) === lbl).map((p) => p.number).join(', ')}`).join('  ·  ')
+                : `Plot ${selPlots.map((p) => p.number).join(', ')}`;
+            })()}</Text>
           </View>
           <TouchableOpacity onPress={() => setSelectedIds([])} style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Clear</Text>
