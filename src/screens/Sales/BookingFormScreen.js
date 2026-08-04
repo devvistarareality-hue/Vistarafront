@@ -543,7 +543,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? (eoiMode ? 'Revise EOI' : 'Revise Booking') : eoiMode ? 'Create EOI' : (plotIds.length > 1 ? 'Book Units' : 'Book Unit')} <Text style={eoiMode ? { color: '#E4571A' } : null}>{eoiMode ? (eoiNo || '…') : plotNo}</Text></Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? (eoiMode ? 'Revise EOI' : 'Revise Booking') : eoiMode ? 'Create EOI' : (plotIds.length > 1 ? 'Book Units' : prat ? (prat.kind === 'shop' ? 'Book Shop' : 'Book Flat') : 'Book Unit')} <Text style={eoiMode ? { color: '#E4571A' } : null}>{eoiMode ? (eoiNo || '…') : plotNo}</Text></Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{project?.name || '…'} · {formulaSet.toUpperCase()}{eoiMode ? ' · EOI · no plot' : ''}</Text>
         </View>
       </View>

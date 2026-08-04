@@ -18,6 +18,9 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // Pratishtha is priced from a fixed per-unit price book rather than a formula;
   // its LOI renders those figures verbatim using the same visual blocks.
   const isPratishtha = fs === 'pratishtha';
+  // "Plot" is wrong for a tower — Pratishtha sells flats and shops, so label it by kind.
+  const unitLabel = (isPratishtha && opts.priceBook)
+    ? (opts.priceBook.kind === 'shop' ? 'Shop No: ' : 'Flat No: ') : 'Plot No: ';
   const pb = opts.priceBook || null;
   const isTundav = isIndustrial && projName.trim().toLowerCase() === 'tundav';
   const isKalrav3 = fs === 'kalrav' && projName.trim().toLowerCase() === 'kalrav 3';
@@ -315,7 +318,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
-  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : 'Plot No: ' + esc(((meta.plotNo || '').toString().replace(/^[^0-9]*/, '') || meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
+  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : unitLabel + esc(((meta.plotNo || '').toString().replace(/^[^0-9]*/, '') || meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>
