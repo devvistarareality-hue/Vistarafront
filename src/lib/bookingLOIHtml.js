@@ -239,7 +239,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const legalRows = legalInst.map((i, idx) => {
     const amt = Math.round(i.amt || 0); grandLegal += amt;
     const rawDate = fmtDate(i.date); const legalDate = (rawDate && rawDate !== '—') ? rawDate : NO_DATE;
-    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(legalDate)}</td><td>Legal & Other Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(legalDate)}</td><td>${esc(i.label || 'Legal & Other Charges')}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
 
   const grand = grandUnit + grandEwc + grandLegal;
@@ -396,7 +396,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   ${(!isPratishtha && extraWork) ? `<div class="block">${extraWork}</div>` : ''}
 
-  ${isPratishtha && pb ? '' : scheduleHtml}
+  ${scheduleHtml}
 
   <div class="block">${sec('Terms & Conditions')}${terms.map((t, i) => `<div class="term${i % 2 ? '' : ' alt'}"><span class="tl">${esc(t[0])}</span><span class="td2">${esc(t[1]).replace(/\n/g, '<br>')}</span></div>`).join('')}</div>
 

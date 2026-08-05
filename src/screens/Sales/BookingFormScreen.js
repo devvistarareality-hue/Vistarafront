@@ -262,6 +262,18 @@ export default function BookingFormScreen({ navigation, route }) {
     const bare = n.replace(new RegExp('^' + kind + '\\s*', 'i'), '');
     return kind + ' ' + (bare || n);
   };
+  // A Down Payment flat is paid in instalments against the Box Price only — flats carry
+  // no extra work, so there is no second schedule. The three charge lines fall due on
+  // the sale deed or possession instead, so they are carried as undated extras.
+  const pratDp     = prat && pratBooks.some((b) => b.is_down_payment);
+  const pratSum    = (k) => pratBooks.reduce((sum, b) => sum + (Number(b[k]) || 0), 0);
+  const pratBox    = pratSum('box_price');
+  const pratExtras = () => [
+    ['Total Legal & Other Charges', pratSum('total_extra')],
+    ['6 Months Advance Maintenance', pratSum('maint_adv_6m')],
+    ['12 Months Advance Maintenance', pratSum('maint_adv_12m')],
+  ].filter(([, amt]) => Math.round(amt) > 0)
+   .map(([label, amt]) => ({ no: 'Extra', date: '', amt: Math.round(amt), isExtra: true, label }));
   const pbTotal = (pb) => (pb.grand_total ?? pb.box_price ?? 0);
   const pratTotal = pratBooks.reduce((sum, pb) => sum + pbTotal(pb), 0);
   const pratExtraTotal = pratBooks.reduce((sum, pb) => sum + (pb.total_extra || 0), 0);
@@ -304,7 +316,7 @@ export default function BookingFormScreen({ navigation, route }) {
     });
     return unsub;
   }, [navigation, isDirty]);
-  const base = installmentBase(v);
+  const base = pratDp ? pratBox : installmentBase(v);
   const pctTotal = base ? insts.reduce((a, r) => a + (parseFloat(r.amt) || 0), 0) / base * 100 : insts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
   const ewBase = parseFloat(ew.amt) || 0;
   const ewPctTotal = ewBase ? ewInsts.reduce((a, r) => a + (parseFloat(r.amt) || 0), 0) / ewBase * 100 : ewInsts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
@@ -407,6 +419,7 @@ export default function BookingFormScreen({ navigation, route }) {
   }
   function instArr() {
     const arr = insts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0 }));
+    if (prat) return pratDp ? arr.concat(pratExtras()) : [];
     nsdInsts.forEach((r, i) => arr.push({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isNsd: true }));
     arr.push({ no: 'Extra', date: extraDate, amt: Math.round(v.totalExtra), isExtra: true });
     return arr;
@@ -425,7 +438,9 @@ export default function BookingFormScreen({ navigation, route }) {
     }
     // Installments must total 100% before the LOI — EXCEPT for an EOI, where a partial
     // (token) schedule is allowed and the 100% rule does not apply.
-    if (!prat && !eoiMode) {
+    // A Down Payment Pratishtha flat now has a real schedule, so it is held to the same
+    // 100% rule; a Regular one has no schedule at all and is skipped.
+    if ((!prat || pratDp) && !eoiMode) {
       if (!insts.length) { setMsg('Add the payment installments before downloading the LOI.'); return; }
       if (Math.abs(pctTotal - 100) > 0.01) { setMsg('Payment installments must total 100% before downloading the LOI.'); return; }
       if (hasSaleDeedSplit && nsdBase > 0 && (!nsdInsts.length || Math.abs(nsdPctTotal - 100) > 0.01)) {
@@ -547,7 +562,7 @@ export default function BookingFormScreen({ navigation, route }) {
       if (Object.keys(e).length) { setErrs(e); setMsg('Please fill the highlighted fields.'); return; }
       setErrs({});
     }
-    if (!prat && !eoiMode && insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
+    if ((!prat || pratDp) && !eoiMode && insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
     if (!loiFile) { setMsg('Generate the LOI, get it signed, and attach it before submitting.'); return; }
     setSaving(true); setMsg('');
     const payload = {
@@ -571,7 +586,9 @@ export default function BookingFormScreen({ navigation, route }) {
       total_extra: Math.round(prat ? pratExtraTotal : v.totalExtra), discount: f.discount || 0,
       final_amount: Math.round(prat ? pratTotal : v.finalAmt),
       apply_reg_fee: f.apply_reg_fee, apply_page_fee: f.apply_page_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
-      installments: prat ? [] : instArr(),   // fixed box price — no staged payments
+      // A Regular Pratishtha unit is a fixed box price with no staged payments; a Down
+      // Payment one is paid in instalments against the box price.
+      installments: instArr(),
       booking_date: f.booking_date, cp_name: f.cp_name,
       extra_work_desc: reviseId ? (ew.desc || '') : '',
       extra_work_amount: reviseId ? Math.round(parseFloat(ew.amt) || 0) : 0,
@@ -902,7 +919,7 @@ export default function BookingFormScreen({ navigation, route }) {
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
           {/* Pratishtha is an all-inclusive fixed box price — no staged payments. */}
-          {pricingReady && !prat && (<>
+          {pricingReady && (!prat || pratDp) && (<>
           {/* Extra Work Amount Installments — shown ABOVE the sale-deed installments */}
           {hasSaleDeedSplit && nsdBase > 0 && (
             <View style={{ marginBottom: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 }}>
@@ -922,7 +939,7 @@ export default function BookingFormScreen({ navigation, route }) {
           )}
           {hasSaleDeedSplit && (
             <View style={{ marginBottom: 4 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E3A5F' }}>Unit Price Installments</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E3A5F' }}>{pratDp ? 'Box Price Installments' : 'Unit Price Installments'}</Text>
               <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{rupee(base)}</Text>
             </View>
           )}
@@ -935,7 +952,14 @@ export default function BookingFormScreen({ navigation, route }) {
               <TextInput value={r.amt} onChangeText={(t) => setInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
             </View>
           ))}
-          {v.totalExtra > 0 && (
+          {/* Pratishtha's three charge lines all fall due on the sale deed or possession,
+              so they carry that wording instead of a date picker. */}
+          {pratDp ? pratExtras().map((x) => (
+            <View key={x.label} style={{ marginTop: 6, backgroundColor: '#FFF8E1', borderRadius: 8, padding: 8 }}>
+              <Text style={{ color: '#92400E', fontWeight: '700', fontSize: 12 }}>{x.label} {rupee(x.amt)}</Text>
+              <Text style={{ color: MUTED, fontSize: 10, fontStyle: 'italic', marginTop: 2 }}>Date of Sale Deed or Possession (whichever is earlier)</Text>
+            </View>
+          )) : v.totalExtra > 0 && (
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center', backgroundColor: '#FFF8E1', borderRadius: 8, padding: 6 }}>
               <Text style={{ width: 16, color: '#92400E', fontWeight: '700', fontSize: 11 }}>Ex</Text>
               <DateField value={extraDate} onChange={setExtraDate} placeholder="Extra charges date" style={{ flex: 2 }} />
