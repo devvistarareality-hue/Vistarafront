@@ -161,7 +161,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         + `<table class="money">${mrow('Flat Price', pb.flat_price)}`
         + (pb.terrace_area ? mrow('Additional Terrace Price', pb.terrace_price,
             { subline: num(pb.terrace_area) + ' sq.yd. private terrace' }) : '')
-        + mrow('Total All Inclusive Amount (Box Price)', pb.box_price, { sub: true })
+        + mrow('Box Price', pb.box_price, { sub: true })
         + '</table>';
       pratExtra += mrow('Token', pb.token)
         + mrow('Bank Loan', pb.bank_loan)
