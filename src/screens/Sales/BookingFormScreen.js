@@ -188,11 +188,16 @@ export default function BookingFormScreen({ navigation, route }) {
   const rawBooks = formulaSet === 'pratishtha' ? priceBooks : [];
   const shopEdit = (pb) => shopEdits[pb.unit] || { rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') };
   const setShopEdit = (unit, patch) => setShopEdits((m) => ({ ...m, [unit]: { ...(m[unit] || shopEdit({ unit })), ...patch } }));
-  const flatEdit = (pb) => flatEdits[pb.unit] || { rate: String(impliedFlatRate(pb)), token: String(pb.token ?? '') };
+  const flatEdit = (pb) => flatEdits[pb.unit] || { plan: 'Regular', rate: String(impliedFlatRate(pb)), token: String(pb.token ?? '') };
   const setFlatEdit = (unit, patch) => setFlatEdits((m) => ({ ...m, [unit]: { ...(m[unit] || flatEdit({ unit })), ...patch } }));
+  // Only a Down Payment plan may move the rate or token. On Regular the unit prices
+  // straight from the price book — passing no overrides at all, so switching back from
+  // Down Payment cannot leave an edited figure behind.
+  const isDownPayment = (pb) => flatEdit(pb).plan === 'Down Payment';
+  const flatOverrides = (pb) => (isDownPayment(pb) ? flatEdit(pb) : {});
   const pratBooks = rawBooks.map((pb) => (pb.kind === 'shop'
     ? computeShop(pb, shopEdit(pb))
-    : computeFlat(pb, flatEdit(pb))));
+    : computeFlat(pb, flatOverrides(pb))));
   const prat = pratBooks[0] || null;
   const pratRowsFor = (pb) => (pb.kind === 'shop'
     ? [['Shop Area', `${pb.sq_feet} sq.ft`], ['Rate', rupee(pb.rate) + ' / sq.ft'],
@@ -612,16 +617,42 @@ export default function BookingFormScreen({ navigation, route }) {
                 ) : null}
                 {pb.kind !== 'shop' ? (() => {
                   const e = flatEdit(pb);
+                  const dp = isDownPayment(pb);
+                  const lock = { backgroundColor: '#EEF1F7', color: MUTED };
                   return (
                     <View style={{ borderWidth: 1.5, borderColor: '#C7D2FE', backgroundColor: '#F5F7FF', borderRadius: 10, padding: 12, marginBottom: 10 }}>
                       <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
-                        EDITABLE · EVERYTHING BELOW RECALCULATES
+                        {dp ? 'EDITABLE · EVERYTHING BELOW RECALCULATES' : 'PLAN'}
                       </Text>
-                      <Fld l="Flat Rate (Rs./sq.yd)" val={String(e.rate ?? '')} on={(t) => setFlatEdit(pb.unit, { rate: t })} kb="numeric" />
-                      <Fld l="Token" val={String(e.token ?? '')} on={(t) => setFlatEdit(pb.unit, { token: t })} kb="numeric" />
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Plan</Text>
+                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                        {['Regular', 'Down Payment'].map((pl) => {
+                          const on = (e.plan || 'Regular') === pl;
+                          return (
+                            <TouchableOpacity key={pl} onPress={() => setFlatEdit(pb.unit, { plan: pl })}
+                              style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, alignItems: 'center',
+                                borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                              <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{pl}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Flat Rate (Rs./sq.yd)</Text>
+                      <TextInput editable={dp} keyboardType="numeric"
+                        value={dp ? String(e.rate ?? '') : String(pb.flat_rate)}
+                        onChangeText={(t) => setFlatEdit(pb.unit, { rate: t })}
+                        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                          fontSize: 14, marginBottom: 10, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Token</Text>
+                      <TextInput editable={dp} keyboardType="numeric"
+                        value={dp ? String(e.token ?? '') : String(pb.token)}
+                        onChangeText={(t) => setFlatEdit(pb.unit, { token: t })}
+                        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                          fontSize: 14, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
                       <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
-                        {`${pb.flat_area} sq.yd x ${rupee(pb.flat_rate)} = ${rupee(pb.flat_price)}`}
-                        {pb.terrace_area ? ` + terrace ${pb.terrace_area} sq.yd @ ${rupee(pb.terrace_rate)} = ${rupee(pb.terrace_price)}` : ''}
+                        {dp
+                          ? `${pb.flat_area} sq.yd x ${rupee(pb.flat_rate)} = ${rupee(pb.flat_price)}${pb.terrace_area ? ` + terrace ${pb.terrace_area} sq.yd @ ${rupee(pb.terrace_rate)} = ${rupee(pb.terrace_price)}` : ''}`
+                          : 'Regular plan — priced from the approved price book. Switch to Down Payment to change the rate or token.'}
                       </Text>
                     </View>
                   );
