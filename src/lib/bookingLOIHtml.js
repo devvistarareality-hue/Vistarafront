@@ -158,17 +158,26 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
           })();
     } else {
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value')
-        + `<table class="money">${mrow('Flat Price', pb.flat_price)}`
+        + `<table class="money">${mrow('Flat Price', pb.flat_price, { subline: num(pb.flat_area) + ' sq.yd. built-up' })}`
         + (pb.terrace_area ? mrow('Additional Terrace Price', pb.terrace_price,
             { subline: num(pb.terrace_area) + ' sq.yd. private terrace' }) : '')
         + mrow('Box Price', pb.box_price, { sub: true })
         + '</table>';
-      pratExtra += mrow('Token', pb.token)
-        + mrow('Bank Loan', pb.bank_loan)
-        + mrow('Final Unit Price', pb.dastavej_value)
-        + mrow('Stamp Duty + Registration', pb.stamp_duty_reg)
-        + mrow('GST', pb.gst)
-        + mrow('Bank Processing Fees & Insurance', pb.bank_processing)
+      // These are two DIFFERENT views of the same money, and printing them as one list
+      // made the document unreadable: a buyer added all six lines, got twice the total
+      // and asked why. Split into what the price is made up of, and how it is funded --
+      // each group adding to exactly the same total, and each row saying what it is.
+      // The wrapper opens the table and closes it, so the second section closes the
+      // first table and opens its own.
+      pratExtraTitle = 'What This Price Includes';
+      pratExtra += mrow('Final Unit Price', pb.dastavej_value, { subline: 'Value of the unit recorded in the sale agreement' })
+        + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
+        + mrow('GST', pb.gst, { subline: 'Goods &amp; Services Tax' })
+        + mrow('Bank Processing Fees & Insurance', pb.bank_processing, { subline: 'Charged by the bank to sanction the loan' })
+        + mrow('Total All Inclusive Amount', pb.total, { sub: true })
+        + '</table>' + sec('How You Pay', '#475569') + '<table class="money">'
+        + mrow('Token', pb.token, { subline: 'Payable now, to book the unit' })
+        + mrow('Bank Loan', pb.bank_loan, { subline: 'Loan amount to be arranged — the balance after the token' })
         + mrow('Total', pb.total, { total: !multi, sub: multi });
     }
     });
