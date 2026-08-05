@@ -658,8 +658,12 @@ export default function BookingFormScreen({ navigation, route }) {
                       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                         {['Regular', 'Down Payment'].map((pl) => {
                           const on = (e.plan || 'Regular') === pl;
+                          // Switching to Down Payment clears the price rather than carrying the
+                          // price-book figure over: the plan exists to enter a negotiated one,
+                          // and a pre-filled default is easy to leave in by mistake.
                           return (
-                            <TouchableOpacity key={pl} onPress={() => setFlatEdit(pb, { plan: pl })}
+                            <TouchableOpacity key={pl} onPress={() => setFlatEdit(pb, pl === 'Down Payment'
+                              ? { plan: pl, flatPrice: '0' } : { plan: pl })}
                               style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, alignItems: 'center',
                                 borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
                               <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{pl}</Text>
@@ -673,12 +677,16 @@ export default function BookingFormScreen({ navigation, route }) {
                         onChangeText={(t) => setFlatEdit(pb, { flatPrice: t })}
                         style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
                           fontSize: 14, marginBottom: 10, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Token</Text>
-                      <TextInput editable={dp} keyboardType="numeric"
-                        value={dp ? String(e.token ?? '') : String(pb.token)}
-                        onChangeText={(t) => setFlatEdit(pb, { token: t })}
-                        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
-                          fontSize: 14, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
+                      {/* No token on a Down Payment plan — there is no loan, and the section
+                          that used to quote it is gone. */}
+                      {!dp ? (
+                        <>
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Token</Text>
+                          <TextInput editable={false} keyboardType="numeric" value={String(pb.token)}
+                            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                              fontSize: 14, color: MUTED, backgroundColor: lock.backgroundColor }} />
+                        </>
+                      ) : null}
                       <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
                         {dp
                           ? `${rupee(pb.flat_price)} / ${pb.flat_area} sq.yd = ${rupee(pb.flat_rate)} per sq.yd${pb.terrace_area ? ` · terrace ${pb.terrace_area} sq.yd @ ${rupee(pb.terrace_rate)} = ${rupee(pb.terrace_price)}` : ''}`
