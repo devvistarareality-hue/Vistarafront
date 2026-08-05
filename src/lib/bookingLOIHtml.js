@@ -179,7 +179,8 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
         + mrow('GST', pb.gst, { subline: 'Goods &amp; Services Tax' })
         + (pb.is_down_payment
-            ? mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
+            ? mrow('Legal Charges', pb.legal)
+              + mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
               + mrow('12 Months Advance Maintenance', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, paid in advance' })
             : mrow('Bank Processing Charges', pb.bank_processing))
         + mrow('Total All Inclusive Amount', pb.total, { sub: true })
