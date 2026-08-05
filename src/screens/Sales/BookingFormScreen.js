@@ -16,7 +16,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
 import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 import { computeShop, impliedUnitPct } from '../../lib/pratishthaShop';
-import { computeFlat, impliedFlatRate } from '../../lib/pratishthaFlat';
+import { computeFlat } from '../../lib/pratishthaFlat';
 
 const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
@@ -193,7 +193,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const shopSeed = (pb) => ({ rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') });
   const shopEdit = (pb) => shopEdits[pb.unit] || shopSeed(pb);
   const setShopEdit = (pb, patch) => setShopEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || shopSeed(pb)), ...patch } }));
-  const flatSeed = (pb) => ({ plan: 'Regular', rate: String(impliedFlatRate(pb)), token: String(pb.token ?? '') });
+  const flatSeed = (pb) => ({ plan: 'Regular', flatPrice: String(pb.flat_price ?? ''), token: String(pb.token ?? '') });
   const flatEdit = (pb) => flatEdits[pb.unit] || flatSeed(pb);
   const setFlatEdit = (pb, patch) => setFlatEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || flatSeed(pb)), ...patch } }));
   // Only a Down Payment plan may move the rate or token. On Regular the unit prices
@@ -656,10 +656,10 @@ export default function BookingFormScreen({ navigation, route }) {
                           );
                         })}
                       </View>
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Flat Rate (Rs./sq.yd)</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Flat Price (Rs.)</Text>
                       <TextInput editable={dp} keyboardType="numeric"
-                        value={dp ? String(e.rate ?? '') : String(pb.flat_rate)}
-                        onChangeText={(t) => setFlatEdit(pb, { rate: t })}
+                        value={dp ? String(e.flatPrice ?? '') : String(pb.flat_price)}
+                        onChangeText={(t) => setFlatEdit(pb, { flatPrice: t })}
                         style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
                           fontSize: 14, marginBottom: 10, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Token</Text>
@@ -670,7 +670,7 @@ export default function BookingFormScreen({ navigation, route }) {
                           fontSize: 14, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
                       <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
                         {dp
-                          ? `${pb.flat_area} sq.yd x ${rupee(pb.flat_rate)} = ${rupee(pb.flat_price)}${pb.terrace_area ? ` + terrace ${pb.terrace_area} sq.yd @ ${rupee(pb.terrace_rate)} = ${rupee(pb.terrace_price)}` : ''}`
+                          ? `${rupee(pb.flat_price)} / ${pb.flat_area} sq.yd = ${rupee(pb.flat_rate)} per sq.yd${pb.terrace_area ? ` · terrace ${pb.terrace_area} sq.yd @ ${rupee(pb.terrace_rate)} = ${rupee(pb.terrace_price)}` : ''}`
                           : 'Regular plan — priced from the approved price book. Switch to Down Payment to change the rate or token.'}
                       </Text>
                     </View>
