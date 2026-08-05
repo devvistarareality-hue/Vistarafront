@@ -177,7 +177,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
       pratExtraTitle = 'What This Price Includes';
       pratExtra += (pb.is_down_payment
             ? mrow('Box Price', pb.box_price, { subline: 'Flat Price + Additional Terrace Price' })
-              + mrow('Total Legal &amp; Other Charges', pb.total_extra, { subline: 'Stamp Duty + Registration, GST and Legal Charges' })
+              + mrow('Total Legal &amp; Other Charges', pb.total_extra, { subline: 'Stamp duty, registration and GST at 7% of the box price, plus legal charges' })
               + mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
               + mrow('12 Months Advance Maintenance', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, paid in advance' })
             : mrow('Final Unit Price', pb.dastavej_value, { subline: 'Value of the unit recorded in the sale agreement' })
