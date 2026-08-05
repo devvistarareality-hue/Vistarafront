@@ -145,22 +145,12 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         // instead of totalling a long list of charges themselves. The wrapper opens the
         // table and closes it, so this closes the first table and opens its own.
         + '</table>' + sec('What This Price Includes', '#475569') + '<table class="money">'
-        + (() => {
-            // Document total = Final Unit Price + Total Legal & Other Charges + Extra
-            // Work Amount as printed (per hundred). The booking still records
-            // Amount + Total Extra.
-            const ew = (Number(pb.extra_work_amount || 0) / 100)
-              .toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const t = (Number(pb.loan_amount) || 0) + (Number(pb.total_extra) || 0)
-              + (Number(pb.extra_work_amount) || 0) / 100;
-            return mrow('Final Unit Price', pb.loan_amount, { subline: 'Value of the shop recorded in the sale agreement' })
-              + mrow('Total Legal & Other Charges', pb.total_extra, { subline: 'Bifurcation shown above' })
-              + mrow('Extra Work Amount', 0, { valStr: ew, subline: 'Final Unit Price - Total Legal & Other Charges' })
-              + mrow('Grand Total', 0, {
-                  valStr: t.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                  total: !multi, sub: multi,
-                });
-          })();
+        // These three ARE the total: Final Unit Price + Extra Work Amount is the whole
+        // shop amount, and the charges sit on top.
+        + mrow('Final Unit Price', pb.loan_amount, { subline: 'Value of the shop recorded in the sale agreement' })
+        + mrow('Total Legal & Other Charges', pb.total_extra, { subline: 'Bifurcation shown above' })
+        + mrow('Extra Work Amount', pb.extra_work_amount, { subline: 'Balance of the shop amount beyond the Final Unit Price' })
+        + mrow('Grand Total', pb.grand_total, { total: !multi, sub: multi });
     } else {
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value')
         + `<table class="money">${mrow('Flat Price', pb.flat_price, { subline: num(pb.flat_area) + ' sq.yd. built-up' })}`
