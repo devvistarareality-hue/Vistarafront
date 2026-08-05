@@ -186,10 +186,16 @@ export default function BookingFormScreen({ navigation, route }) {
   // the totals are summed. Both kinds are computed from a small set of editable
   // drivers: shops from Rate + Total Unit Price, flats from Flat Rate + Token.
   const rawBooks = formulaSet === 'pratishtha' ? priceBooks : [];
-  const shopEdit = (pb) => shopEdits[pb.unit] || { rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') };
-  const setShopEdit = (unit, patch) => setShopEdits((m) => ({ ...m, [unit]: { ...(m[unit] || shopEdit({ unit })), ...patch } }));
-  const flatEdit = (pb) => flatEdits[pb.unit] || { plan: 'Regular', rate: String(impliedFlatRate(pb)), token: String(pb.token ?? '') };
-  const setFlatEdit = (unit, patch) => setFlatEdits((m) => ({ ...m, [unit]: { ...(m[unit] || flatEdit({ unit })), ...patch } }));
+  // Seeds come from the unit's own price book, and a patch merges onto the seed rather
+  // than onto an empty stub — otherwise the first edit to any one field (switching plan,
+  // toggling % / Rs.) would create a state with the *other* fields missing and blank
+  // their inputs.
+  const shopSeed = (pb) => ({ rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') });
+  const shopEdit = (pb) => shopEdits[pb.unit] || shopSeed(pb);
+  const setShopEdit = (pb, patch) => setShopEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || shopSeed(pb)), ...patch } }));
+  const flatSeed = (pb) => ({ plan: 'Regular', rate: String(impliedFlatRate(pb)), token: String(pb.token ?? '') });
+  const flatEdit = (pb) => flatEdits[pb.unit] || flatSeed(pb);
+  const setFlatEdit = (pb, patch) => setFlatEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || flatSeed(pb)), ...patch } }));
   // Only a Down Payment plan may move the rate or token. On Regular the unit prices
   // straight from the price book — passing no overrides at all, so switching back from
   // Down Payment cannot leave an edited figure behind.
@@ -629,7 +635,7 @@ export default function BookingFormScreen({ navigation, route }) {
                         {['Regular', 'Down Payment'].map((pl) => {
                           const on = (e.plan || 'Regular') === pl;
                           return (
-                            <TouchableOpacity key={pl} onPress={() => setFlatEdit(pb.unit, { plan: pl })}
+                            <TouchableOpacity key={pl} onPress={() => setFlatEdit(pb, { plan: pl })}
                               style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, alignItems: 'center',
                                 borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
                               <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{pl}</Text>
@@ -640,13 +646,13 @@ export default function BookingFormScreen({ navigation, route }) {
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Flat Rate (Rs./sq.yd)</Text>
                       <TextInput editable={dp} keyboardType="numeric"
                         value={dp ? String(e.rate ?? '') : String(pb.flat_rate)}
-                        onChangeText={(t) => setFlatEdit(pb.unit, { rate: t })}
+                        onChangeText={(t) => setFlatEdit(pb, { rate: t })}
                         style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
                           fontSize: 14, marginBottom: 10, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Token</Text>
                       <TextInput editable={dp} keyboardType="numeric"
                         value={dp ? String(e.token ?? '') : String(pb.token)}
-                        onChangeText={(t) => setFlatEdit(pb.unit, { token: t })}
+                        onChangeText={(t) => setFlatEdit(pb, { token: t })}
                         style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
                           fontSize: 14, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
                       <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
@@ -664,13 +670,13 @@ export default function BookingFormScreen({ navigation, route }) {
                       <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
                         EDITABLE · EVERYTHING BELOW RECALCULATES
                       </Text>
-                      <Fld l="Rate (Rs./sq.ft)" val={String(e.rate ?? '')} on={(t) => setShopEdit(pb.unit, { rate: t })} kb="numeric" />
+                      <Fld l="Rate (Rs./sq.ft)" val={String(e.rate ?? '')} on={(t) => setShopEdit(pb, { rate: t })} kb="numeric" />
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Total Unit Price</Text>
                       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                         {[['pct', '%'], ['amount', 'Rs.']].map(([m, lbl]) => {
                           const on = e.mode === m;
                           return (
-                            <TouchableOpacity key={m} onPress={() => setShopEdit(pb.unit, { mode: m })}
+                            <TouchableOpacity key={m} onPress={() => setShopEdit(pb, { mode: m })}
                               style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5,
                                 borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
                               <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{lbl}</Text>
@@ -680,7 +686,7 @@ export default function BookingFormScreen({ navigation, route }) {
                         <View style={{ flex: 1 }}>
                           <TextInput keyboardType="numeric"
                             value={String((e.mode === 'amount' ? e.unitAmount : e.unitPct) ?? '')}
-                            onChangeText={(t) => setShopEdit(pb.unit, e.mode === 'amount' ? { unitAmount: t } : { unitPct: t })}
+                            onChangeText={(t) => setShopEdit(pb, e.mode === 'amount' ? { unitAmount: t } : { unitPct: t })}
                             placeholderTextColor="#9CA3AF"
                             style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white }} />
                         </View>
