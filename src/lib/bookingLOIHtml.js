@@ -166,7 +166,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         + `<table class="money">${mrow('Flat Price', pb.flat_price, { subline: num(pb.flat_area) + ' sq.yd. built-up' })}`
         + (pb.terrace_area ? mrow('Additional Terrace Price', pb.terrace_price,
             { subline: num(pb.terrace_area) + ' sq.yd. private terrace' }) : '')
-        + mrow('Box Price', pb.box_price, { sub: true })
+        + mrow(pb.is_down_payment ? 'Unit Price' : 'Box Price', pb.box_price, { sub: true })
         + '</table>';
       // These are two DIFFERENT views of the same money, and printing them as one list
       // made the document unreadable: a buyer added all six lines, got twice the total
@@ -176,13 +176,14 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
       // first table and opens its own.
       pratExtraTitle = 'What This Price Includes';
       pratExtra += (pb.is_down_payment
-            ? mrow('Box Price', pb.box_price, { subline: 'Flat Price + Additional Terrace Price' })
-              + mrow('Total Legal &amp; Other Charges', pb.total_extra, { subline: 'Stamp duty, registration and GST at 7% of the box price, plus legal charges' })
+            ? mrow('Unit Price', pb.box_price, { subline: 'Flat Price + Additional Terrace Price' })
+              + mrow('Total Legal & Other Charges', pb.total_extra, { subline: 'Stamp duty, registration and GST at 7% of the unit price, plus legal charges' })
               + mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
               + mrow('12 Months Advance Maintenance', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, paid in advance' })
+              + mrow('Total Legal & Extra Charges', pb.total_legal_extra, { sub: true })
             : mrow('Final Unit Price', pb.dastavej_value, { subline: 'Value of the unit recorded in the sale agreement' })
               + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
-              + mrow('GST', pb.gst, { subline: 'Goods &amp; Services Tax' })
+              + mrow('GST', pb.gst, { subline: 'Goods & Services Tax' })
               + mrow('Bank Processing Charges', pb.bank_processing))
         // Down Payment has no loan to describe, and its four rows already add to the
         // total — so no How You Pay section and no duplicate subtotal above it.
