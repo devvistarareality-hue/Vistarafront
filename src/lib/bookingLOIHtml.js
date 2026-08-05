@@ -184,10 +184,14 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
               + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
               + mrow('GST', pb.gst, { subline: 'Goods &amp; Services Tax' })
               + mrow('Bank Processing Charges', pb.bank_processing))
-        + mrow('Total All Inclusive Amount', pb.total, { sub: true })
-        + '</table>' + sec('How You Pay', '#475569') + '<table class="money">'
-        + mrow('Token', pb.token, { subline: 'Payable now, to book the unit' })
-        + mrow('Bank Loan', pb.bank_loan, { subline: 'Loan amount to be arranged — the balance after the token' })
+        // Down Payment has no loan to describe, and its four rows already add to the
+        // total — so no How You Pay section and no duplicate subtotal above it.
+        + (pb.is_down_payment
+            ? ''
+            : mrow('Total All Inclusive Amount', pb.total, { sub: true })
+              + '</table>' + sec('How You Pay', '#475569') + '<table class="money">'
+              + mrow('Token', pb.token, { subline: 'Payable now, to book the unit' })
+              + mrow('Bank Loan', pb.bank_loan, { subline: 'Loan amount to be arranged — the balance after the token' }))
         + mrow('Total', pb.total, { total: !multi, sub: multi });
     }
     });
