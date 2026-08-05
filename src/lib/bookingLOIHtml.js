@@ -178,7 +178,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
       pratExtra += mrow('Final Unit Price', pb.dastavej_value, { subline: 'Value of the unit recorded in the sale agreement' })
         + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
         + mrow('GST', pb.gst, { subline: 'Goods &amp; Services Tax' })
-        + mrow('Bank Processing Charges', pb.bank_processing)
+        + (pb.is_down_payment
+            ? mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
+              + mrow('12 Months Advance Maintenance', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, paid in advance' })
+            : mrow('Bank Processing Charges', pb.bank_processing))
         + mrow('Total All Inclusive Amount', pb.total, { sub: true })
         + '</table>' + sec('How You Pay', '#475569') + '<table class="money">'
         + mrow('Token', pb.token, { subline: 'Payable now, to book the unit' })
