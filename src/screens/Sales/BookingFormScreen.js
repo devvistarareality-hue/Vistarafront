@@ -223,13 +223,18 @@ export default function BookingFormScreen({ navigation, route }) {
             ['Terrace Rate (Flat Rate / 2)', rupee(pb.terrace_rate) + ' / sq.yd'],
             ['Additional Terrace Price (Terrace Area x Terrace Rate)', rupee(pb.terrace_price)]]
          : [['Additional Terrace Area', '—']]),
-       ['Box Price (Flat Price + Terrace Price)', rupee(pb.box_price)],
-       ['Token', rupee(pb.token)],
-       ['Bank Loan (Box Price - Token)', rupee(pb.bank_loan)],
-       ['Bank Processing Charges (Bank Loan x 4.5%)', rupee(pb.bank_processing)],
+       ['Box Price (Flat Price + Terrace Price)', rupee(pb.box_price), 'sub'],
+       // Same split as the LOI: what the price is made up of, then how it is funded.
+       // Both add to the Total, so listing them together reads as double the price.
+       { h: 'What This Price Includes' },
        ['Final Unit Price ((Box Price - Bank Processing) / 1.07)', rupee(pb.dastavej_value)],
        ['Stamp Duty + Registration (Final Unit Price x 6%)', rupee(pb.stamp_duty_reg)],
-       ['GST (Final Unit Price x 1%)', rupee(pb.gst)]]);
+       ['GST (Final Unit Price x 1%)', rupee(pb.gst)],
+       ['Bank Processing Charges (Bank Loan x 4.5%)', rupee(pb.bank_processing)],
+       ['Total All Inclusive Amount', rupee(pb.total), 'sub'],
+       { h: 'How You Pay' },
+       ['Token', rupee(pb.token)],
+       ['Bank Loan (Box Price - Token)', rupee(pb.bank_loan)]]);
   // The stored unit number may already carry the word ("Shop1"), so don't repeat it:
   // "Shop1" -> "Shop 1", "101" -> "Flat 101".
   const unitTitle = (pb) => {
@@ -700,13 +705,21 @@ export default function BookingFormScreen({ navigation, route }) {
                   );
                 })() : null}
                 <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
-                  {pratRowsFor(pb).map(([k, val], i) => (
-                    <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
-                      paddingHorizontal: 12, paddingVertical: 9,
-                      backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-                      <Text style={{ fontSize: 12, color: MUTED, flexShrink: 1 }}>{k}</Text>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{val}</Text>
-                    </View>
+                  {pratRowsFor(pb).map((row, i) => (
+                    Array.isArray(row) ? (
+                      <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                        paddingHorizontal: 12, paddingVertical: 9,
+                        backgroundColor: row[2] === 'sub' ? '#EEF2FF' : (i % 2 ? '#FAFBFE' : COLORS.white),
+                        borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                        <Text style={{ fontSize: 12, color: row[2] === 'sub' ? TEXT : MUTED, fontWeight: row[2] === 'sub' ? '700' : '400', flexShrink: 1 }}>{row[0]}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: row[2] === 'sub' ? '800' : '700', color: TEXT }}>{row[1]}</Text>
+                      </View>
+                    ) : (
+                      <View key={i} style={{ paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#F5F7FF',
+                        borderBottomWidth: 1, borderBottomColor: '#E5EAF5' }}>
+                        <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: BLUE }}>{row.h.toUpperCase()}</Text>
+                      </View>
+                    )
                   ))}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
                     paddingHorizontal: 12, paddingVertical: 12,
