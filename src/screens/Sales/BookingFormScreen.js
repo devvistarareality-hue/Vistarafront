@@ -16,6 +16,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
 import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 import { computeShop, impliedUnitPct } from '../../lib/pratishthaShop';
+import { computeFlat, impliedFlatRate } from '../../lib/pratishthaFlat';
 
 const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
@@ -39,6 +40,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const [unitLoaded, setUnitLoaded] = useState(false);   // selected unit resolved from the API
   // Per-shop overrides: { [unit]: { rate, mode: 'pct'|'amount', unitPct, unitAmount } }
   const [shopEdits, setShopEdits] = useState({});
+  const [flatEdits, setFlatEdits] = useState({});
   const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
   const plotId = plotIds[0] || '';
   const leadId = p.lead || '';
@@ -179,14 +181,18 @@ export default function BookingFormScreen({ navigation, route }) {
   // then replaced.
   const pricingReady = !!project && (eoiMode || !plotIds.length || unitLoaded);
 
-  // Pratishtha prices from each unit's fixed price book — nothing on this form is
-  // editable for it, and there is no instalment schedule. A booking can cover several
-  // units, so every selected one is priced and the totals are summed.
-  // Shops are computed from an editable Rate and Total Unit Price; flats stay fixed.
+  // Pratishtha prices each unit from its price book, and there is no instalment
+  // schedule. A booking can cover several units, so every selected one is priced and
+  // the totals are summed. Both kinds are computed from a small set of editable
+  // drivers: shops from Rate + Total Unit Price, flats from Flat Rate + Token.
   const rawBooks = formulaSet === 'pratishtha' ? priceBooks : [];
   const shopEdit = (pb) => shopEdits[pb.unit] || { rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') };
   const setShopEdit = (unit, patch) => setShopEdits((m) => ({ ...m, [unit]: { ...(m[unit] || shopEdit({ unit })), ...patch } }));
-  const pratBooks = rawBooks.map((pb) => (pb.kind === 'shop' ? computeShop(pb, shopEdit(pb)) : pb));
+  const flatEdit = (pb) => flatEdits[pb.unit] || { rate: String(impliedFlatRate(pb)), token: String(pb.token ?? '') };
+  const setFlatEdit = (unit, patch) => setFlatEdits((m) => ({ ...m, [unit]: { ...(m[unit] || flatEdit({ unit })), ...patch } }));
+  const pratBooks = rawBooks.map((pb) => (pb.kind === 'shop'
+    ? computeShop(pb, shopEdit(pb))
+    : computeFlat(pb, flatEdit(pb))));
   const prat = pratBooks[0] || null;
   const pratRowsFor = (pb) => (pb.kind === 'shop'
     ? [['Shop Area', `${pb.sq_feet} sq.ft`], ['Rate', rupee(pb.rate) + ' / sq.ft'],
@@ -198,14 +204,19 @@ export default function BookingFormScreen({ navigation, route }) {
        ['Legal Charges', rupee(pb.legal)], ['Total Legal & Other Charges', rupee(pb.total_extra)],
        ['Extra Work Amount', rupee(pb.extra_work_amount)]]
     : [['Flat Area', `${pb.flat_area} sq.yd`],
-       ['Terrace Area', pb.terrace_area ? `${pb.terrace_area} sq.yd` : '—'],
-       ['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—'],
+       ['Flat Rate', rupee(pb.flat_rate) + ' / sq.yd'],
        ['Flat Price', rupee(pb.flat_price)],
-       ...(pb.terrace_area ? [['Additional Terrace Price', rupee(pb.terrace_price)]] : []),
-       ['Token', rupee(pb.token)], ['Bank Loan', rupee(pb.bank_loan)],
+       ['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—'],
+       ...(pb.terrace_area
+         ? [['Additional Terrace Area', `${pb.terrace_area} sq.yd`],
+            ['Terrace Rate (Flat Rate / 2)', rupee(pb.terrace_rate) + ' / sq.yd'],
+            ['Additional Terrace Price', rupee(pb.terrace_price)]]
+         : [['Terrace Area', '—']]),
+       ['Token', rupee(pb.token)], ['Bank Loan (Box Price - Token)', rupee(pb.bank_loan)],
+       ['Bank Processing Charges (4.5% of Bank Loan)', rupee(pb.bank_processing)],
        ['Final Unit Price', rupee(pb.dastavej_value)],
-       ['Stamp Duty + Registration', rupee(pb.stamp_duty_reg)], ['GST', rupee(pb.gst)],
-       ['Bank Processing Fees & Insurance', rupee(pb.bank_processing)]]);
+       ['Stamp Duty + Registration (6%)', rupee(pb.stamp_duty_reg)],
+       ['GST (1%)', rupee(pb.gst)]]);
   // The stored unit number may already carry the word ("Shop1"), so don't repeat it:
   // "Shop1" -> "Shop 1", "101" -> "Flat 101".
   const unitTitle = (pb) => {
@@ -591,12 +602,28 @@ export default function BookingFormScreen({ navigation, route }) {
              A booking can cover several units, so each is priced separately and summed. */
           <>
             {pratBooks.map((pb, idx) => (
-              <Sec key={idx} title={`Unit Pricing · ${unitTitle(pb)} (fixed)`}>
+              <Sec key={idx} title={`Unit Pricing · ${unitTitle(pb)}`}>
                 {idx === 0 ? (
                   <Text style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
-                    These figures come from the approved Pratishtha price book and cannot be edited here.
+                    Figures come from the Pratishtha price book. Adjust the highlighted drivers and every dependent line recalculates.
                   </Text>
                 ) : null}
+                {pb.kind !== 'shop' ? (() => {
+                  const e = flatEdit(pb);
+                  return (
+                    <View style={{ borderWidth: 1.5, borderColor: '#C7D2FE', backgroundColor: '#F5F7FF', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
+                        EDITABLE · EVERYTHING BELOW RECALCULATES
+                      </Text>
+                      <Fld l="Flat Rate (Rs./sq.yd)" val={String(e.rate ?? '')} on={(t) => setFlatEdit(pb.unit, { rate: t })} kb="numeric" />
+                      <Fld l="Token" val={String(e.token ?? '')} on={(t) => setFlatEdit(pb.unit, { token: t })} kb="numeric" />
+                      <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
+                        {`${pb.flat_area} sq.yd x ${rupee(pb.flat_rate)} = ${rupee(pb.flat_price)}`}
+                        {pb.terrace_area ? ` + terrace ${pb.terrace_area} sq.yd @ ${rupee(pb.terrace_rate)} = ${rupee(pb.terrace_price)}` : ''}
+                      </Text>
+                    </View>
+                  );
+                })() : null}
                 {pb.kind === 'shop' ? (() => {
                   const e = shopEdit(pb);
                   return (
