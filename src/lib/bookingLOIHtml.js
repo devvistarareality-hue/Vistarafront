@@ -179,7 +179,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
             ? mrow('Unit Price', pb.box_price, { subline: 'Flat Price + Additional Terrace Price' })
               + mrow('Total Legal & Other Charges', pb.total_extra, { subline: 'Stamp duty, registration and GST at 7% of the unit price, plus legal charges' })
               + mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
-              + mrow('12 Months Advance Maintenance', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, paid in advance' })
+              + mrow('12 Months Maintenance Deposit', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, held as a deposit' })
               + mrow('Total Legal & Extra Charges', pb.total_legal_extra, { sub: true })
             : mrow('Final Unit Price', pb.dastavej_value, { subline: 'Value of the unit recorded in the sale agreement' })
               + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
