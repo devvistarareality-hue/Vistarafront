@@ -21,7 +21,7 @@ const MENU = [
   { key: 'Club1000FollowUps',  label: 'Follow-Ups',   icon: 'calendar-outline',      color: COLORS.warning,  bg: COLORS.warningBg, managerOnly: false },
   { key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: '#E0F7FA',        managerOnly: false },
   { key: 'Club1000InvestorApprovals', label: 'Approvals', icon: 'checkmark-done-outline', color: COLORS.success, bg: COLORS.successBg, managerOnly: true },
-  { key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: true },
+  { key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: false },
   { key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
   { key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: false },
   { key: 'MyTeam',             label: 'My Team',      icon: 'people-circle-outline', color: COLORS.purple,   bg: COLORS.purpleBg,  managerOnly: true, navParams: { module: 'Club 1000', title: 'My Team' } },

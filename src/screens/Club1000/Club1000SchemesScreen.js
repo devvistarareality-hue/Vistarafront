@@ -171,8 +171,6 @@ export default function Club1000SchemesScreen({ navigation }) {
   const [showNew,    setShowNew]    = useState(false);
   const [editing,    setEditing]    = useState(null);
 
-  useEffect(() => { if (!manager) navigation.goBack(); }, [manager]);
-
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
@@ -182,7 +180,7 @@ export default function Club1000SchemesScreen({ navigation }) {
     setLoading(false); setRefreshing(false);
   }
 
-  useFocusEffect(React.useCallback(() => { if (manager) load(); }, [manager]));
+  useFocusEffect(React.useCallback(() => { load(); }, []));
 
   function disableScheme(id) {
     Alert.alert('Disable scheme?', 'It will no longer be selectable for new investors.', [
@@ -194,23 +192,23 @@ export default function Club1000SchemesScreen({ navigation }) {
     ]);
   }
 
-  if (!manager) return null;
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
-      <NewSchemeSheet visible={showNew} onClose={() => setShowNew(false)} onSaved={() => load()} />
-      <NewSchemeSheet visible={!!editing} scheme={editing} onClose={() => setEditing(null)} onSaved={() => load()} />
+      {manager && <NewSchemeSheet visible={showNew} onClose={() => setShowNew(false)} onSaved={() => load()} />}
+      {manager && <NewSchemeSheet visible={!!editing} scheme={editing} onClose={() => setEditing(null)} onSaved={() => load()} />}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={NAVY} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Schemes</Text>
-        <TouchableOpacity onPress={() => setShowNew(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
-          <Ionicons name="add" size={16} color={COLORS.white} />
-          <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>New</Text>
-        </TouchableOpacity>
+        {manager && (
+          <TouchableOpacity onPress={() => setShowNew(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
+            <Ionicons name="add" size={16} color={COLORS.white} />
+            <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>New</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
@@ -228,14 +226,16 @@ export default function Club1000SchemesScreen({ navigation }) {
                 ? (s.interest_payout_options || []).map((k) => `${INTEREST_PAYOUT_LABELS[k] || k}: ${s.payout_rates?.[k] ?? '—'}%`).join('  ·  ')
                 : '—'}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity onPress={() => setEditing(s)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => disableScheme(s.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.errorBg }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.error }}>Disable</Text>
-              </TouchableOpacity>
-            </View>
+            {manager && (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => setEditing(s)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => disableScheme(s.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.errorBg }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.error }}>Disable</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         ))}
       </ScrollView>
