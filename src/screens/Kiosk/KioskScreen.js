@@ -293,7 +293,7 @@ export default function KioskScreen({ navigation }) {
                       {!!pl.size && <Text style={s.chipS}>{pl.size}</Text>}
                       {/* Facing and terrace both move the price, so surface them here. */}
                       {!!pl.facing && <Text style={[s.chipS, { color: '#2563EB' }]}>{FACING_LABEL[pl.facing] || pl.facing}</Text>}
-                      {!!(pl.terrace_area || '').trim() && <Text style={[s.chipS, { color: '#059669' }]}>Terrace {pl.terrace_area} sq.ft</Text>}
+                      {!!(pl.terrace_area || '').trim() && <Text style={[s.chipS, { color: '#059669' }]}>Terrace {pl.terrace_area} sq.yd</Text>}
                     </TouchableOpacity>
                   ))}
                 </View>

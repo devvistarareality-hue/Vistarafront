@@ -16,6 +16,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
 import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 import { computeShop, impliedUnitPct } from '../../lib/pratishthaShop';
+import { computeFlat } from '../../lib/pratishthaFlat';
 
 const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
@@ -39,6 +40,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const [unitLoaded, setUnitLoaded] = useState(false);   // selected unit resolved from the API
   // Per-shop overrides: { [unit]: { rate, mode: 'pct'|'amount', unitPct, unitAmount } }
   const [shopEdits, setShopEdits] = useState({});
+  const [flatEdits, setFlatEdits] = useState({});
   const [plotIds, setPlotIds] = useState((p.plots ? String(p.plots) : (p.plot ? String(p.plot) : '')).split(',').map((s) => s.trim()).filter(Boolean));
   const plotId = plotIds[0] || '';
   const leadId = p.lead || '';
@@ -179,33 +181,80 @@ export default function BookingFormScreen({ navigation, route }) {
   // then replaced.
   const pricingReady = !!project && (eoiMode || !plotIds.length || unitLoaded);
 
-  // Pratishtha prices from each unit's fixed price book — nothing on this form is
-  // editable for it, and there is no instalment schedule. A booking can cover several
-  // units, so every selected one is priced and the totals are summed.
-  // Shops are computed from an editable Rate and Total Unit Price; flats stay fixed.
+  // Pratishtha prices each unit from its price book, and there is no instalment
+  // schedule. A booking can cover several units, so every selected one is priced and
+  // the totals are summed. Both kinds are computed from a small set of editable
+  // drivers: shops from Rate + Total Unit Price, flats from Flat Rate + Token.
   const rawBooks = formulaSet === 'pratishtha' ? priceBooks : [];
-  const shopEdit = (pb) => shopEdits[pb.unit] || { rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') };
-  const setShopEdit = (unit, patch) => setShopEdits((m) => ({ ...m, [unit]: { ...(m[unit] || shopEdit({ unit })), ...patch } }));
-  const pratBooks = rawBooks.map((pb) => (pb.kind === 'shop' ? computeShop(pb, shopEdit(pb)) : pb));
+  // Seeds come from the unit's own price book, and a patch merges onto the seed rather
+  // than onto an empty stub — otherwise the first edit to any one field (switching plan,
+  // toggling % / Rs.) would create a state with the *other* fields missing and blank
+  // their inputs.
+  const shopSeed = (pb) => ({ rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') });
+  const shopEdit = (pb) => shopEdits[pb.unit] || shopSeed(pb);
+  const setShopEdit = (pb, patch) => setShopEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || shopSeed(pb)), ...patch } }));
+  const flatSeed = (pb) => ({ plan: 'Regular', flatPrice: String(pb.flat_price ?? ''), token: String(pb.token ?? '') });
+  const flatEdit = (pb) => flatEdits[pb.unit] || flatSeed(pb);
+  const setFlatEdit = (pb, patch) => setFlatEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || flatSeed(pb)), ...patch } }));
+  // Only a Down Payment plan may move the rate or token. On Regular the unit prices
+  // straight from the price book — passing no overrides at all, so switching back from
+  // Down Payment cannot leave an edited figure behind.
+  const isDownPayment = (pb) => flatEdit(pb).plan === 'Down Payment';
+  const flatOverrides = (pb) => (isDownPayment(pb) ? flatEdit(pb) : {});
+  const pratBooks = rawBooks.map((pb) => (pb.kind === 'shop'
+    ? computeShop(pb, shopEdit(pb))
+    : computeFlat(pb, flatOverrides(pb))));
   const prat = pratBooks[0] || null;
   const pratRowsFor = (pb) => (pb.kind === 'shop'
     ? [['Shop Area', `${pb.sq_feet} sq.ft`], ['Rate', rupee(pb.rate) + ' / sq.ft'],
-       ['Shop Amount', rupee(pb.amount)], ['Final Unit Price', rupee(pb.loan_amount)],
+       ['Shop Amount', rupee(pb.amount), 'sub'],
+       // Grouped like the flats: the charge bifurcation, then the documented split.
+       // Grand Total is Shop Amount + Total Legal & Other Charges, so those two are
+       // the figures to read.
+       { h: 'Legal & Other Charges' },
        ['Stamp Duty & Registration (6% of Final Unit Price)', rupee(pb.stamp_duty_reg)],
        ['GST (5% of Final Unit Price)', rupee(pb.gst)], ['AUDA (Rs.400/sq.ft)', rupee(pb.auda)],
        ['6 Months Maintenance Advance', rupee(pb.maint_adv_6m)],
        ['12 Months Maintenance Deposit', rupee(pb.maint_dep_12m)],
-       ['Legal Charges', rupee(pb.legal)], ['Total Legal & Other Charges', rupee(pb.total_extra)],
+       ['Legal Charges', rupee(pb.legal)],
+       ['Total Legal & Other Charges', rupee(pb.total_extra), 'sub'],
+       { h: 'What This Price Includes' },
+       ['Final Unit Price', rupee(pb.loan_amount)],
+       ['Total Legal & Other Charges', rupee(pb.total_extra)],
        ['Extra Work Amount', rupee(pb.extra_work_amount)]]
-    : [['Flat Area', `${pb.flat_area} sq.yd`],
-       ['Terrace Area', pb.terrace_area ? `${pb.terrace_area} sq.yd` : '—'],
-       ['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—'],
+    : [['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—'],
+       ['Flat Area', `${pb.flat_area} sq.yd`],
+       ['Flat Rate', rupee(pb.flat_rate) + ' / sq.yd'],
        ['Flat Price', rupee(pb.flat_price)],
-       ...(pb.terrace_area ? [['Additional Terrace Price', rupee(pb.terrace_price)]] : []),
-       ['Token', rupee(pb.token)], ['Bank Loan', rupee(pb.bank_loan)],
-       ['Final Unit Price', rupee(pb.dastavej_value)],
-       ['Stamp Duty + Registration', rupee(pb.stamp_duty_reg)], ['GST', rupee(pb.gst)],
-       ['Bank Processing Fees & Insurance', rupee(pb.bank_processing)]]);
+       ...(pb.terrace_area
+         ? [['Additional Terrace Area', `${pb.terrace_area} sq.yd`],
+            ['Terrace Rate (Flat Rate / 2)', rupee(pb.terrace_rate) + ' / sq.yd'],
+            ['Additional Terrace Price (Terrace Area x Terrace Rate)', rupee(pb.terrace_price)]]
+         : [['Additional Terrace Area', '—']]),
+       [pb.is_down_payment ? 'Unit Price (Flat Price + Terrace Price)' : 'Box Price (Flat Price + Terrace Price)', rupee(pb.box_price), 'sub'],
+       // Same split as the LOI: what the price is made up of, then how it is funded.
+       // Both add to the Total, so listing them together reads as double the price.
+       { h: 'What This Price Includes' },
+       // Down Payment quotes four figures that add to the total; Regular breaks the
+       // box price down into what it already contains.
+       ...(pb.is_down_payment
+         ? [['Unit Price (Flat Price + Terrace Price)', rupee(pb.box_price)],
+            ['Total Legal & Other Charges (Unit Price x 7% + Legal Charges)', rupee(pb.total_extra)],
+            ['6 Months Advance Maintenance (1.5 x 9 x Area x 6)', rupee(pb.maint_adv_6m)],
+            ['12 Months Maintenance Deposit (1.5 x 9 x Area x 12)', rupee(pb.maint_adv_12m)],
+            ['Total Legal & Extra Charges', rupee(pb.total_legal_extra), 'sub']]
+         : [['Final Unit Price ((Box Price - Bank Processing) / 1.07)', rupee(pb.dastavej_value)],
+            ['Stamp Duty + Registration (Final Unit Price x 6%)', rupee(pb.stamp_duty_reg)],
+            ['GST (Final Unit Price x 1%)', rupee(pb.gst)],
+            ['Bank Processing Charges (Bank Loan x 4.5%)', rupee(pb.bank_processing)]]),
+       // Down Payment has no loan to describe, and its four rows already add to the
+       // footer total — so no How You Pay section and no duplicate subtotal above it.
+       ...(pb.is_down_payment
+         ? []
+         : [['Total All Inclusive Amount', rupee(pb.total), 'sub'],
+            { h: 'How You Pay' },
+            ['Token', rupee(pb.token)],
+            ['Bank Loan (Box Price - Token)', rupee(pb.bank_loan)]])]);
   // The stored unit number may already carry the word ("Shop1"), so don't repeat it:
   // "Shop1" -> "Shop 1", "101" -> "Flat 101".
   const unitTitle = (pb) => {
@@ -213,6 +262,27 @@ export default function BookingFormScreen({ navigation, route }) {
     const n = String(pb.unit || '').trim();
     const bare = n.replace(new RegExp('^' + kind + '\\s*', 'i'), '');
     return kind + ' ' + (bare || n);
+  };
+  // A Down Payment flat is paid in instalments against the Box Price only — flats carry
+  // no extra work, so there is no second schedule. The three charge lines fall due on
+  // the sale deed or possession instead, so they are carried as undated extras.
+  const pratDp   = prat && pratBooks.some((b) => b.is_down_payment);
+  const pratShop = prat && pratBooks.some((b) => b.kind === 'shop');
+  const pratSched = pratDp || pratShop;   // the units that are paid in instalments
+  // Shops follow Ankhol: an Extra Work Amount schedule, then the unit price, then the
+  // charges. A Down Payment flat has no extra work, so only the middle table applies.
+  // Summed per unit so a booking covering both kinds still adds up.
+  const pratPer = (fn) => pratBooks.reduce((sum, b) => sum + (Number(fn(b)) || 0), 0);
+  const pratUnitBase = pratPer((b) => (b.kind === 'shop' ? b.loan_amount : (b.is_down_payment ? b.box_price : 0)));
+  const pratEwBase   = pratPer((b) => (b.kind === 'shop' ? b.extra_work_amount : 0));
+  // One line on the schedule, not several: the itemisation already sits in the pricing
+  // panel above, and the whole amount falls due on the same date.
+  const pratExtras = () => {
+    const amt = Math.round(pratPer((b) => (b.kind === 'shop' ? b.total_extra : (b.is_down_payment ? b.total_legal_extra : 0))));
+    return amt > 0
+      ? [{ no: 'Extra', date: '', amt, isExtra: true,
+           label: pratDp ? 'Total Legal & Extra Charges' : 'Total Legal & Other Charges' }]
+      : [];
   };
   const pbTotal = (pb) => (pb.grand_total ?? pb.box_price ?? 0);
   const pratTotal = pratBooks.reduce((sum, pb) => sum + pbTotal(pb), 0);
@@ -256,7 +326,7 @@ export default function BookingFormScreen({ navigation, route }) {
     });
     return unsub;
   }, [navigation, isDirty]);
-  const base = installmentBase(v);
+  const base = pratSched ? pratUnitBase : installmentBase(v);
   const pctTotal = base ? insts.reduce((a, r) => a + (parseFloat(r.amt) || 0), 0) / base * 100 : insts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
   const ewBase = parseFloat(ew.amt) || 0;
   const ewPctTotal = ewBase ? ewInsts.reduce((a, r) => a + (parseFloat(r.amt) || 0), 0) / ewBase * 100 : ewInsts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
@@ -315,6 +385,7 @@ export default function BookingFormScreen({ navigation, route }) {
   }
   const ewArr = () => ewInsts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isExtraWork: true }));
 
+
   function buildInsts(n) { n = parseInt(n, 10) || 0; setInsts(Array.from({ length: n }, (_, i) => insts[i] || { date: '', pct: '', amt: '' })); }
   function setInst(i, k, val) {
     setInsts((arr) => {
@@ -335,8 +406,45 @@ export default function BookingFormScreen({ navigation, route }) {
       return next;
     });
   }
-  const nsdBase = Math.max(0, (v.nonSaleDeed || 0) - (v.discount || 0));
+  const nsdBase = pratSched ? pratEwBase : Math.max(0, (v.nonSaleDeed || 0) - (v.discount || 0));
   const nsdPctTotal = nsdBase ? nsdInsts.reduce((a, r) => a + (parseFloat(r.amt) || 0), 0) / nsdBase * 100 : nsdInsts.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
+  // An instalment's amount is worked out from its % at the moment the % is typed. Nothing
+  // revisited it when the base moved, so entering the price after setting the schedule
+  // left every amount against the old base — 33% of a 20,00,000 unit showing as 66.
+  // The percentages are the source of truth: re-derive the amounts whenever a base
+  // changes, giving the last row the remainder so a schedule always sums to its base.
+  // Applies to all three schedules (unit price, extra work charges, extra work) and so
+  // to every pricing model and to EOIs, which share this table.
+  const rebaseRows = (arr, b) => {
+    if (!arr.length || !b) return arr;
+    const next = arr.map((r) => {
+      const pct = parseFloat(r.pct) || 0;
+      return pct ? { ...r, amt: String(Math.round(b * pct / 100)) } : r;
+    });
+    // Give the last row the remainder only when the schedule is a complete one, so
+    // rounding never leaves it a rupee short of the base. An EOI may carry a partial
+    // (token) schedule on purpose — inflating its last row to 100% would misstate it.
+    const last = next.length - 1;
+    const pctSum = next.reduce((a, r) => a + (parseFloat(r.pct) || 0), 0);
+    if (last > 0 && Math.abs(pctSum - 100) < 0.5) {
+      const used = next.slice(0, last).reduce((a, r) => a + (parseFloat(r.amt) || 0), 0);
+      const rem = Math.max(0, Math.round(b - used));
+      next[last] = { ...next[last], amt: String(rem), pct: String(parseFloat((rem / b * 100).toFixed(2))) };
+    }
+    return next;
+  };
+  const useRebase = (b, setRows) => {
+    const prev = useRef(b);
+    useEffect(() => {
+      if (prev.current === b) return;
+      prev.current = b;
+      if (b) setRows((arr) => rebaseRows(arr, b));
+    }, [b]);
+  };
+  useRebase(base, setInsts);
+  useRebase(nsdBase, setNsdInsts);
+  useRebase(ewBase, setEwInsts);
+
   function buildNsdInsts(n) { n = parseInt(n, 10) || 0; setNsdInsts(Array.from({ length: n }, (_, i) => nsdInsts[i] || { date: '', pct: '', amt: '' })); }
   function setNsdInst(i, k, val) {
     setNsdInsts((arr) => {
@@ -359,6 +467,12 @@ export default function BookingFormScreen({ navigation, route }) {
   }
   function instArr() {
     const arr = insts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0 }));
+    if (prat) {
+      if (!pratSched) return [];
+      // isNsd marks the Extra Work Amount rows — the LOI prints those per hundred.
+      nsdInsts.forEach((r, i) => arr.push({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isNsd: true }));
+      return arr.concat(pratExtras());
+    }
     nsdInsts.forEach((r, i) => arr.push({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isNsd: true }));
     arr.push({ no: 'Extra', date: extraDate, amt: Math.round(v.totalExtra), isExtra: true });
     return arr;
@@ -377,10 +491,12 @@ export default function BookingFormScreen({ navigation, route }) {
     }
     // Installments must total 100% before the LOI — EXCEPT for an EOI, where a partial
     // (token) schedule is allowed and the 100% rule does not apply.
-    if (!prat && !eoiMode) {
+    // A Down Payment Pratishtha flat now has a real schedule, so it is held to the same
+    // 100% rule; a Regular one has no schedule at all and is skipped.
+    if ((!prat || pratSched) && !eoiMode) {
       if (!insts.length) { setMsg('Add the payment installments before downloading the LOI.'); return; }
       if (Math.abs(pctTotal - 100) > 0.01) { setMsg('Payment installments must total 100% before downloading the LOI.'); return; }
-      if (hasSaleDeedSplit && nsdBase > 0 && (!nsdInsts.length || Math.abs(nsdPctTotal - 100) > 0.01)) {
+      if ((hasSaleDeedSplit || pratShop) && nsdBase > 0 && (!nsdInsts.length || Math.abs(nsdPctTotal - 100) > 0.01)) {
         setMsg('Extra Work Amount installments must be filled and total 100% before downloading the LOI.'); return;
       }
     }
@@ -499,7 +615,7 @@ export default function BookingFormScreen({ navigation, route }) {
       if (Object.keys(e).length) { setErrs(e); setMsg('Please fill the highlighted fields.'); return; }
       setErrs({});
     }
-    if (!prat && !eoiMode && insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
+    if ((!prat || pratSched) && !eoiMode && insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
     if (!loiFile) { setMsg('Generate the LOI, get it signed, and attach it before submitting.'); return; }
     setSaving(true); setMsg('');
     const payload = {
@@ -523,7 +639,9 @@ export default function BookingFormScreen({ navigation, route }) {
       total_extra: Math.round(prat ? pratExtraTotal : v.totalExtra), discount: f.discount || 0,
       final_amount: Math.round(prat ? pratTotal : v.finalAmt),
       apply_reg_fee: f.apply_reg_fee, apply_page_fee: f.apply_page_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
-      installments: prat ? [] : instArr(),   // fixed box price — no staged payments
+      // A Regular Pratishtha unit is a fixed box price with no staged payments; a Down
+      // Payment one is paid in instalments against the box price.
+      installments: instArr(),
       booking_date: f.booking_date, cp_name: f.cp_name,
       extra_work_desc: reviseId ? (ew.desc || '') : '',
       extra_work_amount: reviseId ? Math.round(parseFloat(ew.amt) || 0) : 0,
@@ -591,12 +709,62 @@ export default function BookingFormScreen({ navigation, route }) {
              A booking can cover several units, so each is priced separately and summed. */
           <>
             {pratBooks.map((pb, idx) => (
-              <Sec key={idx} title={`Unit Pricing · ${unitTitle(pb)} (fixed)`}>
+              <Sec key={idx} title={`Unit Pricing · ${unitTitle(pb)}`}>
                 {idx === 0 ? (
                   <Text style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
-                    These figures come from the approved Pratishtha price book and cannot be edited here.
+                    Figures come from the Pratishtha price book. Adjust the highlighted drivers and every dependent line recalculates.
                   </Text>
                 ) : null}
+                {pb.kind !== 'shop' ? (() => {
+                  const e = flatEdit(pb);
+                  const dp = isDownPayment(pb);
+                  const lock = { backgroundColor: '#EEF1F7', color: MUTED };
+                  return (
+                    <View style={{ borderWidth: 1.5, borderColor: '#C7D2FE', backgroundColor: '#F5F7FF', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
+                        {dp ? 'EDITABLE · EVERYTHING BELOW RECALCULATES' : 'PLAN'}
+                      </Text>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Plan</Text>
+                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                        {['Regular', 'Down Payment'].map((pl) => {
+                          const on = (e.plan || 'Regular') === pl;
+                          // Switching to Down Payment clears the price rather than carrying the
+                          // price-book figure over: the plan exists to enter a negotiated one,
+                          // and a pre-filled default is easy to leave in by mistake.
+                          return (
+                            <TouchableOpacity key={pl} onPress={() => setFlatEdit(pb, pl === 'Down Payment'
+                              ? { plan: pl, flatPrice: '0' } : { plan: pl })}
+                              style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, alignItems: 'center',
+                                borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                              <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{pl}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Flat Price (Rs.)</Text>
+                      <TextInput editable={dp} keyboardType="numeric"
+                        value={dp ? String(e.flatPrice ?? '') : String(pb.flat_price)}
+                        onChangeText={(t) => setFlatEdit(pb, { flatPrice: t })}
+                        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                          fontSize: 14, marginBottom: 10, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
+                      {/* No token on a Down Payment plan — there is no loan, and the section
+                          that used to quote it is gone. */}
+                      {!dp ? (
+                        <>
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Token</Text>
+                          <TextInput editable={false} keyboardType="numeric" value={String(pb.token)}
+                            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                              fontSize: 14, color: MUTED, backgroundColor: lock.backgroundColor }} />
+                        </>
+                      ) : null}
+                      <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
+                        {dp
+                          ? `${rupee(pb.flat_price)} / ${pb.flat_area} sq.yd = ${rupee(pb.flat_rate)} per sq.yd${pb.terrace_area ? ` · terrace ${pb.terrace_area} sq.yd @ ${rupee(pb.terrace_rate)} = ${rupee(pb.terrace_price)}` : ''}`
+                          : 'Regular plan — priced from the approved price book. Switch to Down Payment to change the rate or token.'}
+                      </Text>
+                    </View>
+                  );
+                })() : null}
                 {pb.kind === 'shop' ? (() => {
                   const e = shopEdit(pb);
                   return (
@@ -604,13 +772,13 @@ export default function BookingFormScreen({ navigation, route }) {
                       <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
                         EDITABLE · EVERYTHING BELOW RECALCULATES
                       </Text>
-                      <Fld l="Rate (Rs./sq.ft)" val={String(e.rate ?? '')} on={(t) => setShopEdit(pb.unit, { rate: t })} kb="numeric" />
+                      <Fld l="Rate (Rs./sq.ft)" val={String(e.rate ?? '')} on={(t) => setShopEdit(pb, { rate: t })} kb="numeric" />
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Total Unit Price</Text>
                       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                         {[['pct', '%'], ['amount', 'Rs.']].map(([m, lbl]) => {
                           const on = e.mode === m;
                           return (
-                            <TouchableOpacity key={m} onPress={() => setShopEdit(pb.unit, { mode: m })}
+                            <TouchableOpacity key={m} onPress={() => setShopEdit(pb, { mode: m })}
                               style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5,
                                 borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
                               <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{lbl}</Text>
@@ -620,7 +788,7 @@ export default function BookingFormScreen({ navigation, route }) {
                         <View style={{ flex: 1 }}>
                           <TextInput keyboardType="numeric"
                             value={String((e.mode === 'amount' ? e.unitAmount : e.unitPct) ?? '')}
-                            onChangeText={(t) => setShopEdit(pb.unit, e.mode === 'amount' ? { unitAmount: t } : { unitPct: t })}
+                            onChangeText={(t) => setShopEdit(pb, e.mode === 'amount' ? { unitAmount: t } : { unitPct: t })}
                             placeholderTextColor="#9CA3AF"
                             style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white }} />
                         </View>
@@ -634,19 +802,27 @@ export default function BookingFormScreen({ navigation, route }) {
                   );
                 })() : null}
                 <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
-                  {pratRowsFor(pb).map(([k, val], i) => (
-                    <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
-                      paddingHorizontal: 12, paddingVertical: 9,
-                      backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
-                      <Text style={{ fontSize: 12, color: MUTED, flexShrink: 1 }}>{k}</Text>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{val}</Text>
-                    </View>
+                  {pratRowsFor(pb).map((row, i) => (
+                    Array.isArray(row) ? (
+                      <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
+                        paddingHorizontal: 12, paddingVertical: 9,
+                        backgroundColor: row[2] === 'sub' ? '#EEF2FF' : (i % 2 ? '#FAFBFE' : COLORS.white),
+                        borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                        <Text style={{ fontSize: 12, color: row[2] === 'sub' ? TEXT : MUTED, fontWeight: row[2] === 'sub' ? '700' : '400', flexShrink: 1 }}>{row[0]}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: row[2] === 'sub' ? '800' : '700', color: TEXT }}>{row[1]}</Text>
+                      </View>
+                    ) : (
+                      <View key={i} style={{ paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#F5F7FF',
+                        borderBottomWidth: 1, borderBottomColor: '#E5EAF5' }}>
+                        <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: BLUE }}>{row.h.toUpperCase()}</Text>
+                      </View>
+                    )
                   ))}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
                     paddingHorizontal: 12, paddingVertical: 12,
                     backgroundColor: pratBooks.length > 1 ? '#4B5563' : COLORS.navy }}>
                     <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff', flexShrink: 1 }}>
-                      {pb.kind === 'shop' ? 'Grand Total' : 'Total All Inclusive Amount (Box Price)'}
+                      {pb.kind === 'shop' ? 'Grand Total' : 'Total'}
                     </Text>
                     <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>{rupee(pbTotal(pb))}</Text>
                   </View>
@@ -796,9 +972,9 @@ export default function BookingFormScreen({ navigation, route }) {
         <Sec title="Payment Schedule">
           <DateFld l="Booking Date *" val={f.booking_date} on={(t) => set('booking_date', t)} />
           {/* Pratishtha is an all-inclusive fixed box price — no staged payments. */}
-          {pricingReady && !prat && (<>
+          {pricingReady && (!prat || pratSched) && (<>
           {/* Extra Work Amount Installments — shown ABOVE the sale-deed installments */}
-          {hasSaleDeedSplit && nsdBase > 0 && (
+          {(hasSaleDeedSplit || pratShop) && nsdBase > 0 && (
             <View style={{ marginBottom: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 }}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#065F46', marginBottom: 2 }}>Extra Work Amount Installments</Text>
               <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{rupee(nsdBase)}</Text>
@@ -816,7 +992,7 @@ export default function BookingFormScreen({ navigation, route }) {
           )}
           {hasSaleDeedSplit && (
             <View style={{ marginBottom: 4 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E3A5F' }}>Unit Price Installments</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E3A5F' }}>{pratShop ? 'Final Unit Price Installments' : 'Unit Price Installments'}</Text>
               <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{rupee(base)}</Text>
             </View>
           )}
@@ -829,7 +1005,14 @@ export default function BookingFormScreen({ navigation, route }) {
               <TextInput value={r.amt} onChangeText={(t) => setInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
             </View>
           ))}
-          {v.totalExtra > 0 && (
+          {/* Pratishtha's three charge lines all fall due on the sale deed or possession,
+              so they carry that wording instead of a date picker. */}
+          {pratSched ? pratExtras().map((x) => (
+            <View key={x.label} style={{ marginTop: 6, backgroundColor: '#FFF8E1', borderRadius: 8, padding: 8 }}>
+              <Text style={{ color: '#92400E', fontWeight: '700', fontSize: 12 }}>{x.label} {rupee(x.amt)}</Text>
+              <Text style={{ color: MUTED, fontSize: 10, fontStyle: 'italic', marginTop: 2 }}>Date of Sale Deed or Possession (whichever is earlier)</Text>
+            </View>
+          )) : v.totalExtra > 0 && (
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center', backgroundColor: '#FFF8E1', borderRadius: 8, padding: 6 }}>
               <Text style={{ width: 16, color: '#92400E', fontWeight: '700', fontSize: 11 }}>Ex</Text>
               <DateField value={extraDate} onChange={setExtraDate} placeholder="Extra charges date" style={{ flex: 2 }} />

@@ -130,8 +130,12 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
       // The shop LOI states the area, the unit price, the charge bifurcation and the
       // extra work amount. Rate and Shop Amount are working figures, not contract terms,
       // so they stay on the booking form and off the document.
+      // Extra Work Amount prints per hundred on this document. Shop Area is already
+      // stated in the Details block above, so Deal Value carries the two money figures.
+      const ewDisp = (Number(pb.extra_work_amount) || 0) / 100;
+      const ewStr = ewDisp.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value') + grid([
-        ['Shop Area', num(pb.sq_feet) + ' sq.ft.'], ['Final Unit Price', 'Rs. ' + num(pb.loan_amount)],
+        ['Final Unit Price', 'Rs. ' + num(pb.loan_amount)], ['Extra Work Amount', 'Rs. ' + ewStr],
       ]);
       pratExtraTitle = 'Legal & Other Charges';
       pratExtra += mrow('Stamp Duty & Registration (6% of Final Unit Price)', pb.stamp_duty_reg)
@@ -141,34 +145,54 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
         + mrow('12 Months Maintenance Deposit (Rs. 1.5 per sq.ft. p.m.)', pb.maint_dep_12m)
         + mrow('Legal Charges', pb.legal)
         + mrow('Total Legal & Other Charges', pb.total_extra, { sub: true })
-        + mrow('Extra Work Amount', 0, {
-            valStr: (Number(pb.extra_work_amount || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            subline: 'Final Unit Price - Total Legal & Other Charges',
-          })
-        + (() => {
-            // Document total = Final Unit Price + Total Legal & Other Charges + Extra
-            // Work Amount as printed (per hundred). The booking still records
-            // Amount + Total Extra.
-            const t = (Number(pb.loan_amount) || 0) + (Number(pb.total_extra) || 0)
-              + (Number(pb.extra_work_amount) || 0) / 100;
-            return mrow('Grand Total', 0, {
-              valStr: t.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-              total: !multi, sub: multi,
-            });
-          })();
+        // Summary, so the buyer can see the three figures that make the Grand Total
+        // instead of totalling a long list of charges themselves. The wrapper opens the
+        // table and closes it, so this closes the first table and opens its own.
+        + '</table>' + sec('What This Price Includes', '#475569') + '<table class="money">'
+        // These three ARE the total: Final Unit Price + Extra Work Amount is the whole
+        // shop amount, and the charges sit on top.
+        + mrow('Final Unit Price', pb.loan_amount, { subline: 'Value of the shop recorded in the sale agreement' })
+        + mrow('Total Legal & Other Charges', pb.total_extra, { subline: 'Bifurcation shown above' })
+        + mrow('Extra Work Amount', 0, { valStr: ewStr, subline: 'Balance of the shop amount beyond the Final Unit Price' })
+        // Document total follows the printed figures, so it uses the per-hundred extra
+        // work amount. The booking still records Shop Amount + Total Legal & Other Charges.
+        + mrow('Grand Total', 0, {
+            valStr: ((Number(pb.loan_amount) || 0) + (Number(pb.total_extra) || 0) + ewDisp)
+              .toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            total: !multi, sub: multi,
+          });
     } else {
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value')
-        + `<table class="money">${mrow('Flat Price', pb.flat_price)}`
+        + `<table class="money">${mrow('Flat Price', pb.flat_price, { subline: num(pb.flat_area) + ' sq.yd. built-up' })}`
         + (pb.terrace_area ? mrow('Additional Terrace Price', pb.terrace_price,
             { subline: num(pb.terrace_area) + ' sq.yd. private terrace' }) : '')
-        + mrow('Total All Inclusive Amount (Box Price)', pb.box_price, { sub: true })
+        + mrow(pb.is_down_payment ? 'Unit Price' : 'Box Price', pb.box_price, { sub: true })
         + '</table>';
-      pratExtra += mrow('Token', pb.token)
-        + mrow('Bank Loan', pb.bank_loan)
-        + mrow('Final Unit Price', pb.dastavej_value)
-        + mrow('Stamp Duty + Registration', pb.stamp_duty_reg)
-        + mrow('GST', pb.gst)
-        + mrow('Bank Processing Fees & Insurance', pb.bank_processing)
+      // These are two DIFFERENT views of the same money, and printing them as one list
+      // made the document unreadable: a buyer added all six lines, got twice the total
+      // and asked why. Split into what the price is made up of, and how it is funded --
+      // each group adding to exactly the same total, and each row saying what it is.
+      // The wrapper opens the table and closes it, so the second section closes the
+      // first table and opens its own.
+      pratExtraTitle = 'What This Price Includes';
+      pratExtra += (pb.is_down_payment
+            ? mrow('Unit Price', pb.box_price, { subline: 'Flat Price + Additional Terrace Price' })
+              + mrow('Total Legal & Other Charges', pb.total_extra, { subline: 'Stamp duty, registration and GST at 7% of the unit price, plus legal charges' })
+              + mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
+              + mrow('12 Months Maintenance Deposit', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, held as a deposit' })
+              + mrow('Total Legal & Extra Charges', pb.total_legal_extra, { sub: true })
+            : mrow('Final Unit Price', pb.dastavej_value, { subline: 'Value of the unit recorded in the sale agreement' })
+              + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
+              + mrow('GST', pb.gst, { subline: 'Goods & Services Tax' })
+              + mrow('Bank Processing Charges', pb.bank_processing))
+        // Down Payment has no loan to describe, and its four rows already add to the
+        // total — so no How You Pay section and no duplicate subtotal above it.
+        + (pb.is_down_payment
+            ? ''
+            : mrow('Total All Inclusive Amount', pb.total, { sub: true })
+              + '</table>' + sec('How You Pay', '#475569') + '<table class="money">'
+              + mrow('Token', pb.token, { subline: 'Payable now, to book the unit' })
+              + mrow('Bank Loan', pb.bank_loan, { subline: 'Loan amount to be arranged — the balance after the token' }))
         + mrow('Total', pb.total, { total: !multi, sub: multi });
     }
     });
@@ -216,7 +240,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const legalRows = legalInst.map((i, idx) => {
     const amt = Math.round(i.amt || 0); grandLegal += amt;
     const rawDate = fmtDate(i.date); const legalDate = (rawDate && rawDate !== '—') ? rawDate : NO_DATE;
-    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(legalDate)}</td><td>Legal & Other Charges</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(legalDate)}</td><td>${esc(i.label || 'Legal & Other Charges')}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
   }).join('');
 
   const grand = grandUnit + grandEwc + grandLegal;
@@ -373,7 +397,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   ${(!isPratishtha && extraWork) ? `<div class="block">${extraWork}</div>` : ''}
 
-  ${isPratishtha && pb ? '' : scheduleHtml}
+  ${scheduleHtml}
 
   <div class="block">${sec('Terms & Conditions')}${terms.map((t, i) => `<div class="term${i % 2 ? '' : ' alt'}"><span class="tl">${esc(t[0])}</span><span class="td2">${esc(t[1]).replace(/\n/g, '<br>')}</span></div>`).join('')}</div>
 
