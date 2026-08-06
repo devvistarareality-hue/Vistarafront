@@ -301,6 +301,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       {!!plot.size && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E8EEFF' : MUTED }}>{plot.size}</Text>}
                       {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
                       {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
+                      {/* Who is on a booked unit, so the team can see it without opening the plot. */}
+                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{plot.status === 'hold' ? 'On hold by' : 'Sold by'} {plot.agent_name}</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -396,6 +398,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
               {!!plot.facing && <InfoBox label="Facing" value={FACING_LABEL[plot.facing] || plot.facing} />}
               {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.yd`} />}
               {!!plot.price  && <InfoBox label="Price" value={plot.price} />}
+              {!!plot.agent_name && <InfoBox label={plot.status === 'hold' ? 'On Hold By' : 'Sold By'} value={plot.agent_name} />}
             </View>
 
             {/* Floor plan layouts (per-unit only; the map is the master layout) */}
