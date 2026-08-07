@@ -73,6 +73,8 @@ export const SALES_ENDPOINTS = {
   get bookings()   { return `${BASE_URL}/api/sales/bookings/`; },
   get bookingsAll(){ return `${BASE_URL}/api/sales/bookings/all/`; },
   bookingLoiUrl: (id) => `${BASE_URL}/api/sales/bookings/${id}/loi-url/`,
+  get bookingDraft() { return `${BASE_URL}/api/sales/bookings/draft/`; },
+  bookingDiscard: (id) => `${BASE_URL}/api/sales/bookings/${id}/discard/`,
   project(id)      { return `${BASE_URL}/api/sales/projects/${id}/`; },
   get distSettings(){ return `${BASE_URL}/api/sales/dist-settings/`; },
   get availability(){ return `${BASE_URL}/api/sales/availability/`; },
