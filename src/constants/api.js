@@ -82,6 +82,8 @@ export const SALES_ENDPOINTS = {
   get plotsBulk()       { return `${BASE_URL}/api/sales/plots/bulk/`; },
   get plotsBulkDelete() { return `${BASE_URL}/api/sales/plots/bulk-delete/`; },
   get plotsRenameType() { return `${BASE_URL}/api/sales/plots/rename-type/`; },
+  get plotsHold()       { return `${BASE_URL}/api/sales/plots/hold/`; },
+  get plotsRelease()    { return `${BASE_URL}/api/sales/plots/release/`; },
   plot: (id)            => `${BASE_URL}/api/sales/plots/${id}/`,
   get userProjects()    { return `${BASE_URL}/api/sales/user-projects/`; },
   get mediaUpload()     { return `${BASE_URL}/api/sales/media/upload/`; },

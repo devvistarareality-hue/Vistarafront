@@ -661,7 +661,8 @@ export default function BookingFormScreen({ navigation, route }) {
         ]);
         return;
       }
-      setMsg('Error: ' + JSON.stringify(await res.json().catch(() => ({}))));
+      const errData = await res.json().catch(() => ({}));
+      setMsg('Error: ' + (errData.detail || JSON.stringify(errData)));
     } catch (e) { setMsg(e.message); }
     setSaving(false);
   }
