@@ -63,6 +63,13 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const [typeFilter, setTypeFilter] = useState('all');
   const [zoomMaster, setZoomMaster] = useState(false);
   const [sources, setSources] = useState([]);
+  const [notice,  setNotice]  = useState(''); // transient banner (unit taken / hold expired)
+  const [busyIds, setBusyIds] = useState(() => new Set()); // plot ids with an in-flight hold/release call
+
+  function flash(text) {
+    setNotice(text);
+    setTimeout(() => setNotice((n) => (n === text ? '' : n)), 4500);
+  }
 
   useEffect(() => {
     Promise.all([
@@ -76,6 +83,25 @@ export default function ClosureViewerScreen({ navigation, route }) {
       setLoading(false);
     });
   }, [projectId]);
+
+  // Other reps hold/release units live — poll so this rep sees a unit turn orange
+  // (or free up again) without a manual refresh.
+  useEffect(() => {
+    const poll = setInterval(() => {
+      apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []).then((pl) => {
+        const fresh = Array.isArray(pl) ? pl : (pl?.results || []);
+        setPlots(fresh);
+        const freshById = new Map(fresh.map((p) => [p.id, p]));
+        setSelectedIds((ids) => ids.filter((pid) => {
+          const fp = freshById.get(pid);
+          const stillMine = !!fp && fp.status === 'hold' && (!user?.name || fp.held_by_name === user.name);
+          if (!stillMine && fp) flash(`Your hold on Plot ${fp.number} expired or was released — please reselect.`);
+          return stillMine;
+        }));
+      }).catch(() => {});
+    }, 30_000);
+    return () => clearInterval(poll);
+  }, [projectId, user]);
 
   // A tower is browsed one floor at a time: each floor has its own plan and its own
   // zones, so the map, the unit list and the counts are all scoped to the chosen floor.
@@ -138,10 +164,44 @@ export default function ClosureViewerScreen({ navigation, route }) {
 
   // Multi-select: a client can buy several plots in one booking. Tapping an
   // available unit toggles it; the action bar books all selected together.
+  // Selecting soft-locks the unit server-side immediately (turns it orange for every
+  // other rep), so two salespeople can't both spend time signing an LOI for the same
+  // unit — deselecting (or Clear) releases it again.
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  function pickPlot(plot) {
-    if (!plot || plot.status !== 'available') return; // only Available selectable
-    setSelectedIds((ids) => (ids.includes(plot.id) ? ids.filter((x) => x !== plot.id) : [...ids, plot.id]));
+
+  async function releasePlots(ids) {
+    if (!ids.length) return;
+    try {
+      await apiFetch(SALES_ENDPOINTS.plotsRelease, { method: 'POST', body: JSON.stringify({ plot_ids: ids }) });
+    } catch (_) {}
+    setPlots((ps) => ps.map((p) => (ids.includes(p.id) ? { ...p, status: 'available', held_by_name: null } : p)));
+  }
+
+  async function pickPlot(plot) {
+    if (!plot || busyIds.has(plot.id)) return;
+    if (selectedSet.has(plot.id)) {
+      setSelectedIds((ids) => ids.filter((x) => x !== plot.id));
+      releasePlots([plot.id]);
+      return;
+    }
+    if (plot.status !== 'available') return; // only Available selectable
+    setBusyIds((s) => new Set(s).add(plot.id));
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.plotsHold, { method: 'POST', body: JSON.stringify({ plot_ids: [plot.id] }) });
+      const data = await res.json().catch(() => ({}));
+      if (data.held?.includes(plot.id)) {
+        setPlots((ps) => ps.map((p) => (p.id === plot.id ? { ...p, status: 'hold', held_by_name: user?.name || p.held_by_name } : p)));
+        setSelectedIds((ids) => (ids.includes(plot.id) ? ids : [...ids, plot.id]));
+      } else {
+        const f = (data.failed || [])[0];
+        flash(f?.reason === 'sold'
+          ? `Plot ${f.number || plot.number} was just sold — pick a different unit.`
+          : `Plot ${f?.number || plot.number} was just selected by another salesperson — pick a different one.`);
+        apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []).then((pl) => setPlots(Array.isArray(pl) ? pl : (pl?.results || []))).catch(() => {});
+      }
+    } finally {
+      setBusyIds((s) => { const n = new Set(s); n.delete(plot.id); return n; });
+    }
   }
   const selPlots = useMemo(() => selectedIds.map((pid) => plots.find((p) => p.id === pid)).filter(Boolean), [selectedIds, plots]);
   const selArea = useMemo(() => selPlots.reduce((a, p) => a + (parseFloat(String(p.size || '').replace(/[^\d.]/g, '')) || 0), 0), [selPlots]);
@@ -176,6 +236,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
+        {!!notice && (
+          <View style={{ padding: 12, borderRadius: 10, backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warning, marginBottom: 12 }}>
+            <Text style={{ color: '#78350F', fontSize: 13, fontWeight: '600' }}>⚠ {notice}</Text>
+          </View>
+        )}
         {/* Status filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
           {[['all', 'All'], ['available', 'Available'], ['sold', 'Sold'], ['hold', 'On Hold']].map(([key, label]) => {
@@ -290,8 +355,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {visiblePlots.filter(p => !isHidden(p)).map(plot => {
                   const cfg = STATUS[plot.status] || STATUS.available;
-                  const clickable = plot.status === 'available';
                   const isSel = selectedSet.has(plot.id);
+                  const clickable = plot.status === 'available' || isSel;
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
                       style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
@@ -324,7 +389,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 : `Plot ${selPlots.map((p) => p.number).join(', ')}`;
             })()}</Text>
           </View>
-          <TouchableOpacity onPress={() => setSelectedIds([])} style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
+          <TouchableOpacity onPress={() => { const ids = [...selectedIds]; setSelectedIds([]); releasePlots(ids); }} style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Clear</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={bookSelected} style={{ backgroundColor: COLORS.success, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 }}>
@@ -381,7 +446,9 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
                 </View>
               )}
               <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: COLORS.white }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: cfg.dot }}>{cfg.label}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: cfg.dot }}>
+                  {cfg.label}{plot.held_by_name && plot.status === 'hold' ? ` · ${plot.held_by_name}` : ''}
+                </Text>
               </View>
               <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
             </View>
@@ -501,8 +568,8 @@ function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, sele
                   const op = isHidden(plot) ? 0.08 : 1;
                   const { cx, cy } = zoneCenter(zone);
                   const labelText = String(zone.plotNumber).replace(/^[^\d]+/, '') || String(zone.plotNumber);
-                  const press = () => { if (plot.status === 'available') onPick(plot); };
                   const isSel = selectedSet?.has(plot.id);
+                  const press = () => { if (plot.status === 'available' || isSel) onPick(plot); };
                   const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
                   const strokeC = isSel ? '#1A237E' : cfg.dot;
                   const sw = isSel ? '0.9' : '0.5';
