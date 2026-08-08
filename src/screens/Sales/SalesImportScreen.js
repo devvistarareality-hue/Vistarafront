@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../../utils/apiFetch';
 import * as DocumentPicker from 'expo-document-picker';
@@ -19,6 +20,11 @@ async function authHeaders() {
 }
 
 export default function SalesImportScreen({ navigation }) {
+  const user  = useSelector((s) => s.auth.user);
+  // An STM only works the STM stage — the template the backend generates for them
+  // already omits the telecaller columns (uploads ignore them regardless either
+  // way); this just keeps the on-screen copy accurate for who's looking at it.
+  const isStm = (user?.designation || '').toLowerCase().includes('stm');
   const [projects,   setProjects]   = useState([]);
   const [sources,    setSources]    = useState([]);
   const [project,    setProject]    = useState('');
@@ -94,7 +100,7 @@ export default function SalesImportScreen({ navigation }) {
         {/* Download template */}
         <View style={[CARD, { padding: 16, marginBottom: 14 }]}>
           <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Full Pipeline template</Text>
-          <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>Lead → telecaller → STM → site visit → closure, with dropdowns. Fill it, then upload below.</Text>
+          <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>{isStm ? 'Lead → STM → site visit → closure, with dropdowns. Fill it, then upload below.' : 'Lead → telecaller → STM → site visit → closure, with dropdowns. Fill it, then upload below.'}</Text>
           <TouchableOpacity onPress={downloadTemplate} disabled={dlTpl}
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: BLUE, backgroundColor: COLORS.white }}>
             {dlTpl ? <ActivityIndicator color={BLUE} /> : (
@@ -210,7 +216,7 @@ export default function SalesImportScreen({ navigation }) {
         {/* Info */}
         <View style={{ marginTop: 14, padding: 14, backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: BLUE + '30' }}>
           <Text style={{ fontSize: 12, color: COLORS.link, fontWeight: '600', marginBottom: 4 }}>Supported formats</Text>
-          <Text style={{ fontSize: 11, color: MUTED }}>CSV, XLS, XLSX. Use the Full Pipeline template above to import the whole journey — telecaller, STM, statuses, site visits and closures — all linked. A plain name/phone sheet works too.</Text>
+          <Text style={{ fontSize: 11, color: MUTED }}>CSV, XLS, XLSX. Use the Full Pipeline template above to import the whole journey — {isStm ? 'STM' : 'telecaller, STM'}, statuses, site visits and closures — all linked. A plain name/phone sheet works too.</Text>
         </View>
 
       </ScrollView>
