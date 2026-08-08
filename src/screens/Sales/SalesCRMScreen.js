@@ -166,6 +166,10 @@ export default function SalesCRMScreen({ navigation, route }) {
   };
 
   const _called  = stats?.called_count ?? 0;
+  // A completed follow-up is a call that was made, so it counts toward the day's
+  // calling. Both honour the same date filter as every other tile.
+  const _fuCalls = stats?.followup_call_count ?? 0;
+  const _totCall = stats?.total_called_count  ?? (_called + _fuCalls);
   const _svDone  = stats?.sv_done      ?? 0;
   const _mqlToSv = _called > 0 ? (_svDone / _called * 100).toFixed(1) + '%' : '—';
 
@@ -175,6 +179,8 @@ export default function SalesCRMScreen({ navigation, route }) {
     { label: 'My Leads',      value: stats?.total_leads    ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
     { label: 'New Today',     value: stats?.leads_today    ?? '—', color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads' },
     { label: 'Called/MQL',    value: _called,                      color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
+    { label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesFollowUps' },
+    { label: 'Total Called',  value: _totCall,                     color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { label: 'Warm/SQL',      value: stats?.warm_count     ?? '—', color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
     { label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesMyConversions' },
@@ -188,6 +194,8 @@ export default function SalesCRMScreen({ navigation, route }) {
     { label: 'Warm Leads',    value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
     { label: 'Cold Leads',    value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
     { label: 'SV Scheduled',  value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
+    { label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesFollowUps' },
+    { label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
     { label: 'SV Done / Low Hanging', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
