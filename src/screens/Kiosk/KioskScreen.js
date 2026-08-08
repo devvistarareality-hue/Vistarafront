@@ -294,6 +294,8 @@ export default function KioskScreen({ navigation }) {
                       {/* Facing and terrace both move the price, so surface them here. */}
                       {!!pl.facing && <Text style={[s.chipS, { color: '#2563EB' }]}>{FACING_LABEL[pl.facing] || pl.facing}</Text>}
                       {!!(pl.terrace_area || '').trim() && <Text style={[s.chipS, { color: '#059669' }]}>Terrace {pl.terrace_area} sq.yd</Text>}
+                      {/* Who is on a taken unit — saves the visitor asking. */}
+                      {!!pl.agent_name && <Text style={[s.chipS, { color: '#475569' }]}>{pl.status === 'hold' ? 'On hold by' : 'Sold by'} {pl.agent_name}</Text>}
                     </TouchableOpacity>
                   ))}
                 </View>

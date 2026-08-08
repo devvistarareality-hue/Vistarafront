@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Image, Modal, TextInput, Linking, Platform, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Image, Modal, TextInput, Linking, Platform, StyleSheet, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -23,7 +23,14 @@ const STATUS = {
   available: { label: 'Available', dot: COLORS.success, bg: COLORS.successBg },
   hold:      { label: 'On Hold',   dot: COLORS.warning, bg: COLORS.warningBg },
   sold:      { label: 'Sold',      dot: COLORS.error,   bg: COLORS.errorBg },
+  // A unit with a saved (unsubmitted) draft — same underlying plot.status='hold' as a
+  // bare in-progress selection, but shown grey and distinct so the team can tell "someone
+  // is mid-paperwork on this" from "someone just tapped it a second ago".
+  drafted:   { label: 'Drafted',   dot: COLORS.textSecondary, bg: COLORS.surfaceAlt },
 };
+// Visual state for a plot, folding in the drafted override — everywhere the map colours
+// a unit should go through this instead of indexing STATUS[plot.status] directly.
+const plotCfg = (plot) => (plot.drafted_booking_id ? STATUS.drafted : (STATUS[plot.status] || STATUS.available));
 
 const isPdfUrl   = (u) => !!u && u.split('?')[0].toLowerCase().endsWith('.pdf');
 const isImageUrl = (u) => !!u && /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(u);
@@ -54,6 +61,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const { projectId } = route.params || {};
   const sv   = route.params?.sv || null;
   const user = useSelector((s) => s.auth.user);
+  const isManager = user?.role === 'Admin' || user?.role === 'Manager' || user?.is_staff;
 
   const [project, setProject] = useState(null);
   const [plots,   setPlots]   = useState([]);
@@ -63,6 +71,14 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const [typeFilter, setTypeFilter] = useState('all');
   const [zoomMaster, setZoomMaster] = useState(false);
   const [sources, setSources] = useState([]);
+  const [notice,  setNotice]  = useState(''); // transient banner (unit taken / hold expired)
+  const [busyIds, setBusyIds] = useState(() => new Set()); // plot ids with an in-flight hold/release call
+  const [draftPanelPlot, setDraftPanelPlot] = useState(null); // drafted unit tapped into
+
+  function flash(text) {
+    setNotice(text);
+    setTimeout(() => setNotice((n) => (n === text ? '' : n)), 4500);
+  }
 
   useEffect(() => {
     Promise.all([
@@ -76,6 +92,25 @@ export default function ClosureViewerScreen({ navigation, route }) {
       setLoading(false);
     });
   }, [projectId]);
+
+  // Other reps hold/release units live — poll so this rep sees a unit turn orange
+  // (or free up again) without a manual refresh.
+  useEffect(() => {
+    const poll = setInterval(() => {
+      apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []).then((pl) => {
+        const fresh = Array.isArray(pl) ? pl : (pl?.results || []);
+        setPlots(fresh);
+        const freshById = new Map(fresh.map((p) => [p.id, p]));
+        setSelectedIds((ids) => ids.filter((pid) => {
+          const fp = freshById.get(pid);
+          const stillMine = !!fp && fp.status === 'hold' && (!user?.name || fp.held_by_name === user.name);
+          if (!stillMine && fp) flash(`Your hold on Plot ${fp.number} expired or was released — please reselect.`);
+          return stillMine;
+        }));
+      }).catch(() => {});
+    }, 30_000);
+    return () => clearInterval(poll);
+  }, [projectId, user]);
 
   // A tower is browsed one floor at a time: each floor has its own plan and its own
   // zones, so the map, the unit list and the counts are all scoped to the chosen floor.
@@ -138,10 +173,62 @@ export default function ClosureViewerScreen({ navigation, route }) {
 
   // Multi-select: a client can buy several plots in one booking. Tapping an
   // available unit toggles it; the action bar books all selected together.
+  // Selecting soft-locks the unit server-side immediately (turns it orange for every
+  // other rep), so two salespeople can't both spend time signing an LOI for the same
+  // unit — deselecting (or Clear) releases it again.
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  function pickPlot(plot) {
-    if (!plot || plot.status !== 'available') return; // only Available selectable
-    setSelectedIds((ids) => (ids.includes(plot.id) ? ids.filter((x) => x !== plot.id) : [...ids, plot.id]));
+
+  async function releasePlots(ids) {
+    if (!ids.length) return;
+    try {
+      await apiFetch(SALES_ENDPOINTS.plotsRelease, { method: 'POST', body: JSON.stringify({ plot_ids: ids }) });
+    } catch (_) {}
+    setPlots((ps) => ps.map((p) => (ids.includes(p.id) ? { ...p, status: 'available', held_by_name: null } : p)));
+  }
+
+  // Discard a draft from the map's panel — the drafter or a manager/admin, matching
+  // the backend permission on BookingDiscardDraftView.
+  async function discardDraftFromPanel(bookingId) {
+    setDraftPanelPlot(null);
+    try {
+      await apiFetch(SALES_ENDPOINTS.bookingDiscard(bookingId), { method: 'POST' });
+    } catch (_) {}
+    apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []).then((pl) => setPlots(Array.isArray(pl) ? pl : (pl?.results || []))).catch(() => {});
+  }
+
+  async function pickPlot(plot) {
+    if (!plot || busyIds.has(plot.id)) return;
+    // A drafted unit is out of the normal select/hold flow entirely — it's not
+    // something to select for a new booking. Tapping it opens a small panel: the
+    // drafter can resume or discard it, a manager/admin can discard it, anyone else
+    // just sees who has it.
+    if (plot.drafted_booking_id) {
+      setDraftPanelPlot(plot);
+      return;
+    }
+    if (selectedSet.has(plot.id)) {
+      setSelectedIds((ids) => ids.filter((x) => x !== plot.id));
+      releasePlots([plot.id]);
+      return;
+    }
+    if (plot.status !== 'available') return; // only Available selectable
+    setBusyIds((s) => new Set(s).add(plot.id));
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.plotsHold, { method: 'POST', body: JSON.stringify({ plot_ids: [plot.id] }) });
+      const data = await res.json().catch(() => ({}));
+      if (data.held?.includes(plot.id)) {
+        setPlots((ps) => ps.map((p) => (p.id === plot.id ? { ...p, status: 'hold', held_by_name: user?.name || p.held_by_name } : p)));
+        setSelectedIds((ids) => (ids.includes(plot.id) ? ids : [...ids, plot.id]));
+      } else {
+        const f = (data.failed || [])[0];
+        flash(f?.reason === 'sold'
+          ? `Plot ${f.number || plot.number} was just sold — pick a different unit.`
+          : `Plot ${f?.number || plot.number} was just selected by another salesperson — pick a different one.`);
+        apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []).then((pl) => setPlots(Array.isArray(pl) ? pl : (pl?.results || []))).catch(() => {});
+      }
+    } finally {
+      setBusyIds((s) => { const n = new Set(s); n.delete(plot.id); return n; });
+    }
   }
   const selPlots = useMemo(() => selectedIds.map((pid) => plots.find((p) => p.id === pid)).filter(Boolean), [selectedIds, plots]);
   const selArea = useMemo(() => selPlots.reduce((a, p) => a + (parseFloat(String(p.size || '').replace(/[^\d.]/g, '')) || 0), 0), [selPlots]);
@@ -176,6 +263,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
+        {!!notice && (
+          <View style={{ padding: 12, borderRadius: 10, backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warning, marginBottom: 12 }}>
+            <Text style={{ color: '#78350F', fontSize: 13, fontWeight: '600' }}>⚠ {notice}</Text>
+          </View>
+        )}
         {/* Status filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
           {[['all', 'All'], ['available', 'Available'], ['sold', 'Sold'], ['hold', 'On Hold']].map(([key, label]) => {
@@ -257,7 +349,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 {zones.map(zone => {
                   const plot = plotByNumber[String(zone.plotNumber)];
                   if (!plot) return null;
-                  const cfg = STATUS[plot.status] || STATUS.available;
+                  const cfg = plotCfg(plot);
                   const dim = isHidden(plot);
                   const op = dim ? 0.08 : 1;
                   const { cx, cy } = zoneCenter(zone);
@@ -274,6 +366,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
                         : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
                       }
                       <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.6" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{isSel ? `✓${labelText}` : labelText}</SvgText>
+                      {/* Drafted units name their drafter right on the map — who
+                          everyone else needs to know to ask about the unit. */}
+                      {plot.drafted_booking_id && plot.held_by_name && (
+                        <SvgText x={cx} y={cy + 3.2} textAnchor="middle" dominantBaseline="middle" fontSize="1.7" fontWeight="700" fill={COLORS.white} opacity={op} onPress={press}>{plot.held_by_name}</SvgText>
+                      )}
                     </React.Fragment>
                   );
                 })}
@@ -289,18 +386,24 @@ export default function ClosureViewerScreen({ navigation, route }) {
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {visiblePlots.filter(p => !isHidden(p)).map(plot => {
-                  const cfg = STATUS[plot.status] || STATUS.available;
-                  const clickable = plot.status === 'available';
+                  const cfg = plotCfg(plot);
                   const isSel = selectedSet.has(plot.id);
+                  // Any drafted unit is tappable — it opens the draft panel for everyone,
+                  // just with different actions inside depending on who's looking.
+                  const clickable = plot.status === 'available' || isSel || !!plot.drafted_booking_id;
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
                       style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
                       <Text style={{ fontWeight: '800', fontSize: 13, color: isSel ? '#fff' : cfg.dot }}>{isSel ? `✓ ${plot.number}` : plot.number}</Text>
                       {/* No plan drawn for this floor, so the chip is the only place these
-                          price-affecting details can surface. */}
+                          price-affecting details can surface. Same reasoning for who
+                          drafted a grey unit: print the name, don't rely on a tap-and-hold. */}
+                      {plot.drafted_booking_id && !!plot.held_by_name && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E8EEFF' : MUTED }}>{plot.held_by_name}</Text>}
                       {!!plot.size && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E8EEFF' : MUTED }}>{plot.size}</Text>}
                       {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
                       {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
+                      {/* Who is on a booked unit, so the team can see it without opening the plot. */}
+                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{plot.status === 'hold' ? 'On hold by' : 'Sold by'} {plot.agent_name}</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -324,7 +427,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 : `Plot ${selPlots.map((p) => p.number).join(', ')}`;
             })()}</Text>
           </View>
-          <TouchableOpacity onPress={() => setSelectedIds([])} style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
+          <TouchableOpacity onPress={() => { const ids = [...selectedIds]; setSelectedIds([]); releasePlots(ids); }} style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Clear</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={bookSelected} style={{ backgroundColor: COLORS.success, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 }}>
@@ -344,13 +447,58 @@ export default function ClosureViewerScreen({ navigation, route }) {
         onPick={(plot) => pickPlot(plot)}
         onClose={() => setZoomMaster(false)}
       />
+
+      {/* Drafted-unit panel — resume (drafter) / discard (drafter or manager/admin). */}
+      {!!draftPanelPlot && (() => {
+        const p = draftPanelPlot;
+        const mine = !!p.held_by_name && p.held_by_name === user?.name;
+        const canDiscard = mine || isManager;
+        return (
+          <Modal visible transparent animationType="fade" onRequestClose={() => setDraftPanelPlot(null)}>
+            <TouchableOpacity activeOpacity={1} onPress={() => setDraftPanelPlot(null)}
+              style={{ flex: 1, backgroundColor: 'rgba(15,28,46,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+              <TouchableOpacity activeOpacity={1} onPress={() => {}}
+                style={{ backgroundColor: COLORS.white, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Drafted</Text>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4, marginBottom: 18 }}>
+                  {p.held_by_name ? `Drafted by ${p.held_by_name}` : 'Drafted'}
+                </Text>
+                <View style={{ gap: 10 }}>
+                  {mine && (
+                    <TouchableOpacity onPress={() => { setDraftPanelPlot(null); navigation.navigate('BookingForm', { draft: p.drafted_booking_id }); }}
+                      style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.link, alignItems: 'center' }}>
+                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>▸ Resume</Text>
+                    </TouchableOpacity>
+                  )}
+                  {canDiscard && (
+                    <TouchableOpacity onPress={() => Alert.alert('Discard draft?', 'This can\'t be undone.', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Discard', style: 'destructive', onPress: () => discardDraftFromPanel(p.drafted_booking_id) },
+                    ])}
+                      style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA', alignItems: 'center' }}>
+                      <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>✕ Discard Draft</Text>
+                    </TouchableOpacity>
+                  )}
+                  {!canDiscard && (
+                    <Text style={{ fontSize: 12, color: MUTED }}>Only {p.held_by_name || 'the drafter'} or a manager can resume or discard this.</Text>
+                  )}
+                  <TouchableOpacity onPress={() => setDraftPanelPlot(null)}
+                    style={{ paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                    <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
+        );
+      })()}
     </SafeAreaView>
   );
 }
 
 /* ── Unit detail: floor-plan layouts + record-closure form ── */
 function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, onBook }) {
-  const cfg = STATUS[plot.status] || STATUS.available;
+  const cfg = plotCfg(plot);
   const typePlans = useMemo(() => {
     const entry = (project.plot_type_plans || []).find(t => t.name === plot.cluster_type);
     return entry?.floor_plans || [];
@@ -381,7 +529,9 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
                 </View>
               )}
               <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: COLORS.white }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: cfg.dot }}>{cfg.label}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: cfg.dot }}>
+                  {cfg.label}{plot.held_by_name && plot.status === 'hold' ? ` · ${plot.held_by_name}` : ''}
+                </Text>
               </View>
               <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
             </View>
@@ -396,6 +546,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
               {!!plot.facing && <InfoBox label="Facing" value={FACING_LABEL[plot.facing] || plot.facing} />}
               {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.yd`} />}
               {!!plot.price  && <InfoBox label="Price" value={plot.price} />}
+              {!!plot.agent_name && <InfoBox label={plot.status === 'hold' ? 'On Hold By' : 'Sold By'} value={plot.agent_name} />}
             </View>
 
             {/* Floor plan layouts (per-unit only; the map is the master layout) */}
@@ -497,12 +648,16 @@ function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, sele
                 {zones.map(zone => {
                   const plot = plotByNumber[String(zone.plotNumber)];
                   if (!plot) return null;
-                  const cfg = STATUS[plot.status] || STATUS.available;
+                  const cfg = plotCfg(plot);
                   const op = isHidden(plot) ? 0.08 : 1;
                   const { cx, cy } = zoneCenter(zone);
                   const labelText = String(zone.plotNumber).replace(/^[^\d]+/, '') || String(zone.plotNumber);
-                  const press = () => { if (plot.status === 'available') onPick(plot); };
                   const isSel = selectedSet?.has(plot.id);
+                  // onPick is pickPlot from the parent — it already decides what a tap
+                  // does (deselect, select-if-available, resume-if-mine-drafted, or
+                  // no-op), so this gate just forwards every tap rather than duplicating
+                  // that logic (this modal doesn't have the logged-in user to check with).
+                  const press = () => onPick(plot);
                   const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
                   const strokeC = isSel ? '#1A237E' : cfg.dot;
                   const sw = isSel ? '0.9' : '0.5';

@@ -11,7 +11,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
-const TABS = [['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected'], ['', 'All']];
+const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected'], ['', 'All']];
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function BookingApprovalsScreen({ navigation, route }) {
@@ -52,6 +52,19 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   }, [isAdmin, companyId]);
 
   async function act(id, action) { setBusy(id); await apiFetch(`${SALES_ENDPOINTS.bookings}${id}/action/${cq('?')}`, { method: 'POST', body: JSON.stringify({ action }) }).catch(() => {}); setBusy(null); load(); }
+
+  // Discarding a draft releases whatever plot(s) it still holds and deletes the row —
+  // irreversible, but a draft is scratch work, not a real submission.
+  async function discardDraft(id) {
+    Alert.alert('Discard draft?', 'This can\'t be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: async () => {
+        setBusy(id);
+        await apiFetch(SALES_ENDPOINTS.bookingDiscard(id) + cq('?'), { method: 'POST' }).catch(() => {});
+        setBusy(null); load();
+      } },
+    ]);
+  }
 
   // Cancelling an approved booking goes through its closure: that endpoint frees the
   // plot(s), purges the signed LOI from storage and marks the booking CANCELLED.
@@ -224,6 +237,12 @@ export default function BookingApprovalsScreen({ navigation, route }) {
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
+              {b.status === 'draft' && (
+                <>
+                  <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { draft: b.id })} style={[btn, { backgroundColor: COLORS.link }]}><Text style={btnT}>▸ Resume</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => discardDraft(b.id)} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA' }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Discard</Text></TouchableOpacity>
+                </>
+              )}
               {b.status === 'pending' && isApprover && (
                 <>
                   <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}>✓ Approve</Text></TouchableOpacity>
