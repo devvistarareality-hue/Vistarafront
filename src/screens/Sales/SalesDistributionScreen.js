@@ -82,6 +82,9 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: dotColor }} />
         <SectionLabel color={headColor}>{title}</SectionLabel>
       </View>
+      {/* Fixed height with its own scroll, matching web, so a long project list does
+          not stretch the card. nestedScrollEnabled for the screen's outer ScrollView. */}
+      <ScrollView style={{ maxHeight: 360 }} nestedScrollEnabled showsVerticalScrollIndicator>
       {members.length === 0
         ? <Text style={{ fontSize: 13, color: MUTED }}>No active {title.toLowerCase()}</Text>
         : projectNames.length === 0
@@ -130,6 +133,7 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
           <Text style={{ fontSize: 13, color: '#912018' }}>{noProject.map(m => m.name).join(', ')}</Text>
         </View>
       )}
+      </ScrollView>
     </View>
   );
 }
@@ -388,6 +392,9 @@ export default function SalesDistributionScreen({ navigation }) {
                     );
                   })}
                 </View>
+                {/* Fixed height with its own scroll, matching web. nestedScrollEnabled so
+                    it works inside the screen's ScrollView on Android. */}
+                <ScrollView style={{ maxHeight: 320 }} nestedScrollEnabled showsVerticalScrollIndicator>
                 {histLoading ? <Text style={{ fontSize: 14, color: MUTED }}>Loading…</Text>
                   : history.length === 0 ? <Text style={{ fontSize: 14, color: MUTED }}>Nobody marked available in this range.</Text>
                   : history.map(day => (
@@ -421,6 +428,7 @@ export default function SalesDistributionScreen({ navigation }) {
                       </View>
                     </View>
                   ))}
+                </ScrollView>
               </View>
             ) : (
             <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, gap: 14 }}>
@@ -596,10 +604,13 @@ export default function SalesDistributionScreen({ navigation }) {
                 </TouchableOpacity>
               )}
             </View>
+            {/* Fixed height with its own scroll, matching web — the list used to be
+                capped at 10 rows instead, which quietly hid the rest. */}
+            <ScrollView style={{ maxHeight: 360 }} nestedScrollEnabled showsVerticalScrollIndicator>
             {distLog.length === 0
               ? <Text style={{ textAlign: 'center', color: MUTED, padding: 36, fontSize: 15 }}>No distributions run yet</Text>
-              : distLog.slice(0, 10).map((log, i) => (
-                <View key={log.id || i} style={{ padding: 16, borderBottomWidth: i < Math.min(distLog.length, 10) - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
+              : distLog.map((log, i) => (
+                <View key={log.id || i} style={{ padding: 16, borderBottomWidth: i < distLog.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                     <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, backgroundColor: log.dist_type === 'telecaller' ? COLORS.warningBg : COLORS.screenBg }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: log.dist_type === 'telecaller' ? COLORS.warningAlt : COLORS.link }}>
@@ -614,6 +625,7 @@ export default function SalesDistributionScreen({ navigation }) {
                 </View>
               ))
             }
+            </ScrollView>
           </View>
 
         </ScrollView>
