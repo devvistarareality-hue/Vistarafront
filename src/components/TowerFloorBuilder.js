@@ -22,8 +22,8 @@ const ordinal = (n) => {
 
 // A multi-block tower puts the block in front — "A-101" — so unit numbers stay unique
 // across blocks that repeat the same numbering, which they normally do.
-const blockPrefix = (f) => (f && f.block ? `${f.block}-` : '');
-function unitsForFloor(f) {
+export const blockPrefix = (f) => (f && f.block ? `${f.block}-` : '');
+export function unitsForFloor(f) {
   const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
   if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) return [];
   if (to - from > 200) return [];   // guard against a stray keystroke generating thousands
@@ -32,7 +32,7 @@ function unitsForFloor(f) {
   return out;
 }
 // Distinct blocks in definition order; [''] for a single-block tower.
-function blocksOf(floors) {
+export function blocksOf(floors) {
   const seen = [];
   (floors || []).forEach((f) => { const b = f.block || ''; if (!seen.includes(b)) seen.push(b); });
   return seen.length ? seen : [''];

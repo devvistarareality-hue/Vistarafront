@@ -314,8 +314,9 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
 function unitsForFloorNumbers(f) {
   const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
   if (!Number.isFinite(from) || !Number.isFinite(to) || to < from || to - from > 200) return [];
+  const bp = f.block ? `${f.block}-` : '';
   const out = [];
-  for (let n = from; n <= to; n++) out.push(`${f.prefix || ''}${n}`);
+  for (let n = from; n <= to; n++) out.push(`${bp}${f.prefix || ''}${n}`);
   return out;
 }
 
@@ -336,9 +337,15 @@ function FloorMapEditor({ project, plots, floors, onFloorsChange }) {
   // Only this floor's units are mappable — matched by the floor field, falling back to
   // the floor's own numbering run for units created before `floor` was recorded.
   const names = new Set(unitsForFloorNumbers(active));
-  const floorPlots = plots.filter((p) => (p.floor !== null && p.floor !== undefined)
-    ? Number(p.floor) === Number(active.floor)
-    : names.has(String(p.number)));
+  // In a multi-block tower every block has its own "1st floor", so the floor number
+  // alone is ambiguous — the block prefix on the unit number is what separates them.
+  const bp = active.block ? `${active.block}-` : '';
+  const floorPlots = plots.filter((p) => {
+    if (bp && !String(p.number || '').startsWith(bp)) return false;
+    return (p.floor !== null && p.floor !== undefined)
+      ? Number(p.floor) === Number(active.floor)
+      : names.has(String(p.number));
+  });
 
   const picker = (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
@@ -349,7 +356,7 @@ function FloorMapEditor({ project, plots, floors, onFloorsChange }) {
             style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, borderWidth: 1.5,
               borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
             <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>
-              {f.label || `Floor ${f.floor}`} · {(f.zones || []).length}/{unitsForFloorNumbers(f).length}
+              {f.block ? `${f.block} · ` : ''}{f.label || `Floor ${f.floor}`} · {(f.zones || []).length}/{unitsForFloorNumbers(f).length}
             </Text>
           </TouchableOpacity>
         );
