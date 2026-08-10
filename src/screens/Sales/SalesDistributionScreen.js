@@ -46,6 +46,8 @@ function fmtTime(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
+const isoDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+const fmtDay = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 
 // Assigned-project chips shown under each availability name.
 function ProjectTags({ projects }) {
@@ -137,6 +139,11 @@ export default function SalesDistributionScreen({ navigation }) {
   const [settingsForm,   setSettingsForm]   = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [availability,   setAvailability]   = useState([]);
+  // Sign-in history — the same records the board shows for today, kept per day.
+  const [availTab, setAvailTab]   = useState('today');   // 'today' | 'history'
+  const [history, setHistory]     = useState([]);
+  const [histLoading, setHistLoading] = useState(false);
+  const [histDays, setHistDays]   = useState(7);         // trailing window
   const [allUsers,       setAllUsers]       = useState([]);
   const [weights,        setWeights]        = useState({});
   const [savedWeights,   setSavedWeights]   = useState({});
@@ -178,6 +185,18 @@ export default function SalesDistributionScreen({ navigation }) {
   }, [companyId]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (availTab !== 'history') return;
+    let cancelled = false;
+    setHistLoading(true);
+    apiFetch(`${SALES_ENDPOINTS.availabilityHistory}?date_from=${isoDaysAgo(histDays - 1)}`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setHistory(Array.isArray(d) ? d : []); })
+      .catch(() => { if (!cancelled) setHistory([]); })
+      .finally(() => { if (!cancelled) setHistLoading(false); });
+    return () => { cancelled = true; };
+  }, [availTab, histDays]);
 
   const now             = currentIST();
   const tcWindowOpen    = now >= settings.tc_signin_time  && now < settings.tc_signout_time;
@@ -341,7 +360,69 @@ export default function SalesDistributionScreen({ navigation }) {
 
           {/* ═══ 2. Today's Availability ═══ */}
           <View style={CARD}>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, padding: 16, paddingBottom: 12 }}>👥 Today's Availability</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 12, gap: 8 }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, flex: 1 }}>👥 Availability</Text>
+              {[['today', 'Today'], ['history', 'History']].map(([k, lbl]) => {
+                const on = availTab === k;
+                return (
+                  <TouchableOpacity key={k} onPress={() => setAvailTab(k)}
+                    style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5,
+                      borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{lbl}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {availTab === 'history' ? (
+              <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                  {[7, 15, 30].map(n => {
+                    const on = histDays === n;
+                    return (
+                      <TouchableOpacity key={n} onPress={() => setHistDays(n)}
+                        style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5,
+                          borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? COLORS.linkBg : COLORS.white }}>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{n} days</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {histLoading ? <Text style={{ fontSize: 14, color: MUTED }}>Loading…</Text>
+                  : history.length === 0 ? <Text style={{ fontSize: 14, color: MUTED }}>Nobody marked available in this range.</Text>
+                  : history.map(day => (
+                    <View key={day.date} style={{ borderTopWidth: 1, borderTopColor: COLORS.border, paddingVertical: 12 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT }}>{fmtDay(day.date)}</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success, backgroundColor: COLORS.successBg, paddingHorizontal: 8, paddingVertical: 1, borderRadius: 20, overflow: 'hidden' }}>
+                          {day.telecaller_count} TC · {day.stm_count} STM
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 14 }}>
+                        {[['Telecallers', day.telecallers], ['STMs', day.stms]].map(([lbl, list]) => (
+                          <View key={lbl} style={{ flex: 1 }}>
+                            <SectionLabel>{lbl}</SectionLabel>
+                            <View style={{ marginTop: 6 }}>
+                              {list.length === 0
+                                ? <Text style={{ fontSize: 13, color: MUTED }}>—</Text>
+                                : list.map(x => (
+                                  <View key={x.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 2 }}>
+                                    <Text style={{ fontSize: 13, color: x.is_available ? TEXT : MUTED, flexShrink: 1 }} numberOfLines={1}>{x.name}</Text>
+                                    {!!x.checked_in_at && (
+                                      <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.success, backgroundColor: COLORS.successBg, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 20, overflow: 'hidden' }}>
+                                        {fmtTime(x.checked_in_at)}
+                                      </Text>
+                                    )}
+                                  </View>
+                                ))}
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ))}
+              </View>
+            ) : (
             <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, gap: 14 }}>
 
               <View style={{ flex: 1 }}>
@@ -400,6 +481,7 @@ export default function SalesDistributionScreen({ navigation }) {
                 </View>
               </View>
             </View>
+            )}
           </View>
 
           {/* ═══ 3. Lead Distribution Ratio ═══ */}
