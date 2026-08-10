@@ -240,7 +240,19 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       async function loadDetail() {
         try {
           const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id));
-          if (res.ok) setDetail(await res.json());
+          if (res.ok) {
+            const full = await res.json();
+            setDetail(full);
+            // telecaller_remarks/stm_remarks aren't in the list payload (kept off it
+            // for list-performance reasons), so the initial form prefill above always
+            // left them blank — backfill them now that the full record is in. Only
+            // these two: everything else the form edits already ships in the list.
+            setForm(f => ({
+              ...f,
+              telecaller_remarks: full.telecaller_remarks || '',
+              stm_remarks: full.stm_remarks || '',
+            }));
+          }
         } catch (_) {}
       }
       loadDetail();
