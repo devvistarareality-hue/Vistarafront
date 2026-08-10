@@ -950,6 +950,10 @@ export default function ManagePlotsScreen({ route, navigation }) {
   const [project,  setProject]  = useState(null);
   const [plots,    setPlots]    = useState([]);
   const [filter,   setFilter]   = useState('all');
+  // Tower projects only: narrow the list to one block, then one of its floors.
+  // '' means "all" on both.
+  const [blockF,   setBlockF]   = useState('');
+  const [floorF,   setFloorF]   = useState('');
   const [loading,  setLoading]  = useState(true);
   const [editPlot, setEditPlot] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -1017,13 +1021,33 @@ export default function ManagePlotsScreen({ route, navigation }) {
 
   const clusterTypes = [...new Set(plots.map(p => p.cluster_type).filter(Boolean))];
 
+  // The block a unit belongs to is carried by its number ("A-101"), which is also what
+  // makes numbers unique across blocks that repeat the same run.
+  const blockOfPlot = (p) => { const m = String(p.number || '').match(/^([A-Za-z]+)-/); return m ? m[1] : ''; };
+  const towerBlocks = !project?.floor_wise ? [] : [...new Set(
+    (project.floor_plans || []).map(f => f.block || '').filter(Boolean))];
+  // Floors offered are the selected block's own — every block numbers its floors from 0,
+  // so listing all of them would repeat "1st Floor" once per block.
+  const towerFloors = !project?.floor_wise ? [] : (() => {
+    const seen = new Map();
+    (project.floor_plans || [])
+      .filter(f => !blockF || (f.block || '') === blockF)
+      .forEach(f => { const n = Number(f.floor) || 0; if (!seen.has(n)) seen.set(n, f.label || `Floor ${n}`); });
+    return [...seen.entries()].sort((a, b) => a[0] - b[0]);
+  })();
+
+  // Block/floor narrow the pool the status tabs then count and filter, so the tab
+  // numbers always describe what is actually on screen.
+  const scoped = plots.filter(p =>
+    (!blockF || blockOfPlot(p) === blockF) &&
+    (floorF === '' || Number(p.floor) === Number(floorF)));
   const counts = {
-    all:       plots.length,
-    available: plots.filter(p => p.status === 'available').length,
-    hold:      plots.filter(p => p.status === 'hold').length,
-    sold:      plots.filter(p => p.status === 'sold').length,
+    all:       scoped.length,
+    available: scoped.filter(p => p.status === 'available').length,
+    hold:      scoped.filter(p => p.status === 'hold').length,
+    sold:      scoped.filter(p => p.status === 'sold').length,
   };
-  const soldPct  = plots.length ? Math.round(counts.sold / plots.length * 100) : 0;
+  const soldPct  = plots.length ? Math.round(plots.filter(p => p.status === 'sold').length / plots.length * 100) : 0;
   // Sort strictly by the numeric plot number (1 → n), ignoring the cluster prefix.
   const plotNumVal = (p) => {
     const disp = p.cluster_type
@@ -1032,9 +1056,15 @@ export default function ManagePlotsScreen({ route, navigation }) {
     const m = String(disp).match(/\d+/);
     return m ? parseInt(m[0], 10) : Number.MAX_SAFE_INTEGER;
   };
-  const filtered = (filter === 'all' ? plots : plots.filter(p => p.status === filter))
+  const filtered = (filter === 'all' ? scoped : scoped.filter(p => p.status === filter))
     .slice()
-    .sort((a, b) => (plotNumVal(a) - plotNumVal(b)) || a.number.localeCompare(b.number, undefined, { numeric: true }));
+    // Block first, then floor, then unit number — otherwise every block's "1" sorts
+    // together and A/B/C interleave down the list.
+    .sort((a, b) =>
+      blockOfPlot(a).localeCompare(blockOfPlot(b))
+      || ((a.floor ?? Number.MAX_SAFE_INTEGER) - (b.floor ?? Number.MAX_SAFE_INTEGER))
+      || (plotNumVal(a) - plotNumVal(b))
+      || a.number.localeCompare(b.number, undefined, { numeric: true }));
 
   if (loading) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
@@ -1156,6 +1186,31 @@ export default function ManagePlotsScreen({ route, navigation }) {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+              {/* A single-block tower has nothing to choose between, so only its floors show. */}
+              {towerBlocks.length > 1 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, flexDirection: 'row', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, alignSelf: 'center', marginRight: 2 }}>BLOCK</Text>
+                  {[['', 'All'], ...towerBlocks.map(b => [b, b])].map(([val, label]) => (
+                    <TouchableOpacity key={val || 'all'} onPress={() => { setBlockF(val); setFloorF(''); }}
+                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                        borderColor: blockF === val ? BLUE : COLORS.border, backgroundColor: blockF === val ? '#EEF1FF' : COLORS.white }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: blockF === val ? BLUE : MUTED }}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+              {towerFloors.length > 1 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, flexDirection: 'row', marginBottom: 10 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, alignSelf: 'center', marginRight: 2 }}>FLOOR</Text>
+                  {[['', 'All'], ...towerFloors.map(([n, label]) => [String(n), label])].map(([val, label]) => (
+                    <TouchableOpacity key={val || 'all'} onPress={() => setFloorF(val)}
+                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                        borderColor: floorF === val ? BLUE : COLORS.border, backgroundColor: floorF === val ? '#EEF1FF' : COLORS.white }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: floorF === val ? BLUE : MUTED }}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
               {plots.length > 0 && (
                 <TouchableOpacity onPress={async () => {
                   Alert.alert('Delete All Plots', `Delete all ${plots.length} plots for this project? This cannot be undone.`, [
@@ -1188,7 +1243,9 @@ export default function ManagePlotsScreen({ route, navigation }) {
         ListEmptyComponent={
           <View style={{ alignItems: 'center', padding: 40 }}>
             <Ionicons name="grid-outline" size={40} color={COLORS.divider} />
-            <Text style={{ color: MUTED, marginTop: 12, fontWeight: '600' }}>No plots with this status.</Text>
+            <Text style={{ color: MUTED, marginTop: 12, fontWeight: '600' }}>
+              {blockF || floorF ? 'No plots match this block/floor.' : 'No plots with this status.'}
+            </Text>
           </View>
         }
       />
