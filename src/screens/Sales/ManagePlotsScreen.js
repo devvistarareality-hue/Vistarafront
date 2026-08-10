@@ -282,10 +282,15 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
         </View>
       </View>
 
-      {/* Size row — always rendered */}
+      {/* Size row — always rendered. A terrace is charged on top of the flat and only
+          half the flats have one, so it is called out here rather than hidden behind
+          the edit sheet. */}
       <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, minHeight: 24 }}>
         <Text style={{ fontSize: 10, color: plot.size ? MUTED : COLORS.divider, fontStyle: plot.size ? 'normal' : 'italic' }} numberOfLines={1}>
           {plot.size || 'Area not set'}
+          {(plot.terrace_area || '').trim() ? (
+            <Text style={{ color: BLUE, fontWeight: '700', fontStyle: 'normal' }}> + {plot.terrace_area.trim()} terrace</Text>
+          ) : null}
         </Text>
       </View>
 
