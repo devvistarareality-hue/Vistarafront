@@ -355,8 +355,16 @@ export default function ClosureViewerScreen({ navigation, route }) {
           </ScrollView>
         )}
 
-        {/* Stat cards */}
+        {/* Stat cards — scoped to the floor on view, since that is what the map below
+            shows. Total leads so the three statuses read as a share of something. */}
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+          <View style={[CARD, { flex: 1, padding: 12 }]}>
+            <Text style={{ fontSize: 20, fontWeight: '900', color: TEXT }}>{total}</Text>
+            <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>
+              Total{plots.length !== total ? ` · ${plots.length} all` : ''}
+            </Text>
+            <View style={{ height: 3, borderRadius: 3, backgroundColor: BLUE, marginTop: 6, opacity: 0.5 }} />
+          </View>
           {[['available', counts.available], ['hold', counts.hold], ['sold', counts.sold]].map(([key, n]) => {
             const cfg = STATUS[key];
             return (
