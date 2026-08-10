@@ -52,6 +52,7 @@ export default function KioskScreen({ navigation }) {
   const [project,  setProject]  = useState(null);
   const [plots,    setPlots]    = useState([]);   // ALL plots (map needs sold/hold too)
   const [floorIdx, setFloorIdx] = useState(0);    // tower: which floor is on screen
+  const [blockIdx, setBlockIdx] = useState(0);    // tower: which block (A/B/C…)
   const [selIds,   setSelIds]   = useState([]);   // chosen plot ids (multi-select for LOI)
   const [eoiType,  setEoiType]  = useState('');
   const [eoiUnits, setEoiUnits] = useState('1');
@@ -76,7 +77,10 @@ export default function KioskScreen({ navigation }) {
   const pickProject = async (p) => {
     setProject(p); setSelIds([]); setEoiType(''); setEoiUnits('1');
     // Open a tower on its ground floor — that's where a walk-in starts.
-    const fl = (p?.floor_plans || []).slice().sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0));
+    setBlockIdx(0);
+    const first = ((p?.floor_plans || [])[0] || {}).block || '';
+    const fl = (p?.floor_plans || []).filter((f) => (f.block || '') === first)
+      .slice().sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0));
     const g = fl.findIndex((f) => Number(f.floor) === 0);
     setFloorIdx(g >= 0 ? g : 0);
     try {
@@ -90,10 +94,24 @@ export default function KioskScreen({ navigation }) {
   // A tower is browsed one floor at a time: each floor has its own plan and zones, so
   // the map, the unit list and the counts are all scoped to the chosen floor.
   const floorWise = !!project?.floor_wise;
-  const floors = (project?.floor_plans || []).slice().sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0));
+  const allFloors = project?.floor_plans || [];
+  // A tower may be one block or several (A, B, C…), each with its own floor count —
+  // the buyer picks the block first, then the floor within it.
+  const blocks = (() => {
+    const seen = [];
+    allFloors.forEach((f) => { const b = f.block || ''; if (!seen.includes(b)) seen.push(b); });
+    return seen.length ? seen : [''];
+  })();
+  const activeBlock = blocks[Math.min(blockIdx, blocks.length - 1)] ?? '';
+  const floors = allFloors.filter((f) => (f.block || '') === activeBlock)
+    .slice().sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0));
   const activeFloor = floorWise ? floors[Math.min(floorIdx, Math.max(floors.length - 1, 0))] : null;
   const onFloor = (pl, f) => {
     if (!f) return true;
+    // Both blocks have a floor 1, so the floor number alone is not enough — units
+    // carry their block as a prefix ("A-101"), which is what separates them.
+    const bp = f.block ? `${f.block}-` : '';
+    if (bp && !String(pl.number || '').startsWith(bp)) return false;
     if (pl.floor !== null && pl.floor !== undefined) return Number(pl.floor) === Number(f.floor);
     const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
     if (!Number.isFinite(from) || !Number.isFinite(to)) return false;
@@ -226,6 +244,19 @@ export default function KioskScreen({ navigation }) {
               <View>
                 {floorWise && floors.length > 0 && (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 12, alignItems: 'center' }}>
+                    {blocks.filter(Boolean).length > 1 && (<>
+                      <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: MUTED }}>BLOCK</Text>
+                      {blocks.map((b, i) => {
+                        const on = i === Math.min(blockIdx, blocks.length - 1);
+                        return (
+                          <TouchableOpacity key={`b${i}`} onPress={() => { setBlockIdx(i); setFloorIdx(0); }}
+                            style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
+                              borderColor: on ? BLUE : '#E1E6F1', backgroundColor: on ? BLUEBG : '#fff' }}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{b || '—'}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </>)}
                     <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: MUTED }}>FLOOR</Text>
                     {floors.map((f, i) => {
                       const on = i === Math.min(floorIdx, floors.length - 1);
