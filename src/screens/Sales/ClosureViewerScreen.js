@@ -123,6 +123,14 @@ export default function ClosureViewerScreen({ navigation, route }) {
     allFloors.forEach(f => { const b = f.block || ''; if (!seen.includes(b)) seen.push(b); });
     return seen.length ? seen : [''];
   }, [allFloors]);
+  // A block's height is quoted the way the trade quotes it — "G+12", ground plus the
+  // floors above it — not as a raw floor count. A block with no ground floor falls
+  // back to counting.
+  const blockHeight = (b) => {
+    const fs = allFloors.filter(f => (f.block || '') === b);
+    const upper = fs.filter(f => Number(f.floor) > 0).length;
+    return fs.some(f => Number(f.floor) === 0) ? `G+${upper}` : `${fs.length}`;
+  };
   const [blockIdx, setBlockIdx] = useState(0);
   const activeBlock = blocks[Math.min(blockIdx, blocks.length - 1)] ?? '';
   const floors = useMemo(
@@ -302,13 +310,12 @@ export default function ClosureViewerScreen({ navigation, route }) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
             {blocks.map((b, i) => {
               const active = i === Math.min(blockIdx, blocks.length - 1);
-              const n = allFloors.filter(f => (f.block || '') === b).length;
               return (
                 <TouchableOpacity key={`b${i}`} onPress={() => { setBlockIdx(i); setFloorIdx(0); }}
                   style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
                     borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#EEF1FF' : COLORS.white }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>
-                    Block {b || '—'} · {n}
+                    Block {b || '—'} · {blockHeight(b)}
                   </Text>
                 </TouchableOpacity>
               );
