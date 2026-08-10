@@ -46,6 +46,8 @@ function fmtTime(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
+const isoDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+const fmtDay = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 
 // Assigned-project chips shown under each availability name.
 function ProjectTags({ projects }) {
@@ -80,6 +82,9 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: dotColor }} />
         <SectionLabel color={headColor}>{title}</SectionLabel>
       </View>
+      {/* Fixed height with its own scroll, matching web, so a long project list does
+          not stretch the card. nestedScrollEnabled for the screen's outer ScrollView. */}
+      <ScrollView style={{ maxHeight: 360 }} nestedScrollEnabled showsVerticalScrollIndicator>
       {members.length === 0
         ? <Text style={{ fontSize: 13, color: MUTED }}>No active {title.toLowerCase()}</Text>
         : projectNames.length === 0
@@ -128,6 +133,7 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
           <Text style={{ fontSize: 13, color: '#912018' }}>{noProject.map(m => m.name).join(', ')}</Text>
         </View>
       )}
+      </ScrollView>
     </View>
   );
 }
@@ -137,6 +143,11 @@ export default function SalesDistributionScreen({ navigation }) {
   const [settingsForm,   setSettingsForm]   = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [availability,   setAvailability]   = useState([]);
+  // Sign-in history — the same records the board shows for today, kept per day.
+  const [availTab, setAvailTab]   = useState('today');   // 'today' | 'history'
+  const [history, setHistory]     = useState([]);
+  const [histLoading, setHistLoading] = useState(false);
+  const [histDays, setHistDays]   = useState(7);         // trailing window
   const [allUsers,       setAllUsers]       = useState([]);
   const [weights,        setWeights]        = useState({});
   const [savedWeights,   setSavedWeights]   = useState({});
@@ -179,6 +190,18 @@ export default function SalesDistributionScreen({ navigation }) {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (availTab !== 'history') return;
+    let cancelled = false;
+    setHistLoading(true);
+    apiFetch(`${SALES_ENDPOINTS.availabilityHistory}?date_from=${isoDaysAgo(histDays - 1)}`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setHistory(Array.isArray(d) ? d : []); })
+      .catch(() => { if (!cancelled) setHistory([]); })
+      .finally(() => { if (!cancelled) setHistLoading(false); });
+    return () => { cancelled = true; };
+  }, [availTab, histDays]);
+
   const now             = currentIST();
   const tcWindowOpen    = now >= settings.tc_signin_time  && now < settings.tc_signout_time;
   const stmWindowOpen   = now >= settings.stm_signin_time && now < settings.stm_signout_time;
@@ -197,11 +220,29 @@ export default function SalesDistributionScreen({ navigation }) {
   const stmMembers = availability.filter(a => (a.dist_type || a.role || '').toLowerCase() === 'stm');
   const weightsChanged = Object.keys(weights).some(id => weights[id] !== savedWeights[id]);
 
-  async function toggleAvailability(userId, current) {
+  async function applyAvailability(userId, current) {
     const res = await apiFetch(SALES_ENDPOINTS.availability, {
       method: 'POST', body: JSON.stringify({ user_id: userId, is_available: !current, ...(companyId ? { company_id: companyId } : {}) }),
     });
     if (res.ok) setAvailability(prev => prev.map(a => String(a.user_id) === String(userId) ? { ...a, is_available: !current } : a));
+  }
+
+  function toggleAvailability(userId, current) {
+    // Confirm first: the whole row is tappable, so a stray tap used to silently sign
+    // someone in or out and change who receives leads.
+    const name = availability.find(a => String(a.user_id) === String(userId))?.name || 'this user';
+    Alert.alert(
+      current ? 'Mark unavailable?' : 'Mark available?',
+      current ? `${name} will stop receiving new leads.` : `${name} will start receiving new leads.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: current ? 'Mark Unavailable' : 'Mark Available',
+          style: current ? 'destructive' : 'default',
+          onPress: () => applyAvailability(userId, current),
+        },
+      ],
+    );
   }
 
   async function saveSettings() {
@@ -341,7 +382,73 @@ export default function SalesDistributionScreen({ navigation }) {
 
           {/* ═══ 2. Today's Availability ═══ */}
           <View style={CARD}>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, padding: 16, paddingBottom: 12 }}>👥 Today's Availability</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 12, gap: 8 }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, flex: 1 }}>👥 Availability</Text>
+              {[['today', 'Today'], ['history', 'History']].map(([k, lbl]) => {
+                const on = availTab === k;
+                return (
+                  <TouchableOpacity key={k} onPress={() => setAvailTab(k)}
+                    style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5,
+                      borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{lbl}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {availTab === 'history' ? (
+              <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                  {[7, 15, 30].map(n => {
+                    const on = histDays === n;
+                    return (
+                      <TouchableOpacity key={n} onPress={() => setHistDays(n)}
+                        style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5,
+                          borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? COLORS.linkBg : COLORS.white }}>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{n} days</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {/* Fixed height with its own scroll, matching web. nestedScrollEnabled so
+                    it works inside the screen's ScrollView on Android. */}
+                <ScrollView style={{ maxHeight: 320 }} nestedScrollEnabled showsVerticalScrollIndicator>
+                {histLoading ? <Text style={{ fontSize: 14, color: MUTED }}>Loading…</Text>
+                  : history.length === 0 ? <Text style={{ fontSize: 14, color: MUTED }}>Nobody marked available in this range.</Text>
+                  : history.map(day => (
+                    <View key={day.date} style={{ borderTopWidth: 1, borderTopColor: COLORS.border, paddingVertical: 12 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT }}>{fmtDay(day.date)}</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success, backgroundColor: COLORS.successBg, paddingHorizontal: 8, paddingVertical: 1, borderRadius: 20, overflow: 'hidden' }}>
+                          {day.telecaller_count} TC · {day.stm_count} STM
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 14 }}>
+                        {[['Telecallers', day.telecallers], ['STMs', day.stms]].map(([lbl, list]) => (
+                          <View key={lbl} style={{ flex: 1 }}>
+                            <SectionLabel>{lbl}</SectionLabel>
+                            <View style={{ marginTop: 6 }}>
+                              {list.length === 0
+                                ? <Text style={{ fontSize: 13, color: MUTED }}>—</Text>
+                                : list.map(x => (
+                                  <View key={x.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 2 }}>
+                                    <Text style={{ fontSize: 13, color: x.is_available ? TEXT : MUTED, flexShrink: 1 }} numberOfLines={1}>{x.name}</Text>
+                                    {!!x.checked_in_at && (
+                                      <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.success, backgroundColor: COLORS.successBg, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 20, overflow: 'hidden' }}>
+                                        {fmtTime(x.checked_in_at)}
+                                      </Text>
+                                    )}
+                                  </View>
+                                ))}
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : (
             <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, gap: 14 }}>
 
               <View style={{ flex: 1 }}>
@@ -400,6 +507,7 @@ export default function SalesDistributionScreen({ navigation }) {
                 </View>
               </View>
             </View>
+            )}
           </View>
 
           {/* ═══ 3. Lead Distribution Ratio ═══ */}
@@ -514,10 +622,13 @@ export default function SalesDistributionScreen({ navigation }) {
                 </TouchableOpacity>
               )}
             </View>
+            {/* Fixed height with its own scroll, matching web — the list used to be
+                capped at 10 rows instead, which quietly hid the rest. */}
+            <ScrollView style={{ maxHeight: 360 }} nestedScrollEnabled showsVerticalScrollIndicator>
             {distLog.length === 0
               ? <Text style={{ textAlign: 'center', color: MUTED, padding: 36, fontSize: 15 }}>No distributions run yet</Text>
-              : distLog.slice(0, 10).map((log, i) => (
-                <View key={log.id || i} style={{ padding: 16, borderBottomWidth: i < Math.min(distLog.length, 10) - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
+              : distLog.map((log, i) => (
+                <View key={log.id || i} style={{ padding: 16, borderBottomWidth: i < distLog.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceAlt }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                     <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, backgroundColor: log.dist_type === 'telecaller' ? COLORS.warningBg : COLORS.screenBg }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: log.dist_type === 'telecaller' ? COLORS.warningAlt : COLORS.link }}>
@@ -532,6 +643,7 @@ export default function SalesDistributionScreen({ navigation }) {
                 </View>
               ))
             }
+            </ScrollView>
           </View>
 
         </ScrollView>
