@@ -220,11 +220,29 @@ export default function SalesDistributionScreen({ navigation }) {
   const stmMembers = availability.filter(a => (a.dist_type || a.role || '').toLowerCase() === 'stm');
   const weightsChanged = Object.keys(weights).some(id => weights[id] !== savedWeights[id]);
 
-  async function toggleAvailability(userId, current) {
+  async function applyAvailability(userId, current) {
     const res = await apiFetch(SALES_ENDPOINTS.availability, {
       method: 'POST', body: JSON.stringify({ user_id: userId, is_available: !current, ...(companyId ? { company_id: companyId } : {}) }),
     });
     if (res.ok) setAvailability(prev => prev.map(a => String(a.user_id) === String(userId) ? { ...a, is_available: !current } : a));
+  }
+
+  function toggleAvailability(userId, current) {
+    // Confirm first: the whole row is tappable, so a stray tap used to silently sign
+    // someone in or out and change who receives leads.
+    const name = availability.find(a => String(a.user_id) === String(userId))?.name || 'this user';
+    Alert.alert(
+      current ? 'Mark unavailable?' : 'Mark available?',
+      current ? `${name} will stop receiving new leads.` : `${name} will start receiving new leads.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: current ? 'Mark Unavailable' : 'Mark Available',
+          style: current ? 'destructive' : 'default',
+          onPress: () => applyAvailability(userId, current),
+        },
+      ],
+    );
   }
 
   async function saveSettings() {
