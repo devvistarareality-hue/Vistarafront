@@ -33,6 +33,18 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const [openProj, setOpenProj] = useState(null);      // approver-config accordion
   const [openGroup, setOpenGroup] = useState({});      // project name → expanded?
   const [q, setQ] = useState('');
+  // Booking-date range. Presets only on mobile — a phone has no room for the web's
+  // month/quarter/FY dropdowns, and these are the ranges an approver actually asks for.
+  const [range, setRange] = useState({ from: '', to: '' });
+  const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
+  const DATE_PRESETS = [
+    ['All',        () => ({ from: '', to: '' })],
+    ['Today',      () => ({ from: istToday(), to: istToday() })],
+    ['7 days',     () => ({ from: istDaysAgo(6), to: istToday() })],
+    ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
+    ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
+  ];
   const [toCancel, setToCancel] = useState(null);      // booking awaiting cancel confirmation
 
   const load = useCallback(async () => {
@@ -95,7 +107,17 @@ export default function BookingApprovalsScreen({ navigation, route }) {
     // Need a few digits before matching phones, or "1" would hit almost everything.
     return qDigits.length >= 3 && String(b.phone || '').replace(/\D/g, '').includes(qDigits);
   };
-  const visible = rows.filter(matches);
+  // Booking date is a plain YYYY-MM-DD, so the range compares as strings. A booking
+  // with no date can't be placed in time, so a live range excludes it rather than
+  // silently counting it in every period.
+  const dated = !!(range.from || range.to);
+  const inRange = (b) => {
+    if (!dated) return true;
+    const d = String(b.booking_date || '');
+    if (!d) return false;
+    return (!range.from || d >= range.from) && (!range.to || d <= range.to);
+  };
+  const visible = rows.filter((b) => matches(b) && inRange(b));
 
   // Project-wise grouping (same shape as the Accounts & Finance bookings view), but
   // applied to whichever tab is selected so approvers keep their per-booking actions.
@@ -109,7 +131,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // only make the user click through when there's actually a lot to scroll past.
   // Rejected is archival, though: always start it collapsed however few there are.
   // While searching, always open: hits are the point of the search.
-  const autoOpen = !!ql || (tab !== 'rejected' && visible.length <= 10);
+  const autoOpen = !!ql || dated || (tab !== 'rejected' && visible.length <= 10);
   const isOpen = (pn) => (openGroup[pn] === undefined ? autoOpen : openGroup[pn]);
   const tabLabel = (TABS.find(([k]) => k === tab) || ['', 'All'])[1];
 
@@ -193,10 +215,26 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           )}
         </View>
 
+        {/* Booking-date range */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 14, alignItems: 'center' }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>BOOKED</Text>
+          {DATE_PRESETS.map(([label, make]) => {
+            const r = make();
+            const on = range.from === r.from && range.to === r.to;
+            return (
+              <TouchableOpacity key={label} onPress={() => { setRange(r); setOpenGroup({}); }}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
         {!loading && visible.length > 0 && (
           <View style={{ backgroundColor: BLUE, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}>
             <Text style={{ color: '#DBEAFE', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
-              {(ql ? 'MATCHING ' : 'TOTAL ') + String(tabLabel).toUpperCase()} · {visible.length} BOOKING{visible.length === 1 ? '' : 'S'} · {projectNames.length} PROJECT{projectNames.length === 1 ? '' : 'S'}
+              {(ql || dated ? 'MATCHING ' : 'TOTAL ') + String(tabLabel).toUpperCase()} · {visible.length} BOOKING{visible.length === 1 ? '' : 'S'} · {projectNames.length} PROJECT{projectNames.length === 1 ? '' : 'S'}
             </Text>
             <Text style={{ color: '#fff', fontSize: 21, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
           </View>
@@ -204,7 +242,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
 
         {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : visible.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}>
-            <Text style={{ color: MUTED, textAlign: 'center' }}>{ql ? `No bookings match “${q.trim()}”.` : 'No bookings here.'}</Text>
+            <Text style={{ color: MUTED, textAlign: 'center' }}>{ql ? `No bookings match “${q.trim()}”.` : dated ? 'No bookings were booked in this date range.' : 'No bookings here.'}</Text>
           </View>
         ) : projectNames.map((pn) => (
           <View key={pn} style={{ marginBottom: 12 }}>
