@@ -414,7 +414,24 @@ export default function ClosureViewerScreen({ navigation, route }) {
           <View style={[CARD, { padding: 14 }]}>
             <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Units</Text>
             <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>No site map drawn. Tap an available unit below.</Text>
-            {!visiblePlots.length ? (
+            {!visiblePlots.length && project?.block_industrial ? (
+              // Block-wise industrial, this block has no plots yet — raise an EOI against
+              // the block instead of a dead end. Block-prefixed EOI code (e.g. Block E → E1,
+              // E2…) via the `block` param on BookingForm.
+              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 4 }}>
+                  Block {activeBlock || '—'} hasn't been mapped yet.
+                </Text>
+                <Text style={{ fontSize: 12, color: MUTED, marginBottom: 16, textAlign: 'center' }}>
+                  No units are defined here yet — raise an EOI to hold interest until it's surveyed.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('BookingForm', { project: project.id, eoi: '1', block: activeBlock, projectName: project?.name, formulaSet: project?.formula_set })}
+                  style={{ backgroundColor: BLUE, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 22 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>Raise EOI for Block {activeBlock || 'this project'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : !visiblePlots.length ? (
               <Text style={{ color: MUTED, fontSize: 13, textAlign: 'center', paddingVertical: 16 }}>No units defined.</Text>
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>

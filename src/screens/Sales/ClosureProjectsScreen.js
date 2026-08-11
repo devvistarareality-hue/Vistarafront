@@ -77,8 +77,11 @@ export default function ClosureProjectsScreen({ navigation, route }) {
             const pc = p.plot_counts || {};
             const total = pc.total || 0;
             // No plots yet (pre-approval) → raise an EOI instead of booking a unit.
+            // Block-wise industrial is a per-block decision (some blocks may be mapped,
+            // others not), so it always opens the block picker instead of short-circuiting
+            // a project that has zero plots so far.
             const noPlots = total === 0;
-            const goTo = () => noPlots
+            const goTo = () => (!p.block_industrial && noPlots)
               ? navigation.navigate('BookingForm', { project: p.id, eoi: '1', projectName: p.name, formulaSet: p.formula_set, lead: sv?.lead, client: sv?.lead_name, phone: sv?.lead_phone })
               : navigation.navigate('ClosureViewer', { projectId: p.id, sv });
             return (
@@ -104,8 +107,8 @@ export default function ClosureProjectsScreen({ navigation, route }) {
                       <Text style={{ fontSize: 12, color: COLORS.error, fontWeight: '700' }}>✕ {pc.sold || 0}</Text>
                     </View>
                   )}
-                  <View style={{ marginTop: 12, backgroundColor: noPlots ? '#FFF4ED' : COLORS.linkBg, borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: noPlots ? '#E4571A' : BLUE }}>{noPlots ? 'Create EOI →' : 'View units →'}</Text>
+                  <View style={{ marginTop: 12, backgroundColor: (!p.block_industrial && noPlots) ? '#FFF4ED' : COLORS.linkBg, borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: (!p.block_industrial && noPlots) ? '#E4571A' : BLUE }}>{(!p.block_industrial && noPlots) ? 'Create EOI →' : 'View units →'}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
