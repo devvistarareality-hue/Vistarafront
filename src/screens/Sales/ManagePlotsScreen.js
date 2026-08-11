@@ -1151,12 +1151,13 @@ export default function ManagePlotsScreen({ route, navigation }) {
             {project.floor_wise ? (
               <>
               <View style={[CARD, { margin: 16, padding: 16 }]}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>🏢 Floor-wise Setup</Text>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>{project.block_industrial ? '🏭 Block Setup' : '🏢 Floor-wise Setup'}</Text>
                 <TowerFloorBuilder
                   floors={floorPlans} setFloors={setFloorPlans}
                   folder={`erp/projects/${project.id}/floor-plans`}
                   existing={new Set(plots.map((p) => String(p.number)))}
                   onPersist={saveFloorPlans}
+                  industrial={!!project.block_industrial}
                   onGenerate={generateUnits} generating={genBusy} />
                 </View>
                 <FloorMapEditor project={project} plots={plots} floors={floorPlans}

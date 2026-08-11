@@ -288,7 +288,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '',
     total_area: '', total_plots: '', price_range: '', possession: '', description: '',
     cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false,
-    floor_wise: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }],
+    floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }],
   });
   // EOI standard unit types (pre-approval sizes) — [{type, plot_area, const_area}].
   const addEoiType    = () => setForm(f => ({ ...f, eoi_unit_types: [...(f.eoi_unit_types || []), { type: '', plot_area: '', const_area: '' }] }));
@@ -352,11 +352,12 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           is_active:       project.is_active !== undefined ? project.is_active : true,
           kiosk_enabled:   !!project.kiosk_enabled,
           floor_wise:      !!project.floor_wise,
+          block_industrial: !!project.block_industrial,
           floor_plans:     (project.floor_plans?.length ? project.floor_plans : [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }]),
         });
         setEditableTypes((project.plot_type_plans || []).map(pt => ({ original: pt.name, current: pt.name })));
       } else {
-        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false, floor_wise: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
+        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false, floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
         setHasTypes(false); setNoTypePlots(''); setPlotTypes([{ name: '', from: '1', to: '' }]);
         setEditableTypes([]);
       }
@@ -513,10 +514,11 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 map, or units built floor by floor (tower). */}
             <Field label="Layout">
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                {[[false, 'Plotted scheme'], [true, 'Floor-wise (tower)']].map(([val, label]) => {
-                  const on = !!form.floor_wise === val;
+                {[['plot', 'Plotted scheme'], ['floor', 'Floor-wise (tower)'], ['block', 'Block-wise industrial']].map(([key, label]) => {
+                  const current = form.block_industrial ? 'block' : form.floor_wise ? 'floor' : 'plot';
+                  const on = current === key;
                   return (
-                    <TouchableOpacity key={String(val)} onPress={() => set('floor_wise', val)}
+                    <TouchableOpacity key={key} onPress={() => setForm(f => ({ ...f, floor_wise: key !== 'plot', block_industrial: key === 'block' }))}
                       style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center',
                         borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{on ? '\u2713 ' : ''}{label}</Text>
@@ -525,7 +527,9 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 })}
               </View>
               <Text style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>
-                {form.floor_wise
+                {form.block_industrial
+                  ? "Units are grouped by block. A mapped block (site plan + zones drawn) books normally; an unmapped block raises a block-prefixed EOI (e.g. Block E \u2192 E1, E2\u2026) until it's surveyed."
+                  : form.floor_wise
                   ? "Units are built floor by floor (e.g. Ground = Shop1\u201312, 1st = 101\u2013107), each floor with its own plan."
                   : 'Plots are added as a flat list and positioned on an interactive site map.'}
               </Text>
@@ -651,14 +655,17 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             {form.floor_wise ? (
               <View style={{ borderTopWidth: 1.5, borderTopColor: COLORS.surfaceAlt, paddingTop: 16, marginBottom: 8 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
-                  Unit Setup
+                  {form.block_industrial ? 'Block Setup' : 'Unit Setup'}
                 </Text>
                 <TowerFloorBuilder
                   floors={form.floor_plans || []}
                   setFloors={(next) => set('floor_plans', next)}
                   folder={`erp/projects/${editing?.id || 'new'}/floor-plans`}
                   existing={existingNumbers}
-                  note={`Units are created when you ${editing ? 'save' : 'add the project'} — existing ones are left alone.`} />
+                  industrial={form.block_industrial}
+                  note={form.block_industrial
+                    ? `Add a block, then draw its site plan once it's surveyed. Leave a block's units ungenerated until then — it'll raise EOIs (block-prefixed, e.g. E1, E2…) in the meantime. Units are created when you ${editing ? 'save' : 'add the project'}.`
+                    : `Units are created when you ${editing ? 'save' : 'add the project'} — existing ones are left alone.`} />
               </View>
             ) : (
             <View style={{ borderTopWidth: 1.5, borderTopColor: COLORS.surfaceAlt, paddingTop: 16, marginBottom: 8 }}>
