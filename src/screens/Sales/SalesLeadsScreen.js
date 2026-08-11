@@ -1356,9 +1356,16 @@ export default function SalesLeadsScreen({ navigation, route }) {
     let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
     if (isCaller) {
       url += `&work=${workTab}`;
-      // Pending = oldest-first (FIFO) so new leads queue at the bottom and never
-      // bury the lead being worked; Called = most recently actioned first.
-      url += `&ordering=${workTab === 'pending' ? 'created_at' : '-updated_at'}`;
+      if (isStm && workTab === 'pending') {
+        // An STM's queue is ordered by when the lead was handed to them, most
+        // recent first — not creation date (a lead can exist long before it
+        // reaches this STM), and not the telecaller's oldest-first FIFO below.
+        url += `&ordering=-stm_assigned_at`;
+      } else {
+        // Pending = oldest-first (FIFO) so new leads queue at the bottom and never
+        // bury the lead being worked; Called = most recently actioned first.
+        url += `&ordering=${workTab === 'pending' ? 'created_at' : '-updated_at'}`;
+      }
     }
     if (companyId)             url += `&company_id=${companyId}`;
     if (search)                url += `&search=${encodeURIComponent(search)}`;
@@ -1483,7 +1490,11 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
   const LeadCard = useCallback(({ item }) => {
     const metaLine = [item.meta_campaign_name, item.meta_adset_name, item.meta_ad_name].filter(Boolean).join(' · ');
-    const dateObj  = item.created_at ? new Date(item.created_at) : null;
+    // An STM cares about when THEY received the lead, not when it first entered the
+    // system (it may have sat with a telecaller for days first) — fall back to
+    // created_at for leads with no stamped stm_assigned_at (e.g. self-sourced).
+    const cardDate = (isStm && item.stm_assigned_at) ? item.stm_assigned_at : item.created_at;
+    const dateObj  = cardDate ? new Date(cardDate) : null;
     const dateStr  = dateObj ? dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '';
     const timeStr  = dateObj ? dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
     return (
