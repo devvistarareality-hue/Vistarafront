@@ -1148,6 +1148,15 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
   const today = localDate(new Date());
   const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
   const activeCount = Object.entries(filters).filter(([k, v]) => v && v !== false && v !== '').length;
+  // Custom date range — the Today/Week/Month buttons cover common cases, but a manager
+  // often needs an arbitrary range (e.g. "leads from the 3rd to the 9th").
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker,   setShowToPicker]   = useState(false);
+  const parseLocalDate = (s) => {
+    if (!s) return new Date();
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
 
   return (
     <FormSheet visible={visible} onClose={onClose}>
@@ -1173,6 +1182,64 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
                 );
               })}
             </View>
+
+            {/* Custom range — pick any From/To, independent of the quick buttons above. */}
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => setShowFromPicker(true)}
+                style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                <Ionicons name="calendar-outline" size={16} color={MUTED} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: local.date_from ? TEXT : MUTED }}>{local.date_from || 'From'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowToPicker(true)}
+                style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                <Ionicons name="calendar-outline" size={16} color={MUTED} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: local.date_to ? TEXT : MUTED }}>{local.date_to || 'To'}</Text>
+              </TouchableOpacity>
+              {(local.date_from || local.date_to) ? (
+                <TouchableOpacity onPress={() => { set('date_from', ''); set('date_to', ''); }} style={{ padding: 4 }}>
+                  <Ionicons name="close-circle" size={20} color={MUTED} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {Platform.OS === 'ios' && showFromPicker && (
+              <Modal transparent animationType="slide" onRequestClose={() => setShowFromPicker(false)}>
+                <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowFromPicker(false)}>
+                  <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                      <TouchableOpacity onPress={() => setShowFromPicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                      <Text style={{ fontWeight: '700', color: TEXT }}>From Date</Text>
+                      <TouchableOpacity onPress={() => setShowFromPicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                    </View>
+                    <DateTimePicker value={parseLocalDate(local.date_from)} mode="date" display="spinner" textColor={TEXT}
+                      onChange={(_, d) => d && set('date_from', localDate(d))} />
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+            )}
+            {Platform.OS === 'android' && showFromPicker && (
+              <DateTimePicker value={parseLocalDate(local.date_from)} mode="date" display="default"
+                onChange={(e, d) => { setShowFromPicker(false); if (e.type === 'dismissed') return; if (d) set('date_from', localDate(d)); }} />
+            )}
+            {Platform.OS === 'ios' && showToPicker && (
+              <Modal transparent animationType="slide" onRequestClose={() => setShowToPicker(false)}>
+                <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowToPicker(false)}>
+                  <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                      <TouchableOpacity onPress={() => setShowToPicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                      <Text style={{ fontWeight: '700', color: TEXT }}>To Date</Text>
+                      <TouchableOpacity onPress={() => setShowToPicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                    </View>
+                    <DateTimePicker value={parseLocalDate(local.date_to)} mode="date" display="spinner" textColor={TEXT}
+                      onChange={(_, d) => d && set('date_to', localDate(d))} />
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+            )}
+            {Platform.OS === 'android' && showToPicker && (
+              <DateTimePicker value={parseLocalDate(local.date_to)} mode="date" display="default"
+                onChange={(e, d) => { setShowToPicker(false); if (e.type === 'dismissed') return; if (d) set('date_to', localDate(d)); }} />
+            )}
           </View>
 
           {/* Project */}
