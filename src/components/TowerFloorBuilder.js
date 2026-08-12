@@ -22,8 +22,8 @@ const ordinal = (n) => {
 
 // A multi-block tower puts the block in front — "A-101" — so unit numbers stay unique
 // across blocks that repeat the same numbering, which they normally do.
-const blockPrefix = (f) => (f && f.block ? `${f.block}-` : '');
-function unitsForFloor(f) {
+export const blockPrefix = (f) => (f && f.block ? `${f.block}-` : '');
+export function unitsForFloor(f) {
   const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
   if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) return [];
   if (to - from > 200) return [];   // guard against a stray keystroke generating thousands
@@ -32,13 +32,13 @@ function unitsForFloor(f) {
   return out;
 }
 // Distinct blocks in definition order; [''] for a single-block tower.
-function blocksOf(floors) {
+export function blocksOf(floors) {
   const seen = [];
   (floors || []).forEach((f) => { const b = f.block || ''; if (!seen.includes(b)) seen.push(b); });
   return seen.length ? seen : [''];
 }
 
-export default function TowerFloorBuilder({ floors, setFloors, folder, existing = new Set(), onPersist, onGenerate, generating = false, note }) {
+export default function TowerFloorBuilder({ floors, setFloors, folder, existing = new Set(), onPersist, onGenerate, generating = false, note, industrial = false }) {
   const [uploading, setUploading] = useState(null);
   const [msg, setMsg] = useState('');
   const persist = (next) => { if (onPersist) onPersist(next); };
@@ -131,14 +131,17 @@ export default function TowerFloorBuilder({ floors, setFloors, folder, existing 
     <View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, color: MUTED }}>Define each floor's unit numbering and plan. Ground is floor 0.</Text>
+          <Text style={{ fontSize: 12, color: MUTED }}>{industrial ? "Define each block's unit numbering and plan once it's surveyed." : "Define each floor's unit numbering and plan. Ground is floor 0."}</Text>
         </View>
         <TouchableOpacity onPress={addBlock} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: '#C7D2FE' }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>+ Block</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => addFloorRow(blocksOf(floors)[0] || '')} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: '#C7D2FE' }}>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>+ Floor</Text>
-        </TouchableOpacity>
+        {/* Industrial blocks are single-level — no floor concept, so no way to add one. */}
+        {!industrial && (
+          <TouchableOpacity onPress={() => addFloorRow(blocksOf(floors)[0] || '')} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: '#C7D2FE' }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>+ Floor</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Grouped by block. A single-block tower has one unnamed group and looks
@@ -155,10 +158,12 @@ export default function TowerFloorBuilder({ floors, setFloors, folder, existing 
             <TextInput value={blk} onChangeText={(t) => renameBlock(blk, t.trim().toUpperCase())} placeholder="A"
               style={{ width: 54, height: 34, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8,
                 paddingHorizontal: 8, fontSize: 13, fontWeight: '800', textAlign: 'center', color: TEXT }} />
-            <Text style={{ fontSize: 12, color: MUTED }}>{rows.length} floor{rows.length === 1 ? '' : 's'} · {blkUnits} units</Text>
-            <TouchableOpacity onPress={() => addFloorRow(blk)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, borderWidth: 1.5, borderColor: COLORS.border }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>+ Floor</Text>
-            </TouchableOpacity>
+            <Text style={{ fontSize: 12, color: MUTED }}>{industrial ? `${blkUnits} units` : `${rows.length} floor${rows.length === 1 ? '' : 's'} · ${blkUnits} units`}</Text>
+            {!industrial && (
+              <TouchableOpacity onPress={() => addFloorRow(blk)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, borderWidth: 1.5, borderColor: COLORS.border }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: BLUE }}>+ Floor</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={() => removeBlock(blk)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, borderWidth: 1.5, borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}>
               <Text style={{ fontSize: 12, fontWeight: '700', color: '#DC2626' }}>Remove</Text>
             </TouchableOpacity>
@@ -170,8 +175,11 @@ export default function TowerFloorBuilder({ floors, setFloors, folder, existing 
         return (
           <View key={i} style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 12, padding: 12, marginTop: 12 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <View style={{ width: 52 }}><Text style={lbl}>Floor</Text>
-                <TextInput value={String(f.floor ?? '')} onChangeText={(v) => edit(i, { floor: v })} onBlur={() => persist(floors)} keyboardType="number-pad" style={cell} /></View>
+              {/* Industrial blocks are single-level — the floor number is meaningless. */}
+              {!industrial && (
+                <View style={{ width: 52 }}><Text style={lbl}>Floor</Text>
+                  <TextInput value={String(f.floor ?? '')} onChangeText={(v) => edit(i, { floor: v })} onBlur={() => persist(floors)} keyboardType="number-pad" style={cell} /></View>
+              )}
               <View style={{ flex: 1 }}><Text style={lbl}>Label</Text>
                 <TextInput value={f.label || ''} onChangeText={(v) => edit(i, { label: v })} onBlur={() => persist(floors)} style={cell} /></View>
               <TouchableOpacity onPress={() => removeFloor(i)} style={{ justifyContent: 'flex-end', paddingBottom: 7 }}>
@@ -194,9 +202,11 @@ export default function TowerFloorBuilder({ floors, setFloors, folder, existing 
                   : 'Set From / To to generate unit numbers.'}
                 {units.length && isNew === 0 ? '  · all exist' : ''}
               </Text>
-              <TouchableOpacity onPress={() => askRepeat(i)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 7, borderWidth: 1.5, borderColor: COLORS.border }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: BLUE }}>↓ Repeat up to…</Text>
-              </TouchableOpacity>
+              {!industrial && (
+                <TouchableOpacity onPress={() => askRepeat(i)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 7, borderWidth: 1.5, borderColor: COLORS.border }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: BLUE }}>↓ Repeat up to…</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 9 }}>
@@ -225,7 +235,7 @@ export default function TowerFloorBuilder({ floors, setFloors, folder, existing 
         <View style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, marginTop: 14, paddingTop: 12 }}>
           <Text style={{ fontSize: 13, color: '#374151', marginBottom: 10 }}>
             <Text style={{ fontWeight: '800' }}>{planned.length}</Text> units planned across{' '}
-            <Text style={{ fontWeight: '800' }}>{floors.length}</Text> floors ·{' '}
+            <Text style={{ fontWeight: '800' }}>{industrial ? blocksOf(floors).filter(Boolean).length : floors.length}</Text> {industrial ? `block${blocksOf(floors).filter(Boolean).length === 1 ? '' : 's'}` : 'floors'} ·{' '}
             <Text style={{ fontWeight: '800', color: toCreate.length ? '#B45309' : COLORS.success }}>
               {toCreate.length ? `${toCreate.length} to create` : 'all already created'}
             </Text>

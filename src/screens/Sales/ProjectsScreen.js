@@ -13,7 +13,16 @@ import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { uploadToSupabase } from '../../utils/supabaseStorage';
-import TowerFloorBuilder from '../../components/TowerFloorBuilder';
+import TowerFloorBuilder, { unitsForFloor } from '../../components/TowerFloorBuilder';
+
+// A DRF error is JSON, but a 500 (or a proxy timeout) is an HTML page. res.json() on
+// that throws a bare SyntaxError, so read the text first and hand back either the
+// parsed body or a { _raw } snippet the caller can show.
+async function readJson(res) {
+  const text = await res.text().catch(() => '');
+  try { return text ? JSON.parse(text) : {}; }
+  catch { return { _raw: text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) }; }
+}
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
 
@@ -288,7 +297,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '',
     total_area: '', total_plots: '', price_range: '', possession: '', description: '',
     cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false,
-    floor_wise: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }],
+    floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }],
   });
   // EOI standard unit types (pre-approval sizes) — [{type, plot_area, const_area}].
   const addEoiType    = () => setForm(f => ({ ...f, eoi_unit_types: [...(f.eoi_unit_types || []), { type: '', plot_area: '', const_area: '' }] }));
@@ -352,11 +361,12 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           is_active:       project.is_active !== undefined ? project.is_active : true,
           kiosk_enabled:   !!project.kiosk_enabled,
           floor_wise:      !!project.floor_wise,
+          block_industrial: !!project.block_industrial,
           floor_plans:     (project.floor_plans?.length ? project.floor_plans : [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }]),
         });
         setEditableTypes((project.plot_type_plans || []).map(pt => ({ original: pt.name, current: pt.name })));
       } else {
-        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false, floor_wise: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
+        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false, floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
         setHasTypes(false); setNoTypePlots(''); setPlotTypes([{ name: '', from: '1', to: '' }]);
         setEditableTypes([]);
       }
@@ -373,14 +383,12 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     // A floor-wise project's units come from the Floor-wise Setup builder above, not
     // the plot wizard. Send every planned unit — the bulk endpoint ignores conflicts,
     // so re-saving simply tops up whatever is missing.
+    // The builder's own numbering is the single source of truth — re-deriving it here
+    // once dropped the block prefix, so A/C/D's identical runs collapsed into one set
+    // of units (project+number is unique, and bulk create ignores the clashes).
     if (form.floor_wise) {
-      return (form.floor_plans || []).flatMap((f) => {
-        const from = parseInt(f.from, 10), to = parseInt(f.to, 10);
-        if (!Number.isFinite(from) || !Number.isFinite(to) || to < from || to - from > 200) return [];
-        const out = [];
-        for (let n = from; n <= to; n++) out.push({ number: `${f.prefix || ''}${n}`, floor: Number(f.floor) || 0, cluster_type: '' });
-        return out;
-      });
+      return (form.floor_plans || []).flatMap((f) =>
+        unitsForFloor(f).map((number) => ({ number, floor: Number(f.floor) || 0, cluster_type: '' })));
     }
     if (hasTypes) {
       const arr = [];
@@ -414,8 +422,15 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
       const url    = editing ? SALES_ENDPOINTS.project(project.id) : SALES_ENDPOINTS.projects;
       const method = editing ? 'PATCH' : 'POST';
       const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
-      if (!res.ok) { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); setSaving(false); return; }
-      const data = await res.json();
+      // A server error comes back as an HTML page, not JSON — parsing it blind threw a
+      // bare SyntaxError and left the form stuck on "Saving…". Read defensively and
+      // show whatever the server actually said.
+      if (!res.ok) {
+        const e = await readJson(res);
+        Alert.alert('Could not save', e?.detail || e?._raw || JSON.stringify(e));
+        setSaving(false); return;
+      }
+      const data = await readJson(res);
 
       // Rename cluster_types on plots (edit mode)
       if (editing) {
@@ -515,10 +530,11 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 map, or units built floor by floor (tower). */}
             <Field label="Layout">
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                {[[false, 'Plotted scheme'], [true, 'Floor-wise (tower)']].map(([val, label]) => {
-                  const on = !!form.floor_wise === val;
+                {[['plot', 'Plotted scheme'], ['floor', 'Floor-wise (tower)'], ['block', 'Block-wise industrial']].map(([key, label]) => {
+                  const current = form.block_industrial ? 'block' : form.floor_wise ? 'floor' : 'plot';
+                  const on = current === key;
                   return (
-                    <TouchableOpacity key={String(val)} onPress={() => set('floor_wise', val)}
+                    <TouchableOpacity key={key} onPress={() => setForm(f => ({ ...f, floor_wise: key !== 'plot', block_industrial: key === 'block' }))}
                       style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center',
                         borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{on ? '\u2713 ' : ''}{label}</Text>
@@ -527,7 +543,9 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 })}
               </View>
               <Text style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>
-                {form.floor_wise
+                {form.block_industrial
+                  ? "Units are grouped by block. A mapped block (site plan + zones drawn) books normally; an unmapped block raises a block-prefixed EOI (e.g. Block E \u2192 E1, E2\u2026) until it's surveyed."
+                  : form.floor_wise
                   ? "Units are built floor by floor (e.g. Ground = Shop1\u201312, 1st = 101\u2013107), each floor with its own plan."
                   : 'Plots are added as a flat list and positioned on an interactive site map.'}
               </Text>
@@ -653,14 +671,17 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             {form.floor_wise ? (
               <View style={{ borderTopWidth: 1.5, borderTopColor: COLORS.surfaceAlt, paddingTop: 16, marginBottom: 8 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
-                  Unit Setup
+                  {form.block_industrial ? 'Block Setup' : 'Unit Setup'}
                 </Text>
                 <TowerFloorBuilder
                   floors={form.floor_plans || []}
                   setFloors={(next) => set('floor_plans', next)}
                   folder={`erp/projects/${editing?.id || 'new'}/floor-plans`}
                   existing={existingNumbers}
-                  note={`Units are created when you ${editing ? 'save' : 'add the project'} — existing ones are left alone.`} />
+                  industrial={form.block_industrial}
+                  note={form.block_industrial
+                    ? `Add a block, then draw its site plan once it's surveyed. Leave a block's units ungenerated until then — it'll raise EOIs (block-prefixed, e.g. E1, E2…) in the meantime. Units are created when you ${editing ? 'save' : 'add the project'}.`
+                    : `Units are created when you ${editing ? 'save' : 'add the project'} — existing ones are left alone.`} />
               </View>
             ) : (
             <View style={{ borderTopWidth: 1.5, borderTopColor: COLORS.surfaceAlt, paddingTop: 16, marginBottom: 8 }}>

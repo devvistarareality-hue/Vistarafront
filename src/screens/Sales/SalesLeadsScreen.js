@@ -240,7 +240,19 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       async function loadDetail() {
         try {
           const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id));
-          if (res.ok) setDetail(await res.json());
+          if (res.ok) {
+            const full = await res.json();
+            setDetail(full);
+            // telecaller_remarks/stm_remarks aren't in the list payload (kept off it
+            // for list-performance reasons), so the initial form prefill above always
+            // left them blank — backfill them now that the full record is in. Only
+            // these two: everything else the form edits already ships in the list.
+            setForm(f => ({
+              ...f,
+              telecaller_remarks: full.telecaller_remarks || '',
+              stm_remarks: full.stm_remarks || '',
+            }));
+          }
         } catch (_) {}
       }
       loadDetail();
@@ -1136,6 +1148,15 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
   const today = localDate(new Date());
   const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
   const activeCount = Object.entries(filters).filter(([k, v]) => v && v !== false && v !== '').length;
+  // Custom date range — the Today/Week/Month buttons cover common cases, but a manager
+  // often needs an arbitrary range (e.g. "leads from the 3rd to the 9th").
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker,   setShowToPicker]   = useState(false);
+  const parseLocalDate = (s) => {
+    if (!s) return new Date();
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
 
   return (
     <FormSheet visible={visible} onClose={onClose}>
@@ -1161,6 +1182,64 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
                 );
               })}
             </View>
+
+            {/* Custom range — pick any From/To, independent of the quick buttons above. */}
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => setShowFromPicker(true)}
+                style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                <Ionicons name="calendar-outline" size={16} color={MUTED} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: local.date_from ? TEXT : MUTED }}>{local.date_from || 'From'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowToPicker(true)}
+                style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                <Ionicons name="calendar-outline" size={16} color={MUTED} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: local.date_to ? TEXT : MUTED }}>{local.date_to || 'To'}</Text>
+              </TouchableOpacity>
+              {(local.date_from || local.date_to) ? (
+                <TouchableOpacity onPress={() => { set('date_from', ''); set('date_to', ''); }} style={{ padding: 4 }}>
+                  <Ionicons name="close-circle" size={20} color={MUTED} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {Platform.OS === 'ios' && showFromPicker && (
+              <Modal transparent animationType="slide" onRequestClose={() => setShowFromPicker(false)}>
+                <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowFromPicker(false)}>
+                  <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                      <TouchableOpacity onPress={() => setShowFromPicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                      <Text style={{ fontWeight: '700', color: TEXT }}>From Date</Text>
+                      <TouchableOpacity onPress={() => setShowFromPicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                    </View>
+                    <DateTimePicker value={parseLocalDate(local.date_from)} mode="date" display="spinner" textColor={TEXT}
+                      onChange={(_, d) => d && set('date_from', localDate(d))} />
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+            )}
+            {Platform.OS === 'android' && showFromPicker && (
+              <DateTimePicker value={parseLocalDate(local.date_from)} mode="date" display="default"
+                onChange={(e, d) => { setShowFromPicker(false); if (e.type === 'dismissed') return; if (d) set('date_from', localDate(d)); }} />
+            )}
+            {Platform.OS === 'ios' && showToPicker && (
+              <Modal transparent animationType="slide" onRequestClose={() => setShowToPicker(false)}>
+                <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowToPicker(false)}>
+                  <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                      <TouchableOpacity onPress={() => setShowToPicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                      <Text style={{ fontWeight: '700', color: TEXT }}>To Date</Text>
+                      <TouchableOpacity onPress={() => setShowToPicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                    </View>
+                    <DateTimePicker value={parseLocalDate(local.date_to)} mode="date" display="spinner" textColor={TEXT}
+                      onChange={(_, d) => d && set('date_to', localDate(d))} />
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+            )}
+            {Platform.OS === 'android' && showToPicker && (
+              <DateTimePicker value={parseLocalDate(local.date_to)} mode="date" display="default"
+                onChange={(e, d) => { setShowToPicker(false); if (e.type === 'dismissed') return; if (d) set('date_to', localDate(d)); }} />
+            )}
           </View>
 
           {/* Project */}
@@ -1344,9 +1423,16 @@ export default function SalesLeadsScreen({ navigation, route }) {
     let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
     if (isCaller) {
       url += `&work=${workTab}`;
-      // Pending = oldest-first (FIFO) so new leads queue at the bottom and never
-      // bury the lead being worked; Called = most recently actioned first.
-      url += `&ordering=${workTab === 'pending' ? 'created_at' : '-updated_at'}`;
+      if (isStm && workTab === 'pending') {
+        // An STM's queue is ordered by when the lead was handed to them, most
+        // recent first — not creation date (a lead can exist long before it
+        // reaches this STM), and not the telecaller's oldest-first FIFO below.
+        url += `&ordering=-stm_assigned_at`;
+      } else {
+        // Pending = oldest-first (FIFO) so new leads queue at the bottom and never
+        // bury the lead being worked; Called = most recently actioned first.
+        url += `&ordering=${workTab === 'pending' ? 'created_at' : '-updated_at'}`;
+      }
     }
     if (companyId)             url += `&company_id=${companyId}`;
     if (search)                url += `&search=${encodeURIComponent(search)}`;
@@ -1471,7 +1557,11 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
   const LeadCard = useCallback(({ item }) => {
     const metaLine = [item.meta_campaign_name, item.meta_adset_name, item.meta_ad_name].filter(Boolean).join(' · ');
-    const dateObj  = item.created_at ? new Date(item.created_at) : null;
+    // An STM cares about when THEY received the lead, not when it first entered the
+    // system (it may have sat with a telecaller for days first) — fall back to
+    // created_at for leads with no stamped stm_assigned_at (e.g. self-sourced).
+    const cardDate = (isStm && item.stm_assigned_at) ? item.stm_assigned_at : item.created_at;
+    const dateObj  = cardDate ? new Date(cardDate) : null;
     const dateStr  = dateObj ? dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '';
     const timeStr  = dateObj ? dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
     return (

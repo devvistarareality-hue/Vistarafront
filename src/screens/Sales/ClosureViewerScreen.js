@@ -123,6 +123,14 @@ export default function ClosureViewerScreen({ navigation, route }) {
     allFloors.forEach(f => { const b = f.block || ''; if (!seen.includes(b)) seen.push(b); });
     return seen.length ? seen : [''];
   }, [allFloors]);
+  // A block's height is quoted the way the trade quotes it — "G+12", ground plus the
+  // floors above it — not as a raw floor count. A block with no ground floor falls
+  // back to counting.
+  const blockHeight = (b) => {
+    const fs = allFloors.filter(f => (f.block || '') === b);
+    const upper = fs.filter(f => Number(f.floor) > 0).length;
+    return fs.some(f => Number(f.floor) === 0) ? `G+${upper}` : `${fs.length}`;
+  };
   const [blockIdx, setBlockIdx] = useState(0);
   const activeBlock = blocks[Math.min(blockIdx, blocks.length - 1)] ?? '';
   const floors = useMemo(
@@ -166,13 +174,47 @@ export default function ClosureViewerScreen({ navigation, route }) {
     : (project?.site_map_image_url || (isImageUrl(project?.master_plan_url) ? project.master_plan_url : ''));
   const hasMap   = !!mapImage && zones.length > 0;
 
-  const counts = useMemo(() => {
-    const c = { available: 0, hold: 0, sold: 0 };
-    visiblePlots.forEach(p => { if (c[p.status] != null) c[p.status]++; });
-    return c;
-  }, [visiblePlots]);
   const total = visiblePlots.length;
-  const pct   = (n) => (total ? Math.round(n / total * 100) : 0);
+
+  // The floor row is only meaningful when a floor is actually selected — a plotted
+  // scheme has none, so it shows the project row alone.
+  const floorRowLabel = floorWise && activeFloor
+    ? `${activeBlock ? `Block ${activeBlock} · ` : ''}${activeFloor.label || `Floor ${activeFloor.floor}`}`
+    : null;
+
+  // One row of stat cards over whatever set of units it is handed, so the floor row and
+  // the project row are counted and shown identically.
+  const statRow = (title, list) => {
+    if (!title) return null;
+    const c = { available: 0, hold: 0, sold: 0 };
+    list.forEach(p => { if (c[p.status] != null) c[p.status]++; });
+    const t = list.length;
+    const share = (n) => (t ? Math.round(n / t * 100) : 0);
+    return (
+      <View style={{ marginBottom: 12 }}>
+        <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 6 }}>
+          {title.toUpperCase()}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={[CARD, { flex: 1, padding: 12 }]}>
+            <Text style={{ fontSize: 20, fontWeight: '900', color: TEXT }}>{t}</Text>
+            <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>Total</Text>
+            <View style={{ height: 3, borderRadius: 3, backgroundColor: BLUE, marginTop: 6, opacity: 0.5 }} />
+          </View>
+          {[['available', c.available], ['hold', c.hold], ['sold', c.sold]].map(([key, n]) => {
+            const cfg = STATUS[key];
+            return (
+              <View key={key} style={[CARD, { flex: 1, padding: 12 }]}>
+                <Text style={{ fontSize: 20, fontWeight: '900', color: TEXT }}>{n}</Text>
+                <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>{cfg.label} · {share(n)}%</Text>
+                <View style={{ height: 3, borderRadius: 3, backgroundColor: cfg.dot, marginTop: 6, opacity: 0.5 }} />
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
 
   const plotByNumber = useMemo(() => {
     const m = {}; visiblePlots.forEach(p => { m[String(p.number)] = p; }); return m;
@@ -302,13 +344,12 @@ export default function ClosureViewerScreen({ navigation, route }) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
             {blocks.map((b, i) => {
               const active = i === Math.min(blockIdx, blocks.length - 1);
-              const n = allFloors.filter(f => (f.block || '') === b).length;
               return (
                 <TouchableOpacity key={`b${i}`} onPress={() => { setBlockIdx(i); setFloorIdx(0); }}
                   style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
                     borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#EEF1FF' : COLORS.white }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>
-                    Block {b || '—'} · {n}
+                    Block {b || '—'} · {blockHeight(b)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -348,19 +389,10 @@ export default function ClosureViewerScreen({ navigation, route }) {
           </ScrollView>
         )}
 
-        {/* Stat cards */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
-          {[['available', counts.available], ['hold', counts.hold], ['sold', counts.sold]].map(([key, n]) => {
-            const cfg = STATUS[key];
-            return (
-              <View key={key} style={[CARD, { flex: 1, padding: 12 }]}>
-                <Text style={{ fontSize: 20, fontWeight: '900', color: TEXT }}>{n}</Text>
-                <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{cfg.label} · {pct(n)}%</Text>
-                <View style={{ height: 3, borderRadius: 3, backgroundColor: cfg.dot, marginTop: 6, opacity: 0.5 }} />
-              </View>
-            );
-          })}
-        </View>
+        {/* Two rows of stat cards: the floor on view (what the map below shows), then the
+            whole project. A plotted scheme has no floors, so it gets the project row only. */}
+        {statRow(floorRowLabel, visiblePlots)}
+        {statRow('Whole Project', plots)}
 
         {/* Interactive map */}
         {hasMap ? (
@@ -414,7 +446,24 @@ export default function ClosureViewerScreen({ navigation, route }) {
           <View style={[CARD, { padding: 14 }]}>
             <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Units</Text>
             <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>No site map drawn. Tap an available unit below.</Text>
-            {!visiblePlots.length ? (
+            {!visiblePlots.length && project?.block_industrial ? (
+              // Block-wise industrial, this block has no plots yet — raise an EOI against
+              // the block instead of a dead end. Block-prefixed EOI code (e.g. Block E → E1,
+              // E2…) via the `block` param on BookingForm.
+              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 4 }}>
+                  Block {activeBlock || '—'} hasn't been mapped yet.
+                </Text>
+                <Text style={{ fontSize: 12, color: MUTED, marginBottom: 16, textAlign: 'center' }}>
+                  No units are defined here yet — raise an EOI to hold interest until it's surveyed.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('BookingForm', { project: project.id, eoi: '1', block: activeBlock, projectName: project?.name, formulaSet: project?.formula_set })}
+                  style={{ backgroundColor: BLUE, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 22 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>Raise EOI for Block {activeBlock || 'this project'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : !visiblePlots.length ? (
               <Text style={{ color: MUTED, fontSize: 13, textAlign: 'center', paddingVertical: 16 }}>No units defined.</Text>
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
