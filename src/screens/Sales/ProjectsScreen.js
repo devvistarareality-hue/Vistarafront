@@ -14,6 +14,15 @@ import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { uploadToSupabase } from '../../utils/supabaseStorage';
 import TowerFloorBuilder, { unitsForFloor } from '../../components/TowerFloorBuilder';
+
+// A DRF error is JSON, but a 500 (or a proxy timeout) is an HTML page. res.json() on
+// that throws a bare SyntaxError, so read the text first and hand back either the
+// parsed body or a { _raw } snippet the caller can show.
+async function readJson(res) {
+  const text = await res.text().catch(() => '');
+  try { return text ? JSON.parse(text) : {}; }
+  catch { return { _raw: text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) }; }
+}
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
 
@@ -413,8 +422,15 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
       const url    = editing ? SALES_ENDPOINTS.project(project.id) : SALES_ENDPOINTS.projects;
       const method = editing ? 'PATCH' : 'POST';
       const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
-      if (!res.ok) { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); setSaving(false); return; }
-      const data = await res.json();
+      // A server error comes back as an HTML page, not JSON — parsing it blind threw a
+      // bare SyntaxError and left the form stuck on "Saving…". Read defensively and
+      // show whatever the server actually said.
+      if (!res.ok) {
+        const e = await readJson(res);
+        Alert.alert('Could not save', e?.detail || e?._raw || JSON.stringify(e));
+        setSaving(false); return;
+      }
+      const data = await readJson(res);
 
       // Rename cluster_types on plots (edit mode)
       if (editing) {
