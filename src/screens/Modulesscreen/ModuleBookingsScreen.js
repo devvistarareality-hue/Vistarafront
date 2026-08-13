@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FilterSelect from '../../components/FilterSelect';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -104,6 +105,19 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const [open, setOpen] = useState({});
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
   const [detailsOpen, setDetailsOpen] = useState({});
+  // Same three filters as the Sales approvals screen: booking date, project, STM.
+  const [range, setRange] = useState({ from: '', to: '' });
+  const [proj, setProj] = useState('');   // '' = every project
+  const [stm, setStm] = useState('');     // '' = every STM
+  const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
+  const DATE_PRESETS = [
+    ['All',        () => ({ from: '', to: '' })],
+    ['Today',      () => ({ from: istToday(), to: istToday() })],
+    ['7 days',     () => ({ from: istDaysAgo(6), to: istToday() })],
+    ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
+    ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
+  ];
   const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
 
   const load = useCallback(async () => {
@@ -124,8 +138,30 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     if (a.includes('REJECT') || a.includes('CANCEL') || a.includes('PENDING')) return false;
     return a.includes('APPROVED') || b.status === 'sold';
   };
+  const approved = rows.filter(isApproved);
+
+  // Booking date is a plain YYYY-MM-DD, so the range compares as strings. A booking
+  // with no date can't be placed in time, so a live range excludes it rather than
+  // silently counting it in every period.
+  const dated = !!(range.from || range.to);
+  const inRange = (b) => {
+    if (!dated) return true;
+    const d = String(b.booking_date || '');
+    if (!d) return false;
+    return (!range.from || d >= range.from) && (!range.to || d <= range.to);
+  };
+  // Both option lists come from every approved booking, not the filtered set, so
+  // choosing one value never removes the other options from its sheet.
+  const stmName = (b) => b.stm_name || '—';
+  const projName = (b) => b.project_name || '—';
+  const stmOptions = [...new Set(approved.map(stmName))].sort((a, b) => a.localeCompare(b));
+  const projOptions = [...new Set(approved.map(projName))].sort((a, b) => a.localeCompare(b));
+  const narrowed = dated || !!stm || !!proj;
+
   const groups = {};
-  rows.filter(isApproved).forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
+  approved
+    .filter((b) => inRange(b) && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj))
+    .forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
   projectNames.forEach((pn) => groups[pn].sort((a, b) => String(b.booking_date || '').localeCompare(String(a.booking_date || ''))));
   // Project-wise total booking value (sum of approved final_amount) + grand total.
@@ -150,13 +186,48 @@ export default function ModuleBookingsScreen({ navigation, route }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
         {loading ? <ActivityIndicator color={TEAL} style={{ marginTop: 30 }} />
         : err ? <View style={[CARD, { alignItems: 'center' }]}><Text style={{ color: COLORS.error }}>{err}</Text></View>
-        : projectNames.length === 0 ? (
-          <View style={[CARD, { alignItems: 'center', padding: 28 }]}><Text style={{ color: MUTED }}>No bookings yet.</Text></View>
+        : <>
+          {approved.length > 0 && (
+            <>
+              {/* Booking-date range */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 10, alignItems: 'center' }}>
+                <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>BOOKED</Text>
+                {DATE_PRESETS.map(([label, make]) => {
+                  const r = make();
+                  const on = range.from === r.from && range.to === r.to;
+                  return (
+                    <TouchableOpacity key={label} onPress={() => { setRange(r); setOpen({}); }}
+                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                        borderColor: on ? TEAL : COLORS.border, backgroundColor: on ? '#CCFBF1' : COLORS.white }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: on ? TEAL : MUTED }}>{label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+              {(projOptions.length > 1 || stmOptions.length > 1) && (
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                  {projOptions.length > 1 && (
+                    <FilterSelect label="All Projects" value={proj} onChange={(v) => { setProj(v); setOpen({}); }}
+                      options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
+                  )}
+                  {stmOptions.length > 1 && (
+                    <FilterSelect label="All STMs" value={stm} onChange={(v) => { setStm(v); setOpen({}); }}
+                      options={[{ value: '', label: 'All STMs' }, ...stmOptions.map((n) => ({ value: n, label: n }))]} />
+                  )}
+                </View>
+              )}
+            </>
+          )}
+          {projectNames.length === 0 ? (
+          <View style={[CARD, { alignItems: 'center', padding: 28 }]}>
+            <Text style={{ color: MUTED, textAlign: 'center' }}>{narrowed ? 'No approved bookings match these filters.' : 'No bookings yet.'}</Text>
+          </View>
         ) : <>
           <View style={{ marginBottom: 12, borderRadius: 14, padding: 16, backgroundColor: TEAL }}>
             <Text style={{ color: '#CCFBF1', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Total Approved · {grandCount} booking{grandCount === 1 ? '' : 's'} · {projectNames.length} project{projectNames.length === 1 ? '' : 's'}
+              {narrowed ? 'Matching' : 'Total'} Approved · {grandCount} booking{grandCount === 1 ? '' : 's'} · {projectNames.length} project{projectNames.length === 1 ? '' : 's'}
             </Text>
+            {(!!proj || !!stm) && <Text style={{ color: '#CCFBF1', fontSize: 11, marginTop: 2 }} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
             <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
           </View>
           {projectNames.map((pn) => (
@@ -203,6 +274,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
             </View>}
           </View>
         ))}
+        </>}
         </>}
       </ScrollView>
     </SafeAreaView>
