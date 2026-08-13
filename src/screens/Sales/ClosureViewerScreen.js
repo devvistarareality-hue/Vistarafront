@@ -349,14 +349,16 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
                     borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#EEF1FF' : COLORS.white }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>
-                    Block {b || '—'} · {blockHeight(b)}
+                    Block {b || '—'}{project?.block_industrial ? '' : ` · ${blockHeight(b)}`}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
         )}
-        {floorWise && floors.length > 0 && (
+        {/* A block-industrial block is always a single ground-level entry — no real
+            floor concept, so picking one is redundant clutter, unlike an actual tower. */}
+        {floorWise && !project?.block_industrial && floors.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 14 }}>
             {floors.map((f, i) => {
               const active = i === Math.min(floorIdx, floors.length - 1);
