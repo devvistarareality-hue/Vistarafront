@@ -1262,7 +1262,11 @@ export default function ManagePlotsScreen({ route, navigation }) {
         onClose={() => setEditModalVisible(false)}
         onSaved={handlePlotUpdate}
         clusterTypes={clusterTypes}
-        floorWise={!!project?.floor_wise}
+        // Facing/terrace are Pratishtha-tower concepts (a flat facing road vs garden,
+        // an optional terrace charged separately) -- meaningless for an industrial shed,
+        // so block-wise industrial projects don't get this section even though they
+        // also set floor_wise=True to reuse the block/floor-plan machinery.
+        floorWise={!!project?.floor_wise && !project?.block_industrial}
       />
     </SafeAreaView>
   );
