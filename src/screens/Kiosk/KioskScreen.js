@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { logout } from '../../redux/actions/authActions';
+import { stripPlotPrefix } from '../../lib/plotNumber';
 
 // Client-facing full-screen Kiosk self-booking (mirrors the web /kiosk flow).
 // Kiosk-role device is logged in; walk-in client self-serves:
@@ -296,7 +297,7 @@ export default function KioskScreen({ navigation }) {
                       const cfg = KSTATUS[pl.status] || KSTATUS.available;
                       const isSel = isSelected(pl);
                       const { cx, cy } = zoneCenter(zone);
-                      const label = String(zone.plotNumber).replace(/^[^\d]+/, '') || String(zone.plotNumber);
+                      const label = stripPlotPrefix(zone.plotNumber);
                       const press = () => togglePlot(pl);
                       const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
                       const strokeC = isSel ? '#1A237E' : cfg.dot;

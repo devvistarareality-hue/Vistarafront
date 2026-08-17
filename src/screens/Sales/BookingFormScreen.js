@@ -14,6 +14,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { openLoi } from '../../utils/openLoi';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { stripPlotPrefix } from '../../lib/plotNumber';
 import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
 import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 import { computeShop, impliedUnitPct } from '../../lib/pratishthaShop';
@@ -109,8 +110,7 @@ export default function BookingFormScreen({ navigation, route }) {
       if (picked.length) {
         // Pratishtha prices from each unit's fixed price book, not the form's rates.
         setPriceBooks(picked.map((x) => x.price_book).filter((b) => b && Object.keys(b).length));
-        const stripNum = (n) => { const s = (n || '').toString(); return s.replace(/^[^0-9]*/, '') || s; };
-        setPlotNo(picked.map((x) => stripNum(x.number)).join(', '));
+        setPlotNo(picked.map((x) => stripPlotPrefix(x.number)).join(', '));
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
         // Auto-map construction area from the plot definition(s) into the booking.
         const sumConst = picked.reduce((a, x) => a + (parseFloat((x.construction_area || '').replace(/[^\d.]/g, '')) || 0), 0);
