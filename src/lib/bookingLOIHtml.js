@@ -3,6 +3,7 @@
 // same sections, labels, colours and layout, rendered via the OS print engine.
 
 import { COMPANY_LOGO } from './companyLogo';
+import { stripPlotPrefix } from './plotNumber';
 
 const num = (n) => Number(n || 0).toLocaleString('en-IN');
 const money = (n) => Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -378,7 +379,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
-  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : unitLabel + esc(((meta.plotNo || '').toString().replace(/^[^0-9]*/, '') || meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
+  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : unitLabel + esc(stripPlotPrefix(meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>
