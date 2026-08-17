@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FilterSelect from '../../components/FilterSelect';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -47,6 +48,17 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter,     setFilter]     = useState(route?.params?.initialTab || 'today');
+  const [range,      setRange]      = useState({ from: '', to: '' });   // visit date
+  const [proj,       setProj]       = useState('');                     // '' = every project
+  const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
+  const DATE_PRESETS = [
+    ['All',        () => ({ from: '', to: '' })],
+    ['Today',      () => ({ from: istToday(), to: istToday() })],
+    ['7 days',     () => ({ from: istDaysAgo(6), to: istToday() })],
+    ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
+    ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
+  ];
 
   // schedule modal
   const [schedOpen, setSchedOpen] = useState(false);
@@ -165,7 +177,31 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   }
 
   const now = new Date();
+  // A visit's own date: when it actually happened if it has, otherwise when it is due.
+  // That way Completed filters by the visit date and Scheduled by the due date, without
+  // a second control asking which one you meant.
+  const visitDay = (v) => {
+    const s = v.visited_at || v.scheduled_at;
+    if (!s) return '';
+    const d = new Date(s);
+    return isNaN(d) ? String(s).slice(0, 10) : d.toLocaleDateString('en-CA');
+  };
+  const dated = !!(range.from || range.to);
+  const inRange = (v) => {
+    if (!dated) return true;
+    const d = visitDay(v);
+    if (!d) return false;
+    return (!range.from || d >= range.from) && (!range.to || d <= range.to);
+  };
+  // Options come from every visit, not the filtered set, so picking a project never
+  // removes the other projects from the sheet.
+  const projName = (v) => v.project_name || '—';
+  const projOptions = [...new Set(visits.map(projName))].sort((a, b) => a.localeCompare(b));
+  const narrowed = dated || !!proj;
+
   const visible = visits.filter((v) => {
+    if (!inRange(v)) return false;
+    if (proj && projName(v) !== proj) return false;
     if (filter === 'all') return true;
     if (filter === 'today') {
       const at = new Date(v.scheduled_at);
@@ -213,6 +249,30 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         </ScrollView>
       </View>
 
+      {/* Visit date + project */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center' }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>VISIT</Text>
+          {DATE_PRESETS.map(([label, make]) => {
+            const r = make();
+            const on = range.from === r.from && range.to === r.to;
+            return (
+              <TouchableOpacity key={label} onPress={() => setRange(r)}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        {projOptions.length > 1 && (
+          <View style={{ flexDirection: 'row', marginTop: 8 }}>
+            <FilterSelect label="All Projects" value={proj} onChange={setProj}
+              options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
+          </View>
+        )}
+      </View>
+
       {loading ? (
         <ActivityIndicator color={NAVY} style={{ marginTop: 40 }} />
       ) : (
@@ -221,7 +281,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
           {visible.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>
               <Ionicons name="location-outline" size={40} color={COLORS.border} />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: MUTED, marginTop: 12 }}>No site visits</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: MUTED, marginTop: 12 }}>{narrowed ? 'No site visits match these filters' : 'No site visits'}</Text>
               <Text style={{ fontSize: 13, color: COLORS.textTertiary || MUTED, marginTop: 4 }}>Schedule one from your pipeline</Text>
             </View>
           ) : visible.map((sv) => (
