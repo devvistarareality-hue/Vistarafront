@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FilterSelect from '../../components/FilterSelect';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
@@ -36,6 +37,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // Booking-date range. Presets only on mobile — a phone has no room for the web's
   // month/quarter/FY dropdowns, and these are the ranges an approver actually asks for.
   const [range, setRange] = useState({ from: '', to: '' });
+  const [stm, setStm] = useState('');     // '' = every STM
+  const [proj, setProj] = useState('');   // '' = every project
   const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
   const DATE_PRESETS = [
@@ -117,7 +120,15 @@ export default function BookingApprovalsScreen({ navigation, route }) {
     if (!d) return false;
     return (!range.from || d >= range.from) && (!range.to || d <= range.to);
   };
-  const visible = rows.filter((b) => matches(b) && inRange(b));
+  // Both lists come from the whole tab, not the filtered rows, so choosing one value
+  // never removes the other options from its sheet.
+  const stmName = (b) => b.stm_name || '—';
+  const projName = (b) => b.project_name || '—';
+  const stmOptions = [...new Set(rows.map(stmName))].sort((a, b) => a.localeCompare(b));
+  const projOptions = [...new Set(rows.map(projName))].sort((a, b) => a.localeCompare(b));
+  const narrowed = !!ql || dated || !!stm || !!proj;
+  const visible = rows.filter((b) => matches(b) && inRange(b)
+    && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj));
 
   // Project-wise grouping (same shape as the Accounts & Finance bookings view), but
   // applied to whichever tab is selected so approvers keep their per-booking actions.
@@ -131,7 +142,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // only make the user click through when there's actually a lot to scroll past.
   // Rejected is archival, though: always start it collapsed however few there are.
   // While searching, always open: hits are the point of the search.
-  const autoOpen = !!ql || dated || (tab !== 'rejected' && visible.length <= 10);
+  const autoOpen = narrowed || (tab !== 'rejected' && visible.length <= 10);
   const isOpen = (pn) => (openGroup[pn] === undefined ? autoOpen : openGroup[pn]);
   const tabLabel = (TABS.find(([k]) => k === tab) || ['', 'All'])[1];
 
@@ -231,18 +242,34 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           })}
         </ScrollView>
 
+        {/* Which project and whose bookings — sheets rather than chips, since there are
+            a dozen STMs and the names are too long to scan in a row. */}
+        {(projOptions.length > 1 || stmOptions.length > 1) && (
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+            {projOptions.length > 1 && (
+              <FilterSelect label="All Projects" value={proj} onChange={(v) => { setProj(v); setOpenGroup({}); }}
+                options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
+            )}
+            {stmOptions.length > 1 && (
+              <FilterSelect label="All STMs" value={stm} onChange={(v) => { setStm(v); setOpenGroup({}); }}
+                options={[{ value: '', label: 'All STMs' }, ...stmOptions.map((n) => ({ value: n, label: n }))]} />
+            )}
+          </View>
+        )}
+
         {!loading && visible.length > 0 && (
           <View style={{ backgroundColor: BLUE, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}>
             <Text style={{ color: '#DBEAFE', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
-              {(ql || dated ? 'MATCHING ' : 'TOTAL ') + String(tabLabel).toUpperCase()} · {visible.length} BOOKING{visible.length === 1 ? '' : 'S'} · {projectNames.length} PROJECT{projectNames.length === 1 ? '' : 'S'}
+              {(narrowed ? 'MATCHING ' : 'TOTAL ') + String(tabLabel).toUpperCase()} · {visible.length} BOOKING{visible.length === 1 ? '' : 'S'} · {projectNames.length} PROJECT{projectNames.length === 1 ? '' : 'S'}
             </Text>
+            {(!!stm || !!proj) && <Text style={{ color: '#DBEAFE', fontSize: 11, marginTop: 2 }} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
             <Text style={{ color: '#fff', fontSize: 21, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
           </View>
         )}
 
         {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : visible.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}>
-            <Text style={{ color: MUTED, textAlign: 'center' }}>{ql ? `No bookings match “${q.trim()}”.` : dated ? 'No bookings were booked in this date range.' : 'No bookings here.'}</Text>
+            <Text style={{ color: MUTED, textAlign: 'center' }}>{ql ? `No bookings match “${q.trim()}”.` : (stm || proj) ? `No bookings for ${[stm, proj].filter(Boolean).join(' · ')}${dated ? ' in this date range' : ''}.` : dated ? 'No bookings were booked in this date range.' : 'No bookings here.'}</Text>
           </View>
         ) : projectNames.map((pn) => (
           <View key={pn} style={{ marginBottom: 12 }}>

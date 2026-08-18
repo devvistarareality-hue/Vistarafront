@@ -8,6 +8,7 @@ import Svg, { Rect, Polygon, Text as SvgText } from 'react-native-svg';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { stripPlotPrefix } from '../../lib/plotNumber';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -349,14 +350,16 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
                     borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#EEF1FF' : COLORS.white }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>
-                    Block {b || '—'} · {blockHeight(b)}
+                    Block {b || '—'}{project?.block_industrial ? '' : ` · ${blockHeight(b)}`}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
         )}
-        {floorWise && floors.length > 0 && (
+        {/* A block-industrial block is always a single ground-level entry — no real
+            floor concept, so picking one is redundant clutter, unlike an actual tower. */}
+        {floorWise && !project?.block_industrial && floors.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 14 }}>
             {floors.map((f, i) => {
               const active = i === Math.min(floorIdx, floors.length - 1);
@@ -418,7 +421,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const dim = isHidden(plot);
                   const op = dim ? 0.08 : 1;
                   const { cx, cy } = zoneCenter(zone);
-                  const labelText = String(zone.plotNumber).replace(/^[^\d]+/, '') || String(zone.plotNumber);
+                  const labelText = stripPlotPrefix(zone.plotNumber);
                   const press = () => pickPlot(plot);
                   const isSel = selectedSet.has(plot.id);
                   const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
@@ -733,7 +736,7 @@ function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, sele
                   const cfg = plotCfg(plot);
                   const op = isHidden(plot) ? 0.08 : 1;
                   const { cx, cy } = zoneCenter(zone);
-                  const labelText = String(zone.plotNumber).replace(/^[^\d]+/, '') || String(zone.plotNumber);
+                  const labelText = stripPlotPrefix(zone.plotNumber);
                   const isSel = selectedSet?.has(plot.id);
                   // onPick is pickPlot from the parent — it already decides what a tap
                   // does (deselect, select-if-available, resume-if-mine-drafted, or

@@ -152,25 +152,29 @@ function UserPickerDropdown({ users, value, onChange, placeholder = '— Select 
 }
 
 const HISTORY_LABEL = {
-  created:           'Lead Created',
-  status:            'Overall Status',
-  telecaller_status: 'TC Status',
-  stm_status:        'STM Status',
-  telecaller:        'Telecaller Assigned',
-  stm:               'STM Assigned',
-  warm_transfer:     'Transferred to STM',
-  site_visit:        'Site Visit',
-  closure:           'Closure',
+  created:            'Lead Created',
+  status:             'Overall Status',
+  telecaller_status:  'TC Status',
+  stm_status:         'STM Status',
+  telecaller_remarks: 'TC Remarks',
+  stm_remarks:        'STM Remarks',
+  telecaller:         'Telecaller Assigned',
+  stm:                'STM Assigned',
+  warm_transfer:      'Transferred to STM',
+  site_visit:         'Site Visit',
+  closure:            'Closure',
 };
 const HISTORY_COLOR = {
-  created:           COLORS.textSecondary,
-  status:            COLORS.link,
-  telecaller_status: COLORS.info,
-  stm_status:        COLORS.error,
-  telecaller:        COLORS.purple,
-  stm:               COLORS.success,
-  warm_transfer:     COLORS.error,
-  site_visit:        COLORS.warningAlt,
+  created:            COLORS.textSecondary,
+  status:             COLORS.link,
+  telecaller_status:  COLORS.info,
+  stm_status:         COLORS.error,
+  telecaller_remarks: COLORS.info,
+  stm_remarks:        COLORS.error,
+  telecaller:         COLORS.purple,
+  stm:                COLORS.success,
+  warm_transfer:      COLORS.error,
+  site_visit:         COLORS.warningAlt,
   closure:           COLORS.success,
 };
 const FU_STATUS_COLOR = { pending: COLORS.warningAlt, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
@@ -296,8 +300,14 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
           }
         }
 
+        // Only act on an ACTUAL transition into sv_scheduled/sv_done this save —
+        // otherwise resaving an already sv_done lead (e.g. just to update remarks)
+        // re-ran this block every time and created a fresh duplicate "completed"
+        // site visit each time.
+        const stmStatusChanged = lead.stm_status !== form.stm_status;
+
         // STM scheduled a visit → auto-create the site-visit entry
-        if (form.stm_status === 'sv_scheduled' && svAt instanceof Date) {
+        if (stmStatusChanged && form.stm_status === 'sv_scheduled' && svAt instanceof Date) {
           try {
             await apiFetch(SALES_ENDPOINTS.siteVisits, {
               method: 'POST',
@@ -312,7 +322,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         }
 
         // STM marked sv_done → complete the latest pending visit (or create a completed one)
-        if (form.stm_status === 'sv_done') {
+        if (stmStatusChanged && form.stm_status === 'sv_done') {
           try {
             const svRes = await apiFetch(`${SALES_ENDPOINTS.siteVisits}?lead_id=${lead.id}`);
             const list = svRes.ok ? await svRes.json() : [];
@@ -520,6 +530,25 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 value={form.project} onChange={v => set('project', v)}
                 placeholder="Select Project" title="Project" />
 
+              {/* Read-only for STM/CP once the lead reaches them — they can't edit TC
+                  fields, but they should be able to see what the telecaller found out.
+                  telecaller_remarks isn't in the list payload, so read it off `detail`
+                  (the separately-fetched full record) once that's loaded. */}
+              {!showTC && (lead.telecaller_name || detail?.telecaller_remarks) && (
+                <>
+                  <View style={divider} />
+                  <Text style={secH}>Telecaller (Pre-Sales)</Text>
+                  <View style={{ padding: 12, borderRadius: 10, backgroundColor: COLORS.screenBg, borderWidth: 1, borderColor: COLORS.border, marginTop: 8 }}>
+                    {lead.telecaller_name && (
+                      <Text style={{ fontSize: 12, color: MUTED }}>Telecaller: <Text style={{ color: TEXT, fontWeight: '600' }}>{lead.telecaller_name}</Text>{lead.telecaller_status ? ` · ${lead.telecaller_status.replace(/_/g, ' ')}` : ''}</Text>
+                    )}
+                    {detail?.telecaller_remarks && (
+                      <Text style={{ fontSize: 13, color: TEXT, marginTop: 6 }}>{detail.telecaller_remarks}</Text>
+                    )}
+                  </View>
+                </>
+              )}
+
               {showTC && (<>
               <View style={divider} />
 
@@ -702,8 +731,9 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                              : h.field_changed === 'stm'           ? '🏢'
                              : h.field_changed === 'site_visit'    ? '🏠'
                              : h.field_changed === 'closure'       ? '✅'
+                             : h.field_changed.includes('remarks') ? '📝'
                              : '🔄';
-                const singleValue = ['created', 'warm_transfer', 'closure'].includes(h.field_changed) || !h.old_value;
+                const singleValue = ['created', 'warm_transfer', 'closure', 'telecaller_remarks', 'stm_remarks'].includes(h.field_changed) || !h.old_value;
                 const byLabel = h.changed_by_name
                   || (['created', 'telecaller', 'stm'].includes(h.field_changed) ? 'System (auto)' : null);
                 return (
@@ -718,7 +748,9 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                       <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{HISTORY_LABEL[h.field_changed] || h.field_changed}</Text>
                       <Text style={{ fontSize: 12, color: TEXT, marginTop: 2 }}>
                         {singleValue ? (
-                          <Text style={{ color, fontWeight: '700' }}>{h.new_value || '—'}</Text>
+                          // Remarks run past new_value's 100-char DB cap — the full text
+                          // lives in `remarks` instead, fall back to new_value elsewhere.
+                          <Text style={{ color, fontWeight: '700' }}>{(h.field_changed.includes('remarks') ? h.remarks : null) || h.new_value || '—'}</Text>
                         ) : (
                           <>
                             <Text style={{ color: MUTED }}>{h.old_value || '—'}</Text>
@@ -965,11 +997,20 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   const _isAdminMgr = !(_isTelecaller || _isStm || _isCp);
   const showTC  = _isAdminMgr || _isTelecaller;
   const showStm = _isAdminMgr || _isStm || _isCp;
-  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '' };
+  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '', lead_date: '' };
   const [form, setForm] = useState(emptyForm);
   const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  // "When did this lead actually come in" — optional backdate, e.g. a walk-in logged a
+  // day later. Blank = today, same as the default behaviour without this field.
+  const [showLeadDatePicker, setShowLeadDatePicker] = useState(false);
+  const parseLeadDate = (s) => {
+    if (!s) return new Date();
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+  const toLocalDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   // Same inline scheduler as the Lead Detail modal — filled in here it's created right
   // after the lead itself, so a manual lead can arrive with its first call booked.
   const emptyFu = { role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: null, remarks: '' };
@@ -1027,6 +1068,37 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <TextField label="Phone" required value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" placeholder="10-digit mobile" />
             <TextField label="Alt Phone" value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" placeholder="Optional" />
             <TextField label="Email" value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" autoCapitalize="none" placeholder="name@email.com" />
+            <Field label="Lead Received Date">
+              <TouchableOpacity onPress={() => setShowLeadDatePicker(true)}
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                <Ionicons name="calendar-outline" size={16} color={MUTED} />
+                <Text style={{ fontSize: 14, fontWeight: '600', color: form.lead_date ? TEXT : MUTED }}>{form.lead_date || 'Today'}</Text>
+                {!!form.lead_date && (
+                  <TouchableOpacity onPress={() => set('lead_date', '')} style={{ marginLeft: 'auto' }}>
+                    <Ionicons name="close-circle" size={18} color={MUTED} />
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            </Field>
+            {Platform.OS === 'ios' && showLeadDatePicker && (
+              <Modal transparent animationType="slide" onRequestClose={() => setShowLeadDatePicker(false)}>
+                <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowLeadDatePicker(false)}>
+                  <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                      <TouchableOpacity onPress={() => setShowLeadDatePicker(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                      <Text style={{ fontWeight: '700', color: TEXT }}>Lead Received Date</Text>
+                      <TouchableOpacity onPress={() => setShowLeadDatePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                    </View>
+                    <DateTimePicker value={parseLeadDate(form.lead_date)} mode="date" display="spinner" textColor={TEXT} maximumDate={new Date()}
+                      onChange={(_, d) => d && set('lead_date', toLocalDate(d))} />
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+            )}
+            {Platform.OS === 'android' && showLeadDatePicker && (
+              <DateTimePicker value={parseLeadDate(form.lead_date)} mode="date" display="default" maximumDate={new Date()}
+                onChange={(e, d) => { setShowLeadDatePicker(false); if (e.type === 'dismissed') return; if (d) set('lead_date', toLocalDate(d)); }} />
+            )}
             <Field label="City">
               <DropdownPicker
                 value={cityOther ? 'Other' : form.city}
