@@ -197,6 +197,8 @@ export default function SalesCRMScreen({ navigation, route }) {
     { label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesFollowUps' },
     { label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
     { label: 'SV Done / Low Hanging', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'SV Interested',     value: stats?.sv_interested_count     ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    { label: 'SV Not Interested', value: stats?.sv_not_interested_count ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
 

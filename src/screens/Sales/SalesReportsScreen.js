@@ -303,6 +303,8 @@ export default function SalesReportsScreen({ navigation }) {
     { label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
     { label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
     { label: 'SV Done / Low Hanging', value: _svDone,             color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'SV Interested',     value: stats?.sv_interested_count     ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    { label: 'SV Not Interested', value: stats?.sv_not_interested_count ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
     { label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },

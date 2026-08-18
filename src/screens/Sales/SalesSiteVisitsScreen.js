@@ -15,6 +15,8 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 const SV_COLOR = { scheduled: COLORS.warning, completed: COLORS.success, no_show: COLORS.error, cancelled: COLORS.textSecondary };
+const OUTCOME_COLOR = { interested: COLORS.success, not_interested: COLORS.error };
+const OUTCOME_LABEL = { interested: 'Interested', not_interested: 'Not Interested' };
 const TABS = [
   { key: 'today',     label: "Today's" },
   { key: 'scheduled', label: 'Scheduled' },
@@ -76,6 +78,10 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const [cForm,      setCForm]      = useState({ closure_date: new Date(), unit_no: '', unit_type: '', booking_amount: '', total_amount: '', remarks: '' });
   const [showCDate,  setShowCDate]  = useState(false);
 
+  // "Mark Done" modal — outcome + remarks are required before a visit can be closed out.
+  const [doneSv,   setDoneSv]   = useState(null);
+  const [doneForm, setDoneForm] = useState({ outcome: '', remarks: '' });
+
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
@@ -133,17 +139,45 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
   async function updateStatus(sv, status) {
     const body = { status };
-    if (status === 'completed') body.visited_at = new Date().toISOString();
     try {
       const res = await apiFetch(SALES_ENDPOINTS.siteVisit(sv.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
-        if (status === 'completed') {
-          await apiFetch(SALES_ENDPOINTS.lead(sv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: 'sv_done' }) }).catch(() => {});
-        }
         const updated = await res.json();
         setVisits((list) => list.map((v) => (v.id === sv.id ? updated : v)));
       }
     } catch (e) {}
+  }
+
+  function openDone(sv) {
+    setErr('');
+    setDoneForm({ outcome: '', remarks: '' });
+    setDoneSv(sv);
+  }
+
+  async function submitDone() {
+    if (!doneForm.outcome || !doneForm.remarks.trim()) {
+      setErr('Outcome and remarks are required to mark a visit as done.');
+      return;
+    }
+    setSaving(true); setErr('');
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.siteVisit(doneSv.id), {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'completed', visited_at: new Date().toISOString(),
+          outcome: doneForm.outcome, remarks: doneForm.remarks.trim(),
+        }),
+      });
+      if (res.ok) {
+        await apiFetch(SALES_ENDPOINTS.lead(doneSv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: 'sv_done' }) }).catch(() => {});
+        const updated = await res.json();
+        setVisits((list) => list.map((v) => (v.id === updated.id ? updated : v)));
+        setDoneSv(null);
+      } else {
+        setErr(JSON.stringify(await res.json().catch(() => ({}))));
+      }
+    } catch (e) { setErr(e.message); }
+    setSaving(false);
   }
 
   async function recordClosure() {
@@ -291,15 +325,21 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
                 <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (SV_COLOR[sv.status] || MUTED) + '22' }}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: SV_COLOR[sv.status] || MUTED, textTransform: 'capitalize' }}>{(sv.status || '').replace('_', ' ')}</Text>
                 </View>
+                {!!sv.outcome && (
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (OUTCOME_COLOR[sv.outcome] || MUTED) + '22' }}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: OUTCOME_COLOR[sv.outcome] || MUTED }}>{OUTCOME_LABEL[sv.outcome] || sv.outcome}</Text>
+                  </View>
+                )}
               </View>
               <Text style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>{sv.lead_phone || ''}{sv.project_name ? ` · ${sv.project_name}` : ''}</Text>
               {!!sv.referred_by_telecaller_name && <Text style={{ fontSize: 11, color: COLORS.textTertiary || MUTED, marginTop: 2 }}>via TC: {sv.referred_by_telecaller_name}</Text>}
               <Text style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>Scheduled: {fmtDateTime(sv.scheduled_at)}</Text>
               {!!sv.visited_at && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Visited: {fmtDateTime(sv.visited_at)}</Text>}
+              {!!sv.remarks && <Text style={{ fontSize: 12, color: MUTED, marginTop: 6, fontStyle: 'italic' }}>"{sv.remarks}"</Text>}
 
               {sv.status === 'scheduled' && (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                  <TouchableOpacity onPress={() => updateStatus(sv, 'completed')} style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+                  <TouchableOpacity onPress={() => openDone(sv)} style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
                     <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success }}>✓ Done</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => updateStatus(sv, 'no_show')} style={{ borderWidth: 1.5, borderColor: COLORS.warning, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -360,6 +400,45 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
               <TouchableOpacity onPress={scheduleVisit} disabled={saving} style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
                 <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Schedule Visit'}</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Mark Done Modal ── */}
+      <Modal visible={!!doneSv} transparent animationType="slide" onRequestClose={() => setDoneSv(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Mark Site Visit Done</Text>
+              <TouchableOpacity onPress={() => setDoneSv(null)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{ padding: 16 }}>
+              {!!doneSv && <Text style={{ fontSize: 13, color: MUTED, marginBottom: 8 }}>{doneSv.lead_name} · {doneSv.lead_phone}</Text>}
+              <Text style={lblS}>Outcome *</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {[['interested', 'Interested', COLORS.success], ['not_interested', 'Not Interested', COLORS.error]].map(([val, label, color]) => {
+                  const active = doneForm.outcome === val;
+                  return (
+                    <TouchableOpacity key={val} onPress={() => setDoneForm((f) => ({ ...f, outcome: val }))}
+                      style={{ flex: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 11, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={lblS}>Remarks *</Text>
+              <TextInput value={doneForm.remarks} onChangeText={(v) => setDoneForm((f) => ({ ...f, remarks: v }))}
+                placeholder="What happened on the visit…" placeholderTextColor={MUTED} multiline
+                style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+
+              {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
+              <TouchableOpacity onPress={submitDone} disabled={saving || !doneForm.outcome || !doneForm.remarks.trim()}
+                style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 12, paddingVertical: 13, alignItems: 'center',
+                  opacity: (saving || !doneForm.outcome || !doneForm.remarks.trim()) ? 0.5 : 1 }}>
+                <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
