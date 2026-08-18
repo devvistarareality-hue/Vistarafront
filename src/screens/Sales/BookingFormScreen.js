@@ -347,7 +347,7 @@ export default function BookingFormScreen({ navigation, route }) {
       const_area: t ? String((+t.const_area || 0) * n) : s.const_area }));
   };
   const v = useMemo(() => computeFormulas({
-    formulaSet, projectName: project?.name,
+    formulaSet, projectName: project?.name, loiVariant: project?.loi_variant,
     area: f.area, landRate: f.land_rate, devRate: f.dev_rate, constArea: f.const_area, constRate: f.const_rate,
     discount: f.discount, legalCharges: f.legal_charges, maintRate: f.maint_rate, maintMonths: f.maint_months,
     gender: f.gender, landSaleDeed: f.land_sale_deed, constAgreement: f.const_agreement,
@@ -556,7 +556,7 @@ export default function BookingFormScreen({ navigation, route }) {
       areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
-      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit, priceBooks: pratBooks });
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, loiVariant: project?.loi_variant, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit, priceBooks: pratBooks });
       const { uri } = await Print.printToFileAsync({ html });
       // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;
