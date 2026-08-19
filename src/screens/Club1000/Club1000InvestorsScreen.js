@@ -1103,9 +1103,13 @@ function LedgerModal({ investorId, onClose }) {
                     <View style={{ flex: 1 }}>
                       <LedgerBadge label={e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
                       <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{formatDMY(e.date)}{e.paid_date && e.type !== 'investment' ? ` · Paid ${formatDMY(e.paid_date)}` : ''}</Text>
+                      {!!e.notes && <Text style={{ fontSize: 11, color: MUTED, marginTop: 2, fontStyle: 'italic' }}>"{e.notes}"</Text>}
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT }}>{fmtMoney(e.amount)}</Text>
+                      {e.paid_amount != null && Number(e.paid_amount) !== Number(e.amount) && (
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: AMBER }}>Paid {fmtMoney(e.paid_amount)}</Text>
+                      )}
                       <LedgerBadge label={e.status} color={LEDGER_STATUS_COLOR[e.status] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
                     </View>
                   </View>
