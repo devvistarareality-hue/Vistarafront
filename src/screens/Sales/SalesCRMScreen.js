@@ -196,7 +196,7 @@ export default function SalesCRMScreen({ navigation, route }) {
     { label: 'SV Scheduled',  value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
     { label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesFollowUps' },
     { label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
-    { label: 'SV Done / Low Hanging', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { label: 'SV Done', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'SV Hot',  value: stats?.sv_hot_count  ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { label: 'SV Warm', value: stats?.sv_warm_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { label: 'SV Cold', value: stats?.sv_cold_count ?? '—', color: COLORS.link,    bg: COLORS.linkBg,    target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
