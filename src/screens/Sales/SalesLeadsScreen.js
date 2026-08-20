@@ -214,10 +214,14 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const [svRemarks,  setSvRemarks]  = useState('');
   const [showSvDate, setShowSvDate] = useState(false);
   const [showSvTime, setShowSvTime] = useState(false);
+  // Inline visit outcome when STM picks stm_status = sv_done — the outcome (not
+  // the generic "sv done") becomes the lead's actual next stm_status, same as
+  // the dedicated Site Visits "Mark Done" flow.
+  const [svOutcome, setSvOutcome] = useState('');
 
   useEffect(() => {
     if (lead) {
-      setSvAt(null); setSvRemarks('');
+      setSvAt(null); setSvRemarks(''); setSvOutcome('');
       setForm({
         name:              lead.name            || '',
         phone:             lead.phone           || '',
@@ -273,13 +277,19 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     if (_isStm && (!form.stm_status || !(form.stm_remarks || '').trim())) {
       Alert.alert('Required', 'Please set STM Status and add STM Remarks before saving.'); return;
     }
+    if (form.stm_status === 'sv_done' && !svOutcome) {
+      Alert.alert('Required', 'Please pick a visit outcome (Hot, Warm or Cold).'); return;
+    }
     setSaving(true);
     try {
       // "closed" is NOT persisted from the dropdown — a lead only becomes CLOSED
       // when its booking is approved (backend sets stm_status='closed' on approval).
       // Picking "closed" just routes the STM into the booking flow below.
+      // "sv_done" is a UI-only intermediate — the actual outcome (hot/warm/cold)
+      // picked below is what's saved, same as the dedicated Site Visits flow.
       const body = { ...form };
       if (body.stm_status === 'closed') delete body.stm_status;
+      else if (body.stm_status === 'sv_done') body.stm_status = svOutcome;
       const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
@@ -330,7 +340,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))[0];
             const nowIso = new Date().toISOString();
             if (pending) {
-              await apiFetch(SALES_ENDPOINTS.siteVisit(pending.id), { method: 'PATCH', body: JSON.stringify({ status: 'completed', visited_at: nowIso }) });
+              await apiFetch(SALES_ENDPOINTS.siteVisit(pending.id), { method: 'PATCH', body: JSON.stringify({ status: 'completed', visited_at: nowIso, outcome: svOutcome, remarks: form.stm_remarks || '' }) });
             } else {
               await apiFetch(SALES_ENDPOINTS.siteVisits, {
                 method: 'POST',
@@ -338,6 +348,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   lead: lead.id, project: form.project || null,
                   scheduled_at: nowIso, visited_at: nowIso, status: 'completed',
                   stm: form.stm || user?.id, referred_by_telecaller: form.telecaller || null,
+                  outcome: svOutcome, remarks: form.stm_remarks || '',
                 }),
               });
             }
@@ -668,6 +679,31 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                     <DateTimePicker value={svAt instanceof Date ? svAt : defaultPickerDate()} mode="time" display="default" is24Hour={false}
                       onChange={(e, d) => { setShowSvTime(false); if (e.type === 'dismissed') return; if (d) { const cur = svAt instanceof Date ? svAt : defaultPickerDate(); const m = new Date(cur); m.setHours(d.getHours(), d.getMinutes(), 0, 0); setSvAt(m); } }} />
                   )}
+                </View>
+              )}
+
+              {/* Inline visit outcome when STM picks "sv_done" — the outcome (not the
+                  generic "sv done") is what actually gets saved as STM Status, same as
+                  the dedicated Site Visits "Mark Done" flow. Uses STM Remarks above as
+                  the visit's remarks — no separate field needed since it's already required. */}
+              {form.stm_status === 'sv_done' && (
+                <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <Ionicons name="location-outline" size={14} color="#15803D" />
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 }}>VISIT OUTCOME</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {[['hot', 'Hot', '#EF4444'], ['warm', 'Warm', '#F97316'], ['cold', 'Cold', '#3B82F6']].map(([val, label, color]) => {
+                      const active = svOutcome === val;
+                      return (
+                        <TouchableOpacity key={val} onPress={() => setSvOutcome(val)}
+                          style={{ flex: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {!svOutcome && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Pick how the visit went — this becomes the lead's STM Status.</Text>}
                 </View>
               )}
 

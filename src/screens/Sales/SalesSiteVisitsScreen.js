@@ -15,8 +15,8 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 const SV_COLOR = { scheduled: COLORS.warning, completed: COLORS.success, no_show: COLORS.error, cancelled: COLORS.textSecondary };
-const OUTCOME_COLOR = { interested: COLORS.success, not_interested: COLORS.error };
-const OUTCOME_LABEL = { interested: 'Interested', not_interested: 'Not Interested' };
+const OUTCOME_COLOR = { hot: COLORS.error, warm: COLORS.warning, cold: COLORS.link };
+const OUTCOME_LABEL = { hot: 'Hot', warm: 'Warm', cold: 'Cold' };
 const TABS = [
   { key: 'today',     label: "Today's" },
   { key: 'scheduled', label: 'Scheduled' },
@@ -52,6 +52,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const [filter,     setFilter]     = useState(route?.params?.initialTab || 'today');
   const [range,      setRange]      = useState({ from: '', to: '' });   // visit date
   const [proj,       setProj]       = useState('');                     // '' = every project
+  const [outcomeFilter, setOutcomeFilter] = useState('');                // '' = every outcome
   const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
   const DATE_PRESETS = [
@@ -169,7 +170,11 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         }),
       });
       if (res.ok) {
-        await apiFetch(SALES_ENDPOINTS.lead(doneSv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: 'sv_done' }) }).catch(() => {});
+        // The outcome IS the lead's next pipeline status — hot/warm/cold are all
+        // valid stm_status values, so a lead marked Hot on the visit lands
+        // straight in the Hot bucket instead of sitting generically in sv_done
+        // waiting for someone to reclassify it by hand.
+        await apiFetch(SALES_ENDPOINTS.lead(doneSv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: doneForm.outcome }) }).catch(() => {});
         const updated = await res.json();
         setVisits((list) => list.map((v) => (v.id === updated.id ? updated : v)));
         setDoneSv(null);
@@ -236,6 +241,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const visible = visits.filter((v) => {
     if (!inRange(v)) return false;
     if (proj && projName(v) !== proj) return false;
+    if (outcomeFilter && v.outcome !== outcomeFilter) return false;
     if (filter === 'all') return true;
     if (filter === 'today') {
       const at = new Date(v.scheduled_at);
@@ -305,6 +311,21 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
           </View>
         )}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center', marginTop: 8 }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>OUTCOME</Text>
+          {['', 'hot', 'warm', 'cold'].map((val) => {
+            const active = outcomeFilter === val;
+            const color = val ? OUTCOME_COLOR[val] : MUTED;
+            const label = val ? OUTCOME_LABEL[val] : 'All';
+            return (
+              <TouchableOpacity key={val || 'all'} onPress={() => setOutcomeFilter(val)}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                  borderColor: color, backgroundColor: active ? color : COLORS.white }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {loading ? (
@@ -418,7 +439,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               {!!doneSv && <Text style={{ fontSize: 13, color: MUTED, marginBottom: 8 }}>{doneSv.lead_name} · {doneSv.lead_phone}</Text>}
               <Text style={lblS}>Outcome *</Text>
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                {[['interested', 'Interested', COLORS.success], ['not_interested', 'Not Interested', COLORS.error]].map(([val, label, color]) => {
+                {[['hot', 'Hot', COLORS.error], ['warm', 'Warm', COLORS.warning], ['cold', 'Cold', COLORS.link]].map(([val, label, color]) => {
                   const active = doneForm.outcome === val;
                   return (
                     <TouchableOpacity key={val} onPress={() => setDoneForm((f) => ({ ...f, outcome: val }))}
