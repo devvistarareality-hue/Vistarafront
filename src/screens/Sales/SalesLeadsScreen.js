@@ -76,11 +76,19 @@ const STATUS_COLOR = {
   lost:             { bg: COLORS.screenBg, text: COLORS.textSecondary },
 };
 
-function StatusBadge({ status }) {
+const OUTCOME_COLOR = { hot: COLORS.error, warm: COLORS.warning, cold: COLORS.link, not_interested: COLORS.textSecondary };
+
+// `outcome` (SV Hot/Warm/Cold, only meaningful for sv_done) is shown alongside
+// the stage — "SV DONE · HOT" — rather than replacing it, so the pipeline stage
+// and the visit's outcome are both visible without conflating the two.
+function StatusBadge({ status, outcome }) {
   const c = STATUS_COLOR[status] || { bg: COLORS.screenBg, text: MUTED };
   return (
-    <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: c.bg }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: c.bg }}>
       <Text style={{ fontSize: 10, fontWeight: '700', color: c.text }}>{(status || '').replace(/_/g, ' ').toUpperCase()}</Text>
+      {status === 'sv_done' && !!outcome && (
+        <Text style={{ fontSize: 10, fontWeight: '700', color: OUTCOME_COLOR[outcome] || c.text }}> · {outcome.replace(/_/g, ' ').toUpperCase()}</Text>
+      )}
     </View>
   );
 }
@@ -214,9 +222,9 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   const [svRemarks,  setSvRemarks]  = useState('');
   const [showSvDate, setShowSvDate] = useState(false);
   const [showSvTime, setShowSvTime] = useState(false);
-  // Inline visit outcome when STM picks stm_status = sv_done — the outcome (not
-  // the generic "sv done") becomes the lead's actual next stm_status, same as
-  // the dedicated Site Visits "Mark Done" flow.
+  // Inline visit outcome when STM picks stm_status = sv_done — recorded on the
+  // auto-created/completed SiteVisit, same as the dedicated Site Visits "Mark
+  // Done" flow. Does not change the lead's own stm_status (stays "sv done").
   const [svOutcome, setSvOutcome] = useState('');
 
   useEffect(() => {
@@ -285,11 +293,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       // "closed" is NOT persisted from the dropdown — a lead only becomes CLOSED
       // when its booking is approved (backend sets stm_status='closed' on approval).
       // Picking "closed" just routes the STM into the booking flow below.
-      // "sv_done" is a UI-only intermediate — the actual outcome (hot/warm/cold)
-      // picked below is what's saved, same as the dedicated Site Visits flow.
       const body = { ...form };
       if (body.stm_status === 'closed') delete body.stm_status;
-      else if (body.stm_status === 'sv_done') body.stm_status = svOutcome;
       const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
@@ -409,7 +414,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
               <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>{lead.name}</Text>
-              <StatusBadge status={lead.status} />
+              <StatusBadge status={lead.status} outcome={lead.sv_outcome} />
             </View>
             <TouchableOpacity onPress={save} disabled={saving}
               style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 10, opacity: saving ? 0.6 : 1 }}>
@@ -682,28 +687,29 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
               )}
 
-              {/* Inline visit outcome when STM picks "sv_done" — the outcome (not the
-                  generic "sv done") is what actually gets saved as STM Status, same as
-                  the dedicated Site Visits "Mark Done" flow. Uses STM Remarks above as
-                  the visit's remarks — no separate field needed since it's already required. */}
+              {/* Inline visit outcome when STM picks "sv_done" — recorded on the
+                  SiteVisit itself (rolls into the SV Hot/Warm/Cold dashboard tiles),
+                  same as the dedicated Site Visits "Mark Done" flow. The lead's own
+                  STM Status stays "sv done". Uses STM Remarks above as the visit's
+                  remarks — no separate field needed since it's already required. */}
               {form.stm_status === 'sv_done' && (
                 <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 12 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                     <Ionicons name="location-outline" size={14} color="#15803D" />
                     <Text style={{ fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 }}>VISIT OUTCOME</Text>
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    {[['hot', 'Hot', '#EF4444'], ['warm', 'Warm', '#F97316'], ['cold', 'Cold', '#3B82F6']].map(([val, label, color]) => {
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {[['hot', 'Hot', '#EF4444'], ['warm', 'Warm', '#F97316'], ['cold', 'Cold', '#3B82F6'], ['not_interested', 'Not Interested', COLORS.textSecondary]].map(([val, label, color]) => {
                       const active = svOutcome === val;
                       return (
                         <TouchableOpacity key={val} onPress={() => setSvOutcome(val)}
-                          style={{ flex: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                          style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
                           <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
-                  {!svOutcome && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Pick how the visit went — this becomes the lead's STM Status.</Text>}
+                  {!svOutcome && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Pick how the visit went — recorded on the site visit.</Text>}
                 </View>
               )}
 
@@ -1700,7 +1706,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
                     <Ionicons name="call" size={13} color={COLORS.success} />
                   </TouchableOpacity>
                 )}
-                <StatusBadge status={item.status} />
+                <StatusBadge status={item.status} outcome={item.sv_outcome} />
               </View>
             </View>
             {!!metaLine && (
