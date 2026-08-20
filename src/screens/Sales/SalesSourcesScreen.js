@@ -103,6 +103,9 @@ function MetaTab() {
   const [loading,      setLoading]     = useState(true);
   const [refreshing,   setRefreshing]  = useState(false);
   const [pat,          setPat]         = useState('');
+  // Meta signs each webhook delivery with this; without it we can't tell a genuine
+  // delivery from anyone's POST. Write-only — the API only reports whether one is set.
+  const [appSecret,    setAppSecret]   = useState('');
   const [saving,       setSaving]      = useState(false);
   const [msg,          setMsg]         = useState('');
   const [regen,        setRegen]       = useState(false);
@@ -144,11 +147,14 @@ function MetaTab() {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
         method: 'POST',
-        body: JSON.stringify({ action: 'save', page_access_token: cleanPat, ...(companyId ? { company_id: companyId } : {}) }),
+        body: JSON.stringify({ action: 'save', page_access_token: cleanPat, ...(appSecret.trim() ? { app_secret: appSecret.trim() } : {}), ...(companyId ? { company_id: companyId } : {}) }),
       });
       const d = await res.json();
       if (res.ok) {
-        setCfg(prev => ({ ...prev, is_active: d.is_active, page_access_token: cleanPat, pages_data: d.pages_data || prev?.pages_data || [] }));
+        setCfg(prev => ({ ...prev, is_active: d.is_active, page_access_token: cleanPat,
+                          app_secret_set: prev?.app_secret_set || !!appSecret.trim(),
+                          pages_data: d.pages_data || prev?.pages_data || [] }));
+        setAppSecret('');   // never keep the secret in component state after saving
         setMsg('Saved!'); setEditingToken(false);
       } else setMsg('Error saving.');
     } catch (_) { setMsg('Network error.'); }
@@ -166,7 +172,7 @@ function MetaTab() {
     const cidBody = companyId ? { company_id: companyId } : {};
     try {
       const res = await apiFetch(SALES_ENDPOINTS.metaWebhookConfig, {
-        method: 'POST', body: JSON.stringify({ action: 'save', page_access_token: cleanPat, ...cidBody }),
+        method: 'POST', body: JSON.stringify({ action: 'save', page_access_token: cleanPat, ...(appSecret.trim() ? { app_secret: appSecret.trim() } : {}), ...cidBody }),
       });
       const d = await res.json().catch(() => ({}));
       const pages = d.pages_data || [];
@@ -350,6 +356,38 @@ function MetaTab() {
                 </TouchableOpacity>
               </View>
             )}
+            {/* App Secret — proves a webhook delivery really came from Meta */}
+            <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <SectionLabel>APP SECRET</SectionLabel>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20,
+                  backgroundColor: cfg?.app_secret_set ? COLORS.successBg : COLORS.warningBg }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: cfg?.app_secret_set ? GREEN : COLORS.warning }} />
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: cfg?.app_secret_set ? GREEN : COLORS.warning }}>
+                    {cfg?.app_secret_set ? 'Verifying deliveries' : 'Not verified'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8, lineHeight: 16 }}>
+                developers.facebook.com → your app → Settings → Basic → App Secret → Show.
+                {cfg?.app_secret_set ? ' Leave blank to keep the stored secret.' : ''}
+              </Text>
+              <TextInput
+                value={appSecret}
+                onChangeText={setAppSecret}
+                placeholder={cfg?.app_secret_set ? '•••••••• (stored — type to replace)' : 'paste the App Secret'}
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry
+                autoCapitalize="none"
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, fontSize: 12, color: TEXT, backgroundColor: BG }}
+              />
+              {!editing && (
+                <TouchableOpacity onPress={saveConfig} disabled={saving || !appSecret.trim()}
+                  style={{ marginTop: 10, backgroundColor: NAVY, borderRadius: 10, paddingVertical: 12, alignItems: 'center', opacity: appSecret.trim() ? 1 : 0.5 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.white }}>Save App Secret</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {!!msg && (
               <Text style={{ marginTop: 8, textAlign: 'center', fontSize: 12, fontWeight: '700', color: msgErr ? COLORS.errorStrong : GREEN }}>{msg}</Text>
             )}

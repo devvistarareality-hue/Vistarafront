@@ -249,7 +249,7 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
       {loading ? (
         <ActivityIndicator color={NAVY} style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }}
+        <ScrollView showsVerticalScrollIndicator persistentScrollbar contentContainerStyle={{ paddingBottom: 36 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
           {/* Stats */}
@@ -302,12 +302,16 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
                         <Text style={{ fontSize: 13, color: TEXT, marginTop: 2 }}>{fmtDate(v.visited_at || v.scheduled_at)}</Text>
                       </View>
                     </View>
-                    {(isStm ? v.referred_by_telecaller_name : v.stm_name) ? (
-                      <View style={{ marginTop: 6 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>{isStm ? 'Telecaller' : 'STM'}</Text>
-                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{isStm ? v.referred_by_telecaller_name : v.stm_name}</Text>
+                    <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>STM</Text>
+                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{v.stm_name || '—'}</Text>
                       </View>
-                    ) : null}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Telecaller</Text>
+                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{v.referred_by_telecaller_name || '—'}</Text>
+                      </View>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -352,6 +356,16 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
                         <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.success, marginTop: 2 }}>
                           {c.total_amount ? '₹' + Number(c.total_amount).toLocaleString('en-IN') : '—'}
                         </Text>
+                      </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>STM</Text>
+                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{c.stm_name || '—'}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Telecaller</Text>
+                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{c.referred_by_telecaller_name || '—'}</Text>
                       </View>
                     </View>
                   </TouchableOpacity>

@@ -1019,6 +1019,110 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
   );
 }
 
+// ── Ledger modal ─────────────────────────────────────────────────────────────
+// Full money-movement history for one investor — the investment itself plus
+// every scheduled payout (interest/maturity/premature redemption), paid or
+// still pending — in one chronological timeline.
+const LEDGER_TYPE_COLOR = {
+  investment: { bg: COLORS.linkBg, fg: COLORS.link },
+  interest: { bg: COLORS.successBg, fg: COLORS.success },
+  maturity: { bg: COLORS.purpleBg, fg: COLORS.purple },
+  premature_redemption: { bg: COLORS.warningBg, fg: COLORS.warning },
+};
+const LEDGER_STATUS_COLOR = {
+  completed: { bg: COLORS.successBg, fg: COLORS.success },
+  paid: { bg: COLORS.successBg, fg: COLORS.success },
+  pending: { bg: COLORS.warningBg, fg: AMBER },
+};
+
+function LedgerBadge({ label, color }) {
+  return (
+    <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: color.bg, alignSelf: 'flex-start' }}>
+      <Text style={{ fontSize: 10, fontWeight: '700', color: color.fg, textTransform: 'capitalize' }}>{label.replace(/_/g, ' ')}</Text>
+    </View>
+  );
+}
+
+function LedgerModal({ investorId, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    if (!investorId) return;
+    let cancelled = false;
+    setLoading(true); setErr('');
+    apiFetch(CLUB1000_ENDPOINTS.investorLedger(investorId))
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (cancelled) return;
+        if (r.ok) setData(d); else setErr(d?.detail || 'Could not load the ledger.');
+      })
+      .catch((e) => !cancelled && setErr(e.message))
+      .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [investorId]);
+
+  const inv = data?.investor;
+  const s = data?.summary;
+
+  return (
+    <Modal visible={!!investorId} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Ledger{inv ? ` — ${inv.name}` : ''}</Text>
+              {!!inv && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{inv.phone} · {inv.scheme_name}</Text>}
+            </View>
+            <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 30 }}>
+            {loading ? (
+              <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} />
+            ) : err ? (
+              <Text style={{ textAlign: 'center', color: COLORS.error, marginTop: 30 }}>{err}</Text>
+            ) : (
+              <>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                  {[
+                    ['Invested', s.total_invested, COLORS.link],
+                    ['Scheduled', s.total_payout_due, COLORS.purple],
+                    ['Paid Out', s.total_paid, COLORS.success],
+                    ['Pending', s.total_pending, AMBER],
+                  ].map(([label, val, color]) => (
+                    <View key={label} style={{ flexBasis: '47%', flexGrow: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 10 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>{label}</Text>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color, marginTop: 2 }}>{fmtMoney(val)}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {(data.entries || []).map((e, i) => (
+                  <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
+                    <View style={{ flex: 1 }}>
+                      <LedgerBadge label={e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
+                      <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{formatDMY(e.date)}{e.paid_date && e.type !== 'investment' ? ` · Paid ${formatDMY(e.paid_date)}` : ''}</Text>
+                      {!!e.notes && <Text style={{ fontSize: 11, color: MUTED, marginTop: 2, fontStyle: 'italic' }}>"{e.notes}"</Text>}
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT }}>{fmtMoney(e.amount)}</Text>
+                      {e.paid_amount != null && Number(e.paid_amount) !== Number(e.amount) && (
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: AMBER }}>Paid {fmtMoney(e.paid_amount)}</Text>
+                      )}
+                      <LedgerBadge label={e.status} color={LEDGER_STATUS_COLOR[e.status] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ── Main screen ──────────────────────────────────────────────────────────────
 export default function Club1000InvestorsScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
@@ -1032,6 +1136,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [showAdd,    setShowAdd]    = useState(false);
   const [revising,   setRevising]   = useState(null);
   const [renewing,   setRenewing]   = useState(null);
+  const [ledgerFor,  setLedgerFor]  = useState(null);
   // Opened from a Lead's "Convert to Investor" action (see Club1000LeadsScreen).
   const [prefillLead, setPrefillLead] = useState(route?.params?.prefillLead || null);
   const [search, setSearch] = useState('');
@@ -1113,6 +1218,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
         scheme={schemes.find((s) => String(s.id) === String(renewing?.scheme))}
         onClose={() => setRenewing(null)} onSaved={() => load()} />
+      <LedgerModal investorId={ledgerFor} onClose={() => setLedgerFor(null)} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
@@ -1197,6 +1303,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                     <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.link }}>View LOI</Text>
                   </TouchableOpacity>
                 )}
+                <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: '#E0F2F1' }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}>📒 Ledger</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => setRevising(inv)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.purpleBg }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.purple }}>↻ Revise LOI</Text>
                 </TouchableOpacity>

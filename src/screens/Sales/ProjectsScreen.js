@@ -666,6 +666,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
               <Switch value={!!form.kiosk_enabled} onValueChange={v => set('kiosk_enabled', v)} trackColor={{ false: COLORS.border, true: '#4F46E5' }} />
             </View>
 
+
             {/* ── PLOT SETUP ── a tower's units come from the floor-wise builder on the
                 Manage Plots screen, so this flat-list wizard doesn't apply. */}
             {form.floor_wise ? (

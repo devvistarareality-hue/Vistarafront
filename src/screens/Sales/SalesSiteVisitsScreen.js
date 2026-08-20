@@ -8,12 +8,15 @@ import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import FilterSelect from '../../components/FilterSelect';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 const SV_COLOR = { scheduled: COLORS.warning, completed: COLORS.success, no_show: COLORS.error, cancelled: COLORS.textSecondary };
+const OUTCOME_COLOR = { hot: COLORS.error, warm: COLORS.warning, cold: COLORS.link, not_interested: COLORS.textSecondary };
+const OUTCOME_LABEL = { hot: 'Hot', warm: 'Warm', cold: 'Cold', not_interested: 'Not Interested' };
 const TABS = [
   { key: 'today',     label: "Today's" },
   { key: 'scheduled', label: 'Scheduled' },
@@ -47,6 +50,18 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter,     setFilter]     = useState(route?.params?.initialTab || 'today');
+  const [range,      setRange]      = useState({ from: '', to: '' });   // visit date
+  const [proj,       setProj]       = useState('');                     // '' = every project
+  const [outcomeFilter, setOutcomeFilter] = useState('');                // '' = every outcome
+  const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
+  const DATE_PRESETS = [
+    ['All',        () => ({ from: '', to: '' })],
+    ['Today',      () => ({ from: istToday(), to: istToday() })],
+    ['7 days',     () => ({ from: istDaysAgo(6), to: istToday() })],
+    ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
+    ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
+  ];
 
   // schedule modal
   const [schedOpen, setSchedOpen] = useState(false);
@@ -63,6 +78,10 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const [closureSv,  setClosureSv]  = useState(null);
   const [cForm,      setCForm]      = useState({ closure_date: new Date(), unit_no: '', unit_type: '', booking_amount: '', total_amount: '', remarks: '' });
   const [showCDate,  setShowCDate]  = useState(false);
+
+  // "Mark Done" modal — outcome + remarks are required before a visit can be closed out.
+  const [doneSv,   setDoneSv]   = useState(null);
+  const [doneForm, setDoneForm] = useState({ outcome: '', remarks: '' });
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
@@ -121,17 +140,48 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
   async function updateStatus(sv, status) {
     const body = { status };
-    if (status === 'completed') body.visited_at = new Date().toISOString();
     try {
       const res = await apiFetch(SALES_ENDPOINTS.siteVisit(sv.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
-        if (status === 'completed') {
-          await apiFetch(SALES_ENDPOINTS.lead(sv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: 'sv_done' }) }).catch(() => {});
-        }
         const updated = await res.json();
         setVisits((list) => list.map((v) => (v.id === sv.id ? updated : v)));
       }
     } catch (e) {}
+  }
+
+  function openDone(sv) {
+    setErr('');
+    setDoneForm({ outcome: '', remarks: '' });
+    setDoneSv(sv);
+  }
+
+  async function submitDone() {
+    if (!doneForm.outcome || !doneForm.remarks.trim()) {
+      setErr('Outcome and remarks are required to mark a visit as done.');
+      return;
+    }
+    setSaving(true); setErr('');
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.siteVisit(doneSv.id), {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'completed', visited_at: new Date().toISOString(),
+          outcome: doneForm.outcome, remarks: doneForm.remarks.trim(),
+        }),
+      });
+      if (res.ok) {
+        // The lead's pipeline stage stays "sv done" — the outcome is recorded on
+        // the SiteVisit itself (and rolls up into the SV Hot/Warm/Cold dashboard
+        // tiles), but it does not overwrite the lead's own STM Status.
+        await apiFetch(SALES_ENDPOINTS.lead(doneSv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: 'sv_done' }) }).catch(() => {});
+        const updated = await res.json();
+        setVisits((list) => list.map((v) => (v.id === updated.id ? updated : v)));
+        setDoneSv(null);
+      } else {
+        setErr(JSON.stringify(await res.json().catch(() => ({}))));
+      }
+    } catch (e) { setErr(e.message); }
+    setSaving(false);
   }
 
   async function recordClosure() {
@@ -165,7 +215,32 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   }
 
   const now = new Date();
+  // A visit's own date: when it actually happened if it has, otherwise when it is due.
+  // That way Completed filters by the visit date and Scheduled by the due date, without
+  // a second control asking which one you meant.
+  const visitDay = (v) => {
+    const s = v.visited_at || v.scheduled_at;
+    if (!s) return '';
+    const d = new Date(s);
+    return isNaN(d) ? String(s).slice(0, 10) : d.toLocaleDateString('en-CA');
+  };
+  const dated = !!(range.from || range.to);
+  const inRange = (v) => {
+    if (!dated) return true;
+    const d = visitDay(v);
+    if (!d) return false;
+    return (!range.from || d >= range.from) && (!range.to || d <= range.to);
+  };
+  // Options come from every visit, not the filtered set, so picking a project never
+  // removes the other projects from the sheet.
+  const projName = (v) => v.project_name || '—';
+  const projOptions = [...new Set(visits.map(projName))].sort((a, b) => a.localeCompare(b));
+  const narrowed = dated || !!proj;
+
   const visible = visits.filter((v) => {
+    if (!inRange(v)) return false;
+    if (proj && projName(v) !== proj) return false;
+    if (outcomeFilter && v.outcome !== outcomeFilter) return false;
     if (filter === 'all') return true;
     if (filter === 'today') {
       const at = new Date(v.scheduled_at);
@@ -213,6 +288,45 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         </ScrollView>
       </View>
 
+      {/* Visit date + project */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center' }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>VISIT</Text>
+          {DATE_PRESETS.map(([label, make]) => {
+            const r = make();
+            const on = range.from === r.from && range.to === r.to;
+            return (
+              <TouchableOpacity key={label} onPress={() => setRange(r)}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        {projOptions.length > 1 && (
+          <View style={{ flexDirection: 'row', marginTop: 8 }}>
+            <FilterSelect label="All Projects" value={proj} onChange={setProj}
+              options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
+          </View>
+        )}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center', marginTop: 8 }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>OUTCOME</Text>
+          {['', 'hot', 'warm', 'cold', 'not_interested'].map((val) => {
+            const active = outcomeFilter === val;
+            const color = val ? OUTCOME_COLOR[val] : MUTED;
+            const label = val ? OUTCOME_LABEL[val] : 'All';
+            return (
+              <TouchableOpacity key={val || 'all'} onPress={() => setOutcomeFilter(val)}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                  borderColor: color, backgroundColor: active ? color : COLORS.white }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
       {loading ? (
         <ActivityIndicator color={NAVY} style={{ marginTop: 40 }} />
       ) : (
@@ -221,7 +335,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
           {visible.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>
               <Ionicons name="location-outline" size={40} color={COLORS.border} />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: MUTED, marginTop: 12 }}>No site visits</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: MUTED, marginTop: 12 }}>{narrowed ? 'No site visits match these filters' : 'No site visits'}</Text>
               <Text style={{ fontSize: 13, color: COLORS.textTertiary || MUTED, marginTop: 4 }}>Schedule one from your pipeline</Text>
             </View>
           ) : visible.map((sv) => (
@@ -231,15 +345,21 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
                 <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (SV_COLOR[sv.status] || MUTED) + '22' }}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: SV_COLOR[sv.status] || MUTED, textTransform: 'capitalize' }}>{(sv.status || '').replace('_', ' ')}</Text>
                 </View>
+                {!!sv.outcome && (
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (OUTCOME_COLOR[sv.outcome] || MUTED) + '22' }}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: OUTCOME_COLOR[sv.outcome] || MUTED }}>{OUTCOME_LABEL[sv.outcome] || sv.outcome}</Text>
+                  </View>
+                )}
               </View>
               <Text style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>{sv.lead_phone || ''}{sv.project_name ? ` · ${sv.project_name}` : ''}</Text>
               {!!sv.referred_by_telecaller_name && <Text style={{ fontSize: 11, color: COLORS.textTertiary || MUTED, marginTop: 2 }}>via TC: {sv.referred_by_telecaller_name}</Text>}
               <Text style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>Scheduled: {fmtDateTime(sv.scheduled_at)}</Text>
               {!!sv.visited_at && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Visited: {fmtDateTime(sv.visited_at)}</Text>}
+              {!!sv.remarks && <Text style={{ fontSize: 12, color: MUTED, marginTop: 6, fontStyle: 'italic' }}>"{sv.remarks}"</Text>}
 
               {sv.status === 'scheduled' && (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                  <TouchableOpacity onPress={() => updateStatus(sv, 'completed')} style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+                  <TouchableOpacity onPress={() => openDone(sv)} style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
                     <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success }}>✓ Done</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => updateStatus(sv, 'no_show')} style={{ borderWidth: 1.5, borderColor: COLORS.warning, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -300,6 +420,45 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
               <TouchableOpacity onPress={scheduleVisit} disabled={saving} style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
                 <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Schedule Visit'}</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Mark Done Modal ── */}
+      <Modal visible={!!doneSv} transparent animationType="slide" onRequestClose={() => setDoneSv(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Mark Site Visit Done</Text>
+              <TouchableOpacity onPress={() => setDoneSv(null)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{ padding: 16 }}>
+              {!!doneSv && <Text style={{ fontSize: 13, color: MUTED, marginBottom: 8 }}>{doneSv.lead_name} · {doneSv.lead_phone}</Text>}
+              <Text style={lblS}>Outcome *</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {[['hot', 'Hot', COLORS.error], ['warm', 'Warm', COLORS.warning], ['cold', 'Cold', COLORS.link], ['not_interested', 'Not Interested', COLORS.textSecondary]].map(([val, label, color]) => {
+                  const active = doneForm.outcome === val;
+                  return (
+                    <TouchableOpacity key={val} onPress={() => setDoneForm((f) => ({ ...f, outcome: val }))}
+                      style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 11, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={lblS}>Remarks *</Text>
+              <TextInput value={doneForm.remarks} onChangeText={(v) => setDoneForm((f) => ({ ...f, remarks: v }))}
+                placeholder="What happened on the visit…" placeholderTextColor={MUTED} multiline
+                style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+
+              {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
+              <TouchableOpacity onPress={submitDone} disabled={saving || !doneForm.outcome || !doneForm.remarks.trim()}
+                style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 12, paddingVertical: 13, alignItems: 'center',
+                  opacity: (saving || !doneForm.outcome || !doneForm.remarks.trim()) ? 0.5 : 1 }}>
+                <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

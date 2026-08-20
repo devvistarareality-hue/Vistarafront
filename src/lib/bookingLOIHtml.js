@@ -25,8 +25,11 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const pbs = (opts.priceBooks && opts.priceBooks.length) ? opts.priceBooks
     : (opts.priceBook ? [opts.priceBook] : []);
   const pb = pbs[0] || null;   // Details block describes the first unit
-  const isTundav = isIndustrial && projName.trim().toLowerCase() === 'tundav';
-  const isKalrav3 = fs === 'kalrav' && projName.trim().toLowerCase() === 'kalrav 3';
+  // Bespoke layouts key off the project's stored loi_variant, not its name — a
+  // rename used to silently change which LOI a project produced.
+  const loiVariant = opts.loiVariant || '';
+  const isTundav = isIndustrial && loiVariant === 'tundav';
+  const isKalrav3 = fs === 'kalrav' && loiVariant === 'kalrav3';
   // Honour the booking form's unit toggle; fall back to the formula default.
   const chosenUnit = opts.areaUnit || meta.areaUnit || '';
   const areaUnit = chosenUnit === 'sq.m' ? 'sq.mtr'

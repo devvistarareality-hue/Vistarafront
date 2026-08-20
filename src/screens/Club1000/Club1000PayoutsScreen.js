@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -31,6 +31,9 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
   // Deep-link support: the dashboard's Pending/Paid Payouts stat cards pass
   // initialFilter so this screen opens already switched to the matching tab.
   const [filter,     setFilter]     = useState(route?.params?.initialFilter ?? 'pending');
+  const [payingFor,  setPayingFor]  = useState(null);
+  const [payForm,    setPayForm]    = useState({ amount: '', notes: '' });
+  const [saving,     setSaving]     = useState(false);
 
   useEffect(() => { if (!manager) navigation.goBack(); }, [manager]);
 
@@ -46,14 +49,26 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
 
   useFocusEffect(React.useCallback(() => { if (manager) load(); }, [manager, filter]));
 
-  function markPaid(id) {
-    Alert.alert('Mark as paid?', 'This confirms the payout has been disbursed.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Mark Paid', onPress: async () => {
-        const res = await apiFetch(CLUB1000_ENDPOINTS.payoutMarkPaid(id), { method: 'POST' });
-        if (res.ok) load();
-      } },
-    ]);
+  function openMarkPaid(p) {
+    setPayForm({ amount: String(p.amount_due), notes: '' });
+    setPayingFor(p);
+  }
+
+  async function submitMarkPaid() {
+    if (!payForm.amount) { Alert.alert('Amount required', 'Enter the amount paid.'); return; }
+    setSaving(true);
+    try {
+      const res = await apiFetch(CLUB1000_ENDPOINTS.payoutMarkPaid(payingFor.id), {
+        method: 'POST',
+        body: JSON.stringify({ amount: payForm.amount, notes: payForm.notes }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { Alert.alert('Could not mark paid', d?.detail || 'Please try again.'); return; }
+      setPayingFor(null);
+      load();
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!manager) return null;
@@ -90,8 +105,16 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
                 <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{p.scheme_name} · {TYPE_LABELS[p.payout_type] || p.payout_type}</Text>
                 <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Due {formatDMY(p.due_date)}</Text>
               </View>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: TEAL }}>{fmtMoney(p.amount_due)}</Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: TEAL }}>{fmtMoney(p.amount_due)}</Text>
+                {p.status === 'paid' && p.paid_amount != null && Number(p.paid_amount) !== Number(p.amount_due) && (
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.warning }}>Paid {fmtMoney(p.paid_amount)}</Text>
+                )}
+              </View>
             </View>
+            {p.status === 'paid' && !!p.notes && (
+              <Text style={{ fontSize: 12, color: MUTED, marginTop: 6, fontStyle: 'italic' }}>"{p.notes}"</Text>
+            )}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
               <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: p.status === 'paid' ? COLORS.successBg : COLORS.warningBg }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: p.status === 'paid' ? COLORS.success : COLORS.warning }}>
@@ -99,7 +122,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
                 </Text>
               </View>
               {p.status === 'pending' && (
-                <TouchableOpacity onPress={() => markPaid(p.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: TEAL }}>
+                <TouchableOpacity onPress={() => openMarkPaid(p)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: TEAL }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.white }}>Mark Paid</Text>
                 </TouchableOpacity>
               )}
@@ -107,6 +130,41 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
           </View>
         ))}
       </ScrollView>
+
+      <Modal visible={!!payingFor} transparent animationType="slide" onRequestClose={() => setPayingFor(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 24 }}>
+            <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Mark Payout Paid</Text>
+              {!!payingFor && (
+                <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+                  {payingFor.investor_name} · {TYPE_LABELS[payingFor.payout_type] || payingFor.payout_type} · Due {formatDMY(payingFor.due_date)}
+                </Text>
+              )}
+            </View>
+            <View style={{ padding: 16 }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Amount Paid (₹)</Text>
+              <TextInput value={payForm.amount} onChangeText={(v) => setPayForm((f) => ({ ...f, amount: v }))} keyboardType="decimal-pad"
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT }} />
+              {!!payingFor && <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Scheduled: {fmtMoney(payingFor.amount_due)}</Text>}
+
+              <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginTop: 14, marginBottom: 6 }}>Remarks</Text>
+              <TextInput value={payForm.notes} onChangeText={(v) => setPayForm((f) => ({ ...f, notes: v }))}
+                placeholder="e.g. paid via NEFT, rounded to nearest ₹10…" placeholderTextColor={MUTED} multiline
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, minHeight: 70, textAlignVertical: 'top' }} />
+
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 18 }}>
+                <TouchableOpacity onPress={() => setPayingFor(null)} style={{ flex: 1, height: 46, borderRadius: 12, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: MUTED }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={submitMarkPaid} disabled={saving} style={{ flex: 1, height: 46, borderRadius: 12, backgroundColor: TEAL, alignItems: 'center', justifyContent: 'center', opacity: saving ? 0.6 : 1 }}>
+                  {saving ? <ActivityIndicator color={COLORS.white} /> : <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.white }}>Mark Paid</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
