@@ -306,6 +306,7 @@ export default function SalesReportsScreen({ navigation }) {
     { label: 'SV Hot',  value: stats?.sv_hot_count  ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { label: 'SV Warm', value: stats?.sv_warm_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { label: 'SV Cold', value: stats?.sv_cold_count ?? '—', color: COLORS.link,    bg: COLORS.linkBg,    target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    { label: 'SV Not Interested', value: stats?.sv_not_interested_count ?? '—', color: COLORS.textSecondary, bg: COLORS.surfaceAlt, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
     { label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },

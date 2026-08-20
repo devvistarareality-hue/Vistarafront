@@ -15,8 +15,8 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 const SV_COLOR = { scheduled: COLORS.warning, completed: COLORS.success, no_show: COLORS.error, cancelled: COLORS.textSecondary };
-const OUTCOME_COLOR = { hot: COLORS.error, warm: COLORS.warning, cold: COLORS.link };
-const OUTCOME_LABEL = { hot: 'Hot', warm: 'Warm', cold: 'Cold' };
+const OUTCOME_COLOR = { hot: COLORS.error, warm: COLORS.warning, cold: COLORS.link, not_interested: COLORS.textSecondary };
+const OUTCOME_LABEL = { hot: 'Hot', warm: 'Warm', cold: 'Cold', not_interested: 'Not Interested' };
 const TABS = [
   { key: 'today',     label: "Today's" },
   { key: 'scheduled', label: 'Scheduled' },
@@ -170,11 +170,10 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         }),
       });
       if (res.ok) {
-        // The outcome IS the lead's next pipeline status — hot/warm/cold are all
-        // valid stm_status values, so a lead marked Hot on the visit lands
-        // straight in the Hot bucket instead of sitting generically in sv_done
-        // waiting for someone to reclassify it by hand.
-        await apiFetch(SALES_ENDPOINTS.lead(doneSv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: doneForm.outcome }) }).catch(() => {});
+        // The lead's pipeline stage stays "sv done" — the outcome is recorded on
+        // the SiteVisit itself (and rolls up into the SV Hot/Warm/Cold dashboard
+        // tiles), but it does not overwrite the lead's own STM Status.
+        await apiFetch(SALES_ENDPOINTS.lead(doneSv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: 'sv_done' }) }).catch(() => {});
         const updated = await res.json();
         setVisits((list) => list.map((v) => (v.id === updated.id ? updated : v)));
         setDoneSv(null);
@@ -313,7 +312,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         )}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center', marginTop: 8 }}>
           <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>OUTCOME</Text>
-          {['', 'hot', 'warm', 'cold'].map((val) => {
+          {['', 'hot', 'warm', 'cold', 'not_interested'].map((val) => {
             const active = outcomeFilter === val;
             const color = val ? OUTCOME_COLOR[val] : MUTED;
             const label = val ? OUTCOME_LABEL[val] : 'All';
@@ -438,12 +437,12 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
             <ScrollView contentContainerStyle={{ padding: 16 }}>
               {!!doneSv && <Text style={{ fontSize: 13, color: MUTED, marginBottom: 8 }}>{doneSv.lead_name} · {doneSv.lead_phone}</Text>}
               <Text style={lblS}>Outcome *</Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {[['hot', 'Hot', COLORS.error], ['warm', 'Warm', COLORS.warning], ['cold', 'Cold', COLORS.link]].map(([val, label, color]) => {
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {[['hot', 'Hot', COLORS.error], ['warm', 'Warm', COLORS.warning], ['cold', 'Cold', COLORS.link], ['not_interested', 'Not Interested', COLORS.textSecondary]].map(([val, label, color]) => {
                   const active = doneForm.outcome === val;
                   return (
                     <TouchableOpacity key={val} onPress={() => setDoneForm((f) => ({ ...f, outcome: val }))}
-                      style={{ flex: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 11, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                      style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 11, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
                     </TouchableOpacity>
                   );
