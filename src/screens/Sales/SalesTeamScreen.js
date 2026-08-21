@@ -6,12 +6,18 @@ import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 // Designations that can be assigned projects (mirrors the web Team Users page).
+// Frontline designations always take project assignments; Manager does too, since
+// an assignment is what confines a manager's leads to those projects. Director and
+// General Manager always see the whole company, so they are not offered one.
 const ASSIGN_DESIGS = ['TELECALLER', 'STM'];
+const canHoldProjects = (m) =>
+  ASSIGN_DESIGS.includes((m?.designation || '').toUpperCase()) || m?.role === 'Manager';
 
 const DESIG_COLORS = {
   TELECALLER:         { bg: COLORS.warningBg, text: COLORS.warningAlt },
@@ -122,7 +128,7 @@ function Chip({ label, active, onPress }) {
 export default function SalesTeamScreen({ navigation }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
-  const canAssign = me?.role === 'Admin' || me?.is_staff || me?.role === 'Manager';
+  const canAssign = me?.role === 'Admin' || me?.is_staff || isManagerRole(me);
 
   const [members,    setMembers]    = useState([]);
   const [projects,   setProjects]   = useState([]);
@@ -150,7 +156,7 @@ export default function SalesTeamScreen({ navigation }) {
         // projects (for the assign modal)
         apiFetch(SALES_ENDPOINTS.projects + cq).then(r => (r.ok ? r.json() : [])).then(pd => setProjects(Array.isArray(pd) ? pd : (pd.results || []))).catch(() => {});
         // assigned-project counts for assignable members (best-effort)
-        const assignable = list.filter(m => ASSIGN_DESIGS.includes((m.designation || '').toUpperCase()));
+        const assignable = list.filter(canHoldProjects);
         const counts = {};
         await Promise.allSettled(assignable.map(async (m) => {
           try { const r = await apiFetch(`${SALES_ENDPOINTS.userProjects}?user_id=${m.id}`); if (r.ok) { const ids = await r.json(); counts[m.id] = Array.isArray(ids) ? ids.length : 0; } } catch (_) {}
@@ -182,7 +188,7 @@ export default function SalesTeamScreen({ navigation }) {
     return true;
   });
 
-  const isAssignable = (m) => canAssign && ASSIGN_DESIGS.includes((m.designation || '').toUpperCase());
+  const isAssignable = (m) => canAssign && canHoldProjects(m);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>

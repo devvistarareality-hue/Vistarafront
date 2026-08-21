@@ -81,7 +81,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
   // "Mark Done" modal — outcome + remarks are required before a visit can be closed out.
   const [doneSv,   setDoneSv]   = useState(null);
-  const [doneForm, setDoneForm] = useState({ outcome: '', remarks: '' });
+  const [doneForm, setDoneForm] = useState({ outcome: '', remarks: '', visitedDate: new Date() });
+  const [showDoneDate, setShowDoneDate] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
@@ -151,8 +152,17 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
   function openDone(sv) {
     setErr('');
-    setDoneForm({ outcome: '', remarks: '' });
+    setDoneForm({ outcome: '', remarks: '', visitedDate: new Date() });
     setDoneSv(sv);
+  }
+
+  // Keeps the current time-of-day (so same-day ordering still makes sense) but
+  // lets the date itself be backdated to when the visit actually happened.
+  function visitedAtFromDate(date) {
+    const now = new Date();
+    const d = new Date(date);
+    d.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), 0);
+    return d.toISOString();
   }
 
   async function submitDone() {
@@ -165,7 +175,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       const res = await apiFetch(SALES_ENDPOINTS.siteVisit(doneSv.id), {
         method: 'PATCH',
         body: JSON.stringify({
-          status: 'completed', visited_at: new Date().toISOString(),
+          status: 'completed', visited_at: visitedAtFromDate(doneForm.visitedDate),
           outcome: doneForm.outcome, remarks: doneForm.remarks.trim(),
         }),
       });
@@ -449,6 +459,12 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
                 })}
               </View>
 
+              <Text style={lblS}>Visit Date *</Text>
+              <TouchableOpacity onPress={() => setShowDoneDate(true)} style={[pickBtn, { borderColor: COLORS.link }]}>
+                <Ionicons name="calendar-outline" size={16} color={BLUE} />
+                <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{doneForm.visitedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+              </TouchableOpacity>
+
               <Text style={lblS}>Remarks *</Text>
               <TextInput value={doneForm.remarks} onChangeText={(v) => setDoneForm((f) => ({ ...f, remarks: v }))}
                 placeholder="What happened on the visit…" placeholderTextColor={MUTED} multiline
@@ -593,6 +609,27 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       {Platform.OS === 'android' && showCDate && (
         <DateTimePicker value={cForm.closure_date} mode="date" display="default"
           onChange={(e, d) => { setShowCDate(false); if (e.type === 'dismissed') return; if (d) setCForm((f) => ({ ...f, closure_date: d })); }} />
+      )}
+
+      {/* ── Mark Done visit date picker ── */}
+      {Platform.OS === 'ios' && showDoneDate && (
+        <Modal transparent animationType="slide" onRequestClose={() => setShowDoneDate(false)}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowDoneDate(false)}>
+            <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                <TouchableOpacity onPress={() => setShowDoneDate(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                <Text style={{ fontWeight: '700', color: TEXT }}>Visit Date</Text>
+                <TouchableOpacity onPress={() => setShowDoneDate(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+              </View>
+              <DateTimePicker value={doneForm.visitedDate} mode="date" display="spinner" textColor={TEXT} maximumDate={new Date()}
+                onChange={(_, d) => d && setDoneForm((f) => ({ ...f, visitedDate: d }))} />
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+      {Platform.OS === 'android' && showDoneDate && (
+        <DateTimePicker value={doneForm.visitedDate} mode="date" display="default" maximumDate={new Date()}
+          onChange={(e, d) => { setShowDoneDate(false); if (e.type === 'dismissed') return; if (d) setDoneForm((f) => ({ ...f, visitedDate: d })); }} />
       )}
     </SafeAreaView>
   );

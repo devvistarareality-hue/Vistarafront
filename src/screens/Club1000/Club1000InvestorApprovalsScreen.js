@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { CLUB1000_ENDPOINTS, SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { isManagerRole } from '../../lib/roles';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const TEAL = '#00838F'; const PURPLE = '#7C3AED'; const AMBER = '#D97706';
 
@@ -52,7 +53,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
 
   useEffect(() => {
     apiFetch(SALES_ENDPOINTS.usersSlim).then((r) => (r.ok ? r.json() : []))
-      .then((d) => setManagers(Array.isArray(d) ? d.filter((u) => u.role === 'Manager' || u.role === 'Admin') : []))
+      .then((d) => setManagers(Array.isArray(d) ? d.filter((u) => isManagerRole(u) || u.role === 'Admin') : []))
       .catch(() => {});
     apiFetch(CLUB1000_ENDPOINTS.schemes).then((r) => (r.ok ? r.json() : []))
       .then((d) => setSchemes(Array.isArray(d) ? d : []))

@@ -34,6 +34,9 @@ export default function SalesDataResetScreen({ navigation }) {
   const [counts, setCounts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmText, setConfirmText] = useState('');
+  // Held in the server environment, not in the app — being signed in as an admin
+  // is not by itself enough to wipe the company's data.
+  const [resetKey, setResetKey] = useState('');
   const [withAttendance, setWithAttendance] = useState(false);
   const [withLoi, setWithLoi] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -65,7 +68,7 @@ export default function SalesDataResetScreen({ navigation }) {
   const total = counts ? Object.entries(counts).reduce((a, [k, v]) => a + (willClear(k) ? v : 0), 0) : 0;
 
   function confirmReset() {
-    if (confirmText !== 'DELETE' || nothingSelected) return;
+    if (confirmText !== 'DELETE' || !resetKey.trim() || nothingSelected) return;
     Alert.alert(
       'Delete selected trial data?',
       'This permanently deletes the selected trial data for this company. This cannot be undone.',
@@ -78,7 +81,7 @@ export default function SalesDataResetScreen({ navigation }) {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.dataReset + cq('?'), {
         method: 'POST',
-        body: JSON.stringify({ confirm: 'DELETE', targets: [...selected], with_attendance: withAttendance, with_loi_files: withLoi }),
+        body: JSON.stringify({ confirm: 'DELETE', reset_key: resetKey, targets: [...selected], with_attendance: withAttendance, with_loi_files: withLoi }),
       });
       const d = await res.json().catch(() => ({}));
       if (res.ok) { setMsg('✅ Trial data cleared. Your CRM is now a clean slate.'); setConfirmText(''); load(); }
@@ -161,13 +164,16 @@ export default function SalesDataResetScreen({ navigation }) {
         {/* Danger zone */}
         <View style={{ backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: RED, borderRadius: 14, padding: 16 }}>
           <Text style={{ fontSize: 14, fontWeight: '800', color: RED, marginBottom: 6 }}>⚠️ Danger zone — cannot be undone</Text>
-          <Text style={{ fontSize: 13, color: '#7F1D1D', marginBottom: 12 }}>Take a database backup first. Then type DELETE to enable the button.</Text>
+          <Text style={{ fontSize: 13, color: '#7F1D1D', marginBottom: 12 }}>Take a database backup first. Then type DELETE and enter the reset key.</Text>
           <TextInput value={confirmText} onChangeText={setConfirmText} placeholder="Type DELETE" autoCapitalize="characters"
             placeholderTextColor={COLORS.shadow}
             style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
-          <TouchableOpacity onPress={confirmReset} disabled={confirmText !== 'DELETE' || busy || nothingSelected}
-            style={{ backgroundColor: (confirmText === 'DELETE' && !busy && !nothingSelected) ? RED : '#F3B4B4', borderRadius: 10, paddingVertical: 13, alignItems: 'center' }}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>{nothingSelected ? 'Select at least one item' : `Permanently delete ${total} records`}</Text>}
+          <TextInput value={resetKey} onChangeText={setResetKey} placeholder="Reset key"
+            secureTextEntry autoCapitalize="none" placeholderTextColor={COLORS.shadow}
+            style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
+          <TouchableOpacity onPress={confirmReset} disabled={confirmText !== 'DELETE' || !resetKey.trim() || busy || nothingSelected}
+            style={{ backgroundColor: (confirmText === 'DELETE' && !!resetKey.trim() && !busy && !nothingSelected) ? RED : '#F3B4B4', borderRadius: 10, paddingVertical: 13, alignItems: 'center' }}>
+            {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>{nothingSelected ? 'Select at least one item' : !resetKey.trim() ? 'Enter the reset key' : `Permanently delete ${total} records`}</Text>}
           </TouchableOpacity>
           {!!msg && <Text style={{ marginTop: 12, fontSize: 13, fontWeight: '600', color: msg[0] === '✅' ? COLORS.success : RED }}>{msg}</Text>}
         </View>

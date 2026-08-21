@@ -9,6 +9,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { stripPlotPrefix } from '../../lib/plotNumber';
+import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -62,7 +63,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const { projectId } = route.params || {};
   const sv   = route.params?.sv || null;
   const user = useSelector((s) => s.auth.user);
-  const isManager = user?.role === 'Admin' || user?.role === 'Manager' || user?.is_staff;
+  const isManager = user?.role === 'Admin' || isManagerRole(user) || user?.is_staff;
 
   const [project, setProject] = useState(null);
   const [plots,   setPlots]   = useState([]);

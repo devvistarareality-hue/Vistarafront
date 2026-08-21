@@ -9,6 +9,8 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
+import { isManagerRole } from '../../lib/roles';
+import { unitLabel } from '../../lib/bookingUnit';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
@@ -19,7 +21,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
-  const isApprover = me?.role === 'Admin' || me?.role === 'Manager' || me?.is_staff;
+  const isApprover = me?.role === 'Admin' || isManagerRole(me) || me?.is_staff;
   const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
@@ -292,7 +294,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{b.client_name || '—'}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
                 {/* Project lives in the group header now — don't repeat it on every card. */}
-                <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.phone} · Unit {b.plot_numbers || b.plot_number || b.area}</Text>
+                <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.phone} · {unitLabel(b).isUnit ? `Unit ${unitLabel(b).text}` : unitLabel(b).text}</Text>
                 <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>STM: {b.stm_name || '—'} · {b.booking_date || '—'}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -347,7 +349,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
 // Cancelling frees the unit and destroys the signed LOI — irreversible, so spell out
 // exactly which booking is going and what it costs before letting it through.
 function CancelBookingModal({ b, busy, onClose, onConfirm }) {
-  const unit = b ? (b.plot_numbers || b.plot_number || b.area || '—') : '';
+  const unit = b ? (unitLabel(b).isUnit ? `Unit ${unitLabel(b).text}` : unitLabel(b).text) : '';
   const doc = String(b?.plot_numbers || '').toUpperCase().startsWith('EOI') ? 'EOI' : 'LOI';
   return (
     <Modal visible={!!b} transparent animationType="fade" onRequestClose={busy ? undefined : onClose}>

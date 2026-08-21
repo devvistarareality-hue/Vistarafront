@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -14,7 +15,7 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW 
 export default function ModuleHomeScreen({ navigation, route }) {
   const { module = '', name = 'Module' } = route?.params || {};
   const user = useSelector((s) => s.auth.user);
-  const canSeeTeam = user?.role === 'Manager' || user?.role === 'Admin' || user?.is_staff;
+  const canSeeTeam = isManagerRole(user) || user?.role === 'Admin' || user?.is_staff;
 
   const isAccounts = /account|finance/i.test(module);
   const cards = [
