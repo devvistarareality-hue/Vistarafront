@@ -12,7 +12,11 @@ const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; 
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 // Designations that can be assigned projects (mirrors the web Team Users page).
+// Frontline designations always take project assignments; manager-level roles do
+// too, since an assignment is what confines a manager's leads to those projects.
 const ASSIGN_DESIGS = ['TELECALLER', 'STM'];
+const canHoldProjects = (m) =>
+  ASSIGN_DESIGS.includes((m?.designation || '').toUpperCase()) || isManagerRole(m);
 
 const DESIG_COLORS = {
   TELECALLER:         { bg: COLORS.warningBg, text: COLORS.warningAlt },
@@ -151,7 +155,7 @@ export default function SalesTeamScreen({ navigation }) {
         // projects (for the assign modal)
         apiFetch(SALES_ENDPOINTS.projects + cq).then(r => (r.ok ? r.json() : [])).then(pd => setProjects(Array.isArray(pd) ? pd : (pd.results || []))).catch(() => {});
         // assigned-project counts for assignable members (best-effort)
-        const assignable = list.filter(m => ASSIGN_DESIGS.includes((m.designation || '').toUpperCase()));
+        const assignable = list.filter(canHoldProjects);
         const counts = {};
         await Promise.allSettled(assignable.map(async (m) => {
           try { const r = await apiFetch(`${SALES_ENDPOINTS.userProjects}?user_id=${m.id}`); if (r.ok) { const ids = await r.json(); counts[m.id] = Array.isArray(ids) ? ids.length : 0; } } catch (_) {}
@@ -183,7 +187,7 @@ export default function SalesTeamScreen({ navigation }) {
     return true;
   });
 
-  const isAssignable = (m) => canAssign && ASSIGN_DESIGS.includes((m.designation || '').toUpperCase());
+  const isAssignable = (m) => canAssign && canHoldProjects(m);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
