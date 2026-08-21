@@ -349,7 +349,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
 // Cancelling frees the unit and destroys the signed LOI — irreversible, so spell out
 // exactly which booking is going and what it costs before letting it through.
 function CancelBookingModal({ b, busy, onClose, onConfirm }) {
-  const unit = b ? (b.plot_numbers || b.plot_number || b.area || '—') : '';
+  const unit = b ? (unitLabel(b).isUnit ? `Unit ${unitLabel(b).text}` : unitLabel(b).text) : '';
   const doc = String(b?.plot_numbers || '').toUpperCase().startsWith('EOI') ? 'EOI' : 'LOI';
   return (
     <Modal visible={!!b} transparent animationType="fade" onRequestClose={busy ? undefined : onClose}>

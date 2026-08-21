@@ -6,6 +6,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { unitLabel } from '../../lib/bookingUnit';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
@@ -66,7 +67,7 @@ export function MyBookingsList({ navigation }) {
             <View key={b.id} style={[CARD, { marginBottom: 10 }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Plot {b.plot_numbers || b.plot_number || b.area}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{unitLabel(b).isUnit ? `Plot ${unitLabel(b).text}` : unitLabel(b).text}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
                   <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.client_name || '—'} · {b.phone}</Text>
                   <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>Booked {b.booking_date || '—'}</Text>
                 </View>
