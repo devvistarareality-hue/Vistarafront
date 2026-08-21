@@ -12,11 +12,12 @@ const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; 
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
 // Designations that can be assigned projects (mirrors the web Team Users page).
-// Frontline designations always take project assignments; manager-level roles do
-// too, since an assignment is what confines a manager's leads to those projects.
+// Frontline designations always take project assignments; Manager does too, since
+// an assignment is what confines a manager's leads to those projects. Director and
+// General Manager always see the whole company, so they are not offered one.
 const ASSIGN_DESIGS = ['TELECALLER', 'STM'];
 const canHoldProjects = (m) =>
-  ASSIGN_DESIGS.includes((m?.designation || '').toUpperCase()) || isManagerRole(m);
+  ASSIGN_DESIGS.includes((m?.designation || '').toUpperCase()) || m?.role === 'Manager';
 
 const DESIG_COLORS = {
   TELECALLER:         { bg: COLORS.warningBg, text: COLORS.warningAlt },
