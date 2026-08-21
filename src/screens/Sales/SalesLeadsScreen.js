@@ -261,12 +261,20 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             setDetail(full);
             // telecaller_remarks/stm_remarks aren't in the list payload (kept off it
             // for list-performance reasons), so the initial form prefill above always
-            // left them blank — backfill them now that the full record is in. Only
-            // these two: everything else the form edits already ships in the list.
+            // left them blank — backfill them now that the full record is in.
+            // status/stm_status/telecaller_status ARE in the list payload but that row
+            // can be stale (fetched before someone else's later update) — every save
+            // resends all three regardless of whether they were touched, so a stale
+            // value silently regresses a status another user already advanced (e.g.
+            // STM sets warm, then an unrelated resave reverts it to warm_transferred).
+            // Correct any of these the user hasn't already started editing.
             setForm(f => ({
               ...f,
               telecaller_remarks: full.telecaller_remarks || '',
               stm_remarks: full.stm_remarks || '',
+              status: f.status === (lead.status || 'new') ? (full.status || 'new') : f.status,
+              stm_status: f.stm_status === (lead.stm_status || '') ? (full.stm_status || '') : f.stm_status,
+              telecaller_status: f.telecaller_status === (lead.telecaller_status || '') ? (full.telecaller_status || '') : f.telecaller_status,
             }));
           }
         } catch (_) {}
