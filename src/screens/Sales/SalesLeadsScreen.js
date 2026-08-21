@@ -226,10 +226,19 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   // auto-created/completed SiteVisit, same as the dedicated Site Visits "Mark
   // Done" flow. Does not change the lead's own stm_status (stays "sv done").
   const [svOutcome, setSvOutcome] = useState('');
+  const [svVisitedDate, setSvVisitedDate] = useState(new Date());
+  const [showSvVisitedDate, setShowSvVisitedDate] = useState(false);
 
   useEffect(() => {
     if (lead) {
-      setSvAt(null); setSvRemarks(''); setSvOutcome('');
+      setSvAt(null); setSvRemarks('');
+      // A lead already at sv_done carries its visit's outcome on the list row
+      // (LeadListView annotates it) — prefill instantly instead of forcing a
+      // re-pick every time the lead is reopened; the exact visit date is refined
+      // below once the full site-visit record arrives.
+      setSvOutcome(lead.stm_status === 'sv_done' ? (lead.sv_outcome || '') : '');
+      const defaultVisitedDate = new Date();
+      setSvVisitedDate(defaultVisitedDate);
       setForm({
         name:              lead.name            || '',
         phone:             lead.phone           || '',
@@ -276,6 +285,18 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               stm_status: f.stm_status === (lead.stm_status || '') ? (full.stm_status || '') : f.stm_status,
               telecaller_status: f.telecaller_status === (lead.telecaller_status || '') ? (full.telecaller_status || '') : f.telecaller_status,
             }));
+            // Refine the sv_done prefill with the actual latest completed visit —
+            // its real outcome and the date it happened on, not just today's date.
+            if (full.stm_status === 'sv_done') {
+              const latestSv = (full.site_visits || [])
+                .filter(v => v.status === 'completed' && v.visited_at)
+                .sort((a, b) => new Date(b.visited_at) - new Date(a.visited_at))[0];
+              if (latestSv) {
+                setSvOutcome(cur => cur || latestSv.outcome || '');
+                const realDate = new Date(latestSv.visited_at);
+                setSvVisitedDate(cur => (cur === defaultVisitedDate ? realDate : cur));
+              }
+            }
           }
         } catch (_) {}
       }
@@ -293,8 +314,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     if (_isStm && (!form.stm_status || !(form.stm_remarks || '').trim())) {
       Alert.alert('Required', 'Please set STM Status and add STM Remarks before saving.'); return;
     }
-    if (form.stm_status === 'sv_done' && !svOutcome) {
-      Alert.alert('Required', 'Please pick a visit outcome (Hot, Warm or Cold).'); return;
+    if (form.stm_status === 'sv_done' && (!svOutcome || !svVisitedDate)) {
+      Alert.alert('Required', 'Please pick a visit outcome and visit date.'); return;
     }
     setSaving(true);
     try {
@@ -351,15 +372,20 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             const list = svRes.ok ? await svRes.json() : [];
             const pending = (Array.isArray(list) ? list : []).filter(v => v.status === 'scheduled')
               .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))[0];
-            const nowIso = new Date().toISOString();
+            // Keeps the current time-of-day but lets the date itself be backdated
+            // to when the visit actually happened.
+            const visitedAt = new Date(svVisitedDate);
+            const timeNow = new Date();
+            visitedAt.setHours(timeNow.getHours(), timeNow.getMinutes(), timeNow.getSeconds(), 0);
+            const visitedIso = visitedAt.toISOString();
             if (pending) {
-              await apiFetch(SALES_ENDPOINTS.siteVisit(pending.id), { method: 'PATCH', body: JSON.stringify({ status: 'completed', visited_at: nowIso, outcome: svOutcome, remarks: form.stm_remarks || '' }) });
+              await apiFetch(SALES_ENDPOINTS.siteVisit(pending.id), { method: 'PATCH', body: JSON.stringify({ status: 'completed', visited_at: visitedIso, outcome: svOutcome, remarks: form.stm_remarks || '' }) });
             } else {
               await apiFetch(SALES_ENDPOINTS.siteVisits, {
                 method: 'POST',
                 body: JSON.stringify({
                   lead: lead.id, project: form.project || null,
-                  scheduled_at: nowIso, visited_at: nowIso, status: 'completed',
+                  scheduled_at: visitedIso, visited_at: visitedIso, status: 'completed',
                   stm: form.stm || user?.id, referred_by_telecaller: form.telecaller || null,
                   outcome: svOutcome, remarks: form.stm_remarks || '',
                 }),
@@ -717,7 +743,32 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                       );
                     })}
                   </View>
+                  <Text style={[lblS, { color: '#166534', marginTop: 10 }]}>Visit Date *</Text>
+                  <TouchableOpacity onPress={() => setShowSvVisitedDate(true)} style={{ borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                    <Ionicons name="calendar-outline" size={16} color={BLUE} />
+                    <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{svVisitedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                  </TouchableOpacity>
                   {!svOutcome && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Pick how the visit went — recorded on the site visit.</Text>}
+
+                  {Platform.OS === 'ios' && showSvVisitedDate && (
+                    <Modal transparent animationType="slide" onRequestClose={() => setShowSvVisitedDate(false)}>
+                      <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowSvVisitedDate(false)}>
+                        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                            <TouchableOpacity onPress={() => setShowSvVisitedDate(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                            <Text style={{ fontWeight: '700', color: TEXT }}>Visit Date</Text>
+                            <TouchableOpacity onPress={() => setShowSvVisitedDate(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                          </View>
+                          <DateTimePicker value={svVisitedDate} mode="date" display="spinner" textColor={TEXT} maximumDate={new Date()}
+                            onChange={(_, d) => d && setSvVisitedDate(d)} />
+                        </View>
+                      </TouchableOpacity>
+                    </Modal>
+                  )}
+                  {Platform.OS === 'android' && showSvVisitedDate && (
+                    <DateTimePicker value={svVisitedDate} mode="date" display="default" maximumDate={new Date()}
+                      onChange={(e, d) => { setShowSvVisitedDate(false); if (e.type === 'dismissed') return; if (d) setSvVisitedDate(d); }} />
+                  )}
                 </View>
               )}
 
@@ -1065,16 +1116,45 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   // after the lead itself, so a manual lead can arrive with its first call booked.
   const emptyFu = { role_context: _isStm ? 'stm' : 'telecaller', scheduled_at: null, remarks: '' };
   const [fuForm, setFuForm] = useState(emptyFu);
+  // Same inline outcome capture as the Lead Detail modal — a manual lead created
+  // directly at STM Status = sv_done needs its visit outcome too, recorded on an
+  // auto-created completed SiteVisit right after the lead itself.
+  const [svOutcome, setSvOutcome] = useState('');
+  const [svVisitedDate, setSvVisitedDate] = useState(new Date());
+  const [showSvVisitedDate, setShowSvVisitedDate] = useState(false);
 
   async function create() {
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
     if (!form.project) { Alert.alert('Required', 'Project is required.'); return; }
     if (!form.source)  { Alert.alert('Required', 'Source is required.'); return; }
+    if (showStm && form.stm_status === 'sv_done' && (!svOutcome || !svVisitedDate)) {
+      Alert.alert('Required', 'Please pick a visit outcome and visit date.'); return;
+    }
     setSaving(true);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
       if (res.ok) {
         const lead = await res.json();
+        // A lead created directly at STM Status = sv_done needs the visit itself on
+        // record too — same as marking a scheduled visit done, just with no prior
+        // "scheduled" row to complete. Best-effort: the lead is already saved.
+        if (showStm && form.stm_status === 'sv_done' && lead?.id && svOutcome) {
+          const now = new Date();
+          const visitedAt = new Date(svVisitedDate);
+          visitedAt.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), 0);
+          const visitedIso = visitedAt.toISOString();
+          try {
+            await apiFetch(SALES_ENDPOINTS.siteVisits, {
+              method: 'POST',
+              body: JSON.stringify({
+                lead: lead.id, project: form.project || null,
+                scheduled_at: visitedIso, visited_at: visitedIso, status: 'completed',
+                stm: form.stm || user?.id,
+                outcome: svOutcome, remarks: form.stm_remarks || '',
+              }),
+            });
+          } catch (_) {}
+        }
         // Best-effort: the lead is already saved, so a failure here must not read
         // back to the user as "lead not added".
         if (fuForm.scheduled_at instanceof Date && lead?.id) {
@@ -1092,6 +1172,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
           }
         }
         onCreated(lead); onClose(); setForm(emptyForm); setFuForm(emptyFu); setCityOther(false);
+        setSvOutcome(''); setSvVisitedDate(new Date());
       }
       else { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); }
     } catch (e) { Alert.alert('Network error', e.message); }
@@ -1246,6 +1327,54 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                   />
                 </Field>
                 <TextField label={_isCp ? 'CP Remarks' : 'STM Remarks'} value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
+
+                {/* A lead added directly at sv_done needs its visit outcome recorded too —
+                    same panel as the Lead Detail modal's inline "Visit Outcome". */}
+                {form.stm_status === 'sv_done' && (
+                  <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <Ionicons name="location-outline" size={14} color="#15803D" />
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 }}>VISIT OUTCOME</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      {[['hot', 'Hot', '#EF4444'], ['warm', 'Warm', '#F97316'], ['cold', 'Cold', '#3B82F6'], ['not_interested', 'Not Interested', COLORS.textSecondary]].map(([val, label, color]) => {
+                        const active = svOutcome === val;
+                        return (
+                          <TouchableOpacity key={val} onPress={() => setSvOutcome(val)}
+                            style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#166534', marginTop: 10, marginBottom: 6 }}>Visit Date *</Text>
+                    <TouchableOpacity onPress={() => setShowSvVisitedDate(true)} style={{ borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                      <Ionicons name="calendar-outline" size={16} color={COLORS.link} />
+                      <Text style={{ fontSize: 14, color: COLORS.link, fontWeight: '600' }}>{svVisitedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                    </TouchableOpacity>
+                    {!svOutcome && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Pick how the visit went — recorded on the site visit.</Text>}
+
+                    {Platform.OS === 'ios' && showSvVisitedDate && (
+                      <Modal transparent animationType="slide" onRequestClose={() => setShowSvVisitedDate(false)}>
+                        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowSvVisitedDate(false)}>
+                          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                              <TouchableOpacity onPress={() => setShowSvVisitedDate(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
+                              <Text style={{ fontWeight: '700', color: TEXT }}>Visit Date</Text>
+                              <TouchableOpacity onPress={() => setShowSvVisitedDate(false)}><Text style={{ color: COLORS.link, fontWeight: '700' }}>Done</Text></TouchableOpacity>
+                            </View>
+                            <DateTimePicker value={svVisitedDate} mode="date" display="spinner" textColor={TEXT} maximumDate={new Date()}
+                              onChange={(_, d) => d && setSvVisitedDate(d)} />
+                          </View>
+                        </TouchableOpacity>
+                      </Modal>
+                    )}
+                    {Platform.OS === 'android' && showSvVisitedDate && (
+                      <DateTimePicker value={svVisitedDate} mode="date" display="default" maximumDate={new Date()}
+                        onChange={(e, d) => { setShowSvVisitedDate(false); if (e.type === 'dismissed') return; if (d) setSvVisitedDate(d); }} />
+                    )}
+                  </View>
+                )}
               </>
             )}
 
