@@ -15,6 +15,7 @@ import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { BASE_URL } from '../../constants/api';
 import { COLORS } from '../../constants/theme';
 import styles from './createStyles';
+import { isManagerRole } from '../../lib/roles';
 
 const VOWELS = new Set(['a', 'e', 'i', 'o', 'u']);
 
@@ -35,7 +36,9 @@ function generateUserCodePrefix(companyCode) {
   return (c1 + c2 + c3).toUpperCase();
 }
 
-const ROLES   = ['Manager', 'Employee', 'Intern', 'Kiosk'];
+// Seniority order, most senior first; Kiosk is the unattended self-booking
+// account rather than a rank, so it sits apart at the end.
+const ROLES   = ['Director', 'General Manager', 'Manager', 'Employee', 'Intern', 'Kiosk'];
 
 function AppDropdown({ label, value, options, onChange, placeholder = 'Select…', disabled = false }) {
   const [open, setOpen] = React.useState(false);
@@ -187,7 +190,7 @@ export default function CreateUserScreen({ navigation, route }) {
   // Access change overwrites Manager Access to match. Other roles just keep
   // Manager Access pruned to a subset of the selected modules.
   useEffect(() => {
-    if (role === 'Manager') {
+    if (isManagerRole({ role })) {
       setManagerModules(modules);
     } else {
       setManagerModules((prev) => prev.filter((m) => modules.includes(m)));
@@ -466,7 +469,7 @@ export default function CreateUserScreen({ navigation, route }) {
           <>
             <Text style={styles.label}>MANAGER ACCESS</Text>
             <Text style={styles.managerSubtitle}>
-              {role === 'Manager' ? 'Auto-matches Module Access above' : 'Elevated view for modules assigned above'}
+              {isManagerRole({ role }) ? 'Auto-matches Module Access above' : 'Elevated view for modules assigned above'}
             </Text>
             <View style={styles.pillGrid}>
               {modules.map((mod) => {
@@ -483,7 +486,7 @@ export default function CreateUserScreen({ navigation, route }) {
         )}
 
         {/* Admin Access — only for Managers */}
-        {role === 'Manager' && (
+        {isManagerRole({ role }) && (
           <>
             <Text style={styles.label}>ADMIN ACCESS</Text>
             <Text style={styles.managerSubtitle}>Grant admin-level control over selected modules</Text>

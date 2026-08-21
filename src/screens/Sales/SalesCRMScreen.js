@@ -9,6 +9,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { isManagerRole } from '../../lib/roles';
 
 const NAVY  = COLORS.navy;
 const BLUE  = COLORS.link;
@@ -71,7 +72,7 @@ export default function SalesCRMScreen({ navigation, route }) {
   const isStm = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive');
   const isTelecaller = _des.includes('telecaller') || _des.includes('tele caller');
   // Managers also get the STM-portal modules (Site Visits, Booking, My Conversions).
-  const isManager = user?.role === 'Manager';
+  const isManager = isManagerRole(user);
   // CP Executive works their own leads like an STM (no Meta) → same modules.
   const isCp = _des.includes('cp executive') || _des.includes('channel partner');
   const baseFilter = m => (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp);

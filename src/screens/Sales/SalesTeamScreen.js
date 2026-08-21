@@ -6,6 +6,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
@@ -122,7 +123,7 @@ function Chip({ label, active, onPress }) {
 export default function SalesTeamScreen({ navigation }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
-  const canAssign = me?.role === 'Admin' || me?.is_staff || me?.role === 'Manager';
+  const canAssign = me?.role === 'Admin' || me?.is_staff || isManagerRole(me);
 
   const [members,    setMembers]    = useState([]);
   const [projects,   setProjects]   = useState([]);

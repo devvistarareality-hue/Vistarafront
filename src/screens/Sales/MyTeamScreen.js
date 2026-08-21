@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { isManagerRole } from '../../lib/roles';
 
 // Order siblings: heads/managers first, then STM, CP, telecallers — and keep
 // same-designation people contiguous (telecallers next to telecallers).
@@ -33,7 +34,7 @@ function accentFor(node) {
   if (d.includes('telecaller') || d.includes('pre-sale'))  return COLORS.info;
   if (d.includes('cp ') || d.includes('channel'))          return COLORS.warning;
   if (d.includes('stm') || d.includes('sales'))            return COLORS.link;
-  if (node.role === 'Manager')                             return COLORS.purple;
+  if (isManagerRole(node))                             return COLORS.purple;
   return COLORS.textSecondary;
 }
 
@@ -164,7 +165,7 @@ export default function MyTeamScreen({ navigation, route }) {
     }
     // Org view (admin): top-level = a Manager with no reporting manager (admins,
     // whose role isn't "Manager", are never tops). Everyone else nests beneath.
-    let tops = team.filter((m) => m.role === 'Manager' && !m.reporting_manager_id);
+    let tops = team.filter((m) => isManagerRole(m) && !m.reporting_manager_id);
     if (!tops.length) tops = team.filter((m) => !m.reporting_manager_id || !byId[m.reporting_manager_id]);
     tops = sortSiblings(tops);
     // Always show a department/company header so the context is consistent.
