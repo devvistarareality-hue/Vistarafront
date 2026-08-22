@@ -278,8 +278,10 @@ export default function SalesReportsScreen({ navigation }) {
   // STM/CP funnel metrics: SQL = leads that reached warm; ratios + avg closure timeline.
   const _sql          = stats?.sql_count ?? stats?.stm_warm_count ?? 0;
   const _closures     = stats?.closures ?? 0;
-  const _sqlToSv      = _sql > 0 ? Math.round(_svDone / _sql * 100) + '%' : '—';
-  const _sqlToClosure = _sql > 0 ? Math.round(_closures / _sql * 100) + '%' : '—';
+  // SQLs per outcome, e.g. "4.0 : 1" = four warm leads for every site visit.
+  // Divides by the outcome, so the guard sits on _svDone/_closures, not on _sql.
+  const _sqlToSv      = _svDone > 0 ? (_sql / _svDone).toFixed(1) + ' : 1' : '—';
+  const _sqlToClosure = _closures > 0 ? (_sql / _closures).toFixed(1) + ' : 1' : '—';
   const _avgCloseMo   = (() => {
     const d = stats?.avg_closure_days;
     if (d == null) return '—';
