@@ -1824,7 +1824,9 @@ export default function SalesLeadsScreen({ navigation, route }) {
         // makes a malformed double-`?` URL that drops crm_role AND company_id, so
         // the backend returns every company's users mixed across both roles).
         (isCaller || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers + (companyId ? `&company_id=${companyId}` : '')),
-        (isCaller || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms        + (companyId ? `&company_id=${companyId}` : '')),
+        // An STM is the exception to isCaller here: they cannot assign, but they do
+        // need the STM list to pick who a lead is being transferred to.
+        ((isCaller && !isStm) || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms + (companyId ? `&company_id=${companyId}` : '')),
         // CP managers (cluster heads) assign leads to their CP executives.
         (!isCpHead || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.cps        + (companyId ? `&company_id=${companyId}` : '')),
       ]);
