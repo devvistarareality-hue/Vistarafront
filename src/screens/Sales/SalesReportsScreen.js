@@ -282,6 +282,10 @@ export default function SalesReportsScreen({ navigation }) {
   // Divides by the outcome, so the guard sits on _svDone/_closures, not on _sql.
   const _sqlToSv      = _svDone > 0 ? (_sql / _svDone).toFixed(1) + ' : 1' : '—';
   const _sqlToClosure = _closures > 0 ? (_sql / _closures).toFixed(1) + ' : 1' : '—';
+  // Backlog tiles: what is still waiting to be worked, as opposed to what was done.
+  const _toCall    = stats?.to_call_count          ?? 0;
+  const _fuPending = stats?.followup_pending_count ?? 0;
+  const _fuOverdue = stats?.followup_overdue_count ?? 0;
   const _avgCloseMo   = (() => {
     const d = stats?.avg_closure_days;
     if (d == null) return '—';
@@ -293,15 +297,19 @@ export default function SalesReportsScreen({ navigation }) {
   const TELECALLER_CARDS = [
     { label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads' },
     { label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
+    { label: 'To Call',      value: _toCall,                      color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads' },
     { label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
     { label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesMyConversions' },
     { label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
+    { label: 'Follow-ups Pending', value: _fuPending,             color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
+    { label: 'Follow-ups Overdue', value: _fuOverdue,             color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
   const STM_CARDS = [
     { label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { label: 'To Work',      value: _toCall,                              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads' },
     { label: 'Hot Leads',    value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
     { label: 'Warm/SQL',     value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
     { label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
@@ -310,6 +318,8 @@ export default function SalesReportsScreen({ navigation }) {
     { label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
     { label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
+    { label: 'Follow-ups Pending',  value: _fuPending,    color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
+    { label: 'Follow-ups Overdue',  value: _fuOverdue,    color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { label: 'Avg Closure Time',    value: _avgCloseMo,   color: COLORS.error,  bg: COLORS.errorBg },
   ];
   const STAT_CARDS = isStmView ? STM_CARDS : TELECALLER_CARDS;

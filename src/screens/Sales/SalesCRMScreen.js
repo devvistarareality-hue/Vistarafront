@@ -175,12 +175,17 @@ export default function SalesCRMScreen({ navigation, route }) {
   // MQLs per completed site visit, e.g. "4.0 : 1" = four dispositioned leads for
   // every visit. Divides by SV, so it needs _svDone (not _called) to be non-zero.
   const _mqlToSv = _svDone > 0 ? (_called / _svDone).toFixed(1) + ' : 1' : '—';
+  // Backlog tiles: what is still waiting to be worked, as opposed to what was done.
+  const _toCall    = stats?.to_call_count          ?? 0;
+  const _fuPending = stats?.followup_pending_count ?? 0;
+  const _fuOverdue = stats?.followup_overdue_count ?? 0;
 
   // Telecallers (and admins/managers) see call-queue metrics; STM/CP see their
   // pipeline (stm_status based) — mirrors the web's per-role dashboards.
   const TELECALLER_CARDS = [
     { label: 'My Leads',      value: stats?.total_leads    ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
     { label: 'New Today',     value: stats?.leads_today    ?? '—', color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads' },
+    { label: 'To Call',       value: _toCall,                      color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads' },
     { label: 'Called/MQL',    value: _called,                      color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesFollowUps' },
     { label: 'Total Called',  value: _totCall,                     color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
@@ -188,16 +193,21 @@ export default function SalesCRMScreen({ navigation, route }) {
     { label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesMyConversions' },
     { label: 'Callback Due',  value: stats?.callback_count ?? '—', color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
+    { label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
+    { label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { label: 'Closures',      value: stats?.closures       ?? '—', color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
 
   const STM_CARDS = [
     { label: 'My Pipeline',   value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { label: 'To Work',       value: _toCall,                              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads' },
     { label: 'Hot Leads',     value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
     { label: 'Warm Leads',    value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
     { label: 'Cold Leads',    value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
     { label: 'SV Scheduled',  value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
     { label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesFollowUps' },
+    { label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
+    { label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
     { label: 'SV Done', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
