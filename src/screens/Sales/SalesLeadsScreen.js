@@ -1121,6 +1121,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   // auto-created completed SiteVisit right after the lead itself.
   const [svOutcome, setSvOutcome] = useState('');
   const [svVisitedDate, setSvVisitedDate] = useState(new Date());
+  // A walk-in IS the site visit — the client turned up. Picking that source puts
+  // the lead straight at sv_done and dates the visit by when they walked in (the
+  // Lead Received Date), not by when the STM got round to typing it in.
+  const srcName = (id) => (sources.find(x => String(x.value ?? x.id) === String(id))?.name || '').toLowerCase();
+  const isWalkIn = /walk\s*-?\s*in/.test(srcName(form.source));
   const [showSvVisitedDate, setShowSvVisitedDate] = useState(false);
 
   async function create() {
@@ -1128,7 +1133,10 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     if (!form.project) { Alert.alert('Required', 'Project is required.'); return; }
     if (!form.source)  { Alert.alert('Required', 'Source is required.'); return; }
     if (showStm && form.stm_status === 'sv_done' && (!svOutcome || !svVisitedDate)) {
-      Alert.alert('Required', 'Please pick a visit outcome and visit date.'); return;
+      Alert.alert('Required', isWalkIn
+        ? 'A walk-in is a completed visit — pick how it went (Hot / Warm / Cold / Not Interested) and the visit date.'
+        : 'Please pick a visit outcome and visit date.');
+      return;
     }
     setSaving(true);
     try {
@@ -1221,14 +1229,14 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                       <TouchableOpacity onPress={() => setShowLeadDatePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
                     </View>
                     <DateTimePicker value={parseLeadDate(form.lead_date)} mode="date" display="spinner" textColor={TEXT} maximumDate={new Date()}
-                      onChange={(_, d) => d && set('lead_date', toLocalDate(d))} />
+                      onChange={(_, d) => { if (!d) return; set('lead_date', toLocalDate(d)); if (isWalkIn) setSvVisitedDate(d); }} />
                   </View>
                 </TouchableOpacity>
               </Modal>
             )}
             {Platform.OS === 'android' && showLeadDatePicker && (
               <DateTimePicker value={parseLeadDate(form.lead_date)} mode="date" display="default" maximumDate={new Date()}
-                onChange={(e, d) => { setShowLeadDatePicker(false); if (e.type === 'dismissed') return; if (d) set('lead_date', toLocalDate(d)); }} />
+                onChange={(e, d) => { setShowLeadDatePicker(false); if (e.type === 'dismissed') return; if (d) { set('lead_date', toLocalDate(d)); if (isWalkIn) setSvVisitedDate(d); } }} />
             )}
             <Field label="City">
               <DropdownPicker
@@ -1278,7 +1286,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <Field label="Source" required>
               <DropdownPicker
                 value={form.source}
-                onChange={v => set('source', v)}
+                onChange={v => {
+                  const walkIn = /walk\s*-?\s*in/.test(srcName(v));
+                  setForm(f => ({ ...f, source: v, ...(walkIn && showStm ? { stm_status: 'sv_done' } : {}) }));
+                  if (walkIn) setSvVisitedDate(form.lead_date ? parseLeadDate(form.lead_date) : new Date());
+                }}
                 options={sources.map(s => ({ value: s.id, label: s.name }))}
                 placeholder="Select source"
                 triggerStyle={{ marginBottom: 0 }}
