@@ -38,7 +38,9 @@ const MENU = [
   { key: 'SalesFollowUps',    label: 'Follow-Ups',   icon: 'calendar-outline',        color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: false },
   { key: 'SalesSiteVisits',   label: 'Site Visits',  icon: 'location-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, stmOnly: true },
   { key: 'ClosureProjects',   label: 'Booking',      icon: 'document-text-outline',   color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, stmOnly: true },
-  { key: 'SalesMyConversions', label: 'My Conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, tcStmOnly: true },
+  // Not for an STM: their site visits and closures are reached from Site Visits
+  // and Booking -> My Bookings, which the dashboard tiles now link to directly.
+  { key: 'SalesMyConversions', label: 'My Conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, tcStmOnly: true, hideForStm: true },
   { key: 'MyTeam',            label: 'My Team',      icon: 'people-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: false, managerOnly: true, navParams: { module: 'Sales', title: 'My Team' } },
   { key: 'BookingApprovals',  label: 'Approvals',    icon: 'checkmark-done-outline',  color: COLORS.success, bg: COLORS.successBg, adminOnly: false, managerOnly: true },
   { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: true  },
@@ -85,7 +87,7 @@ export default function SalesCRMScreen({ navigation, route }) {
   const isManager = isManagerRole(user);
   // CP Executive works their own leads like an STM (no Meta) → same modules.
   const isCp = _des.includes('cp executive') || _des.includes('channel partner');
-  const baseFilter = m => (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp);
+  const baseFilter = m => (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
   // Tiles that pull hierarchy-scoped data need adminView threaded into their own
   // params so THEY request full company data too (see backend's admin_view=1).
   const withAdminParams = (m) => ({ ...m, navParams: { ...(m.navParams || {}), adminView: true } });
@@ -219,8 +221,8 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
-    { group: 'Site Visits & Closures', label: 'SV Done', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
-    { group: 'Site Visits & Closures', label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
+    { group: 'Site Visits & Closures', label: 'SV Done', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    { group: 'Site Visits & Closures', label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' } },
   ];
 
   const STAT_CARDS = (isStm || isCp) ? STM_CARDS : TELECALLER_CARDS;
