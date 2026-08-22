@@ -295,34 +295,43 @@ export default function SalesReportsScreen({ navigation }) {
   })();
 
   const TELECALLER_CARDS = [
-    { label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads' },
-    { label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
-    { label: 'To Call',      value: _toCall,                      color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads' },
-    { label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
-    { label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
-    { label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
-    { label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesMyConversions' },
-    { label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
-    { label: 'Follow-ups Pending', value: _fuPending,             color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
-    { label: 'Follow-ups Overdue', value: _fuOverdue,             color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
-    { label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
+    { group: 'My Pipeline', label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { group: 'My Pipeline', label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
+    { group: 'My Pipeline', label: 'To Call',      value: _toCall,                      color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads' },
+    { group: 'Calling Activity', label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
+    { group: 'Conversions', label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
+    { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { group: 'Conversions', label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesMyConversions' },
+    { group: 'Follow-ups Due', label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
+    { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,             color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
+    { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,             color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
+    { group: 'Conversions', label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
   const STM_CARDS = [
-    { label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
-    { label: 'To Work',      value: _toCall,                              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads' },
-    { label: 'Hot Leads',    value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
-    { label: 'Warm/SQL',     value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
-    { label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
-    { label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
-    { label: 'SV Done', value: _svDone,             color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
-    { label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
-    { label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
-    { label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
-    { label: 'Follow-ups Pending',  value: _fuPending,    color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
-    { label: 'Follow-ups Overdue',  value: _fuOverdue,    color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
-    { label: 'Avg Closure Time',    value: _avgCloseMo,   color: COLORS.error,  bg: COLORS.errorBg },
+    { group: 'My Pipeline', label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { group: 'My Pipeline', label: 'To Work',      value: _toCall,                              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads' },
+    { group: 'Lead Temperature', label: 'Hot Leads',    value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
+    { group: 'Lead Temperature', label: 'Warm/SQL',     value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
+    { group: 'Lead Temperature', label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
+    { group: 'Site Visits & Closures', label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
+    { group: 'Site Visits & Closures', label: 'SV Done', value: _svDone,             color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
+    { group: 'Site Visits & Closures', label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
+    { group: 'Conversion Rates', label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
+    { group: 'Conversion Rates', label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
+    { group: 'Follow-ups Due', label: 'Follow-ups Pending',  value: _fuPending,    color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
+    { group: 'Follow-ups Due', label: 'Follow-ups Overdue',  value: _fuOverdue,    color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
+    { group: 'Conversion Rates', label: 'Avg Closure Time',    value: _avgCloseMo,   color: COLORS.error,  bg: COLORS.errorBg },
   ];
   const STAT_CARDS = isStmView ? STM_CARDS : TELECALLER_CARDS;
+  // Club the tiles under the question each block answers, so the row a number
+  // sits in already says how to read it. Order is fixed; a group with no cards
+  // for this role simply drops out.
+  const GROUP_ORDER = ['My Pipeline', 'Lead Temperature', 'Calling Activity',
+                       'Follow-ups Due', 'Site Visits & Closures', 'Conversions',
+                       'Conversion Rates'];
+  const STAT_SECTIONS = GROUP_ORDER
+    .map((title) => ({ title, cards: STAT_CARDS.filter((c) => c.group === title) }))
+    .filter((s) => s.cards.length);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -500,22 +509,25 @@ export default function SalesReportsScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
 
-        <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Overview</Text>
-
         {loading ? (
           <ActivityIndicator color={NAVY} style={{ marginVertical: 40 }} />
         ) : (
           <>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-              {STAT_CARDS.map(s => (
-                <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
-                  onPress={() => s.target && navigation.navigate(s.target, s.params)}
-                  style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
-                  <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
-                  <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {STAT_SECTIONS.map(sec => (
+              <View key={sec.title} style={{ marginBottom: 18 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>{sec.title}</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {sec.cards.map(s => (
+                    <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
+                      onPress={() => s.target && navigation.navigate(s.target, s.params)}
+                      style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
+                      <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
+                      <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            ))}
 
             {trend && (() => {
               const from = trend.date_from;
