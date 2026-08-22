@@ -1947,11 +1947,18 @@ export default function SalesLeadsScreen({ navigation, route }) {
                 </View>
               )}
             </View>
+            {/* Hand the lead on without having to open it first. */}
+            {isStm && !!item.stm && (
+              <TouchableOpacity onPress={() => setXferLead(item)} activeOpacity={0.7}
+                style={{ alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.link, backgroundColor: COLORS.white }}>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: BLUE }}>⇄ Transfer</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </TouchableOpacity>
     );
-  }, []);
+  }, [isStm]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -2066,6 +2073,42 @@ export default function SalesLeadsScreen({ navigation, route }) {
         visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} navigation={navigation} />
       <CreateLeadModal projects={projects} sources={sources} telecallers={telecallers} stms={stms} cps={cps}
         visible={createModal} onClose={() => setCreateModal(false)} onCreated={l => setLeads(prev => [l, ...prev])} />
+
+      {/* Transfer sheet, opened straight from a lead card */}
+      <Modal visible={!!xferLead} transparent animationType="fade" onRequestClose={() => setXferLead(null)}>
+        <TouchableOpacity activeOpacity={1} onPress={() => setXferLead(null)}
+          style={{ flex: 1, backgroundColor: 'rgba(12,20,40,0.45)', justifyContent: 'center', padding: 20 }}>
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}
+            style={{ backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: NAVY, padding: 16 }}>
+              <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Transfer to another STM</Text>
+              <Text style={{ color: COLORS.surfaceAlt, fontSize: 12, marginTop: 2 }}>
+                {xferLead?.name}{xferLead?.project_name ? ` \u00b7 ${xferLead.project_name}` : ''}
+              </Text>
+            </View>
+            <View style={{ padding: 16 }}>
+              <Text style={{ fontSize: 11.5, color: MUTED, marginBottom: 10 }}>
+                Needs approval from this project's booking approvers. The lead stays with you until then.
+              </Text>
+              <UserPickerDropdown users={(stms || []).filter(u => String(u.id) !== String(xferLead?.stm))}
+                value={xferTo} onChange={setXferTo} placeholder="Select STM" title="Transfer to" />
+              <TextInput value={xferReason} onChangeText={setXferReason}
+                placeholder="Why is it moving? (optional)" placeholderTextColor={COLORS.textTertiary}
+                multiline style={{ backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, height: 60, textAlignVertical: 'top', marginTop: 10, color: TEXT }} />
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                <TouchableOpacity onPress={() => setXferLead(null)}
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                  <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={submitRowTransfer} disabled={!xferTo || xferBusy}
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 10, backgroundColor: (!xferTo || xferBusy) ? COLORS.border : NAVY, alignItems: 'center' }}>
+                  <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>{xferBusy ? 'Sending…' : 'Request transfer'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
