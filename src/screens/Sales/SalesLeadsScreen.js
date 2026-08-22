@@ -1692,6 +1692,29 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [selectedLead,setSelectedLead]= useState(null);
   const [detailModal, setDetailModal] = useState(false);
   const [createModal, setCreateModal] = useState(false);
+  // Transfer straight from a lead card — the lead being handed on, or null.
+  const [xferLead, setXferLead] = useState(null);
+  const [xferTo, setXferTo] = useState('');
+  const [xferReason, setXferReason] = useState('');
+  const [xferBusy, setXferBusy] = useState(false);
+
+  async function submitRowTransfer() {
+    if (!xferLead || !xferTo) return;
+    setXferBusy(true);
+    try {
+      const r = await apiFetch(SALES_ENDPOINTS.leadTransfers, {
+        method: 'POST',
+        body: JSON.stringify({ lead: xferLead.id, to_stm: xferTo, reason: xferReason.trim() }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) Alert.alert('Could not transfer', d.detail || 'Please try again.');
+      else {
+        setXferLead(null); setXferTo(''); setXferReason('');
+        Alert.alert('Sent for approval', 'The lead stays with you until an approver accepts it.');
+      }
+    } catch (_) { Alert.alert('Could not transfer', 'Please try again.'); }
+    setXferBusy(false);
+  }
 
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const user      = useSelector((s) => s.auth.user);
