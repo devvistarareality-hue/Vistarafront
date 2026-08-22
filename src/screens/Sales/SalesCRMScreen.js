@@ -346,7 +346,7 @@ export default function SalesCRMScreen({ navigation, route }) {
           ) : STAT_SECTIONS.map(sec => (
             <View key={sec.title} style={[CARD, { padding: 14, marginBottom: 12 }]}>
               <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>{sec.title}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
                 {sec.cards.map(s => (
                   <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
                     onPress={() => s.target && navigation.navigate(s.target, s.params)}
