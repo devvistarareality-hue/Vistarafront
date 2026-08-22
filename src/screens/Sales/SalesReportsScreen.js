@@ -286,22 +286,29 @@ export default function SalesReportsScreen({ navigation }) {
     return (d / 30.44).toFixed(1) + ' mo';
   })();
 
+  // A tile's count is computed over the selected date range, so its deep-link into
+  // SalesLeads must carry that same range — otherwise "Warm/SQL: 18" (became warm
+  // today) would open a list scoped to "currently warm, ever" (a much bigger,
+  // unrelated number). Real date strings only — 'today' is a sentinel seedFilters()
+  // special-cases in SalesLeadsScreen, not a value we want to send here.
+  const dateFilter = { date_from: effectiveDates.from || '', date_to: effectiveDates.to || '' };
+
   const TELECALLER_CARDS = [
-    { label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads' },
-    { label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
-    { label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
-    { label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
+    { label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
+    { label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
+    { label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
+    { label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm', ...dateFilter } } },
     { label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesMyConversions' },
-    { label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
+    { label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback', ...dateFilter } } },
     { label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' } },
   ];
   const STM_CARDS = [
-    { label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
-    { label: 'Hot Leads',    value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
-    { label: 'Warm/SQL',     value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
-    { label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
-    { label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
+    { label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
+    { label: 'Hot Leads',    value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot', ...dateFilter } } },
+    { label: 'Warm/SQL',     value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm', ...dateFilter } } },
+    { label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold', ...dateFilter } } },
+    { label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled', ...dateFilter } } },
     { label: 'SV Done', value: _svDone,             color: COLORS.success, bg: COLORS.successBg, target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'closures' } },
     { label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
