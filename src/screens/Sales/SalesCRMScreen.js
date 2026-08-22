@@ -172,7 +172,9 @@ export default function SalesCRMScreen({ navigation, route }) {
   const _fuCalls = stats?.followup_call_count ?? 0;
   const _totCall = stats?.total_called_count  ?? (_called + _fuCalls);
   const _svDone  = stats?.sv_done      ?? 0;
-  const _mqlToSv = _called > 0 ? (_svDone / _called * 100).toFixed(1) + '%' : '—';
+  // MQLs per completed site visit, e.g. "4.0 : 1" = four dispositioned leads for
+  // every visit. Divides by SV, so it needs _svDone (not _called) to be non-zero.
+  const _mqlToSv = _svDone > 0 ? (_called / _svDone).toFixed(1) + ' : 1' : '—';
 
   // Telecallers (and admins/managers) see call-queue metrics; STM/CP see their
   // pipeline (stm_status based) — mirrors the web's per-role dashboards.

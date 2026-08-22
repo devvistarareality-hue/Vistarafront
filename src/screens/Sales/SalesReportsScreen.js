@@ -271,7 +271,9 @@ export default function SalesReportsScreen({ navigation }) {
 
   const _called  = stats?.called_count ?? 0;
   const _svDone  = stats?.sv_done      ?? 0;
-  const _mqlToSv = _called > 0 ? (_svDone / _called * 100).toFixed(1) + '%' : '—';
+  // MQLs per completed site visit, e.g. "4.0 : 1" = four dispositioned leads for
+  // every visit. Divides by SV, so it needs _svDone (not _called) to be non-zero.
+  const _mqlToSv = _svDone > 0 ? (_called / _svDone).toFixed(1) + ' : 1' : '—';
 
   // STM/CP funnel metrics: SQL = leads that reached warm; ratios + avg closure timeline.
   const _sql          = stats?.sql_count ?? stats?.stm_warm_count ?? 0;
