@@ -1132,6 +1132,15 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
     if (!form.project) { Alert.alert('Required', 'Project is required.'); return; }
     if (!form.source)  { Alert.alert('Required', 'Source is required.'); return; }
+    // A rep logging a lead by hand has just spoken to them, so the disposition and
+    // the note are the point of the record. Required for the rep's own section only;
+    // an admin entering someone else's lead has no call to write up.
+    if (_isTelecaller && (!form.telecaller_status || !(form.telecaller_remarks || '').trim())) {
+      Alert.alert('Required', 'Please set TC Status and add TC Remarks before saving.'); return;
+    }
+    if (_isStm && (!form.stm_status || !(form.stm_remarks || '').trim())) {
+      Alert.alert('Required', 'Please set STM Status and add STM Remarks before saving.'); return;
+    }
     if (showStm && form.stm_status === 'sv_done' && (!svOutcome || !svVisitedDate)) {
       Alert.alert('Required', isWalkIn
         ? 'A walk-in is a completed visit — pick how it went (Hot / Warm / Cold / Not Interested) and the visit date.'
@@ -1304,7 +1313,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="— None —" title="Assign Telecaller" />
                   </Field>
                 )}
-                <Field label="TC Status">
+                <Field label="TC Status" required={_isTelecaller}>
                   <DropdownPicker
                     value={form.telecaller_status}
                     onChange={v => set('telecaller_status', v)}
@@ -1313,7 +1322,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     triggerStyle={{ marginBottom: 0 }}
                   />
                 </Field>
-                <TextField label="TC Remarks" value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
+                <TextField label="TC Remarks" required={_isTelecaller} value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)} placeholder={_isTelecaller ? 'What was discussed' : 'Optional'} multiline style={{ height: 60, textAlignVertical: 'top' }} />
               </>
             )}
 
@@ -1329,7 +1338,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     <UserPickerDropdown users={cps} value={form.stm} onChange={v => set('stm', v)} placeholder="— None —" title="Assign CP" />
                   </Field>
                 )}
-                <Field label={_isCp ? 'CP Status' : 'STM Status'}>
+                <Field label={_isCp ? 'CP Status' : 'STM Status'} required={_isStm}>
                   <DropdownPicker
                     value={form.stm_status}
                     onChange={v => set('stm_status', v)}
@@ -1338,7 +1347,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     triggerStyle={{ marginBottom: 0 }}
                   />
                 </Field>
-                <TextField label={_isCp ? 'CP Remarks' : 'STM Remarks'} value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
+                <TextField label={_isCp ? 'CP Remarks' : 'STM Remarks'} required={_isStm} value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder={_isStm ? 'What was discussed' : 'Optional'} multiline style={{ height: 60, textAlignVertical: 'top' }} />
 
                 {/* A lead added directly at sv_done needs its visit outcome recorded too —
                     same panel as the Lead Detail modal's inline "Visit Outcome". */}
