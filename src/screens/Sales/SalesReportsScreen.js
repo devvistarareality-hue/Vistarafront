@@ -15,6 +15,10 @@ const BG   = COLORS.screenBg;
 const TEXT = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
 const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+// Tiles sit inside a section panel, so they lose the white card + shadow the
+// panel already provides and go flat on the subtle surface colour instead.
+const TILE  = { width: '30%', flexGrow: 1, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
+                backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt };
 
 function fillDates(rows, dateFrom, dateTo) {
   const map = {}, amtMap = {};
@@ -514,14 +518,14 @@ export default function SalesReportsScreen({ navigation }) {
         ) : (
           <>
             {STAT_SECTIONS.map(sec => (
-              <View key={sec.title} style={{ marginBottom: 18 }}>
+              <View key={sec.title} style={[CARD, { padding: 14, marginBottom: 12 }]}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>{sec.title}</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {sec.cards.map(s => (
                     <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
                       onPress={() => s.target && navigation.navigate(s.target, s.params)}
-                      style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
-                      <Text style={{ fontSize: 22, fontWeight: '800', color: s.color }}>{s.value}</Text>
+                      style={TILE}>
+                      <Text style={{ fontSize: 20, fontWeight: '800', color: s.color }}>{s.value}</Text>
                       <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
                     </TouchableOpacity>
                   ))}
