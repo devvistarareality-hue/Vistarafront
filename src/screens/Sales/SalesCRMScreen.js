@@ -19,7 +19,10 @@ const MUTED = COLORS.textSecondary;
 const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
-const TILE  = { width: '30%', flexGrow: 1, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
+// maxWidth matters: without it a group whose tile count isn't a multiple of three
+// leaves its last tile alone on a row, and flexGrow stretches that one tile across
+// the full panel. Capped, it keeps the same width as the tiles above it.
+const TILE  = { width: '30%', flexGrow: 1, maxWidth: '33%', paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
                 backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt };
 
 async function authHeaders() {
