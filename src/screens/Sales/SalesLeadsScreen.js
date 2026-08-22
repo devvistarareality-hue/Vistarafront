@@ -225,6 +225,13 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   // Inline visit outcome when STM picks stm_status = sv_done — recorded on the
   // auto-created/completed SiteVisit, same as the dedicated Site Visits "Mark
   // Done" flow. Does not change the lead's own stm_status (stays "sv done").
+  // Handing the lead to another STM: a request only. The lead does not move until an
+  // approver signs it off, so nothing on this screen changes when it is sent.
+  const [xferOpen, setXferOpen] = useState(false);
+  const [xferTo, setXferTo] = useState('');
+  const [xferReason, setXferReason] = useState('');
+  const [xferBusy, setXferBusy] = useState(false);
+  const [xferPending, setXferPending] = useState(null);
   const [svOutcome, setSvOutcome] = useState('');
   const [svVisitedDate, setSvVisitedDate] = useState(new Date());
   const [showSvVisitedDate, setShowSvVisitedDate] = useState(false);
@@ -305,6 +312,24 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   }, [lead?.id, visible]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  async function requestTransfer() {
+    if (!xferTo) return;
+    setXferBusy(true);
+    try {
+      const r = await apiFetch(SALES_ENDPOINTS.leadTransfers, {
+        method: 'POST',
+        body: JSON.stringify({ lead: lead.id, to_stm: xferTo, reason: xferReason.trim() }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) Alert.alert('Could not transfer', d.detail || 'Please try again.');
+      else {
+        setXferPending(d); setXferOpen(false);
+        Alert.alert('Sent for approval', 'The lead stays with you until an approver accepts it.');
+      }
+    } catch (_) { Alert.alert('Could not transfer', 'Please try again.'); }
+    setXferBusy(false);
+  }
 
   async function save() {
     // Telecaller / STM portals must record their status + remarks before saving.
@@ -873,6 +898,43 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <View style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, marginTop: 8, paddingTop: 16, marginBottom: 12 }}>
                 <Text style={{ fontSize: 12, fontWeight: '800', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.8 }}>Follow-ups</Text>
               </View>
+              {/* Transfer to another STM — request only; an approver decides. */}
+              {_isStm && !!lead?.stm && (
+                <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 12, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 20 }}>
+                  <Text style={[lblS, { marginBottom: 2 }]}>Transfer to another STM</Text>
+                  <Text style={{ fontSize: 11.5, color: MUTED, marginBottom: 10 }}>
+                    {xferPending
+                      ? `Awaiting approval — requested for ${xferPending.to_stm_name || 'another STM'}.`
+                      : "Needs approval from this project's booking approvers before the lead moves."}
+                  </Text>
+                  {!xferPending && !xferOpen && (
+                    <TouchableOpacity onPress={() => setXferOpen(true)}
+                      style={{ paddingVertical: 10, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.link, alignItems: 'center', backgroundColor: COLORS.white }}>
+                      <Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>Transfer</Text>
+                    </TouchableOpacity>
+                  )}
+                  {!xferPending && xferOpen && (
+                    <>
+                      <UserPickerDropdown users={(stms || []).filter(u => String(u.id) !== String(lead.stm))}
+                        value={xferTo} onChange={setXferTo} placeholder="Select STM" title="Transfer to" />
+                      <TextInput value={xferReason} onChangeText={setXferReason}
+                        placeholder="Why is it moving? (optional)" placeholderTextColor={COLORS.textTertiary}
+                        multiline style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, height: 60, textAlignVertical: 'top', marginTop: 10, color: TEXT }} />
+                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                        <TouchableOpacity onPress={() => setXferOpen(false)}
+                          style={{ flex: 1, paddingVertical: 10, borderRadius: 9, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                          <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={requestTransfer} disabled={!xferTo || xferBusy}
+                          style={{ flex: 1, paddingVertical: 10, borderRadius: 9, backgroundColor: (!xferTo || xferBusy) ? COLORS.border : NAVY, alignItems: 'center' }}>
+                          <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>{xferBusy ? 'Sending…' : 'Request'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </View>
+              )}
+
               {/* Add form */}
               <FollowUpScheduler fuForm={fuForm} setFuForm={setFuForm} canAssign={canAssign}
                 hint="Pick a date &amp; time and it's added when you tap Save." />

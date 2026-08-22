@@ -68,6 +68,27 @@ export default function BookingApprovalsScreen({ navigation, route }) {
     apiFetch(SALES_ENDPOINTS.projects + cq('?')).then(r => r.json()).then((d) => setProjects(Array.isArray(d) ? d : [])).catch(() => {});
   }, [isAdmin, companyId]);
 
+  // Pending lead transfers for the projects this user approves — same authority as a
+  // booking on that project, so they belong on the same screen.
+  const [xfers, setXfers] = useState([]);
+  const [xferBusy, setXferBusy] = useState(null);
+  const loadTransfers = useCallback(() => {
+    apiFetch(`${SALES_ENDPOINTS.leadTransfers}?status=pending${companyId ? `&company_id=${companyId}` : ''}`)
+      .then(r => (r.ok ? r.json() : []))
+      .then(d => setXfers(Array.isArray(d) ? d : []))
+      .catch(() => setXfers([]));
+  }, [companyId]);
+  useFocusEffect(useCallback(() => { loadTransfers(); }, [loadTransfers]));
+
+  async function actOnTransfer(id, action) {
+    setXferBusy(id);
+    await apiFetch(SALES_ENDPOINTS.leadTransferAction(id), {
+      method: 'POST', body: JSON.stringify({ action }),
+    }).catch(() => {});
+    setXferBusy(null);
+    loadTransfers();
+  }
+
   async function act(id, action) { setBusy(id); await apiFetch(`${SALES_ENDPOINTS.bookings}${id}/action/${cq('?')}`, { method: 'POST', body: JSON.stringify({ action }) }).catch(() => {}); setBusy(null); load(); }
 
   // Discarding a draft releases whatever plot(s) it still holds and deletes the row —
@@ -170,6 +191,37 @@ export default function BookingApprovalsScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
+        {xfers.length > 0 && (
+          <View style={[CARD, { marginBottom: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: COLORS.warning }]}>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.warning }}>
+              ⇄ Lead Transfers awaiting your approval · {xfers.length}
+            </Text>
+            <Text style={{ fontSize: 11.5, color: MUTED, marginTop: 2, marginBottom: 10 }}>
+              The lead stays with the current STM until you approve.
+            </Text>
+            {xfers.map((x) => (
+              <View key={x.id} style={{ borderWidth: 1, borderColor: COLORS.surfaceAlt, borderRadius: 10, padding: 10, marginBottom: 8, backgroundColor: COLORS.warningBg }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>
+                  {x.lead_name || 'Lead'}{x.project_name ? ` · ${x.project_name}` : ''}
+                </Text>
+                <Text style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
+                  {x.from_stm_name || 'Unassigned'} → {x.to_stm_name}{x.reason ? ` · ${x.reason}` : ''}
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                  <TouchableOpacity onPress={() => actOnTransfer(x.id, 'reject')} disabled={xferBusy === x.id}
+                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.errorBg, alignItems: 'center', backgroundColor: COLORS.white }}>
+                    <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 12.5 }}>Reject</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => actOnTransfer(x.id, 'approve')} disabled={xferBusy === x.id}
+                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', backgroundColor: COLORS.success }}>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.5 }}>{xferBusy === x.id ? '…' : 'Approve'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         {isAdmin && (
           <View style={[CARD, { marginBottom: 12 }]}>
             <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
