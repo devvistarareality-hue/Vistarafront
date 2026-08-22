@@ -19,11 +19,14 @@ const MUTED = COLORS.textSecondary;
 const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
-// maxWidth matters: without it a group whose tile count isn't a multiple of three
-// leaves its last tile alone on a row, and flexGrow stretches that one tile across
-// the full panel. Capped, it keeps the same width as the tiles above it.
-const TILE  = { width: '30%', flexGrow: 1, maxWidth: '33%', paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
+const TILE  = { flexGrow: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
                 backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt };
+
+// How wide each tile is, given how many the group holds. Two and three share the
+// row; four splits 2+2 rather than 3+1, so no tile is ever left alone on a row
+// looking twice the size of its neighbours. Four across would fit, but on a phone
+// it squeezes labels like "Follow-ups Overdue" into three lines.
+const tileBasis = (n) => (n === 1 ? '100%' : n === 2 || n === 4 ? '48%' : '31%');
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -347,7 +350,7 @@ export default function SalesCRMScreen({ navigation, route }) {
                 {sec.cards.map(s => (
                   <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
                     onPress={() => s.target && navigation.navigate(s.target, s.params)}
-                    style={TILE}>
+                    style={[TILE, { flexBasis: tileBasis(sec.cards.length) }]}>
                     <Text style={{ fontSize: 20, fontWeight: '800', color: s.color }}>{s.value}</Text>
                     <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
                   </TouchableOpacity>
