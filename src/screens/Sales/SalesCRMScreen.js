@@ -214,7 +214,7 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'Lead Temperature', label: 'Hot Leads',     value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
     { group: 'Lead Temperature', label: 'Warm Leads',    value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
     { group: 'Lead Temperature', label: 'Cold Leads',    value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
-    { group: 'Site Visits & Closures', label: 'SV Scheduled',  value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'sv_scheduled' } } },
+    { group: 'Site Visits & Closures', label: 'SV Scheduled',  value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'scheduled' } },
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesFollowUps' },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
