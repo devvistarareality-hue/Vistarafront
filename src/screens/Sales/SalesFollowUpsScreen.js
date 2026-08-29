@@ -47,7 +47,9 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [items,      setItems]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter,     setFilter]     = useState('today');
+  // Deep link from the dashboard's Pending / Overdue tiles.
+  const [filter,     setFilter]     = useState(
+    TABS.some((t) => t.key === route?.params?.initialFilter) ? route.params.initialFilter : 'today');
   const [dateFrom,   setDateFrom]   = useState(null);   // Date | null
   const [dateTo,     setDateTo]     = useState(null);   // Date | null
   const [showFrom,   setShowFrom]   = useState(false);
