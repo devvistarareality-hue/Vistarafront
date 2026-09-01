@@ -1121,14 +1121,31 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   // auto-created completed SiteVisit right after the lead itself.
   const [svOutcome, setSvOutcome] = useState('');
   const [svVisitedDate, setSvVisitedDate] = useState(new Date());
+  // A walk-in IS the site visit — the client turned up. Picking that source puts
+  // the lead straight at sv_done and dates the visit by when they walked in (the
+  // Lead Received Date), not by when the STM got round to typing it in.
+  const srcName = (id) => (sources.find(x => String(x.value ?? x.id) === String(id))?.name || '').toLowerCase();
+  const isWalkIn = /walk\s*-?\s*in/.test(srcName(form.source));
   const [showSvVisitedDate, setShowSvVisitedDate] = useState(false);
 
   async function create() {
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
     if (!form.project) { Alert.alert('Required', 'Project is required.'); return; }
     if (!form.source)  { Alert.alert('Required', 'Source is required.'); return; }
+    // A rep logging a lead by hand has just spoken to them, so the disposition and
+    // the note are the point of the record. Required for the rep's own section only;
+    // an admin entering someone else's lead has no call to write up.
+    if (_isTelecaller && (!form.telecaller_status || !(form.telecaller_remarks || '').trim())) {
+      Alert.alert('Required', 'Please set TC Status and add TC Remarks before saving.'); return;
+    }
+    if (_isStm && (!form.stm_status || !(form.stm_remarks || '').trim())) {
+      Alert.alert('Required', 'Please set STM Status and add STM Remarks before saving.'); return;
+    }
     if (showStm && form.stm_status === 'sv_done' && (!svOutcome || !svVisitedDate)) {
-      Alert.alert('Required', 'Please pick a visit outcome and visit date.'); return;
+      Alert.alert('Required', isWalkIn
+        ? 'A walk-in is a completed visit — pick how it went (Hot / Warm / Cold / Not Interested) and the visit date.'
+        : 'Please pick a visit outcome and visit date.');
+      return;
     }
     setSaving(true);
     try {
@@ -1221,14 +1238,14 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                       <TouchableOpacity onPress={() => setShowLeadDatePicker(false)}><Text style={{ color: BLUE, fontWeight: '700' }}>Done</Text></TouchableOpacity>
                     </View>
                     <DateTimePicker value={parseLeadDate(form.lead_date)} mode="date" display="spinner" textColor={TEXT} maximumDate={new Date()}
-                      onChange={(_, d) => d && set('lead_date', toLocalDate(d))} />
+                      onChange={(_, d) => { if (!d) return; set('lead_date', toLocalDate(d)); if (isWalkIn) setSvVisitedDate(d); }} />
                   </View>
                 </TouchableOpacity>
               </Modal>
             )}
             {Platform.OS === 'android' && showLeadDatePicker && (
               <DateTimePicker value={parseLeadDate(form.lead_date)} mode="date" display="default" maximumDate={new Date()}
-                onChange={(e, d) => { setShowLeadDatePicker(false); if (e.type === 'dismissed') return; if (d) set('lead_date', toLocalDate(d)); }} />
+                onChange={(e, d) => { setShowLeadDatePicker(false); if (e.type === 'dismissed') return; if (d) { set('lead_date', toLocalDate(d)); if (isWalkIn) setSvVisitedDate(d); } }} />
             )}
             <Field label="City">
               <DropdownPicker
@@ -1278,7 +1295,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <Field label="Source" required>
               <DropdownPicker
                 value={form.source}
-                onChange={v => set('source', v)}
+                onChange={v => {
+                  const walkIn = /walk\s*-?\s*in/.test(srcName(v));
+                  setForm(f => ({ ...f, source: v, ...(walkIn && showStm ? { stm_status: 'sv_done' } : {}) }));
+                  if (walkIn) setSvVisitedDate(form.lead_date ? parseLeadDate(form.lead_date) : new Date());
+                }}
                 options={sources.map(s => ({ value: s.id, label: s.name }))}
                 placeholder="Select source"
                 triggerStyle={{ marginBottom: 0 }}
@@ -1292,7 +1313,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     <UserPickerDropdown users={telecallers} value={form.telecaller} onChange={v => set('telecaller', v)} placeholder="— None —" title="Assign Telecaller" />
                   </Field>
                 )}
-                <Field label="TC Status">
+                <Field label="TC Status" required={_isTelecaller}>
                   <DropdownPicker
                     value={form.telecaller_status}
                     onChange={v => set('telecaller_status', v)}
@@ -1301,7 +1322,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     triggerStyle={{ marginBottom: 0 }}
                   />
                 </Field>
-                <TextField label="TC Remarks" value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
+                <TextField label="TC Remarks" required={_isTelecaller} value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)} placeholder={_isTelecaller ? 'What was discussed' : 'Optional'} multiline style={{ height: 60, textAlignVertical: 'top' }} />
               </>
             )}
 
@@ -1317,7 +1338,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     <UserPickerDropdown users={cps} value={form.stm} onChange={v => set('stm', v)} placeholder="— None —" title="Assign CP" />
                   </Field>
                 )}
-                <Field label={_isCp ? 'CP Status' : 'STM Status'}>
+                <Field label={_isCp ? 'CP Status' : 'STM Status'} required={_isStm}>
                   <DropdownPicker
                     value={form.stm_status}
                     onChange={v => set('stm_status', v)}
@@ -1326,7 +1347,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     triggerStyle={{ marginBottom: 0 }}
                   />
                 </Field>
-                <TextField label={_isCp ? 'CP Remarks' : 'STM Remarks'} value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder="Optional" multiline style={{ height: 60, textAlignVertical: 'top' }} />
+                <TextField label={_isCp ? 'CP Remarks' : 'STM Remarks'} required={_isStm} value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder={_isStm ? 'What was discussed' : 'Optional'} multiline style={{ height: 60, textAlignVertical: 'top' }} />
 
                 {/* A lead added directly at sv_done needs its visit outcome recorded too —
                     same panel as the Lead Detail modal's inline "Visit Outcome". */}
@@ -1609,6 +1630,41 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [selectedLead,setSelectedLead]= useState(null);
   const [detailModal, setDetailModal] = useState(false);
   const [createModal, setCreateModal] = useState(false);
+  // Transfer straight from a lead card — the lead being handed on, or null.
+  const [xferLead, setXferLead] = useState(null);
+  const [xferTo, setXferTo] = useState('');
+  const [xferReason, setXferReason] = useState('');
+  const [xferBusy, setXferBusy] = useState(false);
+  // Leads that already have a request awaiting approval, so the card shows that
+  // instead of offering to raise a second one (the server would reject it anyway).
+  const [pendingXfers, setPendingXfers] = useState({});
+  const loadPendingXfers = useCallback(() => {
+    if (!isStm) return;
+    apiFetch(`${SALES_ENDPOINTS.leadTransfers}?status=pending`)
+      .then(r => (r.ok ? r.json() : []))
+      .then(rows => setPendingXfers(Object.fromEntries((Array.isArray(rows) ? rows : []).map(x => [x.lead, x]))))
+      .catch(() => {});
+  }, [isStm]);
+  useEffect(() => { loadPendingXfers(); }, [loadPendingXfers]);
+
+  async function submitRowTransfer() {
+    if (!xferLead || !xferTo) return;
+    setXferBusy(true);
+    try {
+      const r = await apiFetch(SALES_ENDPOINTS.leadTransfers, {
+        method: 'POST',
+        body: JSON.stringify({ lead: xferLead.id, to_stm: xferTo, reason: xferReason.trim() }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) Alert.alert('Could not transfer', d.detail || 'Please try again.');
+      else {
+        setXferLead(null); setXferTo(''); setXferReason('');
+        loadPendingXfers();
+        Alert.alert('Sent for approval', 'The lead stays with you until an approver accepts it.');
+      }
+    } catch (_) { Alert.alert('Could not transfer', 'Please try again.'); }
+    setXferBusy(false);
+  }
 
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const user      = useSelector((s) => s.auth.user);
@@ -1741,7 +1797,9 @@ export default function SalesLeadsScreen({ navigation, route }) {
         // makes a malformed double-`?` URL that drops crm_role AND company_id, so
         // the backend returns every company's users mixed across both roles).
         (isCaller || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.telecallers + (companyId ? `&company_id=${companyId}` : '')),
-        (isCaller || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms        + (companyId ? `&company_id=${companyId}` : '')),
+        // An STM is the exception to isCaller here: they cannot assign, but they do
+        // need the STM list to pick who a lead is being transferred to.
+        ((isCaller && !isStm) || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.stms + (companyId ? `&company_id=${companyId}` : '')),
         // CP managers (cluster heads) assign leads to their CP executives.
         (!isCpHead || !reset) ? Promise.resolve(null) : apiFetch(SALES_ENDPOINTS.cps        + (companyId ? `&company_id=${companyId}` : '')),
       ]);
@@ -1862,11 +1920,22 @@ export default function SalesLeadsScreen({ navigation, route }) {
                 </View>
               )}
             </View>
+            {/* Hand the lead on without having to open it first. */}
+            {isStm && !!item.stm && (pendingXfers[item.id] ? (
+              <View style={{ alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.warningBg, backgroundColor: COLORS.warningBg }}>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: COLORS.warning }}>⏳ Transfer pending</Text>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setXferLead(item)} activeOpacity={0.7}
+                style={{ alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.link, backgroundColor: COLORS.white }}>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: BLUE }}>⇄ Transfer</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </TouchableOpacity>
     );
-  }, []);
+  }, [isStm, pendingXfers]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
@@ -1981,6 +2050,42 @@ export default function SalesLeadsScreen({ navigation, route }) {
         visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} navigation={navigation} />
       <CreateLeadModal projects={projects} sources={sources} telecallers={telecallers} stms={stms} cps={cps}
         visible={createModal} onClose={() => setCreateModal(false)} onCreated={l => setLeads(prev => [l, ...prev])} />
+
+      {/* Transfer sheet, opened straight from a lead card */}
+      <Modal visible={!!xferLead} transparent animationType="fade" onRequestClose={() => setXferLead(null)}>
+        <TouchableOpacity activeOpacity={1} onPress={() => setXferLead(null)}
+          style={{ flex: 1, backgroundColor: 'rgba(12,20,40,0.45)', justifyContent: 'center', padding: 20 }}>
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}
+            style={{ backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: NAVY, padding: 16 }}>
+              <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Transfer to another STM</Text>
+              <Text style={{ color: COLORS.surfaceAlt, fontSize: 12, marginTop: 2 }}>
+                {xferLead?.name}{xferLead?.project_name ? ` \u00b7 ${xferLead.project_name}` : ''}
+              </Text>
+            </View>
+            <View style={{ padding: 16 }}>
+              <Text style={{ fontSize: 11.5, color: MUTED, marginBottom: 10 }}>
+                Needs approval from this project's booking approvers. The lead stays with you until then.
+              </Text>
+              <UserPickerDropdown users={(stms || []).filter(u => String(u.id) !== String(xferLead?.stm))}
+                value={xferTo} onChange={setXferTo} placeholder="Select STM" title="Transfer to" />
+              <TextInput value={xferReason} onChangeText={setXferReason}
+                placeholder="Why is it moving? (optional)" placeholderTextColor={COLORS.textTertiary}
+                multiline style={{ backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, height: 60, textAlignVertical: 'top', marginTop: 10, color: TEXT }} />
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                <TouchableOpacity onPress={() => setXferLead(null)}
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                  <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={submitRowTransfer} disabled={!xferTo || xferBusy}
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 10, backgroundColor: (!xferTo || xferBusy) ? COLORS.border : NAVY, alignItems: 'center' }}>
+                  <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>{xferBusy ? 'Sending…' : 'Request transfer'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }

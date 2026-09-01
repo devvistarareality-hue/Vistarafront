@@ -70,6 +70,8 @@ export const SALES_ENDPOINTS = {
   get import_()    { return `${BASE_URL}/api/sales/leads/import/`; },
   get reports()    { return `${BASE_URL}/api/sales/reports/`; },
   get myTeam()     { return `${BASE_URL}/api/sales/my-team/`; },
+  get leadTransfers() { return `${BASE_URL}/api/sales/lead-transfers/`; },
+  leadTransferAction: (id) => `${BASE_URL}/api/sales/lead-transfers/${id}/action/`,
   get bookings()   { return `${BASE_URL}/api/sales/bookings/`; },
   get bookingsAll(){ return `${BASE_URL}/api/sales/bookings/all/`; },
   bookingLoiUrl: (id) => `${BASE_URL}/api/sales/bookings/${id}/loi-url/`,
