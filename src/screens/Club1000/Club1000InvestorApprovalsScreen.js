@@ -24,6 +24,7 @@ const APPROVAL_BADGE_COLOR = {
 };
 
 export default function Club1000InvestorApprovalsScreen({ navigation }) {
+  const user = useSelector((s) => s.auth.user);
   const [tab, setTab] = useState('pending');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +84,20 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
       return { ...s, investor_approvers: next };
     }));
     await apiFetch(CLUB1000_ENDPOINTS.scheme(schemeId), { method: 'PATCH', body: JSON.stringify({ investor_approvers: next }) }).catch(() => {});
+  }
+
+  // Being on this screen at all means manager-level Club 1000 access, but
+  // approval authority itself is scoped to the scheme's configured Investor
+  // Approvers (or a real admin) — mirrors backend can_approve_investor and
+  // the same fix on the web Approvals page. Without this, every manager saw
+  // live Approve/Reject buttons for every scheme regardless of who was
+  // actually picked above, which only 403'd on tap instead of not being
+  // offered at all.
+  const isRealAdmin = user?.is_staff || user?.role === 'Admin';
+  function canApprove(inv) {
+    if (isRealAdmin) return true;
+    const scheme = schemes.find((s) => s.id === inv.scheme);
+    return !!scheme && (scheme.investor_approvers || []).includes(user?.id);
   }
 
   async function viewLoi(id, pending) {
@@ -194,10 +209,12 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   ? (!!inv.pending_loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, { backgroundColor: isRenewal ? '#FEF3C7' : '#F3E8FF' }]}><Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}>📄 {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)
                   : (!!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: COLORS.link, fontWeight: '700', fontSize: 13 }}>📄 Signed LOI</Text></TouchableOpacity>)}
                 {inv.approval_status === 'pending' && (
-                  <>
-                    <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}>✓ Approve</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}>✕ Reject</Text></TouchableOpacity>
-                  </>
+                  canApprove(inv) ? (
+                    <>
+                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}>✓ Approve</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}>✕ Reject</Text></TouchableOpacity>
+                    </>
+                  ) : <Text style={{ fontSize: 11, color: MUTED, alignSelf: 'center' }}>Not an approver</Text>
                 )}
               </View>
             </View>
