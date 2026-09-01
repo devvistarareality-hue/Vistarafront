@@ -153,7 +153,7 @@ export default function SalesDistributionScreen({ navigation }) {
   const [savedWeights,   setSavedWeights]   = useState({});
   const [savingWeights,  setSavingWeights]  = useState(false);
   const [distLog,        setDistLog]        = useState([]);
-  const [stats,          setStats]          = useState(null);
+  const [pending,        setPending]        = useState(null);
   const [loading,        setLoading]        = useState(true);
   const [distributing,   setDistributing]   = useState('');
   const [refreshing,     setRefreshing]     = useState(false);
@@ -163,14 +163,15 @@ export default function SalesDistributionScreen({ navigation }) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
       const cq = companyId ? `?company_id=${companyId}` : '';
-      const [sRes, aRes, wRes, lRes, stRes] = await Promise.all([
+      // No /stats call: the pool counts it was meant to supply now come from
+      // dist-settings (`pending`), which mirrors _distribute()'s own querysets.
+      const [sRes, aRes, wRes, lRes] = await Promise.all([
         apiFetch(`${SALES_ENDPOINTS.distSettings}${cq}`),
         apiFetch(`${SALES_ENDPOINTS.availability}${cq}`),
         apiFetch(`${SALES_ENDPOINTS.distWeight}${cq}`),
         apiFetch(`${SALES_ENDPOINTS.distLog}${cq}`),
-        apiFetch(`${SALES_ENDPOINTS.stats}${cq}`),
       ]);
-      if (sRes.ok)  { const d = await sRes.json(); if (!d.detail) setSettings(d); }
+      if (sRes.ok)  { const d = await sRes.json(); if (!d.detail) { setSettings(d); setPending(d.pending || null); } }
       if (aRes.ok)  { const d = await aRes.json(); setAvailability(Array.isArray(d) ? d : (d.results || [])); }
       if (wRes.ok)  {
         const d = await wRes.json();
@@ -182,7 +183,6 @@ export default function SalesDistributionScreen({ navigation }) {
         setSavedWeights(wMap);
       }
       if (lRes.ok)  { const d = await lRes.json(); setDistLog(Array.isArray(d) ? d : (d.results || [])); }
-      if (stRes.ok) setStats(await stRes.json());
     } catch (_) {}
     setLoading(false);
     setRefreshing(false);
@@ -542,7 +542,7 @@ export default function SalesDistributionScreen({ navigation }) {
           {[
             {
               type: 'telecaller', label: 'Telecaller Distribution',
-              unassigned: stats?.unassigned ?? 0, avail: tcAvail.length,
+              unassigned: pending?.telecaller ?? 0, avail: tcAvail.length,
               windowOpen: tcWindowOpen, afterSignout: tcAfterSignout,
               signin: settings.tc_signin_time, signout: settings.tc_signout_time,
               borderOpen: COLORS.divider, bgOpen: COLORS.screenBg,
@@ -553,7 +553,7 @@ export default function SalesDistributionScreen({ navigation }) {
             },
             {
               type: 'stm', label: 'STM Distribution',
-              unassigned: stats?.sv_done ?? 0, avail: stmAvail.length,
+              unassigned: pending?.stm ?? 0, avail: stmAvail.length,
               windowOpen: stmWindowOpen, afterSignout: stmAfterSignout,
               signin: settings.stm_signin_time, signout: settings.stm_signout_time,
               borderOpen: COLORS.powderBlue, bgOpen: COLORS.screenBg,
