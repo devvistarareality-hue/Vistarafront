@@ -584,6 +584,8 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
   useEffect(() => {
     if (visible && investor) {
       setForm({
+        name: investor.name || '',
+        phone: investor.phone || '',
         amount_invested: String(investor.amount_invested || ''),
         interest_payout: investor.interest_payout || 'maturity',
         total_return_pct: String(investor.total_return_pct ?? ''),
@@ -700,7 +702,7 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Revise LOI · R{nextRevisionNo}</Text>
-          <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{investor.name} · {investor.phone} · {scheme?.name}</Text>
+          <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{form.name || investor.name} · {form.phone || investor.phone} · {scheme?.name}</Text>
         </View>
         <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
@@ -708,8 +710,11 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       </View>
       <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <Text style={{ fontSize: 11, color: MUTED, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 10, marginBottom: 16 }}>
-          Scheme, investor identity and investment date stay fixed across a revision — only the terms below can change. Matures {maturityDate ? formatDMY(toISODate(maturityDate)) : '—'}.
+          Scheme and investment date stay fixed across a revision — name, mobile number and the terms below can change. Matures {maturityDate ? formatDMY(toISODate(maturityDate)) : '—'}.
         </Text>
+
+        <TextField label="Investor Name" required value={form.name} onChangeText={(v) => set('name', v)} />
+        <TextField label="Mobile Number" required value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" />
 
         <TextField label="Amount Invested (₹)" required value={form.amount_invested} onChangeText={(v) => set('amount_invested', v)} keyboardType="number-pad" />
 
