@@ -25,6 +25,9 @@ const STATUS = {
   available: { label: 'Available', dot: COLORS.success, bg: COLORS.successBg },
   hold:      { label: 'On Hold',   dot: COLORS.warning, bg: COLORS.warningBg },
   sold:      { label: 'Sold',      dot: COLORS.error,   bg: COLORS.errorBg },
+  // A previously-sold unit put back on the market — bookable exactly like
+  // Available, just purple instead of green so it reads as "resold", not new.
+  resale:    { label: 'Resale',    dot: COLORS.purple,  bg: COLORS.purpleBg },
   // A unit with a saved (unsubmitted) draft — same underlying plot.status='hold' as a
   // bare in-progress selection, but shown grey and distinct so the team can tell "someone
   // is mid-paperwork on this" from "someone just tapped it a second ago".
@@ -271,7 +274,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
       releasePlots([plot.id]);
       return;
     }
-    if (plot.status !== 'available') return; // only Available selectable
+    if (plot.status !== 'available' && plot.status !== 'resale') return; // Available or Resale selectable
     setBusyIds((s) => new Set(s).add(plot.id));
     try {
       const res = await apiFetch(SALES_ENDPOINTS.plotsHold, { method: 'POST', body: JSON.stringify({ plot_ids: [plot.id] }) });
@@ -476,7 +479,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const isSel = selectedSet.has(plot.id);
                   // Any drafted unit is tappable — it opens the draft panel for everyone,
                   // just with different actions inside depending on who's looking.
-                  const clickable = plot.status === 'available' || isSel || !!plot.drafted_booking_id;
+                  const clickable = plot.status === 'available' || plot.status === 'resale' || isSel || !!plot.drafted_booking_id;
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
                       style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
