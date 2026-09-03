@@ -25,7 +25,7 @@ const STATUS_CFG = {
   // Covers both a soft pick (auto-expires in 10 min) and a hard hold backed by
   // a pending-approval booking — "Hold" read as one deliberate state and
   // confused which of the two it was. "In Progress" reads correctly for both.
-  hold:      { label: 'In Progress', color: COLORS.warning, bg: COLORS.warningBg, border: COLORS.warning, zone: COLORS.warningAlt },
+  hold:      { label: 'In Progress', color: COLORS.inProgress, bg: COLORS.inProgressBg, border: COLORS.inProgress, zone: COLORS.inProgressAlt },
   sold:      { label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg, border: COLORS.error, zone: COLORS.error },
   // A previously-sold unit put back on the market — bookable exactly like
   // Available, just purple instead of green so it reads as "resold", not new.
@@ -1146,7 +1146,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
               {[
                 { label: 'Total',     val: plots.length,   color: TEXT },
                 { label: 'Available', val: counts.available, color: COLORS.success },
-                { label: 'In Progress', val: counts.hold,    color: COLORS.warning },
+                { label: 'In Progress', val: counts.hold,    color: COLORS.inProgress },
                 { label: 'Sold',      val: counts.sold,      color: COLORS.error },
               ].map(s => (
                 <View key={s.label} style={[CARD, { flex: 1, padding: 10, alignItems: 'center' }]}>
@@ -1205,7 +1205,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
                 {[
                   { key: 'all',       label: 'All',       color: TEXT,      bg: COLORS.screenBg },
                   { key: 'available', label: 'Available', color: COLORS.success, bg: COLORS.successBg },
-                  { key: 'hold',      label: 'In Progress', color: COLORS.warning, bg: COLORS.warningBg },
+                  { key: 'hold',      label: 'In Progress', color: COLORS.inProgress, bg: COLORS.inProgressBg },
                   { key: 'sold',      label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg },
                 ].map(({ key, label, color, bg }) => (
                   <TouchableOpacity key={key} onPress={() => setFilter(key)}

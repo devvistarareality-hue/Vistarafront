@@ -59,7 +59,7 @@ function PlotStats({ counts }) {
         {[
           { label: 'Total',     val: total,     color: TEXT },
           { label: 'Available', val: available,  color: COLORS.success },
-          { label: 'In Progress', val: hold,     color: COLORS.warning },
+          { label: 'In Progress', val: hold,     color: COLORS.inProgress },
           { label: 'Sold',      val: sold,       color: COLORS.error },
         ].map(s => (
           <View key={s.label} style={{ alignItems: 'center' }}>

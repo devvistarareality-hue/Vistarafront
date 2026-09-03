@@ -26,7 +26,7 @@ const STATUS = {
   // Covers both a soft pick (auto-expires in 10 min) and a hard hold backed by
   // a pending-approval booking — "Hold" read as one deliberate state and
   // confused which of the two it was. "In Progress" reads correctly for both.
-  hold:      { label: 'In Progress', dot: COLORS.warning, bg: COLORS.warningBg },
+  hold:      { label: 'In Progress', dot: COLORS.inProgress, bg: COLORS.inProgressBg },
   sold:      { label: 'Sold',      dot: COLORS.error,   bg: COLORS.errorBg },
   // A previously-sold unit put back on the market — bookable exactly like
   // Available, just purple instead of green so it reads as "resold", not new.
