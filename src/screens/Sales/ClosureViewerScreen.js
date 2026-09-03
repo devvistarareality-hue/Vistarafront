@@ -23,7 +23,10 @@ const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
 
 const STATUS = {
   available: { label: 'Available', dot: COLORS.success, bg: COLORS.successBg },
-  hold:      { label: 'On Hold',   dot: COLORS.warning, bg: COLORS.warningBg },
+  // Covers both a soft pick (auto-expires in 10 min) and a hard hold backed by
+  // a pending-approval booking — "Hold" read as one deliberate state and
+  // confused which of the two it was. "In Progress" reads correctly for both.
+  hold:      { label: 'In Progress', dot: COLORS.warning, bg: COLORS.warningBg },
   sold:      { label: 'Sold',      dot: COLORS.error,   bg: COLORS.errorBg },
   // A previously-sold unit put back on the market — bookable exactly like
   // Available, just purple instead of green so it reads as "resold", not new.
@@ -364,7 +367,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
         )}
         {/* Status filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
-          {[['all', 'All'], ['available', 'Available'], ['sold', 'Sold'], ['hold', 'On Hold']].map(([key, label]) => {
+          {[['all', 'All'], ['available', 'Available'], ['sold', 'Sold'], ['hold', 'In Progress']].map(([key, label]) => {
             const active = filter === key; const dot = STATUS[key]?.dot;
             return (
               <TouchableOpacity key={key} onPress={() => setFilter(key)}
@@ -523,7 +526,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
                       {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
                       {/* Who is on a booked unit, so the team can see it without opening the plot. */}
-                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{plot.status === 'hold' ? 'On hold by' : 'Sold by'} {plot.agent_name}</Text>}
+                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{plot.status === 'hold' ? 'In progress by' : 'Sold by'} {plot.agent_name}</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -699,7 +702,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
               {!!plot.facing && <InfoBox label="Facing" value={FACING_LABEL[plot.facing] || plot.facing} />}
               {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.yd`} />}
               {!!plot.price  && <InfoBox label="Price" value={plot.price} />}
-              {!!plot.agent_name && <InfoBox label={plot.status === 'hold' ? 'On Hold By' : 'Sold By'} value={plot.agent_name} />}
+              {!!plot.agent_name && <InfoBox label={plot.status === 'hold' ? 'In Progress By' : 'Sold By'} value={plot.agent_name} />}
             </View>
 
             {/* Floor plan layouts (per-unit only; the map is the master layout) */}
