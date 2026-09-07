@@ -22,8 +22,14 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW 
 
 const STATUS_CFG = {
   available: { label: 'Available', color: COLORS.success, bg: COLORS.successBg, border: COLORS.success, zone: COLORS.successAlt },
-  hold:      { label: 'Hold',      color: COLORS.warning, bg: COLORS.warningBg, border: COLORS.warning, zone: COLORS.warningAlt },
+  // Covers both a soft pick (auto-expires in 10 min) and a hard hold backed by
+  // a pending-approval booking — "Hold" read as one deliberate state and
+  // confused which of the two it was. "In Progress" reads correctly for both.
+  hold:      { label: 'In Progress', color: COLORS.inProgress, bg: COLORS.inProgressBg, border: COLORS.inProgress, zone: COLORS.inProgressAlt },
   sold:      { label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg, border: COLORS.error, zone: COLORS.error },
+  // A previously-sold unit put back on the market — bookable exactly like
+  // Available, just purple instead of green so it reads as "resold", not new.
+  resale:    { label: 'Resale',    color: COLORS.purple, bg: COLORS.purpleBg, border: COLORS.purple, zone: COLORS.purple },
 };
 
 // Must match the web's UNITS and the strings actually stored — 'sqyrds' here meant a
@@ -294,17 +300,37 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
         </Text>
       </View>
 
-      {/* Status buttons */}
+      {/* Status buttons — Resale isn't a generic toggle here (it only ever makes
+          sense starting from Sold), so it gets its own conditional button below
+          instead of joining this fixed 3-way row. */}
       <View style={{ flexDirection: 'row', padding: 8, gap: 4 }}>
-        {Object.entries(STATUS_CFG).map(([s, c]) => (
-          <TouchableOpacity key={s} onPress={() => setStatus(s)} disabled={plot.status === s || saving}
-            style={{ flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center',
-              backgroundColor: plot.status === s ? c.bg : COLORS.white,
-              borderWidth: 1.5, borderColor: plot.status === s ? c.border + '80' : COLORS.border }}>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: plot.status === s ? c.color : MUTED }}>{c.label}</Text>
-          </TouchableOpacity>
-        ))}
+        {['available', 'hold', 'sold'].map((s) => {
+          const c = STATUS_CFG[s];
+          return (
+            <TouchableOpacity key={s} onPress={() => setStatus(s)} disabled={plot.status === s || saving}
+              style={{ flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center',
+                backgroundColor: plot.status === s ? c.bg : COLORS.white,
+                borderWidth: 1.5, borderColor: plot.status === s ? c.border + '80' : COLORS.border }}>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: plot.status === s ? c.color : MUTED }}>{c.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
+      {/* Already-sold units can be put back on the market for resale —
+          bookable again, shown purple instead of green so it reads as
+          "resold", not new. */}
+      {(plot.status === 'sold' || plot.status === 'resale') && (
+        <View style={{ paddingHorizontal: 8, paddingBottom: 8 }}>
+          <TouchableOpacity onPress={() => setStatus(plot.status === 'resale' ? 'sold' : 'resale')} disabled={saving}
+            style={{ paddingVertical: 6, borderRadius: 8, alignItems: 'center',
+              backgroundColor: plot.status === 'resale' ? COLORS.purpleBg : COLORS.white,
+              borderWidth: 1.5, borderColor: plot.status === 'resale' ? COLORS.purple + '80' : COLORS.purple + '40' }}>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: plot.status === 'resale' ? COLORS.purple : COLORS.purple }}>
+              {plot.status === 'resale' ? '↩ Back to Sold' : '↻ Move to Resale'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -1120,7 +1146,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
               {[
                 { label: 'Total',     val: plots.length,   color: TEXT },
                 { label: 'Available', val: counts.available, color: COLORS.success },
-                { label: 'On Hold',   val: counts.hold,      color: COLORS.warning },
+                { label: 'In Progress', val: counts.hold,    color: COLORS.inProgress },
                 { label: 'Sold',      val: counts.sold,      color: COLORS.error },
               ].map(s => (
                 <View key={s.label} style={[CARD, { flex: 1, padding: 10, alignItems: 'center' }]}>
@@ -1179,7 +1205,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
                 {[
                   { key: 'all',       label: 'All',       color: TEXT,      bg: COLORS.screenBg },
                   { key: 'available', label: 'Available', color: COLORS.success, bg: COLORS.successBg },
-                  { key: 'hold',      label: 'Hold',      color: COLORS.warning, bg: COLORS.warningBg },
+                  { key: 'hold',      label: 'In Progress', color: COLORS.inProgress, bg: COLORS.inProgressBg },
                   { key: 'sold',      label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg },
                 ].map(({ key, label, color, bg }) => (
                   <TouchableOpacity key={key} onPress={() => setFilter(key)}

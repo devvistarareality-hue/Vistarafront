@@ -23,8 +23,14 @@ const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
 
 const STATUS = {
   available: { label: 'Available', dot: COLORS.success, bg: COLORS.successBg },
-  hold:      { label: 'On Hold',   dot: COLORS.warning, bg: COLORS.warningBg },
+  // Covers both a soft pick (auto-expires in 10 min) and a hard hold backed by
+  // a pending-approval booking — "Hold" read as one deliberate state and
+  // confused which of the two it was. "In Progress" reads correctly for both.
+  hold:      { label: 'In Progress', dot: COLORS.inProgress, bg: COLORS.inProgressBg },
   sold:      { label: 'Sold',      dot: COLORS.error,   bg: COLORS.errorBg },
+  // A previously-sold unit put back on the market — bookable exactly like
+  // Available, just purple instead of green so it reads as "resold", not new.
+  resale:    { label: 'Resale',    dot: COLORS.purple,  bg: COLORS.purpleBg },
   // A unit with a saved (unsubmitted) draft — same underlying plot.status='hold' as a
   // bare in-progress selection, but shown grey and distinct so the team can tell "someone
   // is mid-paperwork on this" from "someone just tapped it a second ago".
@@ -76,6 +82,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const [notice,  setNotice]  = useState(''); // transient banner (unit taken / hold expired)
   const [busyIds, setBusyIds] = useState(() => new Set()); // plot ids with an in-flight hold/release call
   const [draftPanelPlot, setDraftPanelPlot] = useState(null); // drafted unit tapped into
+  const [soldPanelPlot, setSoldPanelPlot] = useState(null); // sold unit tapped into (Manager+ only) — offers Move to Resale
+  const [resaleBusy, setResaleBusy] = useState(false);
 
   function flash(text) {
     setNotice(text);
@@ -246,6 +254,28 @@ export default function ClosureViewerScreen({ navigation, route }) {
     setPlots((ps) => ps.map((p) => (ids.includes(p.id) ? { ...p, status: 'available', held_by_name: null } : p)));
   }
 
+  // Put a sold unit back on the market from the map's panel — Manager/Director/
+  // Admin only (isManager gate mirrors the backend's is_admin_or_manager check
+  // on PlotDetailView.patch, the same endpoint Manage Plots uses for this).
+  // Doesn't touch the original booking or its signed LOI — see PlotDetailView,
+  // it only ever updates the Plot row itself.
+  async function moveToResaleFromPanel(plotId) {
+    setResaleBusy(true);
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.plot(plotId), { method: 'PATCH', body: JSON.stringify({ status: 'resale' }) });
+      if (res.ok) {
+        setPlots((ps) => ps.map((p) => (p.id === plotId ? { ...p, status: 'resale', held_by_name: null, agent_name: null } : p)));
+        setSoldPanelPlot(null);
+      } else {
+        flash('Could not move this unit to resale. Please try again.');
+      }
+    } catch (_) {
+      flash('Could not move this unit to resale. Please try again.');
+    } finally {
+      setResaleBusy(false);
+    }
+  }
+
   // Discard a draft from the map's panel — the drafter or a manager/admin, matching
   // the backend permission on BookingDiscardDraftView.
   async function discardDraftFromPanel(bookingId) {
@@ -271,7 +301,14 @@ export default function ClosureViewerScreen({ navigation, route }) {
       releasePlots([plot.id]);
       return;
     }
-    if (plot.status !== 'available') return; // only Available selectable
+    // A sold unit isn't for booking, but a Manager/Director/Admin can open it to
+    // put it back on the market — same "Move to Resale" action as Manage Plots,
+    // just reachable straight from this map instead of a separate admin screen.
+    if (plot.status === 'sold') {
+      if (isManager) setSoldPanelPlot(plot);
+      return;
+    }
+    if (plot.status !== 'available' && plot.status !== 'resale') return; // Available or Resale selectable
     setBusyIds((s) => new Set(s).add(plot.id));
     try {
       const res = await apiFetch(SALES_ENDPOINTS.plotsHold, { method: 'POST', body: JSON.stringify({ plot_ids: [plot.id] }) });
@@ -330,7 +367,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
         )}
         {/* Status filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
-          {[['all', 'All'], ['available', 'Available'], ['sold', 'Sold'], ['hold', 'On Hold']].map(([key, label]) => {
+          {[['all', 'All'], ['available', 'Available'], ['sold', 'Sold'], ['hold', 'In Progress']].map(([key, label]) => {
             const active = filter === key; const dot = STATUS[key]?.dot;
             return (
               <TouchableOpacity key={key} onPress={() => setFilter(key)}
@@ -476,7 +513,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const isSel = selectedSet.has(plot.id);
                   // Any drafted unit is tappable — it opens the draft panel for everyone,
                   // just with different actions inside depending on who's looking.
-                  const clickable = plot.status === 'available' || isSel || !!plot.drafted_booking_id;
+                  const clickable = plot.status === 'available' || plot.status === 'resale' || isSel || !!plot.drafted_booking_id || (plot.status === 'sold' && isManager);
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
                       style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
@@ -489,7 +526,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
                       {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
                       {/* Who is on a booked unit, so the team can see it without opening the plot. */}
-                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{plot.status === 'hold' ? 'On hold by' : 'Sold by'} {plot.agent_name}</Text>}
+                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{plot.status === 'hold' ? 'In progress by' : 'Sold by'} {plot.agent_name}</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -578,6 +615,39 @@ export default function ClosureViewerScreen({ navigation, route }) {
           </Modal>
         );
       })()}
+
+      {/* Sold-unit panel — Manager/Director/Admin only: put the unit back on the
+          market for resale without touching the original booking or its LOI. */}
+      {!!soldPanelPlot && (() => {
+        const p = soldPanelPlot;
+        return (
+          <Modal visible transparent animationType="fade" onRequestClose={() => !resaleBusy && setSoldPanelPlot(null)}>
+            <TouchableOpacity activeOpacity={1} onPress={() => !resaleBusy && setSoldPanelPlot(null)}
+              style={{ flex: 1, backgroundColor: 'rgba(15,28,46,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+              <TouchableOpacity activeOpacity={1} onPress={() => {}}
+                style={{ backgroundColor: COLORS.white, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Sold</Text>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4, marginBottom: 18 }}>
+                  {p.agent_name ? `Sold by ${p.agent_name}` : 'Sold'}
+                </Text>
+                <View style={{ gap: 10 }}>
+                  <TouchableOpacity onPress={() => Alert.alert('Move to Resale?', 'This unit becomes bookable again. The original booking and its LOI are left untouched.', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Move to Resale', onPress: () => moveToResaleFromPanel(p.id) },
+                  ])} disabled={resaleBusy}
+                    style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.purple, alignItems: 'center', opacity: resaleBusy ? 0.7 : 1 }}>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{resaleBusy ? 'Moving…' : '↻ Move to Resale'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setSoldPanelPlot(null)} disabled={resaleBusy}
+                    style={{ paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                    <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
+        );
+      })()}
     </SafeAreaView>
   );
 }
@@ -632,7 +702,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
               {!!plot.facing && <InfoBox label="Facing" value={FACING_LABEL[plot.facing] || plot.facing} />}
               {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.yd`} />}
               {!!plot.price  && <InfoBox label="Price" value={plot.price} />}
-              {!!plot.agent_name && <InfoBox label={plot.status === 'hold' ? 'On Hold By' : 'Sold By'} value={plot.agent_name} />}
+              {!!plot.agent_name && <InfoBox label={plot.status === 'hold' ? 'In Progress By' : 'Sold By'} value={plot.agent_name} />}
             </View>
 
             {/* Floor plan layouts (per-unit only; the map is the master layout) */}
