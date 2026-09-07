@@ -185,9 +185,15 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
               + mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
               + mrow('12 Months Maintenance Deposit', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, held as a deposit' })
               + mrow('Total Legal & Extra Charges', pb.total_legal_extra, { sub: true })
+            // Pratishtha 2 (dastavej_divisor 1) does not quote an all-inclusive box
+            // price, so its stamp duty and GST are sale-deed figures rather than money
+            // the buyer pays on top — listing them named charges the LOI does not
+            // collect. Omitted, the rows are exact: Final Unit Price + Bank Processing
+            // = Box Price.
             : mrow('Final Unit Price', pb.dastavej_value, { subline: 'Value of the unit recorded in the sale agreement' })
-              + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
-              + mrow('GST', pb.gst, { subline: 'Goods & Services Tax' })
+              + (Number(pb.dastavej_divisor) === 1 ? ''
+                : mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
+                  + mrow('GST', pb.gst, { subline: 'Goods & Services Tax' }))
               + mrow('Bank Processing Charges', pb.bank_processing))
         // Down Payment has no loan to describe, and its four rows already add to the
         // total — so no How You Pay section and no duplicate subtotal above it.
