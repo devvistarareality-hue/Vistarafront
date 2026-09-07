@@ -1407,7 +1407,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   );
 }
 
-const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false };
+const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
 const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback'];
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'];
 
@@ -1587,6 +1587,13 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
               {local.is_duplicate && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
             </View>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => set('unassigned', !local.unassigned)}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 12, marginTop: 10, borderWidth: 1.5, borderColor: local.unassigned ? COLORS.gold : COLORS.border, backgroundColor: local.unassigned ? COLORS.screenBg : COLORS.white }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: local.unassigned ? COLORS.gold : TEXT }}>Unassigned Only</Text>
+            <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: local.unassigned ? COLORS.gold : COLORS.border, alignItems: 'center', justifyContent: 'center' }}>
+              {local.unassigned && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
+            </View>
+          </TouchableOpacity>
         </ScrollView>
 
         <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
@@ -1753,6 +1760,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (filters.date_from)     url += `&date_from=${filters.date_from}`;
     if (filters.date_to)       url += `&date_to=${filters.date_to}`;
     if (filters.is_duplicate)  url += `&is_duplicate=true`;
+    if (filters.unassigned)    url += `&unassigned=true`;
     if (adminView)             url += `&admin_view=1`;
     return url;
   }

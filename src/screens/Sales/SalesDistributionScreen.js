@@ -153,7 +153,11 @@ export default function SalesDistributionScreen({ navigation }) {
   const [savedWeights,   setSavedWeights]   = useState({});
   const [savingWeights,  setSavingWeights]  = useState(false);
   const [distLog,        setDistLog]        = useState([]);
-  const [stats,          setStats]          = useState(null);
+  const [pending,        setPending]        = useState(null);
+  // Leads distribution can never place — their project has nobody of the required
+  // designation assigned. _distribute counts these as "skipped" and drops the
+  // count on auto-runs, so they pile up unnoticed.
+  const [blocked,        setBlocked]        = useState([]);
   const [loading,        setLoading]        = useState(true);
   const [distributing,   setDistributing]   = useState('');
   const [refreshing,     setRefreshing]     = useState(false);
@@ -163,14 +167,15 @@ export default function SalesDistributionScreen({ navigation }) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
       const cq = companyId ? `?company_id=${companyId}` : '';
-      const [sRes, aRes, wRes, lRes, stRes] = await Promise.all([
+      // No /stats call: the pool counts it was meant to supply now come from
+      // dist-settings (`pending`), which mirrors _distribute()'s own querysets.
+      const [sRes, aRes, wRes, lRes] = await Promise.all([
         apiFetch(`${SALES_ENDPOINTS.distSettings}${cq}`),
         apiFetch(`${SALES_ENDPOINTS.availability}${cq}`),
         apiFetch(`${SALES_ENDPOINTS.distWeight}${cq}`),
         apiFetch(`${SALES_ENDPOINTS.distLog}${cq}`),
-        apiFetch(`${SALES_ENDPOINTS.stats}${cq}`),
       ]);
-      if (sRes.ok)  { const d = await sRes.json(); if (!d.detail) setSettings(d); }
+      if (sRes.ok)  { const d = await sRes.json(); if (!d.detail) { setSettings(d); setPending(d.pending || null); setBlocked(d.pending?.blocked || []); } }
       if (aRes.ok)  { const d = await aRes.json(); setAvailability(Array.isArray(d) ? d : (d.results || [])); }
       if (wRes.ok)  {
         const d = await wRes.json();
@@ -182,7 +187,6 @@ export default function SalesDistributionScreen({ navigation }) {
         setSavedWeights(wMap);
       }
       if (lRes.ok)  { const d = await lRes.json(); setDistLog(Array.isArray(d) ? d : (d.results || [])); }
-      if (stRes.ok) setStats(await stRes.json());
     } catch (_) {}
     setLoading(false);
     setRefreshing(false);
@@ -315,6 +319,29 @@ export default function SalesDistributionScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
         >
+
+          {/* ═══ Stuck leads — the skip _distribute never surfaces on auto-runs ═══ */}
+          {blocked.length > 0 && (
+            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.errorStrong, marginBottom: 6 }}>
+                ⚠️ {blocked.reduce((n, b) => n + b.count, 0)} lead{blocked.reduce((n, b) => n + b.count, 0) === 1 ? '' : 's'} can never be distributed
+              </Text>
+              <Text style={{ fontSize: 12, color: COLORS.errorStrong, marginBottom: 10 }}>
+                Distribution skips a lead when nobody of the required role is assigned to its
+                project. Running Distribute again will not move them — someone has to be added
+                to the project.
+              </Text>
+              {blocked.map((b) => (
+                <View key={`${b.project}-${b.needs}`} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: COLORS.errorStrong, minWidth: 26 }}>{b.count}</Text>
+                  <Text style={{ fontSize: 12, color: TEXT, flex: 1 }}>
+                    <Text style={{ fontWeight: '700' }}>{b.project}</Text>
+                    <Text style={{ color: COLORS.errorStrong }}> — {b.reason}</Text>
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* ═══ 1. Distribution Settings ═══ */}
           <View style={CARD}>
@@ -542,7 +569,7 @@ export default function SalesDistributionScreen({ navigation }) {
           {[
             {
               type: 'telecaller', label: 'Telecaller Distribution',
-              unassigned: stats?.unassigned ?? 0, avail: tcAvail.length,
+              unassigned: pending?.telecaller ?? 0, avail: tcAvail.length,
               windowOpen: tcWindowOpen, afterSignout: tcAfterSignout,
               signin: settings.tc_signin_time, signout: settings.tc_signout_time,
               borderOpen: COLORS.divider, bgOpen: COLORS.screenBg,
@@ -553,7 +580,7 @@ export default function SalesDistributionScreen({ navigation }) {
             },
             {
               type: 'stm', label: 'STM Distribution',
-              unassigned: stats?.sv_done ?? 0, avail: stmAvail.length,
+              unassigned: pending?.stm ?? 0, avail: stmAvail.length,
               windowOpen: stmWindowOpen, afterSignout: stmAfterSignout,
               signin: settings.stm_signin_time, signout: settings.stm_signout_time,
               borderOpen: COLORS.powderBlue, bgOpen: COLORS.screenBg,
