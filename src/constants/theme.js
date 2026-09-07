@@ -74,6 +74,11 @@ export const PALETTE = {
   // Accent — Purple (used by some modules)
   purple600: '#7B1FA2',
   purple100: '#F3E5F5',
+
+  // Status — In progress (neutral grey; distinct from success/error/warning)
+  slate600: '#475569',
+  slate400: '#94A3B8',
+  slate100: '#F1F5F9',
 };
 
 /* ============================================================== *
@@ -120,6 +125,11 @@ export const COLORS = {
   // Accent — purple
   purple:    PALETTE.purple600,
   purpleBg:  PALETTE.purple100,
+
+  // Accent — grey (in-progress plot status: soft pick or pending-approval hold)
+  inProgress:   PALETTE.slate600,
+  inProgressAlt: PALETTE.slate400,
+  inProgressBg: PALETTE.slate100,
 
   // Semantic status (color + matching tint background)
   success:    PALETTE.green600,
