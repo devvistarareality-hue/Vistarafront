@@ -242,14 +242,35 @@ export default function BookingFormScreen({ navigation, route }) {
   const shopSeed = (pb) => ({ rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') });
   const shopEdit = (pb) => shopEdits[pb.unit] || shopSeed(pb);
   const setShopEdit = (pb, patch) => setShopEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || shopSeed(pb)), ...patch } }));
-  const flatSeed = (pb) => ({ plan: 'Regular', flatPrice: String(pb.flat_price ?? ''), token: String(pb.token ?? '') });
+  // `rate` and `terraceRate` open on the book's own figures; `flatPrice` stays the
+  // single driver computeFlat reads, and setFlatEdit keeps the pair in step.
+  const flatSeed = (pb) => ({
+    plan: 'Regular', flatPrice: String(pb.flat_price ?? ''), token: String(pb.token ?? ''),
+    rate: String(pb.flat_area ? +((Number(pb.flat_price) || 0) / pb.flat_area).toFixed(4) : ''),
+    terraceRate: String(pb.terrace_rate ?? ''),
+  });
   const flatEdit = (pb) => flatEdits[pb.unit] || flatSeed(pb);
-  const setFlatEdit = (pb, patch) => setFlatEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || flatSeed(pb)), ...patch } }));
+  const setFlatEdit = (pb, patch) => setFlatEdits((m) => {
+    const cur = m[pb.unit] || flatSeed(pb);
+    const next = { ...cur, ...patch };
+    const area = Number(pb.flat_area) || 0;
+    // Rate and price are two views of one number — editing either recomputes the other.
+    if ('rate' in patch && area) next.flatPrice = String(Math.round((Number(patch.rate) || 0) * area));
+    else if ('flatPrice' in patch && area) next.rate = String(+((Number(patch.flatPrice) || 0) / area).toFixed(4));
+    return { ...m, [pb.unit]: next };
+  });
   // Only a Down Payment plan may move the rate or token. On Regular the unit prices
   // straight from the price book — passing no overrides at all, so switching back from
   // Down Payment cannot leave an edited figure behind.
   const isDownPayment = (pb) => flatEdit(pb).plan === 'Down Payment';
-  const flatOverrides = (pb) => (isDownPayment(pb) ? flatEdit(pb) : {});
+  const flatOverrides = (pb) => {
+    const e = flatEdit(pb);
+    // A shop's Rate is editable on any booking; flats match. Only the negotiated
+    // price and token stay behind the Down Payment plan.
+    const base = { rate: e.rate, terraceRate: e.terraceRate };
+    if (Number(e.rate) && Number(pb.flat_area)) base.flatPrice = Math.round(Number(e.rate) * Number(pb.flat_area));
+    return isDownPayment(pb) ? { ...base, ...e } : base;
+  };
   const pratBooks = rawBooks.map((pb) => (pb.kind === 'shop'
     ? computeShop(pb, shopEdit(pb))
     : computeFlat(pb, flatOverrides(pb))));
@@ -813,7 +834,7 @@ export default function BookingFormScreen({ navigation, route }) {
                   return (
                     <View style={{ borderWidth: 1.5, borderColor: '#C7D2FE', backgroundColor: '#F5F7FF', borderRadius: 10, padding: 12, marginBottom: 10 }}>
                       <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
-                        {dp ? 'EDITABLE · EVERYTHING BELOW RECALCULATES' : 'PLAN'}
+                        EDITABLE · EVERYTHING BELOW RECALCULATES
                       </Text>
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Plan</Text>
                       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
@@ -832,6 +853,19 @@ export default function BookingFormScreen({ navigation, route }) {
                           );
                         })}
                       </View>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Rate (Rs./sq.yd)</Text>
+                      <TextInput keyboardType="numeric" value={String(e.rate ?? '')}
+                        onChangeText={(t) => setFlatEdit(pb, { rate: t })}
+                        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                          fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.white }} />
+                      {Number(pb.terrace_area) > 0 && (<>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Terrace Rate (Rs./sq.yd)</Text>
+                        <TextInput keyboardType="numeric" value={String(e.terraceRate ?? '')}
+                          placeholder={String(Math.round((Number(e.rate) || 0) / 2))}
+                          onChangeText={(t) => setFlatEdit(pb, { terraceRate: t })}
+                          style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                            fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.white }} />
+                      </>)}
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Flat Price (Rs.)</Text>
                       <TextInput editable={dp} keyboardType="numeric"
                         value={dp ? String(e.flatPrice ?? '') : String(pb.flat_price)}
