@@ -254,6 +254,14 @@ export default function BookingFormScreen({ navigation, route }) {
     ? computeShop(pb, shopEdit(pb))
     : computeFlat(pb, flatOverrides(pb))));
   const prat = pratBooks[0] || null;
+  // A Pratishtha unit is priced entirely from its price book. With no book loaded the
+  // generic branch below is wrong, not merely empty: fieldFlags() has no 'pratishtha'
+  // case so it returns the Kalrav field set, and computeFormulas has no pratishtha
+  // branch either — it yields saleDeed 0. Filling that in saved a zero-priced booking
+  // with nothing on screen saying so. EOIs are exempt: not priced against a unit book.
+  const pratBookMissing = pricingReady && formulaSet === 'pratishtha' && !eoiMode && !prat;
+  const pratMissingMsg = 'Price book not loaded for this unit. Pratishtha prices every '
+    + 'unit from its price book, so this booking cannot be priced until it is loaded.';
   const pratRowsFor = (pb) => (pb.kind === 'shop'
     ? [['Shop Area', `${pb.sq_feet} sq.ft`], ['Rate', rupee(pb.rate) + ' / sq.ft'],
        ['Shop Amount', rupee(pb.amount), 'sub'],
@@ -528,6 +536,7 @@ export default function BookingFormScreen({ navigation, route }) {
   }
 
   async function genLoi() {
+    if (pratBookMissing) { setMsg(pratMissingMsg); return; }
     {
       const e = {};
       if (!f.client_name.trim()) e.client_name = true;
@@ -691,6 +700,7 @@ export default function BookingFormScreen({ navigation, route }) {
   }
 
   async function submit() {
+    if (pratBookMissing) { setMsg(pratMissingMsg); return; }
     {
       const e = {};
       if (!f.client_name.trim()) e.client_name = true;
@@ -727,6 +737,7 @@ export default function BookingFormScreen({ navigation, route }) {
   // Save Draft: none of Submit's completeness checks apply — the whole point is to
   // never lose typed data, even if it's just a client name so far.
   async function saveDraft() {
+    if (pratBookMissing) { setMsg(pratMissingMsg); return; }
     setSaving(true); setMsg('');
     const payload = { ...buildPayload(), ...(savedDraftId ? { id: savedDraftId } : {}) };
     try {
@@ -930,6 +941,19 @@ export default function BookingFormScreen({ navigation, route }) {
               </Sec>
             ) : null}
           </>
+        ) : pratBookMissing ? (
+          <Sec title="Pricing">
+            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 10, padding: 14 }}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.errorStrong, marginBottom: 6 }}>
+                ⚠️ This unit has no price book
+              </Text>
+              <Text style={{ fontSize: 12, color: COLORS.errorStrong }}>{pratMissingMsg}</Text>
+              <Text style={{ fontSize: 12, color: COLORS.errorStrong, marginTop: 8 }}>
+                Load the price book for this project's units, then reopen this form.
+                Booking is blocked until then so nothing is saved at the wrong price.
+              </Text>
+            </View>
+          </Sec>
         ) : (<>
         <Sec title="Plot & Type">
           <View style={{ marginBottom: 10 }}>
@@ -1143,7 +1167,7 @@ export default function BookingFormScreen({ navigation, route }) {
               <TouchableOpacity onPress={() => openLoi(draftId || savedDraftId)}><Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 12, textDecorationLine: 'underline' }}>View</Text></TouchableOpacity>
             </View>
           )}
-          <TouchableOpacity onPress={genLoi} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
+          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 }}>
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📄 Generate LOI (Download)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.success, borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
@@ -1160,11 +1184,11 @@ export default function BookingFormScreen({ navigation, route }) {
           <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}>{msg}</Text>
         </View>); })()}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <TouchableOpacity onPress={saveDraft} disabled={saving || !projectId}
+          <TouchableOpacity onPress={saveDraft} disabled={saving || !projectId || pratBookMissing}
             style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
             {saving ? <ActivityIndicator color={COLORS.link} /> : <Text style={{ color: COLORS.link, fontWeight: '800', fontSize: 15 }}>💾 Save Draft</Text>}
           </TouchableOpacity>
-          <TouchableOpacity onPress={submit} disabled={saving} style={{ flex: 1, backgroundColor: COLORS.navy, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
+          <TouchableOpacity onPress={submit} disabled={saving || pratBookMissing} style={{ flex: 1, backgroundColor: COLORS.navy, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: (saving || pratBookMissing) ? 0.6 : 1 }}>
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}
           </TouchableOpacity>
         </View>
