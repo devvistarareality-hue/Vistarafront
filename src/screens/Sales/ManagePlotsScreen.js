@@ -351,9 +351,29 @@ function unitsForFloorNumbers(f) {
   return out;
 }
 
+// Remaps a source floor's zone shapes onto a target floor. The shapes (points/rect)
+// stay identical — floors 2-7 of the same block are usually drawn on the exact same
+// plan — only each zone's plotNumber changes, swapped for the target floor's unit at
+// the SAME position in its numbering run (e.g. source's 3rd unit -> target's 3rd
+// unit: E-203 -> E-303). A zone whose plotNumber doesn't match the source floor's own
+// generated run (hand-typed, doesn't fit the from/to/prefix pattern) is left as-is —
+// there's nothing to remap it against, so it copies over literally for the admin to
+// fix by hand.
+function remapZonesToFloor(sourceFloor, targetFloor) {
+  const srcUnits = unitsForFloorNumbers(sourceFloor);
+  const destUnits = unitsForFloorNumbers(targetFloor);
+  return (sourceFloor.zones || []).map((z) => {
+    const idx = srcUnits.indexOf(String(z.plotNumber));
+    const plotNumber = (idx !== -1 && destUnits[idx] !== undefined) ? destUnits[idx] : z.plotNumber;
+    return { ...z, id: Date.now() + Math.random(), plotNumber };
+  });
+}
+
 function FloorMapEditor({ project, plots, floors, onFloorsChange }) {
   const withPlan = floors.filter((f) => f.image_url);
   const [sel, setSel] = useState(0);
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [copyTargets, setCopyTargets] = useState(() => new Set());
   if (!floors.length) return null;
   if (!withPlan.length) {
     return (
@@ -378,20 +398,104 @@ function FloorMapEditor({ project, plots, floors, onFloorsChange }) {
       : names.has(String(p.number));
   });
 
+  const otherFloors = floors.map((f, i) => ({ f, i })).filter(({ i }) => i !== idxInAll);
+  const activeMapped = (active.zones || []).length;
+
+  function toggleCopyTarget(i) {
+    setCopyTargets((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  }
+
+  function doApplyCopy() {
+    const targets = [...copyTargets];
+    const next = floors.map((f, i) => {
+      if (!targets.includes(i)) return f;
+      return { ...f, image_url: f.image_url || active.image_url, zones: remapZonesToFloor(active, f) };
+    });
+    onFloorsChange(next);
+    setCopyOpen(false);
+    setCopyTargets(new Set());
+  }
+
+  function applyCopy() {
+    const targets = [...copyTargets];
+    if (!targets.length) return;
+    const overwriting = targets.some((i) => (floors[i].zones || []).length > 0);
+    if (overwriting) {
+      Alert.alert('Replace existing mapping?',
+        `${targets.length} selected floor(s) already have some units mapped — copying will replace their existing mapping.`,
+        [{ text: 'Cancel', style: 'cancel' }, { text: 'Copy', style: 'destructive', onPress: doApplyCopy }]);
+      return;
+    }
+    doApplyCopy();
+  }
+
   const picker = (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-      {withPlan.map((f, i) => {
-        const on = i === Math.min(sel, withPlan.length - 1);
-        return (
-          <TouchableOpacity key={i} onPress={() => setSel(i)}
-            style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, borderWidth: 1.5,
-              borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>
-              {f.block ? `${f.block} · ` : ''}{f.label || `Floor ${f.floor}`} · {(f.zones || []).length}/{unitsForFloorNumbers(f).length}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+    <View style={{ marginTop: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+        {withPlan.map((f, i) => {
+          const on = i === Math.min(sel, withPlan.length - 1);
+          return (
+            <TouchableOpacity key={i} onPress={() => { setSel(i); setCopyOpen(false); }}
+              style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, borderWidth: 1.5,
+                borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>
+                {f.block ? `${f.block} · ` : ''}{f.label || `Floor ${f.floor}`} · {(f.zones || []).length}/{unitsForFloorNumbers(f).length}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {activeMapped > 0 && otherFloors.length > 0 && (
+        <TouchableOpacity onPress={() => setCopyOpen((v) => !v)}
+          style={{ marginTop: 8, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5,
+            borderColor: BLUE, backgroundColor: copyOpen ? BLUE : '#F0F3FF' }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: copyOpen ? COLORS.white : BLUE }}>
+            📋 Copy this mapping to other floors…
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {copyOpen && (
+        <View style={{ marginTop: 8, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, backgroundColor: '#FAFBFF' }}>
+          <Text style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}>
+            Copies every zone's shape from {active.block ? `${active.block} · ` : ''}{active.label || `Floor ${active.floor}`} onto the floor(s) you pick, renumbering each one to that floor's matching unit. Pick floors with the identical layout.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+            {otherFloors.map(({ f, i }) => {
+              const mapped = (f.zones || []).length;
+              const total = unitsForFloorNumbers(f).length;
+              const checked = copyTargets.has(i);
+              return (
+                <TouchableOpacity key={i} onPress={() => toggleCopyTarget(i)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1.5,
+                    borderColor: checked ? BLUE : COLORS.border, backgroundColor: checked ? '#EEF1FF' : COLORS.white }}>
+                  <Ionicons name={checked ? 'checkbox' : 'square-outline'} size={16} color={checked ? BLUE : MUTED} />
+                  <Text style={{ fontSize: 12, color: TEXT }}>
+                    {f.block ? `${f.block} · ` : ''}{f.label || `Floor ${f.floor}`} <Text style={{ color: '#9CA3AF' }}>({mapped}/{total})</Text>
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity onPress={applyCopy} disabled={!copyTargets.size}
+              style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: copyTargets.size ? BLUE : COLORS.border }}>
+              <Text style={{ fontSize: 12.5, fontWeight: '700', color: COLORS.white }}>
+                Copy to {copyTargets.size || ''} floor{copyTargets.size === 1 ? '' : 's'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setCopyOpen(false); setCopyTargets(new Set()); }}
+              style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border }}>
+              <Text style={{ fontSize: 12.5, fontWeight: '600', color: MUTED }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 
