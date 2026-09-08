@@ -22,6 +22,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // "Plot" is wrong for a tower — Pratishtha sells flats and shops, so label it by kind.
   const unitLabel = (isPratishtha && opts.priceBook)
     ? (opts.priceBook.kind === 'shop' ? 'Shop No: ' : 'Flat No: ') : 'Plot No: ';
+  // A C&D shop belongs to one parade numbered 1-24 across both blocks, so the LOI
+  // names it as the paperwork does ("C&D Shop 3") rather than by the block its plot
+  // record sits in. display_unit already reads as a full name, label included.
+  const unitDisplay = opts.priceBook && opts.priceBook.display_unit;
   const pbs = (opts.priceBooks && opts.priceBooks.length) ? opts.priceBooks
     : (opts.priceBook ? [opts.priceBook] : []);
   const pb = pbs[0] || null;   // Details block describes the first unit
@@ -388,7 +392,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
-  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : unitLabel + esc(stripPlotPrefix(meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
+  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : (unitDisplay ? esc(unitDisplay) : unitLabel + esc(stripPlotPrefix(meta.plotNo || '—')))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>
