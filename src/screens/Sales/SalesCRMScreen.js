@@ -225,7 +225,22 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'Site Visits & Closures', label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' } },
   ];
 
-  const STAT_CARDS = (isStm || isCp) ? STM_CARDS : TELECALLER_CARDS;
+  // "Unassigned" only means anything to someone who sees the whole company's leads.
+  // A telecaller's or STM's stats are scoped to leads already assigned to them, so
+  // the count would sit at zero forever. Mirrors the web dashboard, which shows the
+  // tile to admins/managers and hides it from the CP portal. Deep-links to the same
+  // Unassigned Only filter the leads list gained alongside it.
+  const UNASSIGNED_CARD = {
+    group: 'My Pipeline', label: 'Unassigned',
+    value: stats?.unassigned_leads ?? '—',
+    color: COLORS.gold, bg: COLORS.goldBg,
+    target: 'SalesLeads', params: { initialFilter: { unassigned: true } },
+  };
+  const STAT_CARDS = (isStm || isCp) ? STM_CARDS
+    : (isAdmin || isManager)
+      // After My Leads / New Today, as on the web.
+      ? [...TELECALLER_CARDS.slice(0, 2), UNASSIGNED_CARD, ...TELECALLER_CARDS.slice(2)]
+      : TELECALLER_CARDS;
   // Club the tiles under the question each block answers, so the row a number
   // sits in already says how to read it. Order is fixed; a group with no cards
   // for this role simply drops out.
