@@ -242,18 +242,54 @@ export default function BookingFormScreen({ navigation, route }) {
   const shopSeed = (pb) => ({ rate: String(pb.rate ?? ''), mode: 'pct', unitPct: String(impliedUnitPct(pb)), unitAmount: String(pb.loan_amount ?? '') });
   const shopEdit = (pb) => shopEdits[pb.unit] || shopSeed(pb);
   const setShopEdit = (pb, patch) => setShopEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || shopSeed(pb)), ...patch } }));
-  const flatSeed = (pb) => ({ plan: 'Regular', flatPrice: String(pb.flat_price ?? ''), token: String(pb.token ?? '') });
+  // `rate` and `terraceRate` open on the book's own figures; `flatPrice` stays the
+  // single driver computeFlat reads, and setFlatEdit keeps the pair in step.
+  const flatSeed = (pb) => ({
+    plan: 'Regular', flatPrice: String(pb.flat_price ?? ''), token: String(pb.token ?? ''),
+    // Base rate: a road-facing unit's lump-sum premium is not part of it.
+    rate: String(pb.flat_area
+      ? +(((Number(pb.flat_price) || 0) - (Number(pb.facing_premium) || 0)) / pb.flat_area).toFixed(4)
+      : ''),
+    terraceRate: String(pb.terrace_rate ?? ''),
+  });
   const flatEdit = (pb) => flatEdits[pb.unit] || flatSeed(pb);
-  const setFlatEdit = (pb, patch) => setFlatEdits((m) => ({ ...m, [pb.unit]: { ...(m[pb.unit] || flatSeed(pb)), ...patch } }));
+  const setFlatEdit = (pb, patch) => setFlatEdits((m) => {
+    const cur = m[pb.unit] || flatSeed(pb);
+    const next = { ...cur, ...patch };
+    const area = Number(pb.flat_area) || 0;
+    const prem = Number(pb.facing_premium) || 0;
+    // Rate and price are two views of one number — editing either recomputes the
+    // other. Price = base rate x area + facing premium, in both directions.
+    if ('rate' in patch && area) next.flatPrice = String(Math.round((Number(patch.rate) || 0) * area) + prem);
+    else if ('flatPrice' in patch && area) next.rate = String(+(((Number(patch.flatPrice) || 0) - prem) / area).toFixed(4));
+    return { ...m, [pb.unit]: next };
+  });
   // Only a Down Payment plan may move the rate or token. On Regular the unit prices
   // straight from the price book — passing no overrides at all, so switching back from
   // Down Payment cannot leave an edited figure behind.
   const isDownPayment = (pb) => flatEdit(pb).plan === 'Down Payment';
-  const flatOverrides = (pb) => (isDownPayment(pb) ? flatEdit(pb) : {});
+  const flatOverrides = (pb) => {
+    const e = flatEdit(pb);
+    // A shop's Rate is editable on any booking; flats match. Only the negotiated
+    // price and token stay behind the Down Payment plan.
+    const base = { rate: e.rate, terraceRate: e.terraceRate };
+    if (Number(e.rate) && Number(pb.flat_area)) {
+      base.flatPrice = Math.round(Number(e.rate) * Number(pb.flat_area)) + (Number(pb.facing_premium) || 0);
+    }
+    return isDownPayment(pb) ? { ...base, ...e } : base;
+  };
   const pratBooks = rawBooks.map((pb) => (pb.kind === 'shop'
     ? computeShop(pb, shopEdit(pb))
     : computeFlat(pb, flatOverrides(pb))));
   const prat = pratBooks[0] || null;
+  // A Pratishtha unit is priced entirely from its price book. With no book loaded the
+  // generic branch below is wrong, not merely empty: fieldFlags() has no 'pratishtha'
+  // case so it returns the Kalrav field set, and computeFormulas has no pratishtha
+  // branch either — it yields saleDeed 0. Filling that in saved a zero-priced booking
+  // with nothing on screen saying so. EOIs are exempt: not priced against a unit book.
+  const pratBookMissing = pricingReady && formulaSet === 'pratishtha' && !eoiMode && !prat;
+  const pratMissingMsg = 'Price book not loaded for this unit. Pratishtha prices every '
+    + 'unit from its price book, so this booking cannot be priced until it is loaded.';
   const pratRowsFor = (pb) => (pb.kind === 'shop'
     ? [['Shop Area', `${pb.sq_feet} sq.ft`], ['Rate', rupee(pb.rate) + ' / sq.ft'],
        ['Shop Amount', rupee(pb.amount), 'sub'],
@@ -274,16 +310,28 @@ export default function BookingFormScreen({ navigation, route }) {
     : [['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—'],
        ['Flat Area', `${pb.flat_area} sq.yd`],
        ['Flat Rate', rupee(pb.flat_rate) + ' / sq.yd'],
+       // Road facing is a lump sum on the price, not a higher rate — shown on its
+       // own line so Area x Rate + Premium = Flat Price reads off the page.
+       ...(pb.facing_premium ? [['Road Facing Premium', rupee(pb.facing_premium)]] : []),
        ['Flat Price', rupee(pb.flat_price)],
        ...(pb.terrace_area
          ? [['Additional Terrace Area', `${pb.terrace_area} sq.yd`],
-            ['Terrace Rate (Flat Rate / 2)', rupee(pb.terrace_rate) + ' / sq.yd'],
+            // Only the original Pratishtha derives the terrace at half the flat rate;
+            // Pratishtha 2 quotes its own, so the label must not claim a formula.
+            [pb.terrace_rate === pb.flat_rate / 2 ? 'Terrace Rate (Flat Rate / 2)' : 'Terrace Rate',
+             rupee(pb.terrace_rate) + ' / sq.yd'],
             ['Additional Terrace Price (Terrace Area x Terrace Rate)', rupee(pb.terrace_price)]]
          : [['Additional Terrace Area', '—']]),
        [pb.is_down_payment ? 'Unit Price (Flat Price + Terrace Price)' : 'Box Price (Flat Price + Terrace Price)', rupee(pb.box_price), 'sub'],
        // Same split as the LOI: what the price is made up of, then how it is funded.
        // Both add to the Total, so listing them together reads as double the price.
-       { h: 'What This Price Includes' },
+       // With the 1.07 divisor the rows below work back out to exactly the Box Price,
+       // so "includes" is literal. Pratishtha 2 has no divisor: its stamp duty and GST
+       // are sale-deed figures sitting inside the price rather than components that
+       // sum to it, so the heading must not promise arithmetic that no longer holds.
+       { h: (!pb.is_down_payment && Number(pb.dastavej_divisor) === 1)
+         ? 'Sale Deed Figures · inside the Box Price, not added to it'
+         : 'What This Price Includes' },
        // Down Payment quotes four figures that add to the total; Regular breaks the
        // box price down into what it already contains.
        ...(pb.is_down_payment
@@ -292,7 +340,9 @@ export default function BookingFormScreen({ navigation, route }) {
             ['6 Months Advance Maintenance (1.5 x 9 x Area x 6)', rupee(pb.maint_adv_6m)],
             ['12 Months Maintenance Deposit (1.5 x 9 x Area x 12)', rupee(pb.maint_adv_12m)],
             ['Total Legal & Extra Charges', rupee(pb.total_legal_extra), 'sub']]
-         : [['Final Unit Price ((Box Price - Bank Processing) / 1.07)', rupee(pb.dastavej_value)],
+         : [[Number(pb.dastavej_divisor) === 1
+              ? 'Final Unit Price (Box Price - Bank Processing)'
+              : 'Final Unit Price ((Box Price - Bank Processing) / 1.07)', rupee(pb.dastavej_value)],
             ['Stamp Duty + Registration (Final Unit Price x 6%)', rupee(pb.stamp_duty_reg)],
             ['GST (Final Unit Price x 1%)', rupee(pb.gst)],
             ['Bank Processing Charges (Bank Loan x 4.5%)', rupee(pb.bank_processing)]]),
@@ -307,6 +357,10 @@ export default function BookingFormScreen({ navigation, route }) {
   // The stored unit number may already carry the word ("Shop1"), so don't repeat it:
   // "Shop1" -> "Shop 1", "101" -> "Flat 101".
   const unitTitle = (pb) => {
+    // C and D share one parade of shops numbered 1-24 across both blocks, so the
+    // paperwork names them "C&D Shop 3". The book carries that; `unit` stays the
+    // plot number so edits key off something stable.
+    if (pb.display_unit) return pb.display_unit;
     const kind = pb.kind === 'shop' ? 'Shop' : 'Flat';
     const n = String(pb.unit || '').trim();
     const bare = n.replace(new RegExp('^' + kind + '\\s*', 'i'), '');
@@ -528,6 +582,7 @@ export default function BookingFormScreen({ navigation, route }) {
   }
 
   async function genLoi() {
+    if (pratBookMissing) { setMsg(pratMissingMsg); return; }
     {
       const e = {};
       if (!f.client_name.trim()) e.client_name = true;
@@ -691,6 +746,7 @@ export default function BookingFormScreen({ navigation, route }) {
   }
 
   async function submit() {
+    if (pratBookMissing) { setMsg(pratMissingMsg); return; }
     {
       const e = {};
       if (!f.client_name.trim()) e.client_name = true;
@@ -727,6 +783,7 @@ export default function BookingFormScreen({ navigation, route }) {
   // Save Draft: none of Submit's completeness checks apply — the whole point is to
   // never lose typed data, even if it's just a client name so far.
   async function saveDraft() {
+    if (pratBookMissing) { setMsg(pratMissingMsg); return; }
     setSaving(true); setMsg('');
     const payload = { ...buildPayload(), ...(savedDraftId ? { id: savedDraftId } : {}) };
     try {
@@ -802,7 +859,7 @@ export default function BookingFormScreen({ navigation, route }) {
                   return (
                     <View style={{ borderWidth: 1.5, borderColor: '#C7D2FE', backgroundColor: '#F5F7FF', borderRadius: 10, padding: 12, marginBottom: 10 }}>
                       <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
-                        {dp ? 'EDITABLE · EVERYTHING BELOW RECALCULATES' : 'PLAN'}
+                        EDITABLE · EVERYTHING BELOW RECALCULATES
                       </Text>
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Plan</Text>
                       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
@@ -821,6 +878,19 @@ export default function BookingFormScreen({ navigation, route }) {
                           );
                         })}
                       </View>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Rate (Rs./sq.yd)</Text>
+                      <TextInput keyboardType="numeric" value={String(e.rate ?? '')}
+                        onChangeText={(t) => setFlatEdit(pb, { rate: t })}
+                        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                          fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.white }} />
+                      {Number(pb.terrace_area) > 0 && (<>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Terrace Rate (Rs./sq.yd)</Text>
+                        <TextInput keyboardType="numeric" value={String(e.terraceRate ?? '')}
+                          placeholder={String(Math.round((Number(e.rate) || 0) / 2))}
+                          onChangeText={(t) => setFlatEdit(pb, { terraceRate: t })}
+                          style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                            fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.white }} />
+                      </>)}
                       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Flat Price (Rs.)</Text>
                       <TextInput editable={dp} keyboardType="numeric"
                         value={dp ? String(e.flatPrice ?? '') : String(pb.flat_price)}
@@ -930,6 +1000,19 @@ export default function BookingFormScreen({ navigation, route }) {
               </Sec>
             ) : null}
           </>
+        ) : pratBookMissing ? (
+          <Sec title="Pricing">
+            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 10, padding: 14 }}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.errorStrong, marginBottom: 6 }}>
+                ⚠️ This unit has no price book
+              </Text>
+              <Text style={{ fontSize: 12, color: COLORS.errorStrong }}>{pratMissingMsg}</Text>
+              <Text style={{ fontSize: 12, color: COLORS.errorStrong, marginTop: 8 }}>
+                Load the price book for this project's units, then reopen this form.
+                Booking is blocked until then so nothing is saved at the wrong price.
+              </Text>
+            </View>
+          </Sec>
         ) : (<>
         <Sec title="Plot & Type">
           <View style={{ marginBottom: 10 }}>
@@ -1143,7 +1226,7 @@ export default function BookingFormScreen({ navigation, route }) {
               <TouchableOpacity onPress={() => openLoi(draftId || savedDraftId)}><Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 12, textDecorationLine: 'underline' }}>View</Text></TouchableOpacity>
             </View>
           )}
-          <TouchableOpacity onPress={genLoi} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
+          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 }}>
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📄 Generate LOI (Download)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.success, borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
@@ -1160,11 +1243,11 @@ export default function BookingFormScreen({ navigation, route }) {
           <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}>{msg}</Text>
         </View>); })()}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <TouchableOpacity onPress={saveDraft} disabled={saving || !projectId}
+          <TouchableOpacity onPress={saveDraft} disabled={saving || !projectId || pratBookMissing}
             style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
             {saving ? <ActivityIndicator color={COLORS.link} /> : <Text style={{ color: COLORS.link, fontWeight: '800', fontSize: 15 }}>💾 Save Draft</Text>}
           </TouchableOpacity>
-          <TouchableOpacity onPress={submit} disabled={saving} style={{ flex: 1, backgroundColor: COLORS.navy, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
+          <TouchableOpacity onPress={submit} disabled={saving || pratBookMissing} style={{ flex: 1, backgroundColor: COLORS.navy, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: (saving || pratBookMissing) ? 0.6 : 1 }}>
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}
           </TouchableOpacity>
         </View>

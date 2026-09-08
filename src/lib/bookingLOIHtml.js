@@ -22,6 +22,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // "Plot" is wrong for a tower — Pratishtha sells flats and shops, so label it by kind.
   const unitLabel = (isPratishtha && opts.priceBook)
     ? (opts.priceBook.kind === 'shop' ? 'Shop No: ' : 'Flat No: ') : 'Plot No: ';
+  // A C&D shop belongs to one parade numbered 1-24 across both blocks, so the LOI
+  // names it as the paperwork does ("C&D Shop 3") rather than by the block its plot
+  // record sits in. display_unit already reads as a full name, label included.
+  const unitDisplay = opts.priceBook && opts.priceBook.display_unit;
   const pbs = (opts.priceBooks && opts.priceBooks.length) ? opts.priceBooks
     : (opts.priceBook ? [opts.priceBook] : []);
   const pb = pbs[0] || null;   // Details block describes the first unit
@@ -121,6 +125,10 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   // The stored unit number may already carry the word ("Shop1"), so don't repeat it:
   // "Shop1" -> "Shop 1", "101" -> "Flat 101".
   const unitTitle = (b) => {
+    // A C&D / A&B shop belongs to a parade numbered across two blocks, so a
+    // multi-unit LOI must head its sections with that name too — not just the
+    // document header. Without this a two-shop booking listed "Shop C-Shop3".
+    if (b.display_unit) return b.display_unit;
     const kind = b.kind === 'shop' ? 'Shop' : 'Flat';
     const n = String(b.unit || '').trim();
     const bare = n.replace(new RegExp('^' + kind + '\\s*', 'i'), '');
@@ -185,9 +193,15 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
               + mrow('6 Months Advance Maintenance', pb.maint_adv_6m, { subline: 'Six months of maintenance, paid in advance' })
               + mrow('12 Months Maintenance Deposit', pb.maint_adv_12m, { subline: 'Twelve months of maintenance, held as a deposit' })
               + mrow('Total Legal & Extra Charges', pb.total_legal_extra, { sub: true })
+            // Pratishtha 2 (dastavej_divisor 1) does not quote an all-inclusive box
+            // price, so its stamp duty and GST are sale-deed figures rather than money
+            // the buyer pays on top — listing them named charges the LOI does not
+            // collect. Omitted, the rows are exact: Final Unit Price + Bank Processing
+            // = Box Price.
             : mrow('Final Unit Price', pb.dastavej_value, { subline: 'Value of the unit recorded in the sale agreement' })
-              + mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
-              + mrow('GST', pb.gst, { subline: 'Goods & Services Tax' })
+              + (Number(pb.dastavej_divisor) === 1 ? ''
+                : mrow('Stamp Duty + Registration', pb.stamp_duty_reg, { subline: 'Government charges to register the unit in your name' })
+                  + mrow('GST', pb.gst, { subline: 'Goods & Services Tax' }))
               + mrow('Bank Processing Charges', pb.bank_processing))
         // Down Payment has no loan to describe, and its four rows already add to the
         // total — so no How You Pay section and no duplicate subtotal above it.
@@ -382,7 +396,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     <div class="title">${esc(title)}</div>
     <div class="titlebar"></div>
   </div>
-  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : unitLabel + esc(stripPlotPrefix(meta.plotNo || '—'))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
+  <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : (unitDisplay ? esc(unitDisplay) : unitLabel + esc(stripPlotPrefix(meta.plotNo || '—')))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
     <div class="nm">${esc(meta.clientName || '—')}</div>

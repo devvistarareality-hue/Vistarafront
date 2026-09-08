@@ -50,11 +50,28 @@ export function computeFlat(pb, edit = {}) {
   const flat_price = edit.flatPrice === '' || edit.flatPrice == null
     ? Math.round(Number(pb.flat_price) || 0)
     : Math.round(Number(edit.flatPrice) || 0);
-  const flat_rate = flat_area ? flat_price / flat_area : 0;
+  // Road-facing units carry a lump-sum premium on the Flat Price rather than a
+  // higher per-sq.yd rate, so it has to come off before the rate is derived —
+  // otherwise the form would show 32,500 for a 60 sq.yd unit quoted at 31,666.67
+  // and the terrace's half-rate fallback would inherit the error. Books without the
+  // key (the original Pratishtha's) read 0 and are unaffected.
+  const facing_premium = Number(pb.facing_premium) || 0;
+  const flat_rate = flat_area ? (flat_price - facing_premium) / flat_area : 0;
   const token = edit.token === '' || edit.token == null
     ? (Number(pb.token) || 0) : (Number(edit.token) || 0);
 
-  const terrace_rate    = flat_rate / R.terraceRateDivisor;
+  // Pratishtha's original books price the terrace at exactly half the flat rate, so
+  // it stays derived when the book says nothing. Pratishtha 2 sets its own flat rate
+  // (Rs 12,000/sq.yd) which is NOT half of its flat rate (Rs 31,666.67 -> 15,833.33),
+  // so an explicit terrace_rate on the book wins. Stored as a rate, not a price: the
+  // Down Payment plan moves flat_price, and the terrace must not move with it.
+  // Precedence: what the form's editable field says, else the book's own quoted
+  // rate, else the original's half-of-the-flat-rate rule.
+  const terrace_rate = edit.terraceRate !== '' && edit.terraceRate != null
+    ? Number(edit.terraceRate) || 0
+    : (pb.terrace_rate == null || pb.terrace_rate === ''
+      ? flat_rate / R.terraceRateDivisor
+      : Number(pb.terrace_rate) || 0);
   const terrace_price   = Math.round(terrace_area * terrace_rate);
   const box_price       = flat_price + terrace_price;
   const bank_loan       = box_price - token;
@@ -74,8 +91,13 @@ export function computeFlat(pb, edit = {}) {
   // Regular backs the processing charge out of the box price first; Down Payment
   // divides the box price straight down, because its charges are added on top rather
   // than carved out.
+  // The 1.07 divisor strips the 7% (6% stamp + 1% GST) back out of an all-inclusive
+  // box price. Pratishtha 2 does not quote all-inclusive — its Final Unit Price is
+  // Box Price - Bank Processing flat — so its books carry a divisor of 1. Books
+  // without the key keep 1.07.
+  const dastavej_divisor = Number(pb.dastavej_divisor) || R.dastavejDivisor;
   const dastavej_value  = Math.round(
-    (isDownPayment ? box_price : box_price - bank_processing) / R.dastavejDivisor);
+    (isDownPayment ? box_price : box_price - bank_processing) / dastavej_divisor);
   // Regular taxes the agreement value; Down Payment taxes the box price, so its
   // Total Legal & Other Charges comes to Box Price x 7% plus the legal charge.
   const taxBase         = isDownPayment ? box_price : dastavej_value;
@@ -94,7 +116,7 @@ export function computeFlat(pb, edit = {}) {
 
   return {
     ...pb, kind: 'flat', is_down_payment: isDownPayment,
-    flat_area, terrace_area, flat_rate, terrace_rate,
+    flat_area, terrace_area, flat_rate, terrace_rate, facing_premium, dastavej_divisor,
     flat_price, terrace_price, box_price, token, bank_loan,
     bank_processing, maint_adv_6m, maint_adv_12m, legal,
     dastavej_value, stamp_duty_reg, gst, total_extra, total_legal_extra, total,
