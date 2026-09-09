@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, Linking, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -34,6 +34,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   const [schemes, setSchemes] = useState([]);
   const [cfgOpen, setCfgOpen] = useState(false);
   const [openScheme, setOpenScheme] = useState(null);
+  const [savedCfg, setSavedCfg] = useState('');
   const [search, setSearch] = useState('');
   const [searchText, setSearchText] = useState('');
   useEffect(() => {
@@ -75,15 +76,47 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
     }
   }
 
+  // Per-scheme sequence counter — tapping two names for the same scheme fires
+  // two independent PATCHes in flight together; without this, whichever
+  // response lands LAST wins regardless of which was sent last, so a network
+  // hiccup could silently drop the second tap. Keyed so it only guards
+  // same-scheme races, not toggles on different schemes.
+  const approverPatchSeq = useRef({});
+
   async function toggleApprover(schemeId, mgrId) {
+    let prev = [];
     let next = [];
     setSchemes((ss) => ss.map((s) => {
       if (s.id !== schemeId) return s;
-      const arr = s.investor_approvers || [];
-      next = arr.includes(mgrId) ? arr.filter((x) => x !== mgrId) : [...arr, mgrId];
+      prev = s.investor_approvers || [];
+      next = prev.includes(mgrId) ? prev.filter((x) => x !== mgrId) : [...prev, mgrId];
       return { ...s, investor_approvers: next };
     }));
-    await apiFetch(CLUB1000_ENDPOINTS.scheme(schemeId), { method: 'PATCH', body: JSON.stringify({ investor_approvers: next }) }).catch(() => {});
+
+    const seq = (approverPatchSeq.current[schemeId] || 0) + 1;
+    approverPatchSeq.current[schemeId] = seq;
+
+    let ok = false;
+    try {
+      const res = await apiFetch(CLUB1000_ENDPOINTS.scheme(schemeId), { method: 'PATCH', body: JSON.stringify({ investor_approvers: next }) });
+      ok = res.ok;
+    } catch {
+      ok = false;
+    }
+
+    // A newer toggle for this same scheme already fired while this request was
+    // in flight — let that one's outcome be the final word, not this stale one.
+    if (approverPatchSeq.current[schemeId] !== seq) return;
+
+    if (ok) {
+      setSavedCfg('Saved'); setTimeout(() => setSavedCfg(''), 1500);
+    } else {
+      // The tap looked like it worked (optimistic update above), but the
+      // backend rejected or lost it — undo the local change instead of
+      // leaving the UI showing a selection that was never actually saved.
+      setSchemes((ss) => ss.map((s) => (s.id === schemeId ? { ...s, investor_approvers: prev } : s)));
+      setSavedCfg('Could not save — try again'); setTimeout(() => setSavedCfg(''), 3000);
+    }
   }
 
   // Being on this screen at all means manager-level Club 1000 access, but
@@ -129,7 +162,10 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
         <View style={[CARD, { marginBottom: 12 }]}>
           <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: TEAL }}>⚙ Investor Approvers — by scheme {cfgOpen ? '▴' : '▾'}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: TEAL }}>
+              ⚙ Investor Approvers — by scheme {cfgOpen ? '▴' : '▾'}
+              {!!savedCfg && <Text style={{ color: savedCfg.startsWith('Could not') ? COLORS.error : COLORS.success }}> {savedCfg}</Text>}
+            </Text>
           </TouchableOpacity>
           {cfgOpen && schemes.map((s) => {
             const exp = openScheme === s.id; const sel = s.investor_approvers || [];
