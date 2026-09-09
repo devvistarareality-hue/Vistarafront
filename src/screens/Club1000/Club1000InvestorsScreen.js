@@ -115,12 +115,17 @@ function computeMonthlyDates(investmentDate, tenureMonths) {
 }
 
 // Day-count proration, mirrors backend/club1000/services.py::generate_payout_schedule:
-// dailyRate = principal * pct/100 / 365, each instalment = dailyRate * actual
+// the investor's FIXED total return over the tenure (principal * pct/100 —
+// pct is the total return by maturity, not an annualized rate) is spread
+// pro-rata across the tenure's actual days, not across a flat 365: dailyRate
+// = principal * pct/100 / tenureDays, each instalment = dailyRate * actual
 // calendar days since the PREVIOUS instalment (or since investment_date for
-// the first one) — so the first instalment is usually a stub. `investmentDate`
-// is a Date object; `dates` are 'YYYY-MM-DD' strings.
-function prorateInstalments(dates, investmentDate, principal, totalReturnPct) {
-  const dailyRate = (principal * totalReturnPct) / 100 / 365;
+// the first one) — so the first instalment is usually a stub.
+// `investmentDate`/`maturityDate` are Date objects; `dates` are 'YYYY-MM-DD'
+// strings.
+function prorateInstalments(dates, investmentDate, maturityDate, principal, totalReturnPct) {
+  const tenureDays = Math.round((maturityDate - investmentDate) / 86400000);
+  const dailyRate = tenureDays > 0 ? (principal * totalReturnPct) / 100 / tenureDays : 0;
   let prev = investmentDate;
   return dates.map((due_date) => {
     const cur = new Date(`${due_date}T00:00:00`);
@@ -130,13 +135,14 @@ function prorateInstalments(dates, investmentDate, principal, totalReturnPct) {
   });
 }
 
-// Principal + full-tenure interest, day-count basis — mirrors
-// backend/club1000/services.py::maturity_value exactly. `investmentDate`/
-// `maturityDate` are Date objects.
+// Principal + the scheme's total return, applied once over the whole tenure
+// — mirrors backend/club1000/services.py::maturity_value exactly. pct is the
+// total return BY maturity (e.g. a "GROWTH 35" scheme pays 35% total over
+// its 2-year tenure, not 35% every year), not an annualized rate to scale by
+// day-count. `investmentDate`/`maturityDate` are Date objects.
 function computeMaturityValue(investmentDate, maturityDate, principal, pct) {
   if (!investmentDate || !maturityDate) return principal;
-  const days = Math.round((maturityDate - investmentDate) / 86400000);
-  return principal + principal * (pct / 100) * (days / 365);
+  return principal + principal * (pct / 100);
 }
 
 const INTEREST_PAYOUT_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', maturity: 'At Maturity' };
@@ -211,7 +217,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
       : computeMonthlyDates(form.investment_date, scheme.tenure_months);
     const principal = Number(form.amount_invested) || 0;
     const totalReturn = Number(form.total_return_pct) || 0;
-    const amounts = prorateInstalments(dates, form.investment_date, principal, totalReturn);
+    const amounts = prorateInstalments(dates, form.investment_date, maturityDate, principal, totalReturn);
     const rows = dates.map((due_date, i) => ({ due_date, amount_due: String(amounts[i]), payout_type: 'interest' }));
     rows.push({ due_date: maturityDate ? toISODate(maturityDate) : '', amount_due: String(principal), payout_type: 'maturity' });
     return rows;
@@ -607,7 +613,7 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       : computeMonthlyDates(investmentDate, scheme.tenure_months);
     const principal = Number(form.amount_invested) || 0;
     const totalReturn = Number(form.total_return_pct) || 0;
-    const amounts = prorateInstalments(dates, investmentDate, principal, totalReturn);
+    const amounts = prorateInstalments(dates, investmentDate, maturityDate, principal, totalReturn);
     const rows = dates.map((due_date, i) => ({ due_date, amount_due: String(amounts[i]), payout_type: 'interest' }));
     rows.push({ due_date: maturityDate ? toISODate(maturityDate) : '', amount_due: String(principal), payout_type: 'maturity' });
     return rows;
@@ -827,7 +833,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       : computeMonthlyDates(form.investment_date, scheme.tenure_months);
     const principal = Number(form.amount_invested) || 0;
     const totalReturn = Number(form.total_return_pct) || 0;
-    const amounts = prorateInstalments(dates, form.investment_date, principal, totalReturn);
+    const amounts = prorateInstalments(dates, form.investment_date, maturityDate, principal, totalReturn);
     const rows = dates.map((due_date, i) => ({ due_date, amount_due: String(amounts[i]), payout_type: 'interest' }));
     rows.push({ due_date: maturityDate ? toISODate(maturityDate) : '', amount_due: String(principal), payout_type: 'maturity' });
     return rows;
