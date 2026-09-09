@@ -137,6 +137,11 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
     const scheme = schemes.find((s) => s.id === inv.scheme);
     return !!scheme && (scheme.investor_approvers || []).includes(user?.id);
   }
+  // Who can SEE (let alone change) the "Investor Approvers — by scheme"
+  // picker — deliberately narrower than manager-level Club 1000 access (which
+  // just gets someone onto this screen at all): only Directors and real
+  // admins get to decide who approves each scheme, same as the web page.
+  const canConfigureApprovers = isRealAdmin || user?.role === 'Director';
 
   async function viewLoi(id, pending) {
     try {
@@ -165,41 +170,43 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
-        <View style={[CARD, { marginBottom: 12 }]}>
-          <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: TEAL }}>
-              ⚙ Investor Approvers — by scheme {cfgOpen ? '▴' : '▾'}
-              {!!savedCfg && <Text style={{ color: savedCfg.startsWith('Could not') ? COLORS.error : COLORS.success }}> {savedCfg}</Text>}
-            </Text>
-          </TouchableOpacity>
-          {cfgOpen && schemes.map((s) => {
-            const exp = openScheme === s.id; const sel = s.investor_approvers || [];
-            const names = managers.filter((m) => sel.includes(m.id)).map((m) => m.name).join(', ');
-            return (
-              <View key={s.id} style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingVertical: 10 }}>
-                <TouchableOpacity onPress={() => setOpenScheme(exp ? null : s.id)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{s.name}</Text>
-                    <Text style={{ fontSize: 11, color: names ? MUTED : '#9CA3AF' }} numberOfLines={1}>{names || 'No approvers'}</Text>
-                  </View>
-                  <Ionicons name={exp ? 'chevron-up' : 'chevron-down'} size={18} color={MUTED} />
-                </TouchableOpacity>
-                {exp && (
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-                    {managers.map((m) => {
-                      const on = sel.includes(m.id);
-                      return (
-                        <TouchableOpacity key={m.id} onPress={() => toggleApprover(s.id, m.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on ? TEAL : COLORS.border, backgroundColor: on ? TEAL : COLORS.white }}>
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? '✓ ' : ''}{m.name}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            );
-          })}
-        </View>
+        {canConfigureApprovers && (
+          <View style={[CARD, { marginBottom: 12 }]}>
+            <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: TEAL }}>
+                ⚙ Investor Approvers — by scheme {cfgOpen ? '▴' : '▾'}
+                {!!savedCfg && <Text style={{ color: savedCfg.startsWith('Could not') ? COLORS.error : COLORS.success }}> {savedCfg}</Text>}
+              </Text>
+            </TouchableOpacity>
+            {cfgOpen && schemes.map((s) => {
+              const exp = openScheme === s.id; const sel = s.investor_approvers || [];
+              const names = managers.filter((m) => sel.includes(m.id)).map((m) => m.name).join(', ');
+              return (
+                <View key={s.id} style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingVertical: 10 }}>
+                  <TouchableOpacity onPress={() => setOpenScheme(exp ? null : s.id)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{s.name}</Text>
+                      <Text style={{ fontSize: 11, color: names ? MUTED : '#9CA3AF' }} numberOfLines={1}>{names || 'No approvers'}</Text>
+                    </View>
+                    <Ionicons name={exp ? 'chevron-up' : 'chevron-down'} size={18} color={MUTED} />
+                  </TouchableOpacity>
+                  {exp && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                      {managers.map((m) => {
+                        const on = sel.includes(m.id);
+                        return (
+                          <TouchableOpacity key={m.id} onPress={() => toggleApprover(s.id, m.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on ? TEAL : COLORS.border, backgroundColor: on ? TEAL : COLORS.white }}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? '✓ ' : ''}{m.name}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, height: 40, marginBottom: 12 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
