@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, Linking, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -34,6 +34,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   const [schemes, setSchemes] = useState([]);
   const [cfgOpen, setCfgOpen] = useState(false);
   const [openScheme, setOpenScheme] = useState(null);
+  const [savedCfg, setSavedCfg] = useState('');
   const [search, setSearch] = useState('');
   const [searchText, setSearchText] = useState('');
   useEffect(() => {
@@ -75,15 +76,52 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
     }
   }
 
+  // Per-scheme sequence counter — purely to stop a slow, out-of-order response
+  // from visually flickering the display backwards after a newer toggle for
+  // the same scheme has already landed. It's cosmetic only: the actual
+  // save-without-loss guarantee comes from the backend's atomic toggle
+  // endpoint (see SchemeToggleApproverView) — PATCHing the whole computed
+  // array from here raced the moment two toggles for the same scheme were in
+  // flight together, since whichever write landed LAST at the DB won
+  // regardless of send order, silently dropping the other tap with no error
+  // either side. The toggle endpoint instead sends just the one manager id
+  // and lets the DB row lock serialize concurrent toggles, so nothing is
+  // lost no matter how the requests interleave.
+  const approverPatchSeq = useRef({});
+
   async function toggleApprover(schemeId, mgrId) {
-    let next = [];
+    // Optimistic instant feedback — the atomic call below reconciles this
+    // with the server's authoritative result once it returns.
     setSchemes((ss) => ss.map((s) => {
       if (s.id !== schemeId) return s;
-      const arr = s.investor_approvers || [];
-      next = arr.includes(mgrId) ? arr.filter((x) => x !== mgrId) : [...arr, mgrId];
-      return { ...s, investor_approvers: next };
+      const cur = s.investor_approvers || [];
+      return { ...s, investor_approvers: cur.includes(mgrId) ? cur.filter((x) => x !== mgrId) : [...cur, mgrId] };
     }));
-    await apiFetch(CLUB1000_ENDPOINTS.scheme(schemeId), { method: 'PATCH', body: JSON.stringify({ investor_approvers: next }) }).catch(() => {});
+
+    const seq = (approverPatchSeq.current[schemeId] || 0) + 1;
+    approverPatchSeq.current[schemeId] = seq;
+
+    let result = null;
+    try {
+      const res = await apiFetch(CLUB1000_ENDPOINTS.schemeToggleApprover(schemeId), { method: 'POST', body: JSON.stringify({ manager_id: mgrId }) });
+      if (res.ok) result = await res.json();
+    } catch { /* result stays null */ }
+
+    if (approverPatchSeq.current[schemeId] !== seq) return;
+
+    if (result) {
+      setSchemes((ss) => ss.map((s) => (s.id === schemeId ? { ...s, investor_approvers: result.investor_approvers } : s)));
+      setSavedCfg('Saved'); setTimeout(() => setSavedCfg(''), 1500);
+    } else {
+      // Undo the optimistic toggle — it never actually reached the DB, so the
+      // UI shouldn't keep showing it as selected.
+      setSchemes((ss) => ss.map((s) => {
+        if (s.id !== schemeId) return s;
+        const cur = s.investor_approvers || [];
+        return { ...s, investor_approvers: cur.includes(mgrId) ? cur.filter((x) => x !== mgrId) : [...cur, mgrId] };
+      }));
+      setSavedCfg('Could not save — try again'); setTimeout(() => setSavedCfg(''), 3000);
+    }
   }
 
   // Being on this screen at all means manager-level Club 1000 access, but
@@ -99,6 +137,11 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
     const scheme = schemes.find((s) => s.id === inv.scheme);
     return !!scheme && (scheme.investor_approvers || []).includes(user?.id);
   }
+  // Who can SEE (let alone change) the "Investor Approvers — by scheme"
+  // picker — deliberately narrower than manager-level Club 1000 access (which
+  // just gets someone onto this screen at all): only Directors and real
+  // admins get to decide who approves each scheme, same as the web page.
+  const canConfigureApprovers = isRealAdmin || user?.role === 'Director';
 
   async function viewLoi(id, pending) {
     try {
@@ -127,38 +170,43 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
-        <View style={[CARD, { marginBottom: 12 }]}>
-          <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: TEAL }}>⚙ Investor Approvers — by scheme {cfgOpen ? '▴' : '▾'}</Text>
-          </TouchableOpacity>
-          {cfgOpen && schemes.map((s) => {
-            const exp = openScheme === s.id; const sel = s.investor_approvers || [];
-            const names = managers.filter((m) => sel.includes(m.id)).map((m) => m.name).join(', ');
-            return (
-              <View key={s.id} style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingVertical: 10 }}>
-                <TouchableOpacity onPress={() => setOpenScheme(exp ? null : s.id)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{s.name}</Text>
-                    <Text style={{ fontSize: 11, color: names ? MUTED : '#9CA3AF' }} numberOfLines={1}>{names || 'No approvers'}</Text>
-                  </View>
-                  <Ionicons name={exp ? 'chevron-up' : 'chevron-down'} size={18} color={MUTED} />
-                </TouchableOpacity>
-                {exp && (
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-                    {managers.map((m) => {
-                      const on = sel.includes(m.id);
-                      return (
-                        <TouchableOpacity key={m.id} onPress={() => toggleApprover(s.id, m.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on ? TEAL : COLORS.border, backgroundColor: on ? TEAL : COLORS.white }}>
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? '✓ ' : ''}{m.name}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            );
-          })}
-        </View>
+        {canConfigureApprovers && (
+          <View style={[CARD, { marginBottom: 12 }]}>
+            <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: TEAL }}>
+                ⚙ Investor Approvers — by scheme {cfgOpen ? '▴' : '▾'}
+                {!!savedCfg && <Text style={{ color: savedCfg.startsWith('Could not') ? COLORS.error : COLORS.success }}> {savedCfg}</Text>}
+              </Text>
+            </TouchableOpacity>
+            {cfgOpen && schemes.map((s) => {
+              const exp = openScheme === s.id; const sel = s.investor_approvers || [];
+              const names = managers.filter((m) => sel.includes(m.id)).map((m) => m.name).join(', ');
+              return (
+                <View key={s.id} style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingVertical: 10 }}>
+                  <TouchableOpacity onPress={() => setOpenScheme(exp ? null : s.id)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{s.name}</Text>
+                      <Text style={{ fontSize: 11, color: names ? MUTED : '#9CA3AF' }} numberOfLines={1}>{names || 'No approvers'}</Text>
+                    </View>
+                    <Ionicons name={exp ? 'chevron-up' : 'chevron-down'} size={18} color={MUTED} />
+                  </TouchableOpacity>
+                  {exp && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                      {managers.map((m) => {
+                        const on = sel.includes(m.id);
+                        return (
+                          <TouchableOpacity key={m.id} onPress={() => toggleApprover(s.id, m.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on ? TEAL : COLORS.border, backgroundColor: on ? TEAL : COLORS.white }}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? '✓ ' : ''}{m.name}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, height: 40, marginBottom: 12 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
