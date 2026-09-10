@@ -101,7 +101,20 @@ export default function BookingFormScreen({ navigation, route }) {
 
   useEffect(() => {
     if (projectId) apiFetch(SALES_ENDPOINTS.project(projectId) + cq('?')).then(r => r.json()).then((pr) => {
-      setProject(pr); setF((s) => ({ ...s, area_unit: pr.formula_set === 'kalrav' ? 'sq.yd' : 'sq.ft' }));
+      setProject(pr);
+      setF((s) => {
+        const next = { ...s, area_unit: pr.formula_set === 'kalrav' ? 'sq.yd' : 'sq.ft' };
+        // Rate Master prefill — only for a brand-new booking (revise/draft/convert-EOI
+        // already prefilled every rate from that booking's own saved values, and those
+        // must win over the project's current defaults) and only into fields not
+        // already filled, so switching the project mid-form never clobbers real input.
+        if (!reviseId && !draftId && !convertEoiId) {
+          Object.entries(pr.rate_master || {}).forEach(([k, v]) => {
+            if (v !== '' && v != null && !next[k]) next[k] = v;
+          });
+        }
+        return next;
+      });
     }).catch(() => {});
     if (projectId) apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}${cq('&')}`).then(r => r.json()).then((arr) => {
       const all = Array.isArray(arr) ? arr : [];
