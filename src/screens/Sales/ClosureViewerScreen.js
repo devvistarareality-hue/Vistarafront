@@ -95,7 +95,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const [busyIds, setBusyIds] = useState(() => new Set()); // plot ids with an in-flight hold/release call
   const [draftPanelPlot, setDraftPanelPlot] = useState(null); // drafted unit tapped into
   const [soldPanelPlot, setSoldPanelPlot] = useState(null); // sold unit tapped into (Manager+ only) — offers Move to Resale
-  const [holdPanelPlot, setHoldPanelPlot] = useState(null); // in-progress unit tapped into — offers Cancel Hold
+  const [holdPanelPlot, setHoldPanelPlot] = useState(null); // in-progress unit tapped into — offers to cancel it
   const [cancelBusy, setCancelBusy] = useState(false);
   const [resaleBusy, setResaleBusy] = useState(false);
 
@@ -311,10 +311,10 @@ export default function ClosureViewerScreen({ navigation, route }) {
   }
 
   const confirmCancelHold = (plotId) => Alert.alert(
-    'Cancel this hold?',
+    'Cancel this selection?',
     'The unit goes back on the market, and any saved draft for it is discarded.',
     [{ text: 'Keep', style: 'cancel' },
-     { text: 'Cancel Hold', style: 'destructive', onPress: () => cancelHold(plotId) }]);
+     { text: 'Cancel In Progress', style: 'destructive', onPress: () => cancelHold(plotId) }]);
 
   // Discard a draft from the map's panel — the drafter or a manager/admin, matching
   // the backend permission on BookingDiscardDraftView.
@@ -683,7 +683,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 <View style={{ gap: 10 }}>
                   <TouchableOpacity disabled={cancelBusy} onPress={() => confirmCancelHold(p.id)}
                     style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA', alignItems: 'center', opacity: cancelBusy ? 0.6 : 1 }}>
-                    <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>{cancelBusy ? 'Cancelling…' : '✕ Cancel Hold'}</Text>
+                    <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>{cancelBusy ? 'Cancelling…' : '✕ Cancel In Progress'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity disabled={cancelBusy} onPress={() => setHoldPanelPlot(null)}
                     style={{ paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
