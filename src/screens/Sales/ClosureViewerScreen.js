@@ -35,10 +35,22 @@ const STATUS = {
   // bare in-progress selection, but shown grey and distinct so the team can tell "someone
   // is mid-paperwork on this" from "someone just tapped it a second ago".
   drafted:   { label: 'Drafted',   dot: COLORS.textSecondary, bg: COLORS.surfaceAlt },
+  // Submitted and waiting on a manager. Shares plot.status='hold' with the two
+  // states above — submission is what clears held_by — so it is told apart by the
+  // pending booking the server reports, and coloured amber because it is a real
+  // commitment, not a unit still up for grabs.
+  pending:   { label: 'Hold',      dot: COLORS.warning, bg: COLORS.warningBg },
 };
 // Visual state for a plot, folding in the drafted override — everywhere the map colours
 // a unit should go through this instead of indexing STATUS[plot.status] directly.
-const plotCfg = (plot) => (plot.drafted_booking_id ? STATUS.drafted : (STATUS[plot.status] || STATUS.available));
+const plotCfg = (plot) => (
+  plot.pending_booking_id ? STATUS.pending
+    : plot.drafted_booking_id ? STATUS.drafted
+      : (STATUS[plot.status] || STATUS.available));
+// The filter chips and the count tiles key off this, not plot.status, so
+// "In Progress" means only what is still being worked on.
+const plotState = (plot) => (
+  plot.pending_booking_id ? 'pending' : (plot.status === 'hold' ? 'hold' : plot.status));
 
 const isPdfUrl   = (u) => !!u && u.split('?')[0].toLowerCase().endsWith('.pdf');
 const isImageUrl = (u) => !!u && /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(u);
@@ -83,6 +95,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const [busyIds, setBusyIds] = useState(() => new Set()); // plot ids with an in-flight hold/release call
   const [draftPanelPlot, setDraftPanelPlot] = useState(null); // drafted unit tapped into
   const [soldPanelPlot, setSoldPanelPlot] = useState(null); // sold unit tapped into (Manager+ only) — offers Move to Resale
+  const [holdPanelPlot, setHoldPanelPlot] = useState(null); // in-progress unit tapped into — offers Cancel Hold
+  const [cancelBusy, setCancelBusy] = useState(false);
   const [resaleBusy, setResaleBusy] = useState(false);
 
   function flash(text) {
@@ -196,8 +210,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
   // the project row are counted and shown identically.
   const statRow = (title, list) => {
     if (!title) return null;
-    const c = { available: 0, hold: 0, sold: 0 };
-    list.forEach(p => { if (c[p.status] != null) c[p.status]++; });
+    const c = { available: 0, hold: 0, pending: 0, sold: 0 };
+    list.forEach(p => { const k = plotState(p); if (c[k] != null) c[k]++; });
     const t = list.length;
     const share = (n) => (t ? Math.round(n / t * 100) : 0);
     return (
@@ -205,16 +219,16 @@ export default function ClosureViewerScreen({ navigation, route }) {
         <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 6 }}>
           {title.toUpperCase()}
         </Text>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={[CARD, { flex: 1, padding: 12 }]}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          <View style={[CARD, { flex: 1, minWidth: 90, padding: 12 }]}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: TEXT }}>{t}</Text>
             <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>Total</Text>
             <View style={{ height: 3, borderRadius: 3, backgroundColor: BLUE, marginTop: 6, opacity: 0.5 }} />
           </View>
-          {[['available', c.available], ['hold', c.hold], ['sold', c.sold]].map(([key, n]) => {
+          {[['available', c.available], ['hold', c.hold], ['pending', c.pending], ['sold', c.sold]].map(([key, n]) => {
             const cfg = STATUS[key];
             return (
-              <View key={key} style={[CARD, { flex: 1, padding: 12 }]}>
+              <View key={key} style={[CARD, { flex: 1, minWidth: 90, padding: 12 }]}>
                 <Text style={{ fontSize: 20, fontWeight: '900', color: TEXT }}>{n}</Text>
                 <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>{cfg.label} · {share(n)}%</Text>
                 <View style={{ height: 3, borderRadius: 3, backgroundColor: cfg.dot, marginTop: 6, opacity: 0.5 }} />
@@ -232,7 +246,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
 
   const types = useMemo(() => [...new Set(visiblePlots.map(p => p.cluster_type).filter(Boolean))].sort(), [visiblePlots]);
   const isHidden = (plot) =>
-    (filter !== 'all' && plot.status !== filter) ||
+    (filter !== 'all' && plotState(plot) !== filter) ||
     (typeFilter !== 'all' && plot.cluster_type !== typeFilter);
   // Which floor each selected unit sits on — shown only when the selection spans
   // several, so picking a shop and a flat together reads clearly.
@@ -276,6 +290,32 @@ export default function ClosureViewerScreen({ navigation, route }) {
     }
   }
 
+  // Free a unit somebody selected or drafted but never submitted. The server decides
+  // who may: the holder, a real admin, or one of the project's booking approvers —
+  // `can_cancel_hold` on the plot is that same answer, so the button only appears
+  // where the call would succeed.
+  async function cancelHold(plotId) {
+    setCancelBusy(true);
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.plotsCancelHold, {
+        method: 'POST', body: JSON.stringify({ plot_ids: [plotId] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { Alert.alert('Could not cancel', data.detail || 'Please try again.'); return; }
+      setHoldPanelPlot(null); setDraftPanelPlot(null);
+      const pl = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []);
+      setPlots(Array.isArray(pl) ? pl : (pl?.results || []));
+    } catch (_) {
+      Alert.alert('Could not cancel', 'Please try again.');
+    } finally { setCancelBusy(false); }
+  }
+
+  const confirmCancelHold = (plotId) => Alert.alert(
+    'Cancel this hold?',
+    'The unit goes back on the market, and any saved draft for it is discarded.',
+    [{ text: 'Keep', style: 'cancel' },
+     { text: 'Cancel Hold', style: 'destructive', onPress: () => cancelHold(plotId) }]);
+
   // Discard a draft from the map's panel — the drafter or a manager/admin, matching
   // the backend permission on BookingDiscardDraftView.
   async function discardDraftFromPanel(bookingId) {
@@ -308,6 +348,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
       if (isManager) setSoldPanelPlot(plot);
       return;
     }
+    // Somebody else's live selection. Anyone allowed to clear it gets the panel; for
+    // everyone else this stays inert, as before. A unit already submitted for approval
+    // is excluded — can_cancel_hold is false for it, and rejecting that is the
+    // approvals screen's job.
+    if (plot.status === 'hold' && plot.can_cancel_hold) { setHoldPanelPlot(plot); return; }
     if (plot.status !== 'available' && plot.status !== 'resale') return; // Available or Resale selectable
     setBusyIds((s) => new Set(s).add(plot.id));
     try {
@@ -367,7 +412,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
         )}
         {/* Status filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
-          {[['all', 'All'], ['available', 'Available'], ['sold', 'Sold'], ['hold', 'In Progress']].map(([key, label]) => {
+          {[['all', 'All'], ['available', 'Available'], ['sold', 'Sold'], ['hold', 'In Progress'], ['pending', 'Hold']].map(([key, label]) => {
             const active = filter === key; const dot = STATUS[key]?.dot;
             return (
               <TouchableOpacity key={key} onPress={() => setFilter(key)}
@@ -513,7 +558,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const isSel = selectedSet.has(plot.id);
                   // Any drafted unit is tappable — it opens the draft panel for everyone,
                   // just with different actions inside depending on who's looking.
-                  const clickable = plot.status === 'available' || plot.status === 'resale' || isSel || !!plot.drafted_booking_id || (plot.status === 'sold' && isManager);
+                  const clickable = plot.status === 'available' || plot.status === 'resale' || isSel || !!plot.drafted_booking_id || !!plot.can_cancel_hold || (plot.status === 'sold' && isManager);
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
                       style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
@@ -575,7 +620,9 @@ export default function ClosureViewerScreen({ navigation, route }) {
       {!!draftPanelPlot && (() => {
         const p = draftPanelPlot;
         const mine = !!p.held_by_name && p.held_by_name === user?.name;
-        const canDiscard = mine || isManager;
+        // The server's answer rather than a second guess at the rule: the drafter,
+        // an admin, or one of the project's booking approvers.
+        const canDiscard = !!p.can_cancel_hold;
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => setDraftPanelPlot(null)}>
             <TouchableOpacity activeOpacity={1} onPress={() => setDraftPanelPlot(null)}
@@ -594,18 +641,51 @@ export default function ClosureViewerScreen({ navigation, route }) {
                     </TouchableOpacity>
                   )}
                   {canDiscard && (
-                    <TouchableOpacity onPress={() => Alert.alert('Discard draft?', 'This can\'t be undone.', [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Discard', style: 'destructive', onPress: () => discardDraftFromPanel(p.drafted_booking_id) },
-                    ])}
+                    <TouchableOpacity disabled={cancelBusy} onPress={() => confirmCancelHold(p.id)}
                       style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA', alignItems: 'center' }}>
                       <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>✕ Discard Draft</Text>
                     </TouchableOpacity>
                   )}
                   {!canDiscard && (
-                    <Text style={{ fontSize: 12, color: MUTED }}>Only {p.held_by_name || 'the drafter'} or a manager can resume or discard this.</Text>
+                    <Text style={{ fontSize: 12, color: MUTED }}>Only {p.held_by_name || 'the drafter'} or one of this project's booking approvers can resume or discard this.</Text>
                   )}
                   <TouchableOpacity onPress={() => setDraftPanelPlot(null)}
+                    style={{ paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                    <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
+        );
+      })()}
+
+      {/* In-progress panel — the holder, an admin, or one of the project's booking
+          approvers can put a unit somebody selected back on the market. Before this a
+          unit left selected could only be freed by that person or by waiting out the
+          expiry, so on a live plot map it simply sat there. */}
+      {!!holdPanelPlot && (() => {
+        const p = holdPanelPlot;
+        const mine = !!p.held_by_name && p.held_by_name === user?.name;
+        return (
+          <Modal visible transparent animationType="fade" onRequestClose={() => setHoldPanelPlot(null)}>
+            <TouchableOpacity activeOpacity={1} onPress={() => !cancelBusy && setHoldPanelPlot(null)}
+              style={{ flex: 1, backgroundColor: 'rgba(15,28,46,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+              <TouchableOpacity activeOpacity={1} onPress={() => {}}
+                style={{ backgroundColor: COLORS.white, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · In Progress</Text>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4 }}>
+                  {mine ? 'Selected by you' : (p.held_by_name ? `Selected by ${p.held_by_name}` : 'Selected')}
+                </Text>
+                <Text style={{ fontSize: 12, color: MUTED, marginTop: 6, marginBottom: 18 }}>
+                  Nothing has been submitted for this unit yet. Cancelling puts it back on the market straight away.
+                </Text>
+                <View style={{ gap: 10 }}>
+                  <TouchableOpacity disabled={cancelBusy} onPress={() => confirmCancelHold(p.id)}
+                    style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA', alignItems: 'center', opacity: cancelBusy ? 0.6 : 1 }}>
+                    <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>{cancelBusy ? 'Cancelling…' : '✕ Cancel Hold'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity disabled={cancelBusy} onPress={() => setHoldPanelPlot(null)}
                     style={{ paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
                     <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Close</Text>
                   </TouchableOpacity>
