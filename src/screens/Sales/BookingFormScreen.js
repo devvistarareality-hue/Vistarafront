@@ -193,9 +193,11 @@ export default function BookingFormScreen({ navigation, route }) {
   // for that explicitly rather than relying on the broader visibility rules.
   useEffect(() => {
     if (!draftId) return;
-    apiFetch(`${SALES_ENDPOINTS.bookings}?status=draft&mine=1${cq('&')}`).then(r => r.json()).then((arr) => {
-      const b = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(draftId));
-      if (!b) return;
+    // Ask for this one booking by id — listing and searching made resuming hostage
+    // to the list's scoping, which silently returned nothing for an approver or a CP
+    // user and left the form on "Loading unit pricing…" with every field blank.
+    apiFetch(SALES_ENDPOINTS.booking(draftId)).then(r => (r.ok ? r.json() : null)).then((b) => {
+      if (!b || !b.id) return;
       setSavedDraftId(String(b.id));
       // A signed LOI attached before an earlier Save is already on the server — show
       // it as attached instead of asking the rep to re-upload it to resume.

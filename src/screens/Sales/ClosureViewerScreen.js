@@ -634,10 +634,14 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   {p.held_by_name ? `Drafted by ${p.held_by_name}` : 'Drafted'}
                 </Text>
                 <View style={{ gap: 10 }}>
-                  {mine && (
+                  {/* Offered to anyone the server will hand the draft to — its
+                      author, an admin, or one of the project's approvers. Gating on
+                      "is it mine" left an admin able to discard a draft but not open
+                      it, which is the wrong way round. */}
+                  {canDiscard && (
                     <TouchableOpacity onPress={() => { setDraftPanelPlot(null); navigation.navigate('BookingForm', { draft: p.drafted_booking_id }); }}
                       style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.link, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>▸ Resume</Text>
+                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>▸ {mine ? 'Resume' : 'Open Draft'}</Text>
                     </TouchableOpacity>
                   )}
                   {canDiscard && (
