@@ -408,6 +408,21 @@ const HomeScreen = () => {
               )}
             </View>
 
+            {/* Signing in after the role's time forfeits a share of the day's backlog,
+                so today's count will trail the room's. Said plainly here, or it reads
+                as distribution being broken. */}
+            {avail?.is_available && avail?.signed_in_late && (
+              <View style={{ backgroundColor: COLORS.warningBg, borderRadius: 10, padding: 12, marginBottom: 12 }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: COLORS.warning }}>
+                  ⏰ Signed in late{avail.signin_time ? ` · after ${avail.signin_time}` : ''}
+                </Text>
+                <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 4 }}>
+                  Leads that arrived before you signed in were shared out without you. From
+                  now on you receive an equal share of everything that comes in.
+                </Text>
+              </View>
+            )}
+
             {avail?.is_available ? (
               <>
                 <Text style={{ fontSize: 12, color: MUTED, fontWeight: '500', marginBottom: 14 }}>
