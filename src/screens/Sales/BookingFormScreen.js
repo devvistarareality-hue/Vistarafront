@@ -102,13 +102,19 @@ export default function BookingFormScreen({ navigation, route }) {
   useEffect(() => {
     if (projectId) apiFetch(SALES_ENDPOINTS.project(projectId) + cq('?')).then(r => r.json()).then((pr) => {
       setProject(pr);
+      // Resuming a draft (or a revision, or an EOI conversion) already restored
+      // area_unit from that booking's own saved value — the project's default must not
+      // overwrite it, or a unit saved in sq.ft comes back as sq.yd and every derived
+      // figure moves with it.
+      const resuming = !!(reviseId || draftId || convertEoiId);
       setF((s) => {
-        const next = { ...s, area_unit: pr.formula_set === 'kalrav' ? 'sq.yd' : 'sq.ft' };
+        const next = resuming ? { ...s }
+          : { ...s, area_unit: pr.formula_set === 'kalrav' ? 'sq.yd' : 'sq.ft' };
         // Rate Master prefill — only for a brand-new booking (revise/draft/convert-EOI
         // already prefilled every rate from that booking's own saved values, and those
         // must win over the project's current defaults) and only into fields not
         // already filled, so switching the project mid-form never clobbers real input.
-        if (!reviseId && !draftId && !convertEoiId) {
+        if (!resuming) {
           Object.entries(pr.rate_master || {}).forEach(([k, v]) => {
             if (v !== '' && v != null && !next[k]) next[k] = v;
           });
@@ -127,11 +133,16 @@ export default function BookingFormScreen({ navigation, route }) {
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
         // Auto-map construction area from the plot definition(s) into the booking.
         const sumConst = picked.reduce((a, x) => a + (parseFloat((x.construction_area || '').replace(/[^\d.]/g, '')) || 0), 0);
+        // Same reasoning as area_unit above: on a resumed draft/revision these were
+        // already restored from what was saved, and the rep may well have changed them
+        // from the plot's defaults. Re-deriving from the plot threw that away, which is
+        // what made a resumed draft look like it had not loaded.
+        const fromPlot = !(reviseId || draftId || convertEoiId);
         setF((s) => ({
           ...s,
-          area: sumArea ? String(+sumArea.toFixed(2)) : s.area,
+          area: (fromPlot && sumArea) ? String(+sumArea.toFixed(2)) : s.area,
           // When converting an EOI, Construction Area comes from the EOI, not the plot.
-          const_area: (sumConst && !convertEoiId) ? String(+sumConst.toFixed(2)) : s.const_area,
+          const_area: (fromPlot && sumConst) ? String(+sumConst.toFixed(2)) : s.const_area,
         }));
       }
       setUnitLoaded(true);
