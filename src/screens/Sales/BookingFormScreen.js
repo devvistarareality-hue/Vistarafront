@@ -186,10 +186,14 @@ export default function BookingFormScreen({ navigation, route }) {
   }, [reviseId]);
 
   // Resuming a saved draft: same prefill as revision mode, from the caller's own
-  // drafts list (status=draft is always scoped server-side to the requester).
+  // Your own drafts. `mine=1` matters: without it the list goes through approver
+  // scoping, which narrows to the projects you approve — so a CP approver resuming
+  // their own non-CP draft got an empty list back, and the form sat on "Loading unit
+  // pricing…" with nothing filled in. Resuming is always about your own work, so ask
+  // for that explicitly rather than relying on the broader visibility rules.
   useEffect(() => {
     if (!draftId) return;
-    apiFetch(`${SALES_ENDPOINTS.bookings}?status=draft${cq('&')}`).then(r => r.json()).then((arr) => {
+    apiFetch(`${SALES_ENDPOINTS.bookings}?status=draft&mine=1${cq('&')}`).then(r => r.json()).then((arr) => {
       const b = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(draftId));
       if (!b) return;
       setSavedDraftId(String(b.id));
