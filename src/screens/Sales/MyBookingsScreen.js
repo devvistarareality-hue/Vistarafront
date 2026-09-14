@@ -16,7 +16,19 @@ const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN')
 // Same tabs as Bookings & Approvals, minus Drafts: this list is what you submitted,
 // and a draft has not been. Values are the stored statuses — 'sold' is an approved
 // booking, which is why the label and the value differ.
-const TABS = [['', 'All'], ['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected']];
+const TABS = [['', 'All'], ['pending', 'Pending'], ['sold', 'Approved'],
+              ['rejected', 'Rejected'], ['cancelled', 'Cancelled']];
+
+// A cancelled booking and a rejected one are both stored at status='rejected'; the
+// difference is in approval_status. Filtering on status alone put a live sale that
+// came off the books in the same list as one an approver refused up front.
+const isCancelled = (b) => String(b.approval_status || '').toUpperCase().includes('CANCEL');
+const inTab = (b, tab) => (
+  !tab ? true
+  : tab === 'cancelled' ? isCancelled(b)
+  : tab === 'rejected' ? (b.status === 'rejected' && !isCancelled(b))
+  : b.status === tab
+);
 
 // Everyone at or under `rootId` in the reporting tree. Cycle-safe on purpose: a
 // manager loop in the data is a typo someone can make in User Management, and it
@@ -58,6 +70,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // one shared with the card: the current version shares the booking's id, so a
   // single map let one toggle open two blocks at once.
   const [revDetails, setRevDetails] = useState({});
+  const [cardDetails, setCardDetails] = useState({});
   const toggleRevDetails = (id) => setRevDetails((o) => ({ ...o, [id]: !o[id] }));
   const me = useSelector((s) => s.auth.user);
   const [team, setTeam] = useState([]);   // the viewer's reporting subtree
@@ -141,7 +154,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // Counting over all rows instead kept the numbers still as you switched tabs, but
   // on Approved they then summed to the full 244 next to a list of 229 — a filter
   // that misreports its own result is worse than one that moves.
-  const preWho = rows.filter((b) => (!tab || b.status === tab) && matches(b)
+  const preWho = rows.filter((b) => inTab(b, tab) && matches(b)
     && (!proj || projName(b) === proj));
 
   // 'Booked by' — a manager's list holds their whole reporting subtree, so let them
@@ -335,6 +348,17 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                 {b.status === 'sold' && String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id, eoi: '1' })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise EOI</Text></TouchableOpacity>}
                 {b.status === 'sold' && !String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise LOI</Text></TouchableOpacity>}
                 {b.status === 'pending' && <Text style={{ fontSize: 12, color: COLORS.warning }}>Awaiting approval</Text>}
+                {/* A cancelled deal is kept whole — signed LOI and every figure — so
+                    it can be explained later. Its own key space, since the card and
+                    the current version in the history share a booking id. */}
+                {isCancelled(b) ? (
+                  <TouchableOpacity onPress={() => setCardDetails((o) => ({ ...o, [b.id]: !o[b.id] }))}
+                    style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
+                    <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
+                      {cardDetails[b.id] ? '\u25B4 Hide Details' : '\u25BE Details'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
                 {/* Only the latest version is ever listed, which is right — a deal
                     should appear once, at its current terms. But the earlier ones are
                     what was signed at the time, and there was no way to reach them
@@ -348,6 +372,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                   </TouchableOpacity>
                 )}
               </View>
+              {isCancelled(b) && cardDetails[b.id] ? <BookingDetails b={b} accent={BLUE} /> : null}
               {revOpen[b.id] && (
                 <View style={{ marginTop: 12, borderTopWidth: 1.5, borderTopColor: COLORS.border, paddingTop: 10 }}>
                   <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 8 }}>

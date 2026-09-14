@@ -14,7 +14,11 @@ import { unitLabel } from '../../lib/bookingUnit';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
-const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected'], ['', 'All']];
+// Cancelled sits beside Rejected rather than inside it: both are stored at
+// status='rejected', but one was refused before it counted and the other was a live
+// sale that came off the books and keeps its signed LOI. The server splits them.
+const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'],
+              ['rejected', 'Rejected'], ['cancelled', 'Cancelled'], ['', 'All']];
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function BookingApprovalsScreen({ navigation, route }) {
