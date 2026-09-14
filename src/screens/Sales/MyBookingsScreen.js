@@ -19,7 +19,7 @@ const TABS = [['', 'All'], ['pending', 'Pending'], ['sold', 'Approved'], ['rejec
 
 // "My Bookings" list — the bookings the user submitted, grouped project → plot,
 // with a Revise LOI action. Rendered inside the Booking screen under a toggle.
-export function MyBookingsList({ navigation }) {
+export function MyBookingsList({ navigation, cpOnly = false }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,12 +34,16 @@ export function MyBookingsList({ navigation }) {
 
   const load = useCallback(async () => {
     try {
-      const q = '?mine=1' + (companyId ? `&company_id=${companyId}` : '');
+      // cp_only tells the server this is the Channel Partner module, where My
+      // Bookings also covers the CP pool. Without it the same screen in Sales shows
+      // only own and team work, which is the intended difference between the two.
+      const q = '?mine=1' + (cpOnly ? '&cp_only=true' : '')
+        + (companyId ? `&company_id=${companyId}` : '');
       const res = await apiFetch(SALES_ENDPOINTS.bookings + q);
       if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
-  }, [companyId]);
+  }, [companyId, cpOnly]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   // Discarding a draft releases whatever plot(s) it still holds and deletes the row —
