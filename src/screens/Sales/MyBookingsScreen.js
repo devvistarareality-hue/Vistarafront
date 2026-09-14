@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, RefreshControl, Alert, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
@@ -12,6 +12,11 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE 
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
+// Same tabs as Bookings & Approvals, minus Drafts: this list is what you submitted,
+// and a draft has not been. Values are the stored statuses — 'sold' is an approved
+// booking, which is why the label and the value differ.
+const TABS = [['', 'All'], ['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected']];
+
 // "My Bookings" list — the bookings the user submitted, grouped project → plot,
 // with a Revise LOI action. Rendered inside the Booking screen under a toggle.
 export function MyBookingsList({ navigation }) {
@@ -21,6 +26,11 @@ export function MyBookingsList({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [open, setOpen] = useState({});   // which project groups are expanded
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
+  // Filtered here rather than server-side: the list is already everything this
+  // person submitted, so narrowing it is instant and costs no round trip.
+  const [tab, setTab] = useState('');
+  const [q, setQ] = useState('');
+  const [proj, setProj] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -45,14 +55,70 @@ export function MyBookingsList({ navigation }) {
   }
 
   const groups = {};
-  rows.forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
+  // Search behaves as it does in Bookings & Approvals, so a query that finds a
+  // booking there finds it here.
+  const ql = q.trim().toLowerCase();
+  const qDigits = ql.replace(/\D/g, '');
+  // Only treat the query as a phone/id when it is ALL digits and separators — else
+  // "shop1" strips to "1" and matches every phone containing a 1.
+  const numericQuery = !!qDigits && /^[\d\s+()-]+$/.test(ql);
+  const matches = (b) => {
+    if (!ql) return true;
+    const text = [b.client_name, b.plot_numbers, b.plot_number, b.area, b.loi_document];
+    if (text.some((v) => String(v || '').toLowerCase().includes(ql))) return true;
+    if (!numericQuery) return false;
+    if (String(b.id) === qDigits) return true;
+    return qDigits.length >= 3 && String(b.phone || '').replace(/\D/g, '').includes(qDigits);
+  };
+  const projName = (b) => b.project_name || '—';
+  // Built from every row, not the filtered ones, so picking a project never removes
+  // the other options.
+  const projOptions = [...new Set(rows.map(projName))].sort((a, b) => a.localeCompare(b));
+  const visible = rows.filter((b) => (!tab || b.status === tab) && matches(b)
+    && (!proj || projName(b) === proj));
+
+  visible.forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
   projectNames.forEach((pn) => groups[pn].sort((a, b) => String(a.plot_numbers || a.plot_number || a.area).localeCompare(String(b.plot_numbers || b.plot_number || b.area))));
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {TABS.map(([k, label]) => (
+          <TouchableOpacity key={k} onPress={() => { setTab(k); setOpen({}); }}
+            style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8,
+              backgroundColor: tab === k ? BLUE : COLORS.surfaceAlt }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: tab === k ? '#fff' : MUTED }}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <TextInput value={q} onChangeText={(t) => { setQ(t); setOpen({}); }}
+        placeholder="Search name, phone or LOI / unit no…" placeholderTextColor={MUTED}
+        style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5,
+          borderColor: COLORS.border, backgroundColor: COLORS.white, fontSize: 13,
+          color: TEXT, marginBottom: 10 }} />
+      {projOptions.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {['', ...projOptions].map((p) => (
+              <TouchableOpacity key={p || 'all'} onPress={() => { setProj(p); setOpen({}); }}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1.5,
+                  borderColor: proj === p ? BLUE : COLORS.border,
+                  backgroundColor: proj === p ? COLORS.linkBg : COLORS.white }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: proj === p ? BLUE : MUTED }}>{p || 'All Projects'}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      )}
       {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : projectNames.length === 0 ? (
-        <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You haven't booked any units yet.</Text></View>
+        <View style={[CARD, { alignItems: 'center', padding: 30 }]}>
+          {/* "Nothing matched" is not "nothing exists" — saying someone has never
+              booked a unit while a filter hides 121 of them is worse than silence. */}
+          <Text style={{ color: MUTED }}>
+            {rows.length ? 'No bookings match these filters.' : "You haven't booked any units yet."}
+          </Text>
+        </View>
       ) : projectNames.map((pn) => (
         <View key={pn} style={{ marginBottom: 12 }}>
           <TouchableOpacity onPress={() => toggle(pn)} activeOpacity={0.7}
