@@ -53,10 +53,12 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // revised, so loading every chain up front would be work for nothing.
   const [revs, setRevs] = useState({});      // booking id → array of versions
   const [revOpen, setRevOpen] = useState({});
-  // Keyed by booking id, so each version in the history opens and closes on its own —
-  // the point of opening two is to read them side by side.
-  const [detailsOpen, setDetailsOpen] = useState({});
-  const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
+  // Keyed by version id, so each version in the history opens and closes on its own —
+  // the point of opening two is to read them side by side. Its own state rather than
+  // one shared with the card: the current version shares the booking's id, so a
+  // single map let one toggle open two blocks at once.
+  const [revDetails, setRevDetails] = useState({});
+  const toggleRevDetails = (id) => setRevDetails((o) => ({ ...o, [id]: !o[id] }));
   const me = useSelector((s) => s.auth.user);
   const [team, setTeam] = useState([]);   // the viewer's reporting subtree
 
@@ -86,6 +88,9 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   useFocusEffect(useCallback(() => { loadTeam(); }, [loadTeam]));
 
   async function toggleRevisions(id) {
+    // Every open starts collapsed: the history is opened to scan the versions, and a
+    // panel left open from last time buries the list it was opened to read.
+    setRevDetails({});
     setRevOpen((o) => ({ ...o, [id]: !o[id] }));
     if (revs[id]) return;                      // already loaded, just reopening
     try {
@@ -378,15 +383,15 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                             be open at once: what changed between R0 and R1 is the
                             question the history is opened to answer, and the figures
                             are where the answer is. */}
-                        <TouchableOpacity onPress={() => toggleDetails(v.id)}
+                        <TouchableOpacity onPress={() => toggleRevDetails(v.id)}
                           style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
                             backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border, marginLeft: 6 }}>
                           <Text style={{ color: MUTED, fontWeight: '700', fontSize: 12 }}>
-                            {detailsOpen[v.id] ? '\u25B4 Details' : '\u25BE Details'}
+                            {revDetails[v.id] ? '\u25B4 Details' : '\u25BE Details'}
                           </Text>
                         </TouchableOpacity>
                       </View>
-                      {detailsOpen[v.id] && <BookingDetails b={v} accent={BLUE} />}
+                      {revDetails[v.id] && <BookingDetails b={v} accent={BLUE} />}
                     </View>
                   ))}
                 </View>

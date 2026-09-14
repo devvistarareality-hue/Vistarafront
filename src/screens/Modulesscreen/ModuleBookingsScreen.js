@@ -48,7 +48,14 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   // revised, so loading every chain up front would be work for nothing.
   const [revs, setRevs] = useState({});      // booking id → array of versions
   const [revOpen, setRevOpen] = useState({});
+  // Details inside the history get their own key space, separate from the card's: the
+  // current version shares the booking's id, so one shared map let a single toggle
+  // open two blocks at once. Cleared on every open so the history starts collapsed —
+  // it is opened to scan the versions, and a panel left open buries that list.
+  const [revDetails, setRevDetails] = useState({});
+  const toggleRevDetails = (id) => setRevDetails((o) => ({ ...o, [id]: !o[id] }));
   async function toggleRevisions(id) {
+    setRevDetails({});
     setRevOpen((o) => ({ ...o, [id]: !o[id] }));
     if (revs[id]) return;                      // already loaded, just reopening
     try {
@@ -257,13 +264,13 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                                 <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>{`📄 View / Download ${isEoi(v) ? 'EOI' : 'LOI'}`}</Text>
                               </TouchableOpacity>
                             ) : <Text style={{ fontSize: 11, color: MUTED }}>no document on file</Text>}
-                            <TouchableOpacity onPress={() => toggleDetails(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
+                            <TouchableOpacity onPress={() => toggleRevDetails(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
                               <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>
-                                {detailsOpen[v.id] ? '\u25B2 Details' : '\u25BE Details'}
+                                {revDetails[v.id] ? '\u25B2 Details' : '\u25BE Details'}
                               </Text>
                             </TouchableOpacity>
                           </View>
-                          {detailsOpen[v.id] ? <BookingDetails b={v} /> : null}
+                          {revDetails[v.id] ? <BookingDetails b={v} /> : null}
                         </View>
                       ))}
                     </View>
