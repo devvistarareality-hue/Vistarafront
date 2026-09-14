@@ -48,6 +48,10 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   const [q, setQ] = useState('');
   const [proj, setProj] = useState('');
   const [who, setWho] = useState('');     // 'booked by' — a user id, '' for everyone
+  // Revision history, fetched per booking on demand: only a handful of deals are ever
+  // revised, so loading every chain up front would be work for nothing.
+  const [revs, setRevs] = useState({});      // booking id → array of versions
+  const [revOpen, setRevOpen] = useState({});
   const me = useSelector((s) => s.auth.user);
   const [team, setTeam] = useState([]);   // the viewer's reporting subtree
 
@@ -75,6 +79,19 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
     } catch (_) {}
   }, [companyId]);
   useFocusEffect(useCallback(() => { loadTeam(); }, [loadTeam]));
+
+  async function toggleRevisions(id) {
+    setRevOpen((o) => ({ ...o, [id]: !o[id] }));
+    if (revs[id]) return;                      // already loaded, just reopening
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.bookingRevisions(id)
+        + (companyId ? `?company_id=${companyId}` : ''));
+      const d = res.ok ? await res.json() : [];
+      setRevs((m) => ({ ...m, [id]: Array.isArray(d) ? d : [] }));
+    } catch (_) {
+      setRevs((m) => ({ ...m, [id]: [] }));
+    }
+  }
 
   // Discarding a draft releases whatever plot(s) it still holds and deletes the row —
   // irreversible, but a draft is scratch work, not a real submission.
@@ -308,7 +325,55 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                 {b.status === 'sold' && String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id, eoi: '1' })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise EOI</Text></TouchableOpacity>}
                 {b.status === 'sold' && !String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise LOI</Text></TouchableOpacity>}
                 {b.status === 'pending' && <Text style={{ fontSize: 12, color: COLORS.warning }}>Awaiting approval</Text>}
+                {/* Only the latest version is ever listed, which is right — a deal
+                    should appear once, at its current terms. But the earlier ones are
+                    what was signed at the time, and there was no way to reach them
+                    from the product at all. */}
+                {b.revision_no > 0 && (
+                  <TouchableOpacity onPress={() => toggleRevisions(b.id)}
+                    style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
+                    <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
+                      {`\u27F2 Revisions ${revOpen[b.id] ? '\u25B4' : '\u25BE'}`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
+              {revOpen[b.id] && (
+                <View style={{ marginTop: 12, borderTopWidth: 1.5, borderTopColor: COLORS.border, paddingTop: 10 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 8 }}>
+                    REVISION HISTORY
+                  </Text>
+                  {!revs[b.id] ? <Text style={{ fontSize: 12, color: MUTED }}>Loading…</Text>
+                   : revs[b.id].length === 0 ? <Text style={{ fontSize: 12, color: MUTED }}>Couldn&apos;t load the history.</Text>
+                   : revs[b.id].map((v) => (
+                    <View key={v.id} style={{ paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: v.id === b.id ? COLORS.success : MUTED }}>
+                          {`R${v.revision_no || 0}`}
+                        </Text>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{rupee(v.final_amount)}</Text>
+                        {/* The version marked current is the one the card shows; the
+                            rest are superseded and say so rather than looking live. */}
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: v.id === b.id ? COLORS.success : MUTED }}>
+                          {v.id === b.id ? 'CURRENT' : 'superseded'}
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 }}>
+                        <Text style={{ fontSize: 11, color: MUTED, flex: 1 }}>
+                          {`Booked ${v.booking_date || '—'} · ${(v.approval_status || v.status || '').toUpperCase()}`}
+                          {v.stm_name ? ` · ${v.stm_name}` : ''}
+                        </Text>
+                        {v.loi_document
+                          ? <TouchableOpacity onPress={() => openLoi(v.id)}
+                              style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: COLORS.linkBg }}>
+                              <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}>📄 LOI</Text>
+                            </TouchableOpacity>
+                          : <Text style={{ fontSize: 11, color: MUTED }}>no LOI on file</Text>}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           ))}
           </View>}
