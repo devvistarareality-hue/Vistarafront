@@ -177,10 +177,15 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // half never reaches the client.
   const isCp = (b) => !!b.is_cp_sourced;
   const cpCount = preWho.filter(isCp).length;
+  // Source is a different axis from who booked it — a partner-sourced deal was still
+  // booked by one of the people, so its count overlaps theirs. Last in the strip and
+  // set off by a divider: sitting among the names it read as another person and
+  // invited adding it to the total, 108 + 67 + 11 against a list of 119.
   const whoChips = [
     ...(countsBy[myId] || who === myId ? [{ id: myId, depth: 0, label: 'Only me', count: countsBy[myId] || 0 }] : []),
-    ...(cpOnly && (cpCount || who === 'cp') ? [{ id: 'cp', depth: 0, label: 'Source: CP', count: cpCount }] : []),
     ...peopleOptions, ...others,
+    ...(cpOnly && (cpCount || who === 'cp')
+      ? [{ id: 'cp', depth: 0, label: 'Source: CP', count: cpCount, crossCut: true }] : []),
   ];
 
   const whoSet = !who || who === 'cp' ? null
@@ -227,7 +232,9 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', gap: 6 }}>
             {[{ id: '', depth: 0, label: 'All People', count: null }, ...whoChips].map((p) => (
-              <TouchableOpacity key={p.id || 'all'} onPress={() => { setWho(p.id); setOpen({}); }}
+              <React.Fragment key={p.id || 'all'}>
+              {p.crossCut && <View style={{ width: 1, backgroundColor: COLORS.border, marginHorizontal: 4, marginVertical: 4 }} />}
+              <TouchableOpacity onPress={() => { setWho(p.id); setOpen({}); }}
                 style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1.5,
                   borderColor: who === p.id ? BLUE : COLORS.border,
                   backgroundColor: who === p.id ? COLORS.linkBg : COLORS.white }}>
@@ -237,6 +244,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                   {(p.depth ? '└ ' : '') + p.label + (p.count == null ? '' : ` (${p.count})`)}
                 </Text>
               </TouchableOpacity>
+              </React.Fragment>
             ))}
           </View>
         </ScrollView>
