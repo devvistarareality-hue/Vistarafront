@@ -43,8 +43,8 @@ const CustomDrawerContent = (props) => {
         <View style={s.drawerLogo}>
           <Ionicons name="grid" size={24} color={COLORS.powderBlue} />
         </View>
-        <Text style={s.drawerHeaderText}>StrategicERP</Text>
-        <Text style={s.drawerHeaderSub}>Vistara Realty</Text>
+        <Text style={s.drawerHeaderText}>Nexora</Text>
+        <Text style={s.drawerHeaderSub}>Enterprise Resource Planning</Text>
       </View>
 
       <View style={s.menuSection}>

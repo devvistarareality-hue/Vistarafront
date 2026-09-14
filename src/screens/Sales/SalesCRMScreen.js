@@ -58,7 +58,7 @@ function getDesignationLabel(user) {
   if (des.includes('cp cluster head')) return { title: 'Channel Partner', sub: 'Your CP team' };
   if (des.includes('cp executive') || des.includes('channel partner')) return { title: 'Channel Partner', sub: 'Your pipeline & site visits' };
   if (des.includes('stm') || des.includes('sales team') || des.includes('sales executive')) return { title: 'Sales Executive', sub: 'Your pipeline & site visits' };
-  return { title: 'Sales CRM', sub: 'Vistara Realty' };
+  return { title: 'Sales CRM', sub: 'Nexora' };
 }
 
 export default function SalesCRMScreen({ navigation, route }) {
