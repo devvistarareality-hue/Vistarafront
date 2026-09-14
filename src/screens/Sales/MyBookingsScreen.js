@@ -178,6 +178,10 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   const isCp = (b) => !!b.is_cp_sourced;
   const cpCount = preWho.filter(isCp).length;
   const nonCpCount = preWho.length - cpCount;
+  // Both modules: a Sales manager's list carries partner-sourced deals too, through
+  // whoever on their team closed them. Shown only when the split is a real one — an
+  // all-or-nothing source tells you nothing, and the zero half is a dead chip.
+  const showSource = (cpCount > 0 && nonCpCount > 0) || who === 'cp' || who === 'noncp';
   // Two complete ways to slice the same list, each adding up to it on its own. They
   // are not meant to be added together — one booking has both a person and a source —
   // so the source pair sits behind a divider. Flat among the names, "Source: CP" read
@@ -185,7 +189,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   const whoChips = [
     ...(countsBy[myId] || who === myId ? [{ id: myId, depth: 0, label: 'Only me', count: countsBy[myId] || 0 }] : []),
     ...peopleOptions, ...others,
-    ...(cpOnly && preWho.length > 0 ? [
+    ...(showSource ? [
       { id: 'cp', depth: 0, label: 'Source: CP', count: cpCount, crossCut: true },
       { id: 'noncp', depth: 0, label: 'Every other source', count: nonCpCount },
     ] : []),
