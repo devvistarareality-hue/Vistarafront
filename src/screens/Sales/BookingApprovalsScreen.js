@@ -11,21 +11,45 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import { isManagerRole } from '../../lib/roles';
 import { unitLabel } from '../../lib/bookingUnit';
+import BookingDetails from '../../components/BookingDetails';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
-const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected'], ['', 'All']];
+// Cancelled sits beside Rejected rather than inside it: both are stored at
+// status='rejected', but one was refused before it counted and the other was a live
+// sale that came off the books and keeps its signed LOI. The server splits them.
+const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'],
+              ['rejected', 'Rejected'], ['cancelled', 'Cancelled'], ['', 'All']];
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function BookingApprovalsScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
+  async function toggleRevisions(id) {
+    setRevDetails({});   // every open starts collapsed
+    setRevOpen((o) => ({ ...o, [id]: !o[id] }));
+    if (revs[id]) return;
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.bookingRevisions(id) + cq('?'));
+      const d = res.ok ? await res.json() : [];
+      setRevs((m) => ({ ...m, [id]: Array.isArray(d) ? d : [] }));
+    } catch (_) {
+      setRevs((m) => ({ ...m, [id]: [] }));
+    }
+  }
   const isApprover = me?.role === 'Admin' || isManagerRole(me) || me?.is_staff;
   const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
   const [tab, setTab] = useState('pending');
+  // Details on the card, and the revision history loaded on demand — the same record
+  // My Bookings shows, because an approver deciding on a deal needs the figures in
+  // front of them, not a second screen to go and find.
+  const [cardDetails, setCardDetails] = useState({});
+  const [revs, setRevs] = useState({});
+  const [revOpen, setRevOpen] = useState({});
+  const [revDetails, setRevDetails] = useState({});
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -356,6 +380,25 @@ export default function BookingApprovalsScreen({ navigation, route }) {
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
+              {/* A revised deal gets its Details per version inside the history
+                  instead — the current version is one of them, so a card-level copy
+                  would be the same figures twice. */}
+              {!b.revision_no ? (
+                <TouchableOpacity onPress={() => setCardDetails((o) => ({ ...o, [b.id]: !o[b.id] }))}
+                  style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
+                  <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
+                    {cardDetails[b.id] ? '\u25B4 Hide Details' : '\u25BE Details'}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              {b.revision_no > 0 ? (
+                <TouchableOpacity onPress={() => toggleRevisions(b.id)}
+                  style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
+                  <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
+                    {`\u27F2 Revisions ${revOpen[b.id] ? '\u25B4' : '\u25BE'}`}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
               {b.status === 'draft' && (
                 <>
                   <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { draft: b.id })} style={[btn, { backgroundColor: COLORS.link }]}><Text style={btnT}>▸ Resume</Text></TouchableOpacity>
@@ -390,6 +433,49 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                 );
               })()}
             </View>
+            {!b.revision_no && cardDetails[b.id] ? <BookingDetails b={b} accent={BLUE} /> : null}
+            {revOpen[b.id] ? (
+              <View style={{ marginTop: 12, borderTopWidth: 1.5, borderTopColor: COLORS.border, paddingTop: 10 }}>
+                <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 8 }}>
+                  REVISION HISTORY
+                </Text>
+                {!revs[b.id] ? <Text style={{ fontSize: 12, color: MUTED }}>Loading…</Text>
+                 : revs[b.id].length === 0 ? <Text style={{ fontSize: 12, color: MUTED }}>Couldn&apos;t load the history.</Text>
+                 : revs[b.id].map((v) => (
+                  <View key={v.id} style={{ paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: v.id === b.id ? COLORS.success : MUTED }}>
+                        {`R${v.revision_no || 0}`}
+                      </Text>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{rupee(v.final_amount)}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: v.id === b.id ? COLORS.success : MUTED }}>
+                        {v.id === b.id ? 'CURRENT' : 'superseded'}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
+                      {`Booked ${v.booking_date || '—'} · ${(v.approval_status || v.status || '').toUpperCase()}`}
+                      {v.stm_name ? ` · ${v.stm_name}` : ''}
+                    </Text>
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                      {v.loi_document
+                        ? <TouchableOpacity onPress={() => openLoi(v.id)}
+                            style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: COLORS.linkBg }}>
+                            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}>📄 LOI</Text>
+                          </TouchableOpacity>
+                        : <Text style={{ fontSize: 11, color: MUTED }}>no LOI on file</Text>}
+                      <TouchableOpacity onPress={() => setRevDetails((o) => ({ ...o, [v.id]: !o[v.id] }))}
+                        style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
+                          backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border }}>
+                        <Text style={{ color: MUTED, fontWeight: '700', fontSize: 12 }}>
+                          {revDetails[v.id] ? '\u25B4 Details' : '\u25BE Details'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    {revDetails[v.id] ? <BookingDetails b={v} accent={BLUE} /> : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </View>
             ))}
           </View>
