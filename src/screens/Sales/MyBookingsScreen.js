@@ -135,7 +135,13 @@ export function MyBookingsList({ navigation }) {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{unitLabel(b).isUnit ? `Plot ${unitLabel(b).text}` : unitLabel(b).text}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
                   <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.client_name || '—'} · {b.phone}</Text>
-                  <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>Booked {b.booking_date || '—'}</Text>
+                  {/* STM alongside the unit, as Bookings & Approvals shows it. Usually
+                      the viewer, since this list is their own submissions — but a kiosk
+                      booking records the assisting salesperson in manual_stm_name, which
+                      stm_name prefers, so it is not always. */}
+                  <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>
+                    Booked {b.booking_date || '—'}{b.stm_name ? ` · STM: ${b.stm_name}` : ''}
+                  </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
