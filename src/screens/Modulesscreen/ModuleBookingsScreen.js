@@ -44,6 +44,22 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
   ];
   const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
+  // Revision history, fetched per booking on demand: only a handful of deals are ever
+  // revised, so loading every chain up front would be work for nothing.
+  const [revs, setRevs] = useState({});      // booking id → array of versions
+  const [revOpen, setRevOpen] = useState({});
+  async function toggleRevisions(id) {
+    setRevOpen((o) => ({ ...o, [id]: !o[id] }));
+    if (revs[id]) return;                      // already loaded, just reopening
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.bookingRevisions(id)
+        + (companyId ? `?company_id=${companyId}` : ''));
+      const d = res.ok ? await res.json() : [];
+      setRevs((m) => ({ ...m, [id]: Array.isArray(d) ? d : [] }));
+    } catch (_) {
+      setRevs((m) => ({ ...m, [id]: [] }));
+    }
+  }
 
   const load = useCallback(async () => {
     setErr('');
@@ -192,8 +208,60 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                         <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>📄 View / Download {isEoi(b) ? 'EOI' : 'LOI'}</Text>
                       </TouchableOpacity>
                     ) : null}
+                    {/* Only the latest version is listed here, at its current terms.
+                        The earlier ones are what was signed at the time — which for a
+                        team reconciling payments against documents is the whole
+                        question when a deal carries an R1. */}
+                    {b.revision_no > 0 ? (
+                      <TouchableOpacity onPress={() => toggleRevisions(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
+                        <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>
+                          {`\u27F2 Revisions ${revOpen[b.id] ? '\u25B2' : '\u25BE'}`}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
                   {detailsOpen[b.id] ? <BookingDetails b={b} /> : null}
+                  {revOpen[b.id] ? (
+                    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', paddingTop: 10 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL, letterSpacing: 0.6, marginBottom: 8 }}>
+                        REVISION HISTORY
+                      </Text>
+                      {!revs[b.id] ? <Text style={{ fontSize: 12, color: MUTED }}>Loading…</Text>
+                       : revs[b.id].length === 0 ? <Text style={{ fontSize: 12, color: MUTED }}>Couldn&apos;t load the history.</Text>
+                       : revs[b.id].map((v) => (
+                        <View key={v.id} style={{ paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <Text style={{ fontSize: 11, fontWeight: '800', color: v.id === b.id ? TEAL : MUTED }}>
+                              {`R${v.revision_no || 0}`}
+                            </Text>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{rupee(v.final_amount)}</Text>
+                            {/* The version marked current is the one the card shows; the
+                                rest are superseded and say so rather than looking live. */}
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: v.id === b.id ? TEAL : MUTED }}>
+                              {v.id === b.id ? 'CURRENT' : 'superseded'}
+                            </Text>
+                          </View>
+                          <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
+                            {`Booked ${v.booking_date || '—'} · ${(v.approval_status || v.status || '').toUpperCase()}`}
+                            {v.stm_name ? ` · ${v.stm_name}` : ''}
+                          </Text>
+                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                            {v.loi_document ? (
+                              <TouchableOpacity onPress={() => openLoi(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#99F6E4', backgroundColor: COLORS.white }}>
+                                <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>{`📄 View / Download ${isEoi(v) ? 'EOI' : 'LOI'}`}</Text>
+                              </TouchableOpacity>
+                            ) : <Text style={{ fontSize: 11, color: MUTED }}>no document on file</Text>}
+                            <TouchableOpacity onPress={() => toggleDetails(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
+                              <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>
+                                {detailsOpen[v.id] ? '\u25B2 Details' : '\u25BE Details'}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                          {detailsOpen[v.id] ? <BookingDetails b={v} /> : null}
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
               ))}
             </View>}
