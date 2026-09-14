@@ -177,20 +177,26 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // half never reaches the client.
   const isCp = (b) => !!b.is_cp_sourced;
   const cpCount = preWho.filter(isCp).length;
-  // Source is a different axis from who booked it — a partner-sourced deal was still
-  // booked by one of the people, so its count overlaps theirs. Last in the strip and
-  // set off by a divider: sitting among the names it read as another person and
-  // invited adding it to the total, 108 + 67 + 11 against a list of 119.
+  const nonCpCount = preWho.length - cpCount;
+  // Two complete ways to slice the same list, each adding up to it on its own. They
+  // are not meant to be added together — one booking has both a person and a source —
+  // so the source pair sits behind a divider. Flat among the names, "Source: CP" read
+  // as another person and invited 108 + 67 + 11 against a list of 119.
   const whoChips = [
     ...(countsBy[myId] || who === myId ? [{ id: myId, depth: 0, label: 'Only me', count: countsBy[myId] || 0 }] : []),
     ...peopleOptions, ...others,
-    ...(cpOnly && (cpCount || who === 'cp')
-      ? [{ id: 'cp', depth: 0, label: 'Source: CP', count: cpCount, crossCut: true }] : []),
+    ...(cpOnly && preWho.length > 0 ? [
+      { id: 'cp', depth: 0, label: 'Source: CP', count: cpCount, crossCut: true },
+      { id: 'noncp', depth: 0, label: 'Every other source', count: nonCpCount },
+    ] : []),
   ];
 
-  const whoSet = !who || who === 'cp' ? null
+  const whoSet = !who || who === 'cp' || who === 'noncp' ? null
     : who === myId ? new Set([myId]) : subtreeIds(who, childrenOf);
-  const byWho = (b) => (!who ? true : who === 'cp' ? isCp(b) : whoSet.has(bookedById(b)));
+  const byWho = (b) => (!who ? true
+    : who === 'cp' ? isCp(b)
+    : who === 'noncp' ? !isCp(b)
+    : whoSet.has(bookedById(b)));
 
   const visible = preWho.filter(byWho);
 
@@ -231,7 +237,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
       {whoChips.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            {[{ id: '', depth: 0, label: 'All People', count: null }, ...whoChips].map((p) => (
+            {[{ id: '', depth: 0, label: 'All People', count: preWho.length }, ...whoChips].map((p) => (
               <React.Fragment key={p.id || 'all'}>
               {p.crossCut && <View style={{ width: 1, backgroundColor: COLORS.border, marginHorizontal: 4, marginVertical: 4 }} />}
               <TouchableOpacity onPress={() => { setWho(p.id); setOpen({}); }}
