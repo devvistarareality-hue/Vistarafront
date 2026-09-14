@@ -151,13 +151,22 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
     .filter((k) => k !== myId && !teamById[k])
     .map((k) => ({ id: k, depth: 0, label: personName(k), count: countsBy[k] }))
     .sort((a, b) => a.label.localeCompare(b.label));
+  // 'Source: CP' sits in the same strip because it answers the same question — which
+  // slice of this list am I looking at — even though it cuts across people rather
+  // than down the tree. The flag is the server's: whether a deal is Channel-Partner-
+  // sourced depends on the lead as well as the booking's own Source, and the lead
+  // half never reaches the client.
+  const isCp = (b) => !!b.is_cp_sourced;
+  const cpCount = rows.filter(isCp).length;
   const whoChips = [
     ...(countsBy[myId] ? [{ id: myId, depth: 0, label: 'Only me', count: countsBy[myId] }] : []),
+    ...(cpOnly && cpCount ? [{ id: 'cp', depth: 0, label: 'Source: CP', count: cpCount }] : []),
     ...peopleOptions, ...others,
   ];
 
-  const whoSet = !who ? null : who === myId ? new Set([myId]) : subtreeIds(who, childrenOf);
-  const byWho = (b) => !whoSet || whoSet.has(bookedById(b));
+  const whoSet = !who || who === 'cp' ? null
+    : who === myId ? new Set([myId]) : subtreeIds(who, childrenOf);
+  const byWho = (b) => (!who ? true : who === 'cp' ? isCp(b) : whoSet.has(bookedById(b)));
 
   const projName = (b) => b.project_name || '—';
   // Built from every row, not the filtered ones, so picking a project never removes
