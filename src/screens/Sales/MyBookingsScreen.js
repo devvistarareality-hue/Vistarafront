@@ -7,6 +7,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { unitLabel } from '../../lib/bookingUnit';
+import BookingDetails from '../../components/BookingDetails';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
@@ -52,6 +53,10 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // revised, so loading every chain up front would be work for nothing.
   const [revs, setRevs] = useState({});      // booking id → array of versions
   const [revOpen, setRevOpen] = useState({});
+  // Keyed by booking id, so a version's details and the card's own open and close
+  // independently — the point of opening two is to read them side by side.
+  const [detailsOpen, setDetailsOpen] = useState({});
+  const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
   const me = useSelector((s) => s.auth.user);
   const [team, setTeam] = useState([]);   // the viewer's reporting subtree
 
@@ -337,7 +342,16 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                     </Text>
                   </TouchableOpacity>
                 )}
+                {/* The same block Accounts & Finance reads, rather than a second
+                    rendering of the same deal. */}
+                <TouchableOpacity onPress={() => toggleDetails(b.id)}
+                  style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
+                  <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
+                    {detailsOpen[b.id] ? '\u25B4 Hide Details' : '\u25BE Details'}
+                  </Text>
+                </TouchableOpacity>
               </View>
+              {detailsOpen[b.id] && <BookingDetails b={b} accent={BLUE} />}
               {revOpen[b.id] && (
                 <View style={{ marginTop: 12, borderTopWidth: 1.5, borderTopColor: COLORS.border, paddingTop: 10 }}>
                   <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 8 }}>
@@ -369,7 +383,18 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                               <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}>📄 LOI</Text>
                             </TouchableOpacity>
                           : <Text style={{ fontSize: 11, color: MUTED }}>no LOI on file</Text>}
+                        {/* Per version, so two can be open at once: what changed
+                            between R0 and R1 is the question the history is opened
+                            to answer, and the figures are where the answer is. */}
+                        <TouchableOpacity onPress={() => toggleDetails(v.id)}
+                          style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
+                            backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border, marginLeft: 6 }}>
+                          <Text style={{ color: MUTED, fontWeight: '700', fontSize: 12 }}>
+                            {detailsOpen[v.id] ? '\u25B4 Details' : '\u25BE Details'}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
+                      {detailsOpen[v.id] && <BookingDetails b={v} accent={BLUE} />}
                     </View>
                   ))}
                 </View>
