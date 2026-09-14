@@ -362,7 +362,11 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                   <TouchableOpacity onPress={() => discardDraft(b.id)} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA' }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Discard</Text></TouchableOpacity>
                 </>
               )}
-              {b.status === 'pending' && isApprover && (
+              {/* The server decides per booking, not per person: a CP-sourced deal
+                  routes to the project's CP approvers and everything else to its
+                  regular ones, so a CP manager cannot action a walk-in they booked
+                  themselves. Offering the buttons anyway made the tap fail silently. */}
+              {b.status === 'pending' && isApprover && b.can_approve && (
                 <>
                   <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}>✓ Approve</Text></TouchableOpacity>
                   <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}>✕ Reject</Text></TouchableOpacity>
