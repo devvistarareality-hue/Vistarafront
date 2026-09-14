@@ -29,6 +29,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const [err, setErr] = useState('');
   const [open, setOpen] = useState({});
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
+  const [tab, setTab] = useState('approved');   // 'approved' | 'cancelled'
   const [detailsOpen, setDetailsOpen] = useState({});
   // Same three filters as the Sales approvals screen: booking date, project, STM.
   const [range, setRange] = useState({ from: '', to: '' });
@@ -86,7 +87,13 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     if (a.includes('REJECT') || a.includes('CANCEL') || a.includes('PENDING')) return false;
     return a.includes('APPROVED') || b.status === 'sold';
   };
-  const approved = rows.filter(isApproved);
+  // A cancelled booking keeps its signed LOI, and Accounts reconciles against it —
+  // a deal that was on the books and came off has to be explainable, not a gap. Kept
+  // on its own tab so it can never be mistaken for revenue.
+  const isCancelled = (b) => String(b.approval_status || '').toUpperCase().includes('CANCEL');
+  const approvedRows  = rows.filter(isApproved);
+  const cancelledRows = rows.filter(isCancelled);
+  const approved = tab === 'cancelled' ? cancelledRows : approvedRows;
 
   // Booking date is a plain YYYY-MM-DD, so the range compares as strings. A booking
   // with no date can't be placed in time, so a live range excludes it rather than
@@ -135,6 +142,19 @@ export default function ModuleBookingsScreen({ navigation, route }) {
         {loading ? <ActivityIndicator color={TEAL} style={{ marginTop: 30 }} />
         : err ? <View style={[CARD, { alignItems: 'center' }]}><Text style={{ color: COLORS.error }}>{err}</Text></View>
         : <>
+          {(approvedRows.length > 0 || cancelledRows.length > 0) && (
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+              {[['approved', 'Approved', approvedRows.length], ['cancelled', 'Cancelled', cancelledRows.length]].map(([k, label, n]) => (
+                <TouchableOpacity key={k} onPress={() => { setTab(k); setDetailsOpen({}); }}
+                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8,
+                    backgroundColor: tab === k ? TEAL : COLORS.surfaceAlt }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: tab === k ? '#fff' : MUTED }}>
+                    {`${label} (${n})`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
           {approved.length > 0 && (
             <>
               {/* Booking-date range */}
@@ -168,12 +188,12 @@ export default function ModuleBookingsScreen({ navigation, route }) {
           )}
           {projectNames.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 28 }]}>
-            <Text style={{ color: MUTED, textAlign: 'center' }}>{narrowed ? 'No approved bookings match these filters.' : 'No bookings yet.'}</Text>
+            <Text style={{ color: MUTED, textAlign: 'center' }}>{narrowed ? `No ${tab} bookings match these filters.` : (tab === 'cancelled' ? 'No cancelled bookings.' : 'No bookings yet.')}</Text>
           </View>
         ) : <>
-          <View style={{ marginBottom: 12, borderRadius: 14, padding: 16, backgroundColor: TEAL }}>
-            <Text style={{ color: '#CCFBF1', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {narrowed ? 'Matching' : 'Total'} Approved · {grandCount} booking{grandCount === 1 ? '' : 's'} · {projectNames.length} project{projectNames.length === 1 ? '' : 's'}
+          <View style={{ marginBottom: 12, borderRadius: 14, padding: 16, backgroundColor: tab === 'cancelled' ? '#475569' : TEAL }}>
+            <Text style={{ color: tab === 'cancelled' ? '#E2E8F0' : '#CCFBF1', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {`${narrowed ? 'Matching' : 'Total'} ${tab === 'cancelled' ? 'Cancelled' : 'Approved'} · ${grandCount} booking${grandCount === 1 ? '' : 's'} · ${projectNames.length} project${projectNames.length === 1 ? '' : 's'}`}
             </Text>
             {(!!proj || !!stm) && <Text style={{ color: '#CCFBF1', fontSize: 11, marginTop: 2 }} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
             <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
