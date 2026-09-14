@@ -200,9 +200,15 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                     </View>
                   </View>
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                    <TouchableOpacity onPress={() => toggleDetails(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
-                      <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>{detailsOpen[b.id] ? '▲ Hide Details' : '▾ Details'}</Text>
-                    </TouchableOpacity>
+                    {/* A revised deal gets its Details per version inside the history
+                        instead — the current version is one of them, so a card-level
+                        copy is the same figures twice. It also shares an id with that
+                        row, which rendered the block twice at once. */}
+                    {!b.revision_no ? (
+                      <TouchableOpacity onPress={() => toggleDetails(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
+                        <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>{detailsOpen[b.id] ? '▲ Hide Details' : '▾ Details'}</Text>
+                      </TouchableOpacity>
+                    ) : null}
                     {b.loi_document ? (
                       <TouchableOpacity onPress={() => openLoi(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#99F6E4', backgroundColor: COLORS.white }}>
                         <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>📄 View / Download {isEoi(b) ? 'EOI' : 'LOI'}</Text>
@@ -220,7 +226,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                       </TouchableOpacity>
                     ) : null}
                   </View>
-                  {detailsOpen[b.id] ? <BookingDetails b={b} /> : null}
+                  {!b.revision_no && detailsOpen[b.id] ? <BookingDetails b={b} /> : null}
                   {revOpen[b.id] ? (
                     <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', paddingTop: 10 }}>
                       <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL, letterSpacing: 0.6, marginBottom: 8 }}>
