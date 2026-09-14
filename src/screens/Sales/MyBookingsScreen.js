@@ -348,10 +348,11 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                 {b.status === 'sold' && String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id, eoi: '1' })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise EOI</Text></TouchableOpacity>}
                 {b.status === 'sold' && !String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise LOI</Text></TouchableOpacity>}
                 {b.status === 'pending' && <Text style={{ fontSize: 12, color: COLORS.warning }}>Awaiting approval</Text>}
-                {/* A cancelled deal is kept whole — signed LOI and every figure — so
-                    it can be explained later. Its own key space, since the card and
-                    the current version in the history share a booking id. */}
-                {isCancelled(b) ? (
+                {/* Every figure of the deal, beside its signed LOI. A revised deal gets
+                    its Details per version inside the history instead — the current
+                    version is one of them, so a card-level copy would be the same
+                    figures twice, and the two share a booking id. */}
+                {!b.revision_no ? (
                   <TouchableOpacity onPress={() => setCardDetails((o) => ({ ...o, [b.id]: !o[b.id] }))}
                     style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
                     <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
@@ -372,7 +373,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                   </TouchableOpacity>
                 )}
               </View>
-              {isCancelled(b) && cardDetails[b.id] ? <BookingDetails b={b} accent={BLUE} /> : null}
+              {!b.revision_no && cardDetails[b.id] ? <BookingDetails b={b} accent={BLUE} /> : null}
               {revOpen[b.id] && (
                 <View style={{ marginTop: 12, borderTopWidth: 1.5, borderTopColor: COLORS.border, paddingTop: 10 }}>
                   <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 8 }}>
