@@ -58,7 +58,7 @@ function getDesignationLabel(user) {
   if (des.includes('cp cluster head')) return { title: 'Channel Partner', sub: 'Your CP team' };
   if (des.includes('cp executive') || des.includes('channel partner')) return { title: 'Channel Partner', sub: 'Your pipeline & site visits' };
   if (des.includes('stm') || des.includes('sales team') || des.includes('sales executive')) return { title: 'Sales Executive', sub: 'Your pipeline & site visits' };
-  return { title: 'Sales CRM', sub: 'Vistara Realty' };
+  return { title: 'Sales CRM', sub: 'Nexora' };
 }
 
 export default function SalesCRMScreen({ navigation, route }) {
@@ -86,15 +86,14 @@ export default function SalesCRMScreen({ navigation, route }) {
   // Managers also get the STM-portal modules (Site Visits, Booking, My Conversions).
   const isManager = isManagerRole(user);
   // CP Executive works their own leads like an STM (no Meta) → same modules.
-  const isCp = _des.includes('cp executive') || _des.includes('channel partner');
-  // Anyone on the Channel Partner side — a CP Executive or a CP Cluster Head. The
-  // designation prefix is the same test the backend uses to decide who gets into
-  // the module at all; `isCp` above misses a Cluster Head, whose designation names
-  // no module.
-  const isCpSide = _des.startsWith('cp') || _des.includes('channel partner');
+  // Anyone on the Channel Partner side. The designation prefix is the same test the
+  // backend uses to decide who gets into the module at all (is_cp_manager / is_cp),
+  // and it is the only one that catches a CP Cluster Head — whose designation names
+  // no module, so looking for "channel partner" in it silently misses them.
+  const isCp = _des.startsWith('cp') || _des.includes('channel partner');
   // Their org chart is the Channel Partner one — same tile, but it asks for (and is
   // headed by) the CP side rather than Sales.
-  const teamParams = (m) => (m.key === 'MyTeam' && isCpSide
+  const teamParams = (m) => (m.key === 'MyTeam' && isCp
     ? { ...m, navParams: { cp: true, title: 'My Team' } } : m);
   const baseFilter = m = (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
   // Tiles that pull hierarchy-scoped data need adminView threaded into their own

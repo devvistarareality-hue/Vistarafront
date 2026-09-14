@@ -30,6 +30,12 @@ const safeDate = (s) => { const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s
 export default function BookingFormScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  // The seller printed on the LOI — the company this booking belongs to, which is the
+  // viewer's own or whichever an admin has selected. The ERP is company-wise, so this
+  // can never be a constant.
+  const allCompanies = useSelector((s) => s.companies?.companies || []);
+  const issuerName = (companyId ? allCompanies.find((c) => c.id === companyId)?.name : null)
+    || me?.company_name || '';
   const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
   const p = route?.params || {};
   const reviseId = p.revise || '';
@@ -641,7 +647,7 @@ export default function BookingFormScreen({ navigation, route }) {
       areaUnit: f.area_unit || flags.areaUnit,
     };
     try {
-      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, projectName: project?.name, loiVariant: project?.loi_variant, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit, priceBooks: pratBooks });
+      const html = buildLOIHtml(meta, v, instArr(), { formulaSet, companyName: issuerName, projectName: project?.name, loiVariant: project?.loi_variant, projectLogoUrl: project?.logo_url, isRevision: !!reviseId, revNo: (reviseId ? 1 : 0), extraWorkInst: ewArr(), extraTerms: cleanTerms(), areaUnit: f.area_unit || flags.areaUnit, priceBooks: pratBooks });
       const { uri } = await Print.printToFileAsync({ html });
       // Name the file like the web LOI, then share (Save to Files/Downloads, WhatsApp, Print…).
       const name = `LOI_${project?.name || ''}_Plot${plotNo || ''}_${(f.client_name || '').trim().replace(/\s+/g, '_')}.pdf`;

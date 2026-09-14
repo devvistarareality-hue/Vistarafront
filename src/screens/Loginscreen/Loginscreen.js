@@ -201,7 +201,7 @@ const LoginScreen = () => {
               <View style={s.dividerDot} />
               <View style={s.dividerLine} />
             </View>
-            <Text style={s.brandName}>Vistara</Text>
+            <Text style={s.brandName}>NEXORA</Text>
             <Text style={s.brandTag}>ERP PLATFORM</Text>
             <Text style={s.brandSub}>Real Estate Management</Text>
           </View>
