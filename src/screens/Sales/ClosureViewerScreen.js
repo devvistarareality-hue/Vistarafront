@@ -90,6 +90,9 @@ export default function ClosureViewerScreen({ navigation, route }) {
   const [filter,     setFilter]     = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [zoomMaster, setZoomMaster] = useState(false);
+  // The inline (non-zoomed) map's real aspect ratio, measured once the image loads —
+  // see the Image/Svg pair below for why a hardcoded ratio misaligns the zone overlay.
+  const [mapNat, setMapNat] = useState({ w: 16, h: 10 });
   const [sources, setSources] = useState([]);
   const [notice,  setNotice]  = useState(''); // transient banner (unit taken / hold expired)
   const [busyIds, setBusyIds] = useState(() => new Set()); // plot ids with an in-flight hold/release call
@@ -495,7 +498,15 @@ export default function ClosureViewerScreen({ navigation, route }) {
               </View>
             </View>
             <View style={{ width: '100%' }}>
-              <Image source={{ uri: mapImage }} style={{ width: '100%', aspectRatio: 16 / 10 }} resizeMode="contain" />
+              {/* aspectRatio must match the image's REAL proportions, not a guessed
+                  constant — the Svg below stretches to fill this exact box
+                  (preserveAspectRatio="none"), so any letterboxing resizeMode="contain"
+                  adds inside a wrongly-shaped box shows up as zones drifting off the
+                  actual plan underneath. Measuring on load and re-rendering with the
+                  true ratio (same fix InteractiveMapModal below already uses) removes
+                  that gap entirely — the 16:10 default only shows for one frame. */}
+              <Image source={{ uri: mapImage }} style={{ width: '100%', aspectRatio: mapNat.w / mapNat.h }} resizeMode="contain"
+                onLoad={({ nativeEvent }) => { if (nativeEvent?.source) setMapNat({ w: nativeEvent.source.width || 16, h: nativeEvent.source.height || 10 }); }} />
               <Svg style={StyleSheet.absoluteFill} viewBox="0 0 100 100" preserveAspectRatio="none">
                 {zones.map(zone => {
                   const plot = plotByNumber[String(zone.plotNumber)];
