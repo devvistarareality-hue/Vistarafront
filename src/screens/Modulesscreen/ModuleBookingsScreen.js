@@ -10,6 +10,7 @@ import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import { unitLabel } from '../../lib/bookingUnit';
+import BookingDetails from '../../components/BookingDetails';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -17,83 +18,6 @@ const TEAL = '#0D9488';
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const isEoi = (b) => String(b.plot_numbers || '').toUpperCase().startsWith('EOI');
-const money0 = (n) => (n === '' || n == null) ? '—' : '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
-const val = (v) => (v === '' || v == null) ? '—' : String(v);
-
-// One label:value row inside the Details panel.
-const DRow = ({ l, v }) => (
-  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-    <Text style={{ fontSize: 11, color: '#8492A6', fontWeight: '600', flexShrink: 1 }}>{l}</Text>
-    <Text style={{ fontSize: 12, color: '#1A1A2E', fontWeight: '700', textAlign: 'right' }}>{v}</Text>
-  </View>
-);
-// Due dates are stored yyyy-mm-dd; show them as dd-mm-yyyy for the accounts view.
-const fmtDate = (d) => {
-  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(d || ''));
-  return m ? `${m[3].padStart(2, '0')}-${m[2].padStart(2, '0')}-${m[1]}` : (d || '—');
-};
-function BookingDetails({ b }) {
-  const rawInsts = Array.isArray(b.installments) ? b.installments : [];
-  // Sort the payment schedule by due date ascending (yyyy-mm-dd sorts chronologically).
-  const insts = [...rawInsts].sort((a, x) => String(a.date || '').localeCompare(String(x.date || '')));
-  const Head = ({ t }) => <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 10, marginBottom: 4 }}>{t}</Text>;
-  return (
-    <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', borderStyle: 'dashed' }}>
-      <Head t="Client & Property" />
-      <DRow l="Client" v={val(b.client_name)} />
-      <DRow l="Phone" v={val(b.phone)} />
-      <DRow l="Gender" v={val(b.gender)} />
-      <DRow l="Address" v={val(b.address)} />
-      <DRow l="Source" v={val(b.source)} />
-      {b.cp_name ? <DRow l="Reference / CP" v={val(b.cp_name)} /> : null}
-      <DRow l="Unit" v={val(b.plot_numbers || b.plot_number)} />
-      <DRow l="Type" v={val(b.villa_type || b.bunglow_type)} />
-      <DRow l="STM" v={val(b.stm_name)} />
-      <DRow l="Booking Date" v={val(b.booking_date)} />
-      <DRow l="Pricing" v={String(b.formula_set || '').toUpperCase() || '—'} />
-      <DRow l="Plot Area" v={`${val(b.area)} ${b.area_unit || ''}`.trim()} />
-      <DRow l="Construction Area" v={val(b.const_area)} />
-      <Head t="Rates & Amounts" />
-      <DRow l="Land Rate" v={money0(b.land_rate)} />
-      <DRow l="Development Rate" v={money0(b.dev_rate)} />
-      <DRow l="Construction Rate" v={money0(b.const_rate)} />
-      {Number(b.sale_deed_rate) ? <DRow l="Sale Deed Rate" v={money0(b.sale_deed_rate)} /> : null}
-      <DRow l="Sale Deed %" v={b.sale_deed_pct != null ? b.sale_deed_pct + '%' : '—'} />
-      {Number(b.land_sale_deed) ? <DRow l="Land Sale Deed" v={money0(b.land_sale_deed)} /> : null}
-      {Number(b.const_agreement) ? <DRow l="Construction Agreement" v={money0(b.const_agreement)} /> : null}
-      {Number(b.premium_location) ? <DRow l="Premium Location" v={money0(b.premium_location)} /> : null}
-      <DRow l="Plot Basic" v={money0(b.plot_basic)} />
-      <DRow l="Plot Development" v={money0(b.plot_dev)} />
-      <DRow l="Construction Amount" v={money0(b.const_amt)} />
-      <DRow l="Unit Price" v={money0(b.sale_deed)} />
-      <DRow l="Stamp Duty" v={money0(b.stamp_duty)} />
-      <DRow l="Registration" v={money0(b.reg_fees)} />
-      <DRow l="GST" v={money0(b.gst)} />
-      {/* Kalrav-3 / Ankhol / Industrial split maintenance into deposit + advance; plain
-          Kalrav books a single Maintenance amount and leaves both at 0. Test numerically —
-          DRF serialises decimals as strings, so "0.00" is truthy and a
-          `maint_deposit || maintenance` fallback would never fire. */}
-      {(Number(b.maint_deposit) || Number(b.maint_advance)) ? (
-        <>
-          <DRow l="Maintenance Deposit" v={money0(b.maint_deposit)} />
-          {Number(b.maint_advance) ? <DRow l="Maintenance Advance" v={money0(b.maint_advance)} /> : null}
-        </>
-      ) : (
-        <DRow l="Maintenance" v={money0(b.maintenance)} />
-      )}
-      <DRow l="Legal Charges" v={money0(b.legal_charges)} />
-      <DRow l="Total Legal & Other" v={money0(b.total_extra)} />
-      {Number(b.discount) ? <DRow l="Discount" v={money0(b.discount)} /> : null}
-      {Number(b.extra_work_amount) ? <DRow l="Extra Work" v={money0(b.extra_work_amount)} /> : null}
-      <DRow l="Final Amount" v={money0(b.final_amount)} />
-      {insts.length > 0 && <Head t="Payment Schedule" />}
-      {insts.map((i, idx) => (
-        <DRow key={idx} l={`${idx + 1}. ${fmtDate(i.date)}  ${i.pct != null ? i.pct + '%' : ''}  ${i.isNsd ? '(Extra Work)' : i.isExtra ? '(Legal & Other)' : ''}`.trim()} v={money0(i.amt)} />
-      ))}
-    </View>
-  );
-}
-
 // Accounts & Finance — read-only view of every sales booking (LOI + EOI), grouped by
 // project. Review details + open the signed document; no editing.
 export default function ModuleBookingsScreen({ navigation, route }) {
@@ -120,6 +44,29 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
   ];
   const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
+  // Revision history, fetched per booking on demand: only a handful of deals are ever
+  // revised, so loading every chain up front would be work for nothing.
+  const [revs, setRevs] = useState({});      // booking id → array of versions
+  const [revOpen, setRevOpen] = useState({});
+  // Details inside the history get their own key space, separate from the card's: the
+  // current version shares the booking's id, so one shared map let a single toggle
+  // open two blocks at once. Cleared on every open so the history starts collapsed —
+  // it is opened to scan the versions, and a panel left open buries that list.
+  const [revDetails, setRevDetails] = useState({});
+  const toggleRevDetails = (id) => setRevDetails((o) => ({ ...o, [id]: !o[id] }));
+  async function toggleRevisions(id) {
+    setRevDetails({});
+    setRevOpen((o) => ({ ...o, [id]: !o[id] }));
+    if (revs[id]) return;                      // already loaded, just reopening
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.bookingRevisions(id)
+        + (companyId ? `?company_id=${companyId}` : ''));
+      const d = res.ok ? await res.json() : [];
+      setRevs((m) => ({ ...m, [id]: Array.isArray(d) ? d : [] }));
+    } catch (_) {
+      setRevs((m) => ({ ...m, [id]: [] }));
+    }
+  }
 
   const load = useCallback(async () => {
     setErr('');
@@ -260,16 +207,74 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                     </View>
                   </View>
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                    <TouchableOpacity onPress={() => toggleDetails(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
-                      <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>{detailsOpen[b.id] ? '▲ Hide Details' : '▾ Details'}</Text>
-                    </TouchableOpacity>
+                    {/* A revised deal gets its Details per version inside the history
+                        instead — the current version is one of them, so a card-level
+                        copy is the same figures twice. It also shares an id with that
+                        row, which rendered the block twice at once. */}
+                    {!b.revision_no ? (
+                      <TouchableOpacity onPress={() => toggleDetails(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
+                        <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>{detailsOpen[b.id] ? '▲ Hide Details' : '▾ Details'}</Text>
+                      </TouchableOpacity>
+                    ) : null}
                     {b.loi_document ? (
                       <TouchableOpacity onPress={() => openLoi(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#99F6E4', backgroundColor: COLORS.white }}>
                         <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>📄 View / Download {isEoi(b) ? 'EOI' : 'LOI'}</Text>
                       </TouchableOpacity>
                     ) : null}
+                    {/* Only the latest version is listed here, at its current terms.
+                        The earlier ones are what was signed at the time — which for a
+                        team reconciling payments against documents is the whole
+                        question when a deal carries an R1. */}
+                    {b.revision_no > 0 ? (
+                      <TouchableOpacity onPress={() => toggleRevisions(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
+                        <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>
+                          {`\u27F2 Revisions ${revOpen[b.id] ? '\u25B2' : '\u25BE'}`}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
-                  {detailsOpen[b.id] ? <BookingDetails b={b} /> : null}
+                  {!b.revision_no && detailsOpen[b.id] ? <BookingDetails b={b} /> : null}
+                  {revOpen[b.id] ? (
+                    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', paddingTop: 10 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL, letterSpacing: 0.6, marginBottom: 8 }}>
+                        REVISION HISTORY
+                      </Text>
+                      {!revs[b.id] ? <Text style={{ fontSize: 12, color: MUTED }}>Loading…</Text>
+                       : revs[b.id].length === 0 ? <Text style={{ fontSize: 12, color: MUTED }}>Couldn&apos;t load the history.</Text>
+                       : revs[b.id].map((v) => (
+                        <View key={v.id} style={{ paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <Text style={{ fontSize: 11, fontWeight: '800', color: v.id === b.id ? TEAL : MUTED }}>
+                              {`R${v.revision_no || 0}`}
+                            </Text>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{rupee(v.final_amount)}</Text>
+                            {/* The version marked current is the one the card shows; the
+                                rest are superseded and say so rather than looking live. */}
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: v.id === b.id ? TEAL : MUTED }}>
+                              {v.id === b.id ? 'CURRENT' : 'superseded'}
+                            </Text>
+                          </View>
+                          <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
+                            {`Booked ${v.booking_date || '—'} · ${(v.approval_status || v.status || '').toUpperCase()}`}
+                            {v.stm_name ? ` · ${v.stm_name}` : ''}
+                          </Text>
+                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                            {v.loi_document ? (
+                              <TouchableOpacity onPress={() => openLoi(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#99F6E4', backgroundColor: COLORS.white }}>
+                                <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>{`📄 View / Download ${isEoi(v) ? 'EOI' : 'LOI'}`}</Text>
+                              </TouchableOpacity>
+                            ) : <Text style={{ fontSize: 11, color: MUTED }}>no document on file</Text>}
+                            <TouchableOpacity onPress={() => toggleRevDetails(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
+                              <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>
+                                {revDetails[v.id] ? '\u25B2 Details' : '\u25BE Details'}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                          {revDetails[v.id] ? <BookingDetails b={v} /> : null}
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
               ))}
             </View>}

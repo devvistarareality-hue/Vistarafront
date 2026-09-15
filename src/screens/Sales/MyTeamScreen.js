@@ -102,6 +102,8 @@ const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
 
+// `cp` is the Channel Partner chart: scoped by CP designation rather than by
+// module, since CP staff sit in Sales and there is no module to assign them to.
 // "My Team" / org chart. `module` scopes to a department (admins only); `scope='all'`
 // shows the whole company. Non-admins always get their own reporting subtree.
 export default function MyTeamScreen({ navigation, route }) {
@@ -110,11 +112,15 @@ export default function MyTeamScreen({ navigation, route }) {
   const companies = useSelector((s) => s.companies?.companies || []);
   const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
   const companyName = (companyId && companies.find((c) => c.id === companyId)?.name) || me?.company_name || 'Organisation';
-  const { module = '', scope = '', title = 'My Team', adminView = false } = route?.params || {};
+  const { module = '', scope = '', title = 'My Team', adminView = false, cp = false } = route?.params || {};
+  // What the department node and the count are named. Separate from `module`, which
+  // is a query scope — the CP chart has a department name but no module to ask for.
+  const label = cp ? 'Channel Partner' : module;
   const query = (() => {
     const parts = [];
     if (isAdmin) {
-      if (scope === 'all') parts.push('scope=all');
+      if (cp) parts.push('cp=1');
+      else if (scope === 'all') parts.push('scope=all');
       else if (module) parts.push(`module=${encodeURIComponent(module)}`);
     }
     // Pushed from the Admin section (see SalesCRMScreen) — request the full company
@@ -158,8 +164,8 @@ export default function MyTeamScreen({ navigation, route }) {
       // Manager view: show the department header on top, then the manager + their team.
       const meNode = build({ id: me?.id, name: me?.name, designation: me?.designation, role: me?.role });
       return {
-        name: module || companyName,
-        designation: module ? 'Department' : 'Company',
+        name: label || companyName,
+        designation: label ? 'Department' : 'Company',
         _root: true, children: [meNode],
       };
     }
@@ -170,18 +176,18 @@ export default function MyTeamScreen({ navigation, route }) {
     tops = sortSiblings(tops);
     // Always show a department/company header so the context is consistent.
     return {
-      name: scope === 'all' ? companyName : (module || companyName),
-      designation: scope === 'all' ? 'Organisation' : (module ? 'Department' : 'Company'),
+      name: scope === 'all' ? companyName : (label || companyName),
+      designation: scope === 'all' ? 'Organisation' : (label ? 'Department' : 'Company'),
       _root: true, children: tops.map(build),
     };
   })();
   const orgView = !!(tree && !tree._isMe);
-  const showStats = module === 'Sales';   // leads/closures are sales-only
+  const showStats = cp || module === 'Sales';   // leads/closures are sales-only, and CP is part of Sales
   const n = team.length;
   const subtitle = scope === 'all'
     ? `${n} across the organisation`
-    : module && isAdmin
-    ? `${n} in ${module}`
+    : label && isAdmin
+    ? `${n} in ${label}`
     : orgView
     ? `${n} across the organisation`
     : `${n} reporting under you${n ? ` · ${directs} direct` : ''}`;
@@ -212,7 +218,7 @@ export default function MyTeamScreen({ navigation, route }) {
       ) : team.length === 0 ? (
         <View style={[CARD, { padding: 32, alignItems: 'center', margin: 16 }]}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, marginBottom: 4 }}>No org chart yet.</Text>
-          <Text style={{ fontSize: 13, color: MUTED, textAlign: 'center' }}>Assign people to this {module ? 'department' : 'team'} and set their Reporting Manager, and they’ll appear here.</Text>
+          <Text style={{ fontSize: 13, color: MUTED, textAlign: 'center' }}>Assign people to this {label ? 'department' : 'team'} and set their Reporting Manager, and they’ll appear here.</Text>
         </View>
       ) : view === 'tree' ? (
         <ScrollView contentContainerStyle={{ padding: 16, minHeight: '100%' }}

@@ -16,6 +16,7 @@ import { BASE_URL } from '../../constants/api';
 import { COLORS } from '../../constants/theme';
 import styles from './createStyles';
 import { isManagerRole } from '../../lib/roles';
+import { needsReportingManager } from '../../lib/orgTree';
 
 const VOWELS = new Set(['a', 'e', 'i', 'o', 'u']);
 
@@ -380,6 +381,16 @@ export default function CreateUserScreen({ navigation, route }) {
                 </TouchableOpacity>
               </View>
             )}
+            {/* "Hashed, not encrypted" is the important word — calling it encrypted
+                invites "so decrypt it", and there is nothing to decrypt: the password
+                itself was never written down. */}
+            {changePass && (
+              <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 6, marginLeft: 2, lineHeight: 16 }}>
+                The current password can&apos;t be shown to anyone. It isn&apos;t stored — only a
+                one-way hash of it is, which can check a password but can&apos;t be turned back
+                into one. Type a new one here to replace it, then tell them what it is.
+              </Text>
+            )}
           </>
         ) : (
           <>
@@ -440,7 +451,9 @@ export default function CreateUserScreen({ navigation, route }) {
         />
 
         {/* Reporting Manager */}
-        <Text style={styles.label}>REPORTING MANAGER</Text>
+        <Text style={styles.label}>
+          {needsReportingManager(role) ? 'REPORTING MANAGER *' : 'REPORTING MANAGER'}
+        </Text>
         <TouchableOpacity
           style={styles.inputWrap}
           onPress={() => { setManagerSearch(''); setShowManagerPicker(true); }}
@@ -448,7 +461,11 @@ export default function CreateUserScreen({ navigation, route }) {
         >
           <Ionicons name="people-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
           <Text style={[styles.input, { paddingVertical: 12, color: reportingManager ? COLORS.textPrimary : COLORS.textSecondary }]}>
-            {reportingManager ? `${reportingManager.name}  ·  ${reportingManager.user_code || ''}` : 'Select reporting manager (optional)'}
+            {reportingManager
+              ? `${reportingManager.name}  ·  ${reportingManager.user_code || ''}`
+              : (needsReportingManager(role)
+                  ? 'Select reporting manager (required at this role)'
+                  : 'Select reporting manager (optional)')}
           </Text>
           {reportingManager ? (
             <TouchableOpacity onPress={() => setReportingManager(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -461,6 +478,15 @@ export default function CreateUserScreen({ navigation, route }) {
         {reportingManager && (
           <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 4, marginBottom: 4, marginLeft: 2 }}>
             {reportingManager.role}{reportingManager.designation ? `  ·  ${reportingManager.designation}` : ''}
+          </Text>
+        )}
+        {/* Said before saving rather than after: the API refuses this, and an error on
+            submit teaches the rule one failed save at a time. */}
+        {needsReportingManager(role) && !reportingManager && (
+          <Text style={{ fontSize: 11, color: COLORS.warning, marginTop: 4, marginBottom: 4, marginLeft: 2, lineHeight: 16 }}>
+            Required at this role. Visibility runs on the reporting tree, so with no manager
+            this person is invisible to every manager — their leads and bookings appear in
+            nobody&apos;s list.
           </Text>
         )}
 

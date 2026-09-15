@@ -87,7 +87,16 @@ export default function SalesCRMScreen({ navigation, route }) {
   const isManager = isManagerRole(user);
   // CP Executive works their own leads like an STM (no Meta) → same modules.
   const isCp = _des.includes('cp executive') || _des.includes('channel partner');
-  const baseFilter = m => (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
+  // Anyone on the Channel Partner side — a CP Executive or a CP Cluster Head. The
+  // designation prefix is the same test the backend uses to decide who gets into
+  // the module at all; `isCp` above misses a Cluster Head, whose designation names
+  // no module.
+  const isCpSide = _des.startsWith('cp') || _des.includes('channel partner');
+  // Their org chart is the Channel Partner one — same tile, but it asks for (and is
+  // headed by) the CP side rather than Sales.
+  const teamParams = (m) => (m.key === 'MyTeam' && isCpSide
+    ? { ...m, navParams: { cp: true, title: 'My Team' } } : m);
+  const baseFilter = m = (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
   // Tiles that pull hierarchy-scoped data need adminView threaded into their own
   // params so THEY request full company data too (see backend's admin_view=1).
   const withAdminParams = (m) => ({ ...m, navParams: { ...(m.navParams || {}), adminView: true } });
@@ -110,6 +119,7 @@ export default function SalesCRMScreen({ navigation, route }) {
       visibleMenu.splice(approvalsIdx + 1, 0, adminTile);
     }
   }
+  visibleMenu = visibleMenu.map(teamParams);
   const { title: screenTitle, sub: screenSub } = getDesignationLabel(user);
 
   const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
