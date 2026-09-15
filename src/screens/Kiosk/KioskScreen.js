@@ -63,7 +63,10 @@ export default function KioskScreen({ navigation }) {
   const togglePlot = (pl) => { if (!pl || pl.status !== 'available') return; setSelIds((s) => s.includes(pl.id) ? s.filter((x) => x !== pl.id) : [...s, pl.id]); };
 
   useEffect(() => {
-    apiFetch(SALES_ENDPOINTS.projects)
+    // ?full=1: the kiosk draws the site map straight from the project it picks out
+    // of this list, so it is one of the few callers that needs the floor plans and
+    // zones the list otherwise leaves out.
+    apiFetch(SALES_ENDPOINTS.projects + '?full=1')
       .then((r) => r.ok ? r.json() : [])
       .then((arr) => setProjects((Array.isArray(arr) ? arr : []).filter((p) => p.kiosk_enabled && p.is_active)))
       .catch(() => setProjects([]));
