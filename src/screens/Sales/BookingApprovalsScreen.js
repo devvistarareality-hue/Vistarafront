@@ -4,6 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { openLoi } from '../../utils/openLoi';
@@ -14,6 +17,62 @@ import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
+
+// Download the approved bookings as a workbook — Sales and Channel Partner together,
+// which is the point of it: one download covering both sides. Shown only to someone
+// granted "Download booking Excel" in User Management, and to real admins; the server
+// enforces the same rule, this just avoids offering a button that would be refused.
+function ExportBookings({ projects, companyId }) {
+  const me = useSelector((s) => s.auth.user);
+  const allowed = me?.can_export_bookings || me?.role === 'Admin' || me?.is_staff;
+  const [project, setProject] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  if (!allowed) return null;
+
+  async function download() {
+    setBusy(true);
+    try {
+      const qs = [project ? `project=${project}` : '', companyId ? `company_id=${companyId}` : '']
+        .filter(Boolean).join('&');
+      const token = await AsyncStorage.getItem('access_token');
+      const name = `Bookings-${(projects.find(p => String(p.id) === String(project))?.name || 'All-Projects').replace(/[^A-Za-z0-9]+/g, '-')}.xlsx`;
+      const target = FileSystem.cacheDirectory + name;
+      const { uri, status } = await FileSystem.downloadAsync(
+        `${SALES_ENDPOINTS.bookingsExport}${qs ? `?${qs}` : ''}`, target,
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (status === 403) { Alert.alert('No access', 'You do not have access to download booking data.'); return; }
+      if (status !== 200) { Alert.alert('Download failed', 'Could not build the sheet. Try again.'); return; }
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          dialogTitle: 'Approved bookings', UTI: 'org.openxmlformats.spreadsheetml.sheet' });
+      } else {
+        Alert.alert('Saved', 'Sheet saved to:\n' + uri);
+      }
+    } catch (e) {
+      Alert.alert('Download failed', e.message);
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+      <FilterSelect label="All projects" value={project} onChange={setProject}
+        options={[{ value: '', label: 'All projects' },
+                  ...projects.map((p) => ({ value: String(p.id), label: p.name }))]}
+        style={{ flex: 1 }} />
+      <TouchableOpacity onPress={download} disabled={busy}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9,
+                 borderRadius: 8, backgroundColor: COLORS.success, opacity: busy ? 0.7 : 1 }}>
+        {busy ? <ActivityIndicator size="small" color="#fff" />
+              : <Ionicons name="download-outline" size={15} color="#fff" />}
+        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{busy ? 'Preparing…' : 'Excel'}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
 // Cancelled sits beside Rejected rather than inside it: both are stored at
 // status='rejected', but one was refused before it counted and the other was a live
@@ -339,6 +398,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
             })}
           </View>
         )}
+
+        <ExportBookings projects={projects} companyId={companyId} />
 
         <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10 }}>
           {TABS.map(([k, label]) => (
