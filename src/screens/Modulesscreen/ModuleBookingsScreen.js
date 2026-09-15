@@ -18,6 +18,12 @@ const TEAL = '#0D9488';
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const isEoi = (b) => String(b.plot_numbers || '').toUpperCase().startsWith('EOI');
+// Due dates are stored yyyy-mm-dd; show them as dd-mm-yyyy. This moved out with
+// BookingDetails when that block was shared, but the card here still calls it.
+const fmtDate = (d) => {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(d || ''));
+  return m ? `${m[3].padStart(2, '0')}-${m[2].padStart(2, '0')}-${m[1]}` : (d || '—');
+};
 // Accounts & Finance — read-only view of every sales booking (LOI + EOI), grouped by
 // project. Review details + open the signed document; no editing.
 export default function ModuleBookingsScreen({ navigation, route }) {

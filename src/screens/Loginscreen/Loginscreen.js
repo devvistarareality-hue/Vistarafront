@@ -156,7 +156,9 @@ const LoginScreen = () => {
   const handleBackToLogin = () => {
     setOtpStep(false);
     setOtpToken('');
-    setOtpPhone('');
+    // There is no otpPhone state — only otpToken and otpEmail. Calling a setter that
+    // was never declared threw a ReferenceError the moment anyone tapped back from the
+    // OTP step, which no build catches.
     setOtpEmail('');
     setOtp('');
     setError('');
