@@ -44,6 +44,9 @@ export default function BookingFormScreen({ navigation, route }) {
   // but a fresh Save (no draft param yet) mints a new draft row and this captures
   // its id so every later Save in the same visit keeps updating that same row.
   const [savedDraftId, setSavedDraftId] = useState('');
+  // The booking being revised could not be read. Says so instead of leaving a blank
+  // form that looks like it is still loading.
+  const [reviseError, setReviseError] = useState(false);
   // Kiosk context: this form was opened from the client Kiosk — after submit, return to Kiosk.
   const kioskCtx = p.kiosk === '1' || p.kiosk === true;
   const convertEoiId = p.convertEoi || '';   // converting an EOI into a plot booking
@@ -162,9 +165,12 @@ export default function BookingFormScreen({ navigation, route }) {
   // Revision prefill
   useEffect(() => {
     if (!reviseId) return;
-    apiFetch(SALES_ENDPOINTS.bookings + cq('?')).then(r => r.json()).then((arr) => {
-      const b = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(reviseId));
-      if (!b) return;
+    // Ask for this one booking by id, the same way resuming a draft does. Searching
+    // the list made revising hostage to that list's scoping: a CP-designated user
+    // only ever gets partner-sourced bookings back, so Revise LOI on any other
+    // booking of their own found nothing and sat on a blank form.
+    apiFetch(SALES_ENDPOINTS.booking(reviseId) + cq('?')).then(r => (r.ok ? r.json() : null)).then((b) => {
+      if (!b || !b.id) { setReviseError(true); return; }
       setProjectId(String(b.project));
       setPlotIds(((b.plot_ids && b.plot_ids.length ? b.plot_ids : [b.plot]).filter(Boolean)).map(String));
       // Revising an EOI: keep its existing EOI code (no plot, no next-EOI fetch).
@@ -237,9 +243,11 @@ export default function BookingFormScreen({ navigation, route }) {
   // plot; Construction Area from the EOI. All fields editable (normal LOI booking).
   useEffect(() => {
     if (!convertEoiId) return;
-    apiFetch(SALES_ENDPOINTS.bookings + cq('?')).then(r => r.json()).then((arr) => {
-      const b = (Array.isArray(arr) ? arr : []).find((x) => String(x.id) === String(convertEoiId));
-      if (!b) return;
+    // By id, not by searching the list — the list is CP-only for a CP-designated
+    // user, so converting their own non-partner EOI found nothing and left the
+    // form blank, exactly as revising did.
+    apiFetch(SALES_ENDPOINTS.booking(convertEoiId) + cq('?')).then(r => (r.ok ? r.json() : null)).then((b) => {
+      if (!b || !b.id) { setReviseError(true); return; }
       const srcDisp = (n) => { if (!n) return n; if (/^referral$/i.test(n)) return 'Reference'; if (/^other$/i.test(n)) return 'Other'; return n; };
       setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: srcDisp(b.source || ''),
         area_unit: b.area_unit || s.area_unit, const_area: b.const_area || '', villa_type: b.villa_type || '',
@@ -860,6 +868,13 @@ export default function BookingFormScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        {reviseError && (
+          <View style={{ marginBottom: 14, padding: 12, borderRadius: 8, backgroundColor: '#FEE2E2' }}>
+            <Text style={{ color: '#B91C1C', fontSize: 13, fontWeight: '600' }}>
+              This booking could not be opened for revision. Ask an admin to check your access to it.
+            </Text>
+          </View>
+        )}
         <Sec title="Client">
           <Fld l="Client Name *" val={f.client_name} on={(t) => set('client_name', t)} invalid={errs.client_name} />
           <Pick l="Gender *" val={f.gender} on={(x) => set('gender', x)} opts={['Male', 'Female']} />
