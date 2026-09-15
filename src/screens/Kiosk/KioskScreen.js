@@ -160,9 +160,12 @@ export default function KioskScreen({ navigation }) {
       {/* Header */}
       <View style={s.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={s.logo}><Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>V</Text></View>
+          <View style={s.logo}><Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>
+            {(user?.company_name || 'Nexora').trim().charAt(0).toUpperCase()}</Text></View>
           <View>
-            <Text style={s.brand}>Vistara Realty</Text>
+            {/* The ERP is company-wise, so the kiosk wears the tenant's name rather
+                than a hardcoded one — it used to read "Vistara Realty" for everybody. */}
+            <Text style={s.brand}>{user?.company_name || 'Nexora'}</Text>
             <Text style={s.brandSub}>Self-Service Booking Kiosk</Text>
           </View>
         </View>

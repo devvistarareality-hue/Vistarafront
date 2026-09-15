@@ -190,7 +190,7 @@ const LoginScreen = () => {
                 <View style={s.ring1}>
                   <View style={s.logoCircle}>
                     <Image
-                      source={require('../../assets/images/image-WBG.png')}
+                      source={require('../../assets/images/nexora-mark.png')}
                       style={s.logoImg}
                       resizeMode="contain"
                     />
