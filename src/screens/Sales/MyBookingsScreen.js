@@ -276,6 +276,11 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // whoever on their team closed them. Shown only when the split is a real one — an
   // all-or-nothing source tells you nothing, and the zero half is a dead chip.
   const showSource = (cpCount > 0 && nonCpCount > 0) || who === 'cp' || who === 'noncp';
+  // Resale cuts across people and sources alike, so it is its own complete slice: a
+  // unit resold and a unit sold for the first time, together making up the list.
+  const resaleCount = preWho.filter((b) => b.is_resale).length;
+  const firstSaleCount = preWho.length - resaleCount;
+  const showType = resaleCount > 0 || who === 'resale' || who === 'firstsale';
   // Two complete ways to slice the same list, each adding up to it on its own. They
   // are not meant to be added together — one booking has both a person and a source —
   // so the source pair sits behind a divider. Flat among the names, "Source: CP" read
@@ -283,17 +288,23 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   const whoChips = [
     ...(countsBy[myId] || who === myId ? [{ id: myId, depth: 0, label: 'Only me', count: countsBy[myId] || 0 }] : []),
     ...peopleOptions, ...others,
+    ...(showType ? [
+      { id: 'resale', depth: 0, label: 'Resale', count: resaleCount, crossCut: true },
+      { id: 'firstsale', depth: 0, label: 'First sale', count: firstSaleCount },
+    ] : []),
     ...(showSource ? [
       { id: 'cp', depth: 0, label: 'Source: CP', count: cpCount, crossCut: true },
       { id: 'noncp', depth: 0, label: 'Every other source', count: nonCpCount },
     ] : []),
   ];
 
-  const whoSet = !who || who === 'cp' || who === 'noncp' ? null
+  const whoSet = !who || ['cp', 'noncp', 'resale', 'firstsale'].includes(who) ? null
     : who === myId ? new Set([myId]) : subtreeIds(who, childrenOf);
   const byWho = (b) => (!who ? true
     : who === 'cp' ? isCp(b)
     : who === 'noncp' ? !isCp(b)
+    : who === 'resale' ? !!b.is_resale
+    : who === 'firstsale' ? !b.is_resale
     : whoSet.has(bookedById(b)));
 
   const visible = preWho.filter(byWho);

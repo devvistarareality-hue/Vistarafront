@@ -97,6 +97,9 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
   const [tab, setTab] = useState('pending');
+  // Resale cuts across every status — a resold unit can be pending, approved or
+  // cancelled — so it is a filter beside the others rather than a tab of its own.
+  const [resale, setResale] = useState(false);
   // Details on the card, and the revision history loaded on demand — the same record
   // My Bookings shows, because an approver deciding on a deal needs the figures in
   // front of them, not a second screen to go and find.
@@ -227,9 +230,11 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const projName = (b) => b.project_name || '—';
   const stmOptions = [...new Set(rows.map(stmName))].sort((a, b) => a.localeCompare(b));
   const projOptions = [...new Set(rows.map(projName))].sort((a, b) => a.localeCompare(b));
-  const narrowed = !!ql || dated || !!stm || !!proj;
+  const narrowed = !!ql || dated || !!stm || !!proj || resale;
+  const resaleCount = rows.filter((b) => b.is_resale).length;
   const visible = rows.filter((b) => matches(b) && inRange(b)
-    && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj));
+    && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj)
+    && (!resale || b.is_resale));
 
   // Project-wise grouping (same shape as the Accounts & Finance bookings view), but
   // applied to whichever tab is selected so approvers keep their per-booking actions.
@@ -386,6 +391,18 @@ export default function BookingApprovalsScreen({ navigation, route }) {
               <FilterSelect label="All STMs" value={stm} onChange={(v) => { setStm(v); setOpenGroup({}); }}
                 options={[{ value: '', label: 'All STMs' }, ...stmOptions.map((n) => ({ value: n, label: n }))]} />
             )}
+            {/* Only offered when this tab actually holds one — a filter that can only
+                ever return nothing is a way to waste a tap. */}
+            {resaleCount > 0 ? (
+              <TouchableOpacity onPress={() => { setResale((v) => !v); setOpenGroup({}); }}
+                style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5,
+                  borderColor: resale ? '#0369A1' : COLORS.border,
+                  backgroundColor: resale ? '#E0F2FE' : COLORS.white }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: resale ? '#0369A1' : MUTED }}>
+                  {`Resale (${resaleCount})`}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         )}
 
