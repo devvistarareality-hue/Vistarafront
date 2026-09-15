@@ -220,6 +220,21 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                         {b.revision_no > 0 ? <Text style={{ fontSize: 10, color: '#B45309' }}>  R{b.revision_no}</Text> : null}
                       </Text>
                       <Text style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>{b.phone} · Booked {fmtDate(b.booking_date)} · STM {b.stm_name || '—'}</Text>
+                      {/* The Sales/CP decision — who put the deal on the books, or
+                          took it off them. The Accounts stage has its own line. */}
+                      {b.cancelled_by_name ? (
+                        <Text style={{ fontSize: 11, color: '#475569', marginTop: 2, fontWeight: '600' }}>
+                          {`Cancelled by ${b.cancelled_by_name}`}
+                        </Text>
+                      ) : b.rejected_by_name ? (
+                        <Text style={{ fontSize: 11, color: COLORS.error, marginTop: 2, fontWeight: '600' }}>
+                          {`Rejected by ${b.rejected_by_name}`}
+                        </Text>
+                      ) : b.approved_by_name ? (
+                        <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 2, fontWeight: '600' }}>
+                          {`Approved by ${b.approved_by_name}`}
+                        </Text>
+                      ) : null}
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>

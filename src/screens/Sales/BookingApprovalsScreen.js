@@ -22,6 +22,32 @@ const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'],
               ['rejected', 'Rejected'], ['cancelled', 'Cancelled'], ['', 'All']];
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
+// Who decided this booking, and when — the Sales/CP stage, not the Accounts one. A
+// deal on the books should name the person who put it there, and a cancellation
+// should name whoever took a live sale off them.
+function decidedBy(b) {
+  if (b.cancelled_by_name) return { label: 'Cancelled by', who: b.cancelled_by_name, at: b.cancelled_at, tone: '#475569' };
+  if (b.rejected_by_name)  return { label: 'Rejected by',  who: b.rejected_by_name,  at: b.rejected_at,  tone: COLORS.error };
+  if (b.approved_by_name)  return { label: 'Approved by',  who: b.approved_by_name,  at: b.approved_at,  tone: COLORS.success };
+  return null;
+}
+function decidedWhen(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return ' · ' + d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
+       + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+}
+function DecidedBy({ b }) {
+  const d = decidedBy(b);
+  if (!d) return null;
+  return (
+    <Text style={{ fontSize: 11, color: d.tone, marginTop: 3, fontWeight: '600' }}>
+      {`${d.label} ${d.who}${decidedWhen(d.at)}`}
+    </Text>
+  );
+}
+
 export default function BookingApprovalsScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
@@ -372,6 +398,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                 {/* Project lives in the group header now — don't repeat it on every card. */}
                 <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.phone} · {unitLabel(b).isUnit ? `Unit ${unitLabel(b).text}` : unitLabel(b).text}</Text>
                 <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>STM: {b.stm_name || '—'} · {b.booking_date || '—'}</Text>
+                <DecidedBy b={b} />
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ fontSize: 15, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
