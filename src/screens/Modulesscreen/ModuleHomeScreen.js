@@ -25,6 +25,11 @@ export default function ModuleHomeScreen({ navigation, route }) {
     // Accounts & Finance: read-only view of all sales bookings (LOI / EOI).
     ...(isAccounts ? [{ key: 'ModuleBookings', label: 'Bookings', desc: 'All sales bookings — LOI & EOI', icon: 'document-text-outline',
       color: '#0D9488', bg: '#CCFBF1', params: { module, name } }] : []),
+    // The second approval gate. Sales/CP puts a deal on the books; a unit does not
+    // actually turn sold until Accounts signs off here — which, until now, could only
+    // be done from a desktop.
+    ...(isAccounts ? [{ key: 'ModuleApprovals', label: 'Approvals', desc: 'Sign off bookings — the Accounts gate', icon: 'checkmark-done-outline',
+      color: '#0D9488', bg: '#CCFBF1', params: { module, name } }] : []),
   ];
 
   return (
