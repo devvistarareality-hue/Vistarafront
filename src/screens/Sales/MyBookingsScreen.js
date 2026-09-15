@@ -375,7 +375,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
             <View key={b.id} style={[CARD, { marginBottom: 10 }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{unitLabel(b).isUnit ? `Plot ${unitLabel(b).text}` : unitLabel(b).text}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{unitLabel(b).isUnit ? `Plot ${unitLabel(b).text}` : unitLabel(b).text}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}{b.is_resale ? '  RESALE' : ''}</Text>
                   <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.client_name || '—'} · {b.phone}</Text>
                   {/* STM alongside the unit, as Bookings & Approvals shows it. Usually
                       the viewer, since this list is their own submissions — but a kiosk
@@ -384,6 +384,11 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                   <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>
                     Booked {b.booking_date || '—'}{b.stm_name ? ` · STM: ${b.stm_name}` : ''}
                   </Text>
+                  {b.is_resale && b.resale_of_client ? (
+                    <Text style={{ fontSize: 11, color: '#0369A1', marginTop: 3, fontWeight: '600' }}>
+                      {`Resold from ${b.resale_of_client}${b.stm_name ? ` · resold by ${b.stm_name}` : ''}`}
+                    </Text>
+                  ) : null}
                   <DecidedBy b={b} />
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>

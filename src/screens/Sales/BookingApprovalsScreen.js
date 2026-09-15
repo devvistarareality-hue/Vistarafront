@@ -426,6 +426,11 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                 {/* Project lives in the group header now — don't repeat it on every card. */}
                 <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.phone} · {unitLabel(b).isUnit ? `Unit ${unitLabel(b).text}` : unitLabel(b).text}</Text>
                 <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>STM: {b.stm_name || '—'} · {b.booking_date || '—'}</Text>
+                {b.is_resale && b.resale_of_client ? (
+                  <Text style={{ fontSize: 11, color: '#0369A1', marginTop: 3, fontWeight: '600' }}>
+                    {`Resold from ${b.resale_of_client}${b.stm_name ? ` · resold by ${b.stm_name}` : ''}`}
+                  </Text>
+                ) : null}
                 <DecidedBy b={b} />
               </View>
               <View style={{ alignItems: 'flex-end' }}>
