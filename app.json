@@ -57,8 +57,9 @@
     "android": {
       "allowBackup": false,
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/android-icon-foreground.png"
+        "backgroundColor": "#0F1838",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.vistararealty.app",
       "googleServicesFile": "./android/app/google-services.json",
