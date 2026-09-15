@@ -64,13 +64,41 @@ function decidedWhen(iso) {
   return ' · ' + d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
        + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
 }
+// A sale now clears two gates: the Sales/CP approver puts it on the books, then
+// Accounts signs it off, and only then is the unit actually gone — until that second
+// sign-off the unit sits on hold, not sold. A rep reading only "APPROVED" would think
+// the deal was done, so both gates are shown, in order, on the same card.
 function DecidedBy({ b }) {
   const d = decidedBy(b);
-  if (!d) return null;
+  const acc = b.accounts_status;
+  // The Accounts gate only means anything once Sales/CP has approved. A rejected or
+  // cancelled deal never reaches it, and a pending one has not got there yet.
+  const showAccounts = b.status === 'sold' && !b.cancelled_by_name;
+  if (!d && !showAccounts) return null;
   return (
-    <Text style={{ fontSize: 11, color: d.tone, marginTop: 3, fontWeight: '600' }}>
-      {`${d.label} ${d.who}${decidedWhen(d.at)}`}
-    </Text>
+    <View style={{ marginTop: 3 }}>
+      {d ? (
+        <Text style={{ fontSize: 11, color: d.tone, fontWeight: '600' }}>
+          {`${d.label} ${d.who}${decidedWhen(d.at)}`}
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'approved' ? (
+        <Text style={{ fontSize: 11, color: '#0D9488', fontWeight: '600' }}>
+          {`Accounts approved${b.accounts_approved_by_name ? ` by ${b.accounts_approved_by_name}` : ''}${decidedWhen(b.accounts_approved_at)}`}
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'pending' ? (
+        <Text style={{ fontSize: 11, color: COLORS.warning, fontWeight: '600' }}>
+          Awaiting Accounts approval · unit held, not yet sold
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'rejected' ? (
+        <Text style={{ fontSize: 11, color: COLORS.error, fontWeight: '600' }}>
+          {`Accounts rejected${b.accounts_rejected_by_name ? ` by ${b.accounts_rejected_by_name}` : ''}${decidedWhen(b.accounts_rejected_at)}`}
+          {b.accounts_rejected_reason ? ` · ${b.accounts_rejected_reason}` : ''}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -360,7 +388,15 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, marginTop: 4 }}>{(b.approval_status || b.status || '').toUpperCase()}</Text>
+                  {/* Approved by Sales/CP is not a finished sale — the unit is on
+                      hold until Accounts signs off, so the label says so. */}
+                  <Text style={{ fontSize: 10, fontWeight: '800', marginTop: 4,
+                    color: b.accounts_status === 'rejected' ? COLORS.error
+                      : (b.status === 'sold' && b.accounts_status === 'pending') ? COLORS.warning : MUTED }}>
+                    {b.accounts_status === 'rejected' ? 'REJECTED BY ACCOUNTS'
+                      : (b.status === 'sold' && b.accounts_status === 'pending') ? 'AWAITING ACCOUNTS'
+                      : (b.approval_status || b.status || '').toUpperCase()}
+                  </Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
