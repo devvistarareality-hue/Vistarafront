@@ -61,7 +61,13 @@ export function ExportBookings({ projects: given, companyId }) {
   }
 
   return (
-    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+    <View style={{ marginBottom: 10 }}>
+      {/* Says what the sheet holds, because this control also sits above My Bookings
+          and the download is emphatically not that list. */}
+      <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 6 }}>
+        All approved bookings · Sales + CP
+      </Text>
+    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
       <FilterSelect label="All projects" value={project} onChange={setProject}
         options={[{ value: '', label: 'All projects' },
                   ...projects.map((p) => ({ value: String(p.id), label: p.name }))]}
@@ -73,6 +79,7 @@ export function ExportBookings({ projects: given, companyId }) {
               : <Ionicons name="download-outline" size={15} color="#fff" />}
         <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{busy ? 'Preparing…' : 'Excel'}</Text>
       </TouchableOpacity>
+    </View>
     </View>
   );
 }
