@@ -47,6 +47,10 @@ export function ExportBookings({ projects: given, companyId }) {
         `${SALES_ENDPOINTS.bookingsExport}${qs ? `?${qs}` : ''}`, target,
         { headers: { Authorization: `Bearer ${token}` } });
       if (status === 403) { Alert.alert('No access', 'You do not have access to download booking data.'); return; }
+      // 404 means the server has no such endpoint — the feature is in the app but not
+      // on the server it is talking to. Saying "try again" for that sends people round
+      // in circles.
+      if (status === 404) { Alert.alert('Not available yet', 'This server does not have the booking export — the backend needs deploying.'); return; }
       if (status !== 200) { Alert.alert('Download failed', 'Could not build the sheet. Try again.'); return; }
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
