@@ -16,7 +16,19 @@ const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN')
 // Same tabs as Bookings & Approvals, minus Drafts: this list is what you submitted,
 // and a draft has not been. Values are the stored statuses — 'sold' is an approved
 // booking, which is why the label and the value differ.
-const TABS = [['', 'All'], ['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected']];
+const TABS = [['', 'All'], ['pending', 'Pending'], ['sold', 'Approved'],
+              ['rejected', 'Rejected'], ['cancelled', 'Cancelled']];
+
+// A cancelled booking and a rejected one are both stored at status='rejected'; the
+// difference is in approval_status. Filtering on status alone put a live sale that
+// came off the books in the same list as one an approver refused up front.
+const isCancelled = (b) => String(b.approval_status || '').toUpperCase().includes('CANCEL');
+const inTab = (b, tab) => (
+  !tab ? true
+  : tab === 'cancelled' ? isCancelled(b)
+  : tab === 'rejected' ? (b.status === 'rejected' && !isCancelled(b))
+  : b.status === tab
+);
 
 // Everyone at or under `rootId` in the reporting tree. Cycle-safe on purpose: a
 // manager loop in the data is a typo someone can make in User Management, and it
@@ -36,6 +48,60 @@ function subtreeIds(rootId, childrenOf) {
 
 // "My Bookings" list — the bookings the user submitted, grouped project → plot,
 // with a Revise LOI action. Rendered inside the Booking screen under a toggle.
+// Who decided this booking, and when — the Sales/CP stage, not the Accounts one. A
+// deal on the books should name the person who put it there, and a cancellation
+// should name whoever took a live sale off them.
+function decidedBy(b) {
+  if (b.cancelled_by_name) return { label: 'Cancelled by', who: b.cancelled_by_name, at: b.cancelled_at, tone: '#475569' };
+  if (b.rejected_by_name)  return { label: 'Rejected by',  who: b.rejected_by_name,  at: b.rejected_at,  tone: COLORS.error };
+  if (b.approved_by_name)  return { label: 'Approved by',  who: b.approved_by_name,  at: b.approved_at,  tone: COLORS.success };
+  return null;
+}
+function decidedWhen(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return ' · ' + d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
+       + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+}
+// A sale now clears two gates: the Sales/CP approver puts it on the books, then
+// Accounts signs it off, and only then is the unit actually gone — until that second
+// sign-off the unit sits on hold, not sold. A rep reading only "APPROVED" would think
+// the deal was done, so both gates are shown, in order, on the same card.
+function DecidedBy({ b }) {
+  const d = decidedBy(b);
+  const acc = b.accounts_status;
+  // The Accounts gate only means anything once Sales/CP has approved. A rejected or
+  // cancelled deal never reaches it, and a pending one has not got there yet.
+  const showAccounts = b.status === 'sold' && !b.cancelled_by_name;
+  if (!d && !showAccounts) return null;
+  return (
+    <View style={{ marginTop: 3 }}>
+      {d ? (
+        <Text style={{ fontSize: 11, color: d.tone, fontWeight: '600' }}>
+          {`${d.label} ${d.who}${decidedWhen(d.at)}`}
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'approved' ? (
+        <Text style={{ fontSize: 11, color: '#0D9488', fontWeight: '600' }}>
+          {`Accounts approved${b.accounts_approved_by_name ? ` by ${b.accounts_approved_by_name}` : ''}${decidedWhen(b.accounts_approved_at)}`}
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'pending' ? (
+        <Text style={{ fontSize: 11, color: COLORS.warning, fontWeight: '600' }}>
+          Awaiting Accounts approval · unit held, not yet sold
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'rejected' ? (
+        <Text style={{ fontSize: 11, color: COLORS.error, fontWeight: '600' }}>
+          {`Accounts rejected${b.accounts_rejected_by_name ? ` by ${b.accounts_rejected_by_name}` : ''}${decidedWhen(b.accounts_rejected_at)}`}
+          {b.accounts_rejected_reason ? ` · ${b.accounts_rejected_reason}` : ''}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 export function MyBookingsList({ navigation, cpOnly = false }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const [rows, setRows] = useState([]);
@@ -58,6 +124,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // one shared with the card: the current version shares the booking's id, so a
   // single map let one toggle open two blocks at once.
   const [revDetails, setRevDetails] = useState({});
+  const [cardDetails, setCardDetails] = useState({});
   const toggleRevDetails = (id) => setRevDetails((o) => ({ ...o, [id]: !o[id] }));
   const me = useSelector((s) => s.auth.user);
   const [team, setTeam] = useState([]);   // the viewer's reporting subtree
@@ -141,7 +208,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // Counting over all rows instead kept the numbers still as you switched tabs, but
   // on Approved they then summed to the full 244 next to a list of 229 — a filter
   // that misreports its own result is worse than one that moves.
-  const preWho = rows.filter((b) => (!tab || b.status === tab) && matches(b)
+  const preWho = rows.filter((b) => inTab(b, tab) && matches(b)
     && (!proj || projName(b) === proj));
 
   // 'Booked by' — a manager's list holds their whole reporting subtree, so let them
@@ -209,6 +276,11 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   // whoever on their team closed them. Shown only when the split is a real one — an
   // all-or-nothing source tells you nothing, and the zero half is a dead chip.
   const showSource = (cpCount > 0 && nonCpCount > 0) || who === 'cp' || who === 'noncp';
+  // Resale cuts across people and sources alike, so it is its own complete slice: a
+  // unit resold and a unit sold for the first time, together making up the list.
+  const resaleCount = preWho.filter((b) => b.is_resale).length;
+  const firstSaleCount = preWho.length - resaleCount;
+  const showType = resaleCount > 0 || who === 'resale' || who === 'firstsale';
   // Two complete ways to slice the same list, each adding up to it on its own. They
   // are not meant to be added together — one booking has both a person and a source —
   // so the source pair sits behind a divider. Flat among the names, "Source: CP" read
@@ -216,17 +288,23 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   const whoChips = [
     ...(countsBy[myId] || who === myId ? [{ id: myId, depth: 0, label: 'Only me', count: countsBy[myId] || 0 }] : []),
     ...peopleOptions, ...others,
+    ...(showType ? [
+      { id: 'resale', depth: 0, label: 'Resale', count: resaleCount, crossCut: true },
+      { id: 'firstsale', depth: 0, label: 'First sale', count: firstSaleCount },
+    ] : []),
     ...(showSource ? [
       { id: 'cp', depth: 0, label: 'Source: CP', count: cpCount, crossCut: true },
       { id: 'noncp', depth: 0, label: 'Every other source', count: nonCpCount },
     ] : []),
   ];
 
-  const whoSet = !who || who === 'cp' || who === 'noncp' ? null
+  const whoSet = !who || ['cp', 'noncp', 'resale', 'firstsale'].includes(who) ? null
     : who === myId ? new Set([myId]) : subtreeIds(who, childrenOf);
   const byWho = (b) => (!who ? true
     : who === 'cp' ? isCp(b)
     : who === 'noncp' ? !isCp(b)
+    : who === 'resale' ? !!b.is_resale
+    : who === 'firstsale' ? !b.is_resale
     : whoSet.has(bookedById(b)));
 
   const visible = preWho.filter(byWho);
@@ -308,7 +386,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
             <View key={b.id} style={[CARD, { marginBottom: 10 }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{unitLabel(b).isUnit ? `Plot ${unitLabel(b).text}` : unitLabel(b).text}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{unitLabel(b).isUnit ? `Plot ${unitLabel(b).text}` : unitLabel(b).text}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}{b.is_resale ? '  RESALE' : ''}</Text>
                   <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.client_name || '—'} · {b.phone}</Text>
                   {/* STM alongside the unit, as Bookings & Approvals shows it. Usually
                       the viewer, since this list is their own submissions — but a kiosk
@@ -317,10 +395,24 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                   <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>
                     Booked {b.booking_date || '—'}{b.stm_name ? ` · STM: ${b.stm_name}` : ''}
                   </Text>
+                  {b.is_resale && b.resale_of_client ? (
+                    <Text style={{ fontSize: 11, color: '#0369A1', marginTop: 3, fontWeight: '600' }}>
+                      {`Resold from ${b.resale_of_client}${b.stm_name ? ` · resold by ${b.stm_name}` : ''}`}
+                    </Text>
+                  ) : null}
+                  <DecidedBy b={b} />
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, marginTop: 4 }}>{(b.approval_status || b.status || '').toUpperCase()}</Text>
+                  {/* Approved by Sales/CP is not a finished sale — the unit is on
+                      hold until Accounts signs off, so the label says so. */}
+                  <Text style={{ fontSize: 10, fontWeight: '800', marginTop: 4,
+                    color: b.accounts_status === 'rejected' ? COLORS.error
+                      : (b.status === 'sold' && b.accounts_status === 'pending') ? COLORS.warning : MUTED }}>
+                    {b.accounts_status === 'rejected' ? 'REJECTED BY ACCOUNTS'
+                      : (b.status === 'sold' && b.accounts_status === 'pending') ? 'AWAITING ACCOUNTS'
+                      : (b.approval_status || b.status || '').toUpperCase()}
+                  </Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -335,6 +427,18 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                 {b.status === 'sold' && String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id, eoi: '1' })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise EOI</Text></TouchableOpacity>}
                 {b.status === 'sold' && !String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise LOI</Text></TouchableOpacity>}
                 {b.status === 'pending' && <Text style={{ fontSize: 12, color: COLORS.warning }}>Awaiting approval</Text>}
+                {/* Every figure of the deal, beside its signed LOI. A revised deal gets
+                    its Details per version inside the history instead — the current
+                    version is one of them, so a card-level copy would be the same
+                    figures twice, and the two share a booking id. */}
+                {!b.revision_no ? (
+                  <TouchableOpacity onPress={() => setCardDetails((o) => ({ ...o, [b.id]: !o[b.id] }))}
+                    style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
+                    <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
+                      {cardDetails[b.id] ? '\u25B4 Hide Details' : '\u25BE Details'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
                 {/* Only the latest version is ever listed, which is right — a deal
                     should appear once, at its current terms. But the earlier ones are
                     what was signed at the time, and there was no way to reach them
@@ -348,6 +452,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                   </TouchableOpacity>
                 )}
               </View>
+              {!b.revision_no && cardDetails[b.id] ? <BookingDetails b={b} accent={BLUE} /> : null}
               {revOpen[b.id] && (
                 <View style={{ marginTop: 12, borderTopWidth: 1.5, borderTopColor: COLORS.border, paddingTop: 10 }}>
                   <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 8 }}>

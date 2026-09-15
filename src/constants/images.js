@@ -1,6 +1,6 @@
 // Image assets mapping
 const images = {
-  splashLogo: require('../assets/images/image.png'),
+  splashLogo: require('../assets/images/nexora-mark.png'),
   backIcon:      require('../assets/icons/Back.png'),
   plusIcon:      require('../assets/icons/plus.png'),
   rightArrow:    require('../assets/icons/right-arrow.png'),

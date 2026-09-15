@@ -1,12 +1,13 @@
 /**
- * Vistara Realty — Design System
+ * Nexora — Design System
  * ------------------------------------------------------------------
  * Single source of truth for colors, spacing, radius, typography and
  * shadows across the whole app. Import from here, never hardcode.
  *
  *   import { COLORS, SPACING, RADIUS, TYPE, SHADOWS } from '../../constants/theme';
  *
- * Brand soul kept (navy + gold), refreshed into full, cohesive scales.
+ * Brand soul kept (navy + gold) — the same navy and gold the Nexora mark is
+ * built from, refreshed into full, cohesive scales.
  * Legacy aliases at the bottom of COLORS keep older imports working
  * while screens are migrated.
  * ------------------------------------------------------------------

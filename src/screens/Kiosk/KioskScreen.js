@@ -63,7 +63,10 @@ export default function KioskScreen({ navigation }) {
   const togglePlot = (pl) => { if (!pl || pl.status !== 'available') return; setSelIds((s) => s.includes(pl.id) ? s.filter((x) => x !== pl.id) : [...s, pl.id]); };
 
   useEffect(() => {
-    apiFetch(SALES_ENDPOINTS.projects)
+    // ?full=1: the kiosk draws the site map straight from the project it picks out
+    // of this list, so it is one of the few callers that needs the floor plans and
+    // zones the list otherwise leaves out.
+    apiFetch(SALES_ENDPOINTS.projects + '?full=1')
       .then((r) => r.ok ? r.json() : [])
       .then((arr) => setProjects((Array.isArray(arr) ? arr : []).filter((p) => p.kiosk_enabled && p.is_active)))
       .catch(() => setProjects([]));
@@ -157,9 +160,12 @@ export default function KioskScreen({ navigation }) {
       {/* Header */}
       <View style={s.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={s.logo}><Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>V</Text></View>
+          <View style={s.logo}><Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>
+            {(user?.company_name || 'Nexora').trim().charAt(0).toUpperCase()}</Text></View>
           <View>
-            <Text style={s.brand}>Vistara Realty</Text>
+            {/* The ERP is company-wise, so the kiosk wears the tenant's name rather
+                than a hardcoded one — it used to read "Vistara Realty" for everybody. */}
+            <Text style={s.brand}>{user?.company_name || 'Nexora'}</Text>
             <Text style={s.brandSub}>Self-Service Booking Kiosk</Text>
           </View>
         </View>

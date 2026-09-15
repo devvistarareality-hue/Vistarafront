@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Vistararealty",
+    "name": "Nexora",
     "slug": "Vistararealty",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -57,8 +57,9 @@
     "android": {
       "allowBackup": false,
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/android-icon-foreground.png"
+        "backgroundColor": "#0F1838",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.vistararealty.app",
       "googleServicesFile": "./android/app/google-services.json",
@@ -78,7 +79,8 @@
         "googleMaps": {
           "apiKey": "AIzaSyCuEw97S0W0PfipI4YTyhNrcdfVlZAum8k"
         }
-      }
+      },
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"

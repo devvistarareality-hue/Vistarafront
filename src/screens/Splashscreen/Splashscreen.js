@@ -71,7 +71,7 @@ const SplashScreen = ({ onFinish }) => {
               <View style={s.ring1}>
                 <View style={s.logoCircle}>
                   <Image
-                    source={require('../../assets/images/image-WBG.png')}
+                    source={require('../../assets/images/nexora-mark.png')}
                     style={s.logoImg}
                     resizeMode="contain"
                   />
@@ -87,7 +87,7 @@ const SplashScreen = ({ onFinish }) => {
             <View style={s.dividerLine} />
           </View>
 
-          <Text style={s.brandName}>Vistara</Text>
+          <Text style={s.brandName}>NEXORA</Text>
           <Text style={s.brandTag}>ERP PLATFORM</Text>
           <Text style={s.brandSub}>Real Estate Management</Text>
         </Animated.View>

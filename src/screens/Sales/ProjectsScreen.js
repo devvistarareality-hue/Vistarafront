@@ -815,7 +815,15 @@ export default function ProjectsScreen() {
   }
 
   function openAdd()        { setEditProject(null); setModalVisible(true); }
-  function openEdit(proj)   { setEditProject(proj); setModalVisible(true); }
+  // The project list leaves out floor plans and site-map zones — they are the bulk of
+  // that response and no list screen draws them. The edit form does need them, so it
+  // opens on the full record; if that request fails it falls back to the list row,
+  // which is exactly what it used to get.
+  async function openEdit(proj) {
+    const full = await apiFetch(SALES_ENDPOINTS.project(proj.id))
+      .then(r => (r.ok ? r.json() : null)).catch(() => null);
+    setEditProject(full || proj); setModalVisible(true);
+  }
   function openManage(proj) { navigation.navigate('ManagePlots', { projectId: proj.id }); }
 
   if (loading) {

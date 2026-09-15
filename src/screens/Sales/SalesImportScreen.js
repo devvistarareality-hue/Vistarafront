@@ -42,7 +42,7 @@ export default function SalesImportScreen({ navigation }) {
       const { uri, status } = await FileSystem.downloadAsync(SALES_ENDPOINTS.leadsImportTemplate, fileUri, { headers: { Authorization: `Bearer ${token}` } });
       if (status !== 200) { Alert.alert('Download failed', 'Could not get the template. Try again.'); return; }
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dialogTitle: 'Vistara — Full Pipeline import template', UTI: 'org.openxmlformats.spreadsheetml.sheet' });
+        await Sharing.shareAsync(uri, { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dialogTitle: 'Nexora — Full Pipeline import template', UTI: 'org.openxmlformats.spreadsheetml.sheet' });
       } else {
         Alert.alert('Saved', 'Template saved to:\n' + uri);
       }

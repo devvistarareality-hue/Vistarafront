@@ -11,21 +11,102 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import { isManagerRole } from '../../lib/roles';
 import { unitLabel } from '../../lib/bookingUnit';
+import BookingDetails from '../../components/BookingDetails';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
-const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'], ['rejected', 'Rejected'], ['', 'All']];
+// Cancelled sits beside Rejected rather than inside it: both are stored at
+// status='rejected', but one was refused before it counted and the other was a live
+// sale that came off the books and keeps its signed LOI. The server splits them.
+const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'],
+              ['rejected', 'Rejected'], ['cancelled', 'Cancelled'], ['', 'All']];
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+
+// Who decided this booking, and when — the Sales/CP stage, not the Accounts one. A
+// deal on the books should name the person who put it there, and a cancellation
+// should name whoever took a live sale off them.
+function decidedBy(b) {
+  if (b.cancelled_by_name) return { label: 'Cancelled by', who: b.cancelled_by_name, at: b.cancelled_at, tone: '#475569' };
+  if (b.rejected_by_name)  return { label: 'Rejected by',  who: b.rejected_by_name,  at: b.rejected_at,  tone: COLORS.error };
+  if (b.approved_by_name)  return { label: 'Approved by',  who: b.approved_by_name,  at: b.approved_at,  tone: COLORS.success };
+  return null;
+}
+function decidedWhen(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return ' · ' + d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
+       + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+}
+// A sale now clears two gates: the Sales/CP approver puts it on the books, then
+// Accounts signs it off, and only then is the unit actually gone — until that second
+// sign-off the unit sits on hold, not sold. A rep reading only "APPROVED" would think
+// the deal was done, so both gates are shown, in order, on the same card.
+function DecidedBy({ b }) {
+  const d = decidedBy(b);
+  const acc = b.accounts_status;
+  // The Accounts gate only means anything once Sales/CP has approved. A rejected or
+  // cancelled deal never reaches it, and a pending one has not got there yet.
+  const showAccounts = b.status === 'sold' && !b.cancelled_by_name;
+  if (!d && !showAccounts) return null;
+  return (
+    <View style={{ marginTop: 3 }}>
+      {d ? (
+        <Text style={{ fontSize: 11, color: d.tone, fontWeight: '600' }}>
+          {`${d.label} ${d.who}${decidedWhen(d.at)}`}
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'approved' ? (
+        <Text style={{ fontSize: 11, color: '#0D9488', fontWeight: '600' }}>
+          {`Accounts approved${b.accounts_approved_by_name ? ` by ${b.accounts_approved_by_name}` : ''}${decidedWhen(b.accounts_approved_at)}`}
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'pending' ? (
+        <Text style={{ fontSize: 11, color: COLORS.warning, fontWeight: '600' }}>
+          Awaiting Accounts approval · unit held, not yet sold
+        </Text>
+      ) : null}
+      {showAccounts && acc === 'rejected' ? (
+        <Text style={{ fontSize: 11, color: COLORS.error, fontWeight: '600' }}>
+          {`Accounts rejected${b.accounts_rejected_by_name ? ` by ${b.accounts_rejected_by_name}` : ''}${decidedWhen(b.accounts_rejected_at)}`}
+          {b.accounts_rejected_reason ? ` · ${b.accounts_rejected_reason}` : ''}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
 
 export default function BookingApprovalsScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const cq = (sep) => (companyId ? `${sep}company_id=${companyId}` : '');
+  async function toggleRevisions(id) {
+    setRevDetails({});   // every open starts collapsed
+    setRevOpen((o) => ({ ...o, [id]: !o[id] }));
+    if (revs[id]) return;
+    try {
+      const res = await apiFetch(SALES_ENDPOINTS.bookingRevisions(id) + cq('?'));
+      const d = res.ok ? await res.json() : [];
+      setRevs((m) => ({ ...m, [id]: Array.isArray(d) ? d : [] }));
+    } catch (_) {
+      setRevs((m) => ({ ...m, [id]: [] }));
+    }
+  }
   const isApprover = me?.role === 'Admin' || isManagerRole(me) || me?.is_staff;
   const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
   const [tab, setTab] = useState('pending');
+  // Resale cuts across every status — a resold unit can be pending, approved or
+  // cancelled — so it is a filter beside the others rather than a tab of its own.
+  const [resale, setResale] = useState(false);
+  // Details on the card, and the revision history loaded on demand — the same record
+  // My Bookings shows, because an approver deciding on a deal needs the figures in
+  // front of them, not a second screen to go and find.
+  const [cardDetails, setCardDetails] = useState({});
+  const [revs, setRevs] = useState({});
+  const [revOpen, setRevOpen] = useState({});
+  const [revDetails, setRevDetails] = useState({});
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -149,9 +230,11 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const projName = (b) => b.project_name || '—';
   const stmOptions = [...new Set(rows.map(stmName))].sort((a, b) => a.localeCompare(b));
   const projOptions = [...new Set(rows.map(projName))].sort((a, b) => a.localeCompare(b));
-  const narrowed = !!ql || dated || !!stm || !!proj;
+  const narrowed = !!ql || dated || !!stm || !!proj || resale;
+  const resaleCount = rows.filter((b) => b.is_resale).length;
   const visible = rows.filter((b) => matches(b) && inRange(b)
-    && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj));
+    && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj)
+    && (!resale || b.is_resale));
 
   // Project-wise grouping (same shape as the Accounts & Finance bookings view), but
   // applied to whichever tab is selected so approvers keep their per-booking actions.
@@ -308,6 +391,18 @@ export default function BookingApprovalsScreen({ navigation, route }) {
               <FilterSelect label="All STMs" value={stm} onChange={(v) => { setStm(v); setOpenGroup({}); }}
                 options={[{ value: '', label: 'All STMs' }, ...stmOptions.map((n) => ({ value: n, label: n }))]} />
             )}
+            {/* Only offered when this tab actually holds one — a filter that can only
+                ever return nothing is a way to waste a tap. */}
+            {resaleCount > 0 ? (
+              <TouchableOpacity onPress={() => { setResale((v) => !v); setOpenGroup({}); }}
+                style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5,
+                  borderColor: resale ? '#0369A1' : COLORS.border,
+                  backgroundColor: resale ? '#E0F2FE' : COLORS.white }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: resale ? '#0369A1' : MUTED }}>
+                  {`Resale (${resaleCount})`}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         )}
 
@@ -348,14 +443,47 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                 {/* Project lives in the group header now — don't repeat it on every card. */}
                 <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.phone} · {unitLabel(b).isUnit ? `Unit ${unitLabel(b).text}` : unitLabel(b).text}</Text>
                 <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>STM: {b.stm_name || '—'} · {b.booking_date || '—'}</Text>
+                {b.is_resale && b.resale_of_client ? (
+                  <Text style={{ fontSize: 11, color: '#0369A1', marginTop: 3, fontWeight: '600' }}>
+                    {`Resold from ${b.resale_of_client}${b.stm_name ? ` · resold by ${b.stm_name}` : ''}`}
+                  </Text>
+                ) : null}
+                <DecidedBy b={b} />
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ fontSize: 15, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
-                <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, marginTop: 4 }}>{(b.approval_status || b.status || '').toUpperCase()}</Text>
+                {/* Approved by Sales/CP is not a finished sale — the unit is on hold
+                    until Accounts signs off, so the label says so. */}
+                <Text style={{ fontSize: 10, fontWeight: '800', marginTop: 4,
+                  color: b.accounts_status === 'rejected' ? COLORS.error
+                    : (b.status === 'sold' && b.accounts_status === 'pending') ? COLORS.warning : MUTED }}>
+                  {b.accounts_status === 'rejected' ? 'REJECTED BY ACCOUNTS'
+                    : (b.status === 'sold' && b.accounts_status === 'pending') ? 'AWAITING ACCOUNTS'
+                    : (b.approval_status || b.status || '').toUpperCase()}
+                </Text>
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
+              {/* A revised deal gets its Details per version inside the history
+                  instead — the current version is one of them, so a card-level copy
+                  would be the same figures twice. */}
+              {!b.revision_no ? (
+                <TouchableOpacity onPress={() => setCardDetails((o) => ({ ...o, [b.id]: !o[b.id] }))}
+                  style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
+                  <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
+                    {cardDetails[b.id] ? '\u25B4 Hide Details' : '\u25BE Details'}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              {b.revision_no > 0 ? (
+                <TouchableOpacity onPress={() => toggleRevisions(b.id)}
+                  style={[btn, { backgroundColor: COLORS.surfaceAlt, borderWidth: 1.5, borderColor: COLORS.border }]}>
+                  <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>
+                    {`\u27F2 Revisions ${revOpen[b.id] ? '\u25B4' : '\u25BE'}`}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
               {b.status === 'draft' && (
                 <>
                   <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { draft: b.id })} style={[btn, { backgroundColor: COLORS.link }]}><Text style={btnT}>▸ Resume</Text></TouchableOpacity>
@@ -390,6 +518,49 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                 );
               })()}
             </View>
+            {!b.revision_no && cardDetails[b.id] ? <BookingDetails b={b} accent={BLUE} /> : null}
+            {revOpen[b.id] ? (
+              <View style={{ marginTop: 12, borderTopWidth: 1.5, borderTopColor: COLORS.border, paddingTop: 10 }}>
+                <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 8 }}>
+                  REVISION HISTORY
+                </Text>
+                {!revs[b.id] ? <Text style={{ fontSize: 12, color: MUTED }}>Loading…</Text>
+                 : revs[b.id].length === 0 ? <Text style={{ fontSize: 12, color: MUTED }}>Couldn&apos;t load the history.</Text>
+                 : revs[b.id].map((v) => (
+                  <View key={v.id} style={{ paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: v.id === b.id ? COLORS.success : MUTED }}>
+                        {`R${v.revision_no || 0}`}
+                      </Text>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{rupee(v.final_amount)}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: v.id === b.id ? COLORS.success : MUTED }}>
+                        {v.id === b.id ? 'CURRENT' : 'superseded'}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
+                      {`Booked ${v.booking_date || '—'} · ${(v.approval_status || v.status || '').toUpperCase()}`}
+                      {v.stm_name ? ` · ${v.stm_name}` : ''}
+                    </Text>
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                      {v.loi_document
+                        ? <TouchableOpacity onPress={() => openLoi(v.id)}
+                            style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: COLORS.linkBg }}>
+                            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}>📄 LOI</Text>
+                          </TouchableOpacity>
+                        : <Text style={{ fontSize: 11, color: MUTED }}>no LOI on file</Text>}
+                      <TouchableOpacity onPress={() => setRevDetails((o) => ({ ...o, [v.id]: !o[v.id] }))}
+                        style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
+                          backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border }}>
+                        <Text style={{ color: MUTED, fontWeight: '700', fontSize: 12 }}>
+                          {revDetails[v.id] ? '\u25B4 Details' : '\u25BE Details'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    {revDetails[v.id] ? <BookingDetails b={v} accent={BLUE} /> : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </View>
             ))}
           </View>

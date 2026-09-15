@@ -80,6 +80,8 @@ export const SALES_ENDPOINTS = {
   bookingDiscard: (id) => `${BASE_URL}/api/sales/bookings/${id}/discard/`,
   // Every version of one deal — R0, R1, … — each with its own figures and LOI.
   bookingRevisions: (id) => `${BASE_URL}/api/sales/bookings/${id}/revisions/`,
+  // The second gate: Accounts signs off a booking Sales/CP has already approved.
+  bookingAccountsAction: (id) => `${BASE_URL}/api/sales/bookings/${id}/accounts-action/`,
   project(id)      { return `${BASE_URL}/api/sales/projects/${id}/`; },
   get distSettings(){ return `${BASE_URL}/api/sales/dist-settings/`; },
   get availability(){ return `${BASE_URL}/api/sales/availability/`; },

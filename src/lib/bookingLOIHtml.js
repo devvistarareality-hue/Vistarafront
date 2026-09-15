@@ -11,7 +11,12 @@ function fmtDate(s) { if (!s) return '—'; const p = String(s).split('-'); if (
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // meta, v, installments, opts — same shape as the web LOI.
+// The seller on this document is the company the booking belongs to, not a constant.
+// The ERP is company-wise — Vistara Group is one tenant of several — so a hardcoded
+// name would put the wrong seller on another company's signed instrument. Callers
+// pass `companyName`; an empty one prints nothing rather than someone else's name.
 export function buildLOIHtml(meta, v, installments = [], opts = {}) {
+  const sellerName = (opts.companyName || '').toString().trim();
   const fs = opts.formulaSet || 'kalrav';
   const projName = (opts.projectName || meta.project || '').toString();
   const isEOI = meta.plotNo && meta.plotNo.toString().trim().toUpperCase().indexOf('EOI') === 0;
@@ -422,12 +427,12 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   <div class="block">
     <div class="sign">
       <div class="box"><div class="t">BUYER SIGNATURE</div><div class="line"></div><div class="nm">${esc(meta.clientName || '—')}</div></div>
-      <div class="box"><div class="t">SELLER SIGNATURE</div><div class="line"></div><div class="nm">Vistara Group</div></div>
+      <div class="box"><div class="t">SELLER SIGNATURE</div><div class="line"></div><div class="nm">${esc(sellerName) || "&mdash;"}</div></div>
     </div>
     <div class="dateline">Date: ________________________</div>
     <div class="decl">I hereby declare that I have read, understood, and agreed to all terms and conditions.</div>
   </div>
 
-  <div class="foot">Vistara Group • ${esc(docType)} • ${esc(new Date().toLocaleDateString('en-IN'))}</div>
+  <div class="foot">${sellerName ? esc(sellerName) + " • " : ""}${esc(docType)} • ${esc(new Date().toLocaleDateString('en-IN'))}</div>
 </body></html>`;
 }
