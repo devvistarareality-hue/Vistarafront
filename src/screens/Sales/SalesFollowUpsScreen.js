@@ -47,6 +47,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
+  const cpOnly = !!route?.params?.cpOnly;
 
   const [items,      setItems]      = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -80,6 +81,9 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       const params = [];
       if (companyId) params.push(`company_id=${companyId}`);
       if (adminView) params.push('admin_view=1');
+      // Channel Partner module: the same screen, restricted to partner-sourced
+      // work — the server reads cp_only exactly as the web CP pages send it.
+      if (cpOnly) params.push('cp_only=true');
       const url = params.length ? `${SALES_ENDPOINTS.followUps}?${params.join('&')}` : SALES_ENDPOINTS.followUps;
       const res = await apiFetch(url);
       if (res.ok) setItems(await res.json());
