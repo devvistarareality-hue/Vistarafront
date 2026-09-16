@@ -8,6 +8,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { logout } from '../../redux/actions/authActions';
 import { stripPlotPrefix } from '../../lib/plotNumber';
 
+import AppIcon from '../../components/AppIcon';
 // Client-facing full-screen Kiosk self-booking (mirrors the web /kiosk flow).
 // Kiosk-role device is logged in; walk-in client self-serves:
 //   project (kiosk-enabled) -> plot(s) on interactive map (or EOI if no plots) -> booking form.
@@ -175,7 +176,7 @@ export default function KioskScreen({ navigation }) {
               {STEPS.map((st, i) => (
                 <View key={st.key} style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={[s.dot, i < stepIdx ? s.dotDone : i === stepIdx ? s.dotActive : null]}>
-                    <Text style={[s.dotTxt, (i <= stepIdx) ? { color: '#fff' } : null]}>{i < stepIdx ? '✓' : i + 1}</Text>
+                    <Text style={[s.dotTxt, (i <= stepIdx) ? { color: '#fff' } : null]}>{i < stepIdx ? <AppIcon name="check" size={15} /> : i + 1}</Text>
                   </View>
                   {i < STEPS.length - 1 && <View style={s.stepBar} />}
                 </View>
@@ -203,7 +204,7 @@ export default function KioskScreen({ navigation }) {
                     : <View style={[s.cardImg, { backgroundColor: BLUEBG }]} />}
                   <View style={{ padding: 16 }}>
                     <Text style={s.cardTitle}>{p.name}</Text>
-                    {!!p.location && <Text style={s.cardLoc}>📍 {p.location}</Text>}
+                    {!!p.location && <Text style={s.cardLoc}><AppIcon name="pin" size={15} /> {p.location}</Text>}
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
                       {!!p.price_range && <Text style={s.tag}>{p.price_range}</Text>}
                       {!!p.total_area && <Text style={[s.tag, s.tagGhost]}>{p.total_area}</Text>}
@@ -313,7 +314,7 @@ export default function KioskScreen({ navigation }) {
                           {zone.points?.length
                             ? <Polygon points={zone.points.map((p) => `${p.x},${p.y}`).join(' ')} fill={fillC} stroke={strokeC} strokeWidth={sw} onPress={press} />
                             : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={fillC} stroke={strokeC} strokeWidth={sw} onPress={press} />}
-                          <SvgText x={cx} y={cy} textAnchor="middle" fontSize="2.6" fontWeight="bold" fill="#fff" onPress={press}>{isSel ? `✓${label}` : label}</SvgText>
+                          <SvgText x={cx} y={cy} textAnchor="middle" fontSize="2.6" fontWeight="bold" fill="#fff" onPress={press}>{isSel ? `${label}` : label}</SvgText>
                         </React.Fragment>
                       );
                     })}
@@ -326,7 +327,7 @@ export default function KioskScreen({ navigation }) {
                 <View style={s.chips}>
                   {availablePlots.map((pl) => (
                     <TouchableOpacity key={pl.id} onPress={() => togglePlot(pl)} style={[s.plot, isSelected(pl) ? s.chipOn : null]}>
-                      <Text style={[s.plotNo, isSelected(pl) ? { color: BLUE } : null]}>{isSelected(pl) ? `✓ ${pl.number}` : pl.number}</Text>
+                      <Text style={[s.plotNo, isSelected(pl) ? { color: BLUE } : null]}>{isSelected(pl) ? `${pl.number}` : pl.number}</Text>
                       {/* size already carries its own unit (e.g. "84 sqyrd") — don't append another */}
                       {!!pl.size && <Text style={s.chipS}>{pl.size}</Text>}
                       {/* Facing and terrace both move the price, so surface them here. */}

@@ -8,6 +8,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
@@ -77,7 +78,7 @@ function AssignProjectsModal({ member, projects, onClose }) {
               <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>{member.name} · {member.designation}</Text>
             </View>
             <TouchableOpacity onPress={() => onClose(null)} style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#fff', fontSize: 15 }}>✕</Text>
+              <Text style={{ color: '#fff', fontSize: 15 }}><AppIcon name="x" size={15} /></Text>
             </TouchableOpacity>
           </View>
 
@@ -93,7 +94,7 @@ function AssignProjectsModal({ member, projects, onClose }) {
                   <TouchableOpacity key={p.id} onPress={() => toggle(p.id)} activeOpacity={0.7}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, marginBottom: 8, borderWidth: 1.5, borderColor: checked ? BLUE : COLORS.border, backgroundColor: checked ? '#F3F9FF' : '#F5F6F7' }}>
                     <View style={{ width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: checked ? BLUE : '#C9CDD2', backgroundColor: checked ? BLUE : '#fff', alignItems: 'center', justifyContent: 'center' }}>
-                      {checked && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>✓</Text>}
+                      {checked && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}><AppIcon name="check" size={12} /></Text>}
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{p.name}</Text>

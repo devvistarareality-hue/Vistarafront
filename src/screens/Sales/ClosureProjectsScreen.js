@@ -9,6 +9,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { MyBookingsList } from './MyBookingsScreen';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
@@ -102,12 +103,12 @@ export default function ClosureProjectsScreen({ navigation, route }) {
                 </View>
                 <View style={{ padding: 14 }}>
                   <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>{p.name}</Text>
-                  {!!p.location && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>📍 {p.location}</Text>}
+                  {!!p.location && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}><AppIcon name="pin" size={12} /> {p.location}</Text>}
                   {total > 0 && (
                     <View style={{ flexDirection: 'row', gap: 14, marginTop: 8 }}>
-                      <Text style={{ fontSize: 12, color: COLORS.success, fontWeight: '700' }}>✓ {pc.available || 0} available</Text>
+                      <Text style={{ fontSize: 12, color: COLORS.success, fontWeight: '700' }}><AppIcon name="check" size={12} /> {pc.available || 0} available</Text>
                       <Text style={{ fontSize: 12, color: COLORS.warning, fontWeight: '700' }}>⏸ {pc.hold || 0}</Text>
-                      <Text style={{ fontSize: 12, color: COLORS.error, fontWeight: '700' }}>✕ {pc.sold || 0}</Text>
+                      <Text style={{ fontSize: 12, color: COLORS.error, fontWeight: '700' }}><AppIcon name="x" size={12} /> {pc.sold || 0}</Text>
                     </View>
                   )}
                   <View style={{ marginTop: 12, backgroundColor: (!p.block_industrial && noPlots) ? '#FFF3E0' : COLORS.linkBg, borderRadius: 14, paddingVertical: 9, alignItems: 'center' }}>

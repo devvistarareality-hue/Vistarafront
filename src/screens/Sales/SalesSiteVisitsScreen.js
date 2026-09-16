@@ -10,6 +10,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
@@ -374,7 +375,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               {sv.status === 'scheduled' && (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
                   <TouchableOpacity onPress={() => openDone(sv)} style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success }}>✓ Done</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.success }}><AppIcon name="check" size={11} /> Done</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => updateStatus(sv, 'no_show')} style={{ borderWidth: 1.5, borderColor: COLORS.warning, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
                     <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.warning }}>No Show</Text>

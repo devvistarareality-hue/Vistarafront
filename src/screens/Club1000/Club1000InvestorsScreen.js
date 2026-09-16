@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Linking, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -18,6 +18,7 @@ import FormSheet from '../../components/FormSheet';
 import { TextField, inputStyle } from '../../components/Field';
 import { buildInvestorLOIHtml } from '../../lib/investorLOIHtml';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
@@ -1315,7 +1316,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: '#E9FBEA' }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}>📒 Ledger</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}><AppIcon name="book" size={11} /> Ledger</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setRevising(inv)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.purpleBg }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.purple }}>↻ Revise LOI</Text>

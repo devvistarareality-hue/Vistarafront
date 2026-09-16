@@ -11,6 +11,7 @@ import * as Sharing from 'expo-sharing';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
@@ -116,7 +117,7 @@ export default function SalesImportScreen({ navigation }) {
         <View style={[CARD, { padding: 16, marginBottom: 14 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: file ? COLORS.success : NAVY, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 12 }}>{file ? '✓' : '1'}</Text>
+              <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 12 }}>{file ? <AppIcon name="check" size={12} /> : '1'}</Text>
             </View>
             <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Select File</Text>
           </View>
@@ -134,7 +135,7 @@ export default function SalesImportScreen({ navigation }) {
         <View style={[CARD, { padding: 16, marginBottom: 14 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: project ? COLORS.success : NAVY, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 12 }}>{project ? '✓' : '2'}</Text>
+              <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 12 }}>{project ? <AppIcon name="check" size={12} /> : '2'}</Text>
             </View>
             <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Assign Project (optional)</Text>
           </View>
@@ -154,7 +155,7 @@ export default function SalesImportScreen({ navigation }) {
         <View style={[CARD, { padding: 16, marginBottom: 14 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: source ? COLORS.success : NAVY, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 12 }}>{source ? '✓' : '3'}</Text>
+              <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 12 }}>{source ? <AppIcon name="check" size={12} /> : '3'}</Text>
             </View>
             <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Assign Source (optional)</Text>
           </View>

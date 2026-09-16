@@ -12,6 +12,7 @@ import { SALES_ENDPOINTS, RAILWAY_URL } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const GREEN = COLORS.success; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
 const PRESETS = ['Meta', 'Google', 'Referral', 'Walk-in', 'IVR', 'Portal', 'Other'];
@@ -53,9 +54,9 @@ function Card({ children, style }) {
 const GUIDE_STEPS = [
   { n: '1', title: 'Create a Meta App',          body: 'Go to developers.facebook.com → My Apps → Create App. Choose Business type → enter app name → Create App.' },
   { n: '2', title: 'Add Webhooks Product',       body: 'Inside your app, click Add Product → find Webhooks → Set Up. From the dropdown select Page → Subscribe to this object.' },
-  { n: '3', title: 'Configure Webhook URL',      body: 'In the popup: paste the Webhook URL as Callback URL. Paste the Verify Token. Click Verify and Save.\n\n⚠ URL must be HTTPS — localhost will not work.' },
+  { n: '3', title: 'Configure Webhook URL',      body: "In the popup: paste the Webhook URL as Callback URL. Paste the Verify Token. Click Verify and Save.\n URL must be HTTPS — localhost will not work." },
   { n: '4', title: 'Subscribe to leadgen field', body: 'After verification, find leadgen in the fields list → click Subscribe. Meta will now notify your CRM on every new lead.' },
-  { n: '5', title: 'Get a System-User Access Token', body: 'Meta Business Settings → System Users → add/select a system user → Generate token for your app with pages_show_list, leads_retrieval & pages_read_engagement. Paste it → Save Configuration.\n\n⚠ A single Page token won’t list your pages. 💡 A System-User token is long-lived, so you won’t need to reconnect.' },
+  { n: '5', title: 'Get a System-User Access Token', body: "Meta Business Settings → System Users → add/select a system user → Generate token for your app with pages_show_list, leads_retrieval & pages_read_engagement. Paste it → Save Configuration.\n A single Page token won’t list your pages. A System-User token is long-lived, so you won’t need to reconnect." },
   { n: '6', title: 'Get your Form IDs',          body: 'Ads Manager → Lead Ads Forms → click a form → copy the number after form_id= in the URL.\n\nOr call Graph API Explorer: GET /me/leadgen_forms?access_token=YOUR_TOKEN' },
   { n: '7', title: 'Map Forms to Projects',      body: 'In Form → Project Routing: enter Form ID, a label, select the project → tap + Add Mapping. Repeat for each project.' },
   { n: '8', title: 'Test the Integration',       body: 'Meta for Developers → your app → Webhooks → leadgen → Test → Send. Check All Leads — the test lead should appear within 5 seconds.' },
@@ -89,7 +90,7 @@ function SetupGuideModal({ visible, onClose }) {
           ))}
 
           <View style={{ padding: 14, borderRadius: 16, backgroundColor: COLORS.warningBg, borderWidth: 1.5, borderColor: COLORS.goldLight }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.goldDark, marginBottom: 4 }}>⚠ Important</Text>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.goldDark, marginBottom: 4 }}><AppIcon name="alert" size={11} /> Important</Text>
             <Text style={{ fontSize: 12, color: COLORS.goldDark, lineHeight: 18 }}>The webhook URL must be HTTPS and publicly accessible — localhost will not work. Your Railway deployment URL is used automatically.</Text>
           </View>
         </ScrollView>
@@ -634,7 +635,7 @@ function SourcesTab() {
             return (
               <TouchableOpacity key={name} onPress={() => !exists && addSource(name)} disabled={exists}
                 style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14, backgroundColor: exists ? COLORS.surfaceAlt : NAVY, borderWidth: 1.5, borderColor: exists ? COLORS.border : NAVY, opacity: exists ? 0.5 : 1 }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: exists ? MUTED : COLORS.white }}>{exists ? '✓ ' : '+ '}{name}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: exists ? MUTED : COLORS.white }}>{exists ? <AppIcon name="check" size={12} /> : '+ '}{name}</Text>
               </TouchableOpacity>
             );
           })}

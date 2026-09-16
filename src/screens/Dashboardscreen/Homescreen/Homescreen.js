@@ -17,6 +17,7 @@ import { getBaseUrl, SALES_ENDPOINTS, NOTIFICATION_ENDPOINTS } from '../../../co
 import { apiFetch } from '../../../utils/apiFetch';
 import { COLORS, CARD_SHADOW as THEME_SHADOW } from '../../../constants/theme';
 
+import AppIcon from '../../../components/AppIcon';
 const { width } = Dimensions.get('window');
 
 const MONTH_NAMES = [
@@ -296,7 +297,7 @@ const HomeScreen = () => {
           paddingHorizontal: 20, paddingTop: 14, paddingBottom: 22,
         }}>
           <View>
-            <Text style={{ fontSize: 12, color: MUTED, fontWeight: '500' }}>Welcome back 👋</Text>
+            <Text style={{ fontSize: 12, color: MUTED, fontWeight: '500' }}>Welcome back <AppIcon name="hand" size={12} /></Text>
             <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{user?.name || '—'}</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>

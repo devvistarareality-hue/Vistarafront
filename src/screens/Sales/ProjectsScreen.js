@@ -26,6 +26,7 @@ async function readJson(res) {
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
 async function authHeaders() {
@@ -109,13 +110,13 @@ function ProjectCard({ project, onEdit, onManage }) {
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT, marginBottom: 2 }}>{project.name}</Text>
-            {project.location ? <Text style={{ fontSize: 12, color: MUTED, marginBottom: 4 }}>📍 {project.location}</Text> : null}
+            {project.location ? <Text style={{ fontSize: 12, color: MUTED, marginBottom: 4 }}><AppIcon name="pin" size={12} /> {project.location}</Text> : null}
             {project.tagline ? <Text style={{ fontSize: 11, color: COLORS.textTertiary, fontStyle: 'italic', marginBottom: 4 }} numberOfLines={1}>{project.tagline}</Text> : null}
             {(project.total_area || project.price_range || project.possession) ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {project.total_area  && <View style={metaChip}><Text style={metaChipTxt}>{project.total_area}</Text></View>}
                 {project.price_range && <View style={metaChip}><Text style={metaChipTxt}>{project.price_range}</Text></View>}
-                {project.possession  && <View style={metaChip}><Text style={metaChipTxt}>📅 {project.possession}</Text></View>}
+                {project.possession  && <View style={metaChip}><Text style={metaChipTxt}><AppIcon name="calendar" size={15} /> {project.possession}</Text></View>}
               </View>
             ) : null}
           </View>
@@ -537,7 +538,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                     <TouchableOpacity key={key} onPress={() => setForm(f => ({ ...f, floor_wise: key !== 'plot', block_industrial: key === 'block' }))}
                       style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center',
                         borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#F3F9FF' : COLORS.white }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{on ? '\u2713 ' : ''}{label}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{on ? <AppIcon name="check" size={12} /> : ''}{label}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -631,7 +632,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
               {form.master_plan_url ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border }}>
                   <Ionicons name="document-text-outline" size={22} color={BLUE} style={{ marginRight: 10 }} />
-                  <Text style={{ flex: 1, fontSize: 12, color: BLUE, fontWeight: '600' }} numberOfLines={1}>Master plan uploaded ✓</Text>
+                  <Text style={{ flex: 1, fontSize: 12, color: BLUE, fontWeight: '600' }} numberOfLines={1}>Master plan uploaded <AppIcon name="check" size={12} /></Text>
                   <TouchableOpacity onPress={() => set('master_plan_url', '')}>
                     <Ionicons name="close-circle-outline" size={20} color={MUTED} />
                   </TouchableOpacity>
@@ -721,7 +722,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                         ))}
                       </View>
                       {editableTypes.some(t => t.original !== t.current) && (
-                        <Text style={{ fontSize: 11, color: COLORS.warning, marginTop: 6 }}>⚠ Renaming will update all plots with that type name.</Text>
+                        <Text style={{ fontSize: 11, color: COLORS.warning, marginTop: 6 }}><AppIcon name="alert" size={11} /> Renaming will update all plots with that type name.</Text>
                       )}
                     </View>
                   )}
@@ -738,7 +739,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                   <TouchableOpacity onPress={() => setAddingMore(m => !m)}
                     style={{ borderWidth: 1.5, borderColor: addingMore ? COLORS.error : BLUE, borderStyle: 'dashed', borderRadius: 9, paddingVertical: 8, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: addingMore ? COLORS.error : BLUE }}>
-                      {addingMore ? '✕ Cancel adding plots' : '+ Add More Plots'}
+                      {addingMore ? <><AppIcon name="x" size={13} /> Cancel adding plots</> : '+ Add More Plots'}
                     </Text>
                   </TouchableOpacity>
 

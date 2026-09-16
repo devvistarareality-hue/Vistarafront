@@ -18,6 +18,7 @@ import { fieldFlags } from '../../lib/bookingFormulas';
 
 const { width: SW } = Dimensions.get('window');
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
@@ -182,7 +183,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
                     <TouchableOpacity key={val} onPress={() => setFacing(on ? '' : val)}
                       style={{ flex: 1, paddingVertical: 11, borderRadius: 14, alignItems: 'center',
                         borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#F3F9FF' : COLORS.white }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{on ? '\u2713 ' : ''}{label}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{on ? <AppIcon name="check" size={12} /> : ''}{label}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -456,7 +457,7 @@ function FloorMapEditor({ project, plots, floors, onFloorsChange }) {
           style={{ marginTop: 8, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5,
             borderColor: BLUE, backgroundColor: copyOpen ? BLUE : '#F3F9FF' }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: copyOpen ? COLORS.white : BLUE }}>
-            📋 Copy this mapping to other floors…
+            <AppIcon name="clipboard" size={12} /> Copy this mapping to other floors…
           </Text>
         </TouchableOpacity>
       )}
@@ -888,7 +889,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate, zonesOverride, onZones
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                 <TouchableOpacity onPress={finishPolygon}
                   style={{ flex: 1, paddingVertical: 9, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center' }}>
-                  <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>✓ Done ({polyPoints.length} pts)</Text>
+                  <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}><AppIcon name="check" size={12} /> Done ({polyPoints.length} pts)</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={cancelDraw}
                   style={{ paddingHorizontal: 16, paddingVertical: 9, backgroundColor: COLORS.surfaceAlt, borderRadius: 14 }}>
@@ -1359,7 +1360,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
             {project.floor_wise ? (
               <>
               <View style={[CARD, { margin: 16, padding: 16 }]}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>{project.block_industrial ? '🏭 Block Setup' : '🏢 Floor-wise Setup'}</Text>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>{project.block_industrial ? <><AppIcon name="factory" size={15} /> Block Setup</> : <><AppIcon name="building" size={15} /> Floor-wise Setup</>}</Text>
                 <TowerFloorBuilder
                   floors={floorPlans} setFloors={setFloorPlans}
                   folder={`erp/projects/${project.id}/floor-plans`}

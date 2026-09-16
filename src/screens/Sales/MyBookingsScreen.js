@@ -10,6 +10,7 @@ import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 import ExportBookings from '../../components/ExportBookings';
 
+import AppIcon from '../../components/AppIcon';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -382,7 +383,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
           <TouchableOpacity onPress={() => toggle(pn)} activeOpacity={0.7}
             style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderWidth: 1.5, borderColor: open[pn] ? '#CCE5FF' : 'transparent' }]}>
             <Text style={{ fontSize: 12, fontWeight: '800', color: BLUE, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-              🏢 {pn} · {groups[pn].length} unit{groups[pn].length === 1 ? '' : 's'}
+              <AppIcon name="building" size={12} /> {pn} · {groups[pn].length} unit{groups[pn].length === 1 ? '' : 's'}
             </Text>
             <Text style={{ fontSize: 16, fontWeight: '800', color: MUTED }}>{open[pn] ? '⌄' : '›'}</Text>
           </TouchableOpacity>
@@ -421,11 +422,11 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
+                {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> LOI</Text></TouchableOpacity>}
                 {b.status === 'draft' && (
                   <>
                     <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { draft: b.id })} style={[btn, { backgroundColor: COLORS.link }]}><Text style={btnT}>▸ Resume</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => discardDraft(b.id)} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#F7C3C6' }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Discard</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => discardDraft(b.id)} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#F7C3C6' }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Discard</Text></TouchableOpacity>
                   </>
                 )}
                 {b.status === 'sold' && String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('ClosureViewer', { projectId: b.project, convertEoi: b.id })} style={[btn, { backgroundColor: '#D98A1F' }]}><Text style={btnT}>→ Convert to LOI</Text></TouchableOpacity>}
@@ -486,7 +487,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                         {v.loi_document
                           ? <TouchableOpacity onPress={() => openLoi(v.id)}
                               style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: COLORS.linkBg }}>
-                              <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}>📄 LOI</Text>
+                              <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}><AppIcon name="file" size={12} /> LOI</Text>
                             </TouchableOpacity>
                           : <Text style={{ fontSize: 11, color: MUTED }}>no LOI on file</Text>}
                         {/* Details live here and only here. Per version, so two can

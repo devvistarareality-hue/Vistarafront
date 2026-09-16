@@ -9,6 +9,7 @@ import { CLUB1000_ENDPOINTS, SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
 
+import AppIcon from '../../components/AppIcon';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const TEAL = '#23874A'; const PURPLE = '#2F6DB5'; const AMBER = '#A3671A';
 
 function fmtMoney(n) {
@@ -174,7 +175,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
           <View style={[CARD, { marginBottom: 12 }]}>
             <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: TEAL }}>
-                ⚙ Investor Approvers — by scheme {cfgOpen ? '▴' : '▾'}
+                <AppIcon name="settings" size={13} /> Investor Approvers — by scheme {cfgOpen ? '▴' : '▾'}
                 {!!savedCfg && <Text style={{ color: savedCfg.startsWith('Could not') ? COLORS.error : COLORS.success }}> {savedCfg}</Text>}
               </Text>
             </TouchableOpacity>
@@ -196,7 +197,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                         const on = sel.includes(m.id);
                         return (
                           <TouchableOpacity key={m.id} onPress={() => toggleApprover(s.id, m.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on ? TEAL : COLORS.border, backgroundColor: on ? TEAL : COLORS.white }}>
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? '✓ ' : ''}{m.name}</Text>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? <AppIcon name="check" size={12} /> : ''}{m.name}</Text>
                           </TouchableOpacity>
                         );
                       })}
@@ -254,13 +255,13 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                 {isRevision
-                  ? (!!inv.pending_loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, { backgroundColor: isRenewal ? '#FFF3E0' : '#E6F2FF' }]}><Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}>📄 {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)
-                  : (!!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: COLORS.link, fontWeight: '700', fontSize: 13 }}>📄 Signed LOI</Text></TouchableOpacity>)}
+                  ? (!!inv.pending_loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, { backgroundColor: isRenewal ? '#FFF3E0' : '#E6F2FF' }]}><Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)
+                  : (!!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: COLORS.link, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> Signed LOI</Text></TouchableOpacity>)}
                 {inv.approval_status === 'pending' && (
                   canApprove(inv) ? (
                     <>
-                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}>✓ Approve</Text></TouchableOpacity>
-                      <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}>✕ Reject</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
                     </>
                   ) : <Text style={{ fontSize: 11, color: MUTED, alignSelf: 'center' }}>Not an approver</Text>
                 )}

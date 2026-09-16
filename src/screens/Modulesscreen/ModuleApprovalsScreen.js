@@ -13,6 +13,7 @@ import FilterSelect from '../../components/FilterSelect';
 import BookingDetails from '../../components/BookingDetails';
 import { unitLabel } from '../../lib/bookingUnit';
 
+import AppIcon from '../../components/AppIcon';
 const TEAL = '#23874A';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
@@ -302,7 +303,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                 style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                   paddingVertical: 14, borderWidth: 1.5, borderColor: open[pn] ? '#C9F8CA' : 'transparent' }]}>
                 <Text style={{ fontSize: 12, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                  🏢 {pn} · {groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}
+                  <AppIcon name="building" size={12} /> {pn} · {groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}
                 </Text>
                 <Text style={{ fontSize: 16, fontWeight: '800', color: MUTED }}>{open[pn] ? '⌄' : '›'}</Text>
               </TouchableOpacity>
@@ -362,7 +363,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                           style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
                             borderWidth: 1.5, borderColor: '#C9F8CA', backgroundColor: COLORS.white }}>
                           <Text style={{ color: TEAL, fontWeight: '700', fontSize: 13 }}>
-                            {`📄 View / Download ${isEoi(b) ? 'EOI' : 'LOI'}`}
+                            {`View / Download ${isEoi(b) ? 'EOI' : 'LOI'}`}
                           </Text>
                         </TouchableOpacity>
                       ) : null}
@@ -381,12 +382,12 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                           <TouchableOpacity disabled={busy === b.id} onPress={() => act(b.id, 'approve')}
                             style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: TEAL }}>
                             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
-                              {busy === b.id ? 'Working…' : '✓ Approve'}
+                              {busy === b.id ? 'Working…' : <><AppIcon name="check" size={13} /> Approve</>}
                             </Text>
                           </TouchableOpacity>
                           <TouchableOpacity disabled={busy === b.id} onPress={() => setToReject(b)}
                             style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: COLORS.error }}>
-                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>✕ Reject</Text>
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Reject</Text>
                           </TouchableOpacity>
                         </>
                       ) : null}
@@ -397,7 +398,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                         <TouchableOpacity disabled={busy === b.id} onPress={() => setToCancel(b)}
                           style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
                             borderWidth: 1.5, borderColor: '#F7C3C6', backgroundColor: '#FDECEC' }}>
-                          <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Cancel Booking</Text>
+                          <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Cancel Booking</Text>
                         </TouchableOpacity>
                       ) : null}
                       {(tab === 'awaiting_sales' || tab === 'awaiting_cp') ? (

@@ -8,6 +8,7 @@ import { NOTIFICATION_ENDPOINTS } from '../../constants/api';
 import { routeForNotifType } from '../../navigation/notifRouting';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const NAVY = COLORS.navy; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, padding: 14, ...CARD_SHADOW };
 
@@ -66,7 +67,7 @@ export default function NotificationsScreen({ navigation }) {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
         {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : rows.length === 0 ? (
-          <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up 🎉</Text></View>
+          <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up <AppIcon name="party" size={15} /></Text></View>
         ) : rows.map((n) => {
           const target = routeForNotifType(n.type);
           const st = styleFor(n.type);

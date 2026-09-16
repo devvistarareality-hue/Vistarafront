@@ -11,6 +11,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import FormSheet from '../../components/FormSheet';
 import { TextField, Field, inputStyle } from '../../components/Field';
+import AppIcon from '../../components/AppIcon';
 
 const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -502,14 +503,14 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
           {(detail?.history || []).map((h, idx, arr) => {
             const isLast = idx === arr.length - 1;
             const color = HISTORY_COLOR[h.field_changed] || MUTED;
-            const icon = h.field_changed === 'created' ? '📥' : h.field_changed === 'assigned_to' ? '👤' : '🔄';
+            const icon = h.field_changed === 'created' ? 'download' : h.field_changed === 'assigned_to' ? 'user' : 'refresh';
             const singleValue = h.field_changed === 'created' || !h.old_value;
             const byLabel = h.changed_by_name || (h.field_changed === 'created' ? 'System (auto)' : null);
             return (
               <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                 <View style={{ alignItems: 'center' }}>
                   <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 16 }}>{icon}</Text>
+                    <AppIcon name={icon} size={16} color={color} />
                   </View>
                   {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}
                 </View>

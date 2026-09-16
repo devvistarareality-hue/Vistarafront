@@ -11,6 +11,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { stripPlotPrefix } from '../../lib/plotNumber';
 import { isManagerRole } from '../../lib/roles';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
@@ -410,7 +411,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {!!notice && (
           <View style={{ padding: 12, borderRadius: 14, backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warning, marginBottom: 12 }}>
-            <Text style={{ color: '#6B420C', fontSize: 13, fontWeight: '600' }}>⚠ {notice}</Text>
+            <Text style={{ color: '#6B420C', fontSize: 13, fontWeight: '600' }}><AppIcon name="alert" size={13} /> {notice}</Text>
           </View>
         )}
         {/* Status filters */}
@@ -527,7 +528,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                         ? <Polygon points={zone.points.map(p => `${p.x},${p.y}`).join(' ')} fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
                         : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
                       }
-                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.6" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{isSel ? `✓${labelText}` : labelText}</SvgText>
+                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.6" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{isSel ? `${labelText}` : labelText}</SvgText>
                       {/* Drafted units name their drafter right on the map — who
                           everyone else needs to know to ask about the unit. */}
                       {plot.drafted_booking_id && plot.held_by_name && (
@@ -573,7 +574,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
                       style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1.5, borderColor: isSel ? '#1D1D1F' : cfg.dot, backgroundColor: isSel ? '#2F6DB5' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
-                      <Text style={{ fontWeight: '800', fontSize: 13, color: isSel ? '#fff' : cfg.dot }}>{isSel ? `✓ ${plot.number}` : plot.number}</Text>
+                      <Text style={{ fontWeight: '800', fontSize: 13, color: isSel ? '#fff' : cfg.dot }}>{isSel ? `${plot.number}` : plot.number}</Text>
                       {/* No plan drawn for this floor, so the chip is the only place these
                           price-affecting details can surface. Same reasoning for who
                           drafted a grey unit: print the name, don't rely on a tap-and-hold. */}
@@ -658,7 +659,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   {canDiscard && (
                     <TouchableOpacity disabled={cancelBusy} onPress={() => confirmCancelHold(p.id)}
                       style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#F7C3C6', alignItems: 'center' }}>
-                      <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>✕ Discard Draft</Text>
+                      <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}><AppIcon name="x" size={14} /> Discard Draft</Text>
                     </TouchableOpacity>
                   )}
                   {!canDiscard && (
@@ -698,7 +699,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 <View style={{ gap: 10 }}>
                   <TouchableOpacity disabled={cancelBusy} onPress={() => confirmCancelHold(p.id)}
                     style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#F7C3C6', alignItems: 'center', opacity: cancelBusy ? 0.6 : 1 }}>
-                    <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>{cancelBusy ? 'Cancelling…' : '✕ Cancel In Progress'}</Text>
+                    <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>{cancelBusy ? 'Cancelling…' : <><AppIcon name="x" size={14} /> Cancel In Progress</>}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity disabled={cancelBusy} onPress={() => setHoldPanelPlot(null)}
                     style={{ paddingVertical: 10, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
@@ -808,7 +809,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
                   {typePlans.map((fp, i) => (
                     <TouchableOpacity key={i} onPress={() => openPlan(fp.url)}
                       style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.goldDark + '40', backgroundColor: COLORS.goldDark + '12' }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.goldDark }}>🔍 {fp.label}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.goldDark }}><AppIcon name="search" size={12} /> {fp.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -918,7 +919,7 @@ function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, sele
                         ? <Polygon points={zone.points.map(p => `${p.x},${p.y}`).join(' ')} fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
                         : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={fillC} stroke={strokeC} strokeWidth={sw} opacity={op} onPress={press} />
                       }
-                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.4" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{isSel ? `✓${labelText}` : labelText}</SvgText>
+                      <SvgText x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="2.4" fontWeight="bold" fill={COLORS.white} opacity={op} onPress={press}>{isSel ? `${labelText}` : labelText}</SvgText>
                     </React.Fragment>
                   );
                 })}

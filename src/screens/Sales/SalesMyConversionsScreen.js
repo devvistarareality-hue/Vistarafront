@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
 const HISTORY_LABEL = {
   created: 'Lead Created', status: 'Overall Status', telecaller_status: 'TC Status',
   stm_status: 'STM Status', telecaller: 'Telecaller Assigned', stm: 'STM Assigned',
@@ -109,7 +110,7 @@ function LeadHistoryModal({ lead, onClose }) {
             <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
               <View style={{ alignItems: 'center' }}>
                 <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.link + '18', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 16 }}>📥</Text>
+                  <Text style={{ fontSize: 16 }}><AppIcon name="download" size={16} /></Text>
                 </View>
                 <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />
               </View>
@@ -127,19 +128,19 @@ function LeadHistoryModal({ lead, onClose }) {
             {events.map((h, idx, arr) => {
               const isLast = idx === arr.length - 1;
               const color  = HISTORY_COLOR[h.field_changed] || MUTED;
-              const icon   = h.field_changed === 'warm_transfer' ? '🔥'
-                           : h.field_changed === 'telecaller'    ? '👤'
-                           : h.field_changed === 'stm'           ? '🏢'
-                           : h.field_changed === 'site_visit'    ? '🏠'
-                           : h.field_changed === 'closure'       ? '✅'
-                           : h.field_changed.includes('status')  ? '🔄' : '✏️';
+              const icon   = h.field_changed === 'warm_transfer' ? 'flame'
+                           : h.field_changed === 'telecaller'    ? 'user'
+                           : h.field_changed === 'stm'           ? 'building'
+                           : h.field_changed === 'site_visit'    ? 'home'
+                           : h.field_changed === 'closure'       ? 'check-circle'
+                           : h.field_changed.includes('status')  ? 'refresh' : 'pencil';
               const singleValue = ['created', 'warm_transfer', 'closure'].includes(h.field_changed) || !h.old_value;
               const byLabel = h.changed_by_name || (['created', 'telecaller', 'stm'].includes(h.field_changed) ? 'System (auto)' : null);
               return (
                 <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                   <View style={{ alignItems: 'center' }}>
                     <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 16 }}>{icon}</Text>
+                      <AppIcon name={icon} size={16} color={color} />
                     </View>
                     {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}
                   </View>

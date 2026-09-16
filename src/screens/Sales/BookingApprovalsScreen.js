@@ -14,6 +14,7 @@ import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 import ExportBookings from '../../components/ExportBookings';
 
+import AppIcon from '../../components/AppIcon';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
 
@@ -321,7 +322,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
         {isAdmin && (
           <View style={[CARD, { marginBottom: 12 }]}>
             <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: BLUE }}>{`⚙ ${cpMode ? 'CP ' : ''}Booking Approvers — by project ${cfgOpen ? '▴' : '▾'}`}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: BLUE }}>{`${cpMode ? 'CP ' : ''}Booking Approvers — by project ${cfgOpen ? '▴' : '▾'}`}</Text>
             </TouchableOpacity>
             {cfgOpen && projects.map((p) => {
               const exp = openProj === p.id; const sel = p[approverField] || [];
@@ -341,7 +342,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                         const on = sel.includes(m.id);
                         return (
                           <TouchableOpacity key={m.id} onPress={() => toggleApprover(p.id, m.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? '✓ ' : ''}{m.name}</Text>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? <AppIcon name="check" size={12} /> : ''}{m.name}</Text>
                           </TouchableOpacity>
                         );
                       })}
@@ -442,7 +443,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                 borderRadius: 16, paddingHorizontal: 14, paddingVertical: 13, borderWidth: 1.5, borderColor: isOpen(pn) ? '#CCE5FF' : 'transparent', ...CARD_SHADOW }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '800', color: BLUE, letterSpacing: 0.4 }} numberOfLines={1}>
-                  🏢 {String(pn).toUpperCase()}
+                  <AppIcon name="building" size={12} /> {String(pn).toUpperCase()}
                 </Text>
                 <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}</Text>
               </View>
@@ -479,7 +480,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-              {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
+              {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> LOI</Text></TouchableOpacity>}
               {/* A revised deal gets its Details per version inside the history
                   instead — the current version is one of them, so a card-level copy
                   would be the same figures twice. */}
@@ -502,7 +503,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
               {b.status === 'draft' && (
                 <>
                   <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { draft: b.id })} style={[btn, { backgroundColor: COLORS.link }]}><Text style={btnT}>▸ Resume</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={() => discardDraft(b.id)} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#F7C3C6' }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Discard</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => discardDraft(b.id)} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#F7C3C6' }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Discard</Text></TouchableOpacity>
                 </>
               )}
               {/* The server decides per booking, not per person: a CP-sourced deal
@@ -511,8 +512,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                   themselves. Offering the buttons anyway made the tap fail silently. */}
               {b.status === 'pending' && isApprover && b.can_approve && (
                 <>
-                  <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}>✓ Approve</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}>✕ Reject</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
                 </>
               )}
               {b.status === 'sold' && (() => {
@@ -526,7 +527,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                     {isApprover && !!b.closure && (
                       <TouchableOpacity onPress={() => setToCancel(b)} disabled={busy === b.id}
                         style={[btn, { backgroundColor: '#FDECEC', borderWidth: 1.5, borderColor: '#F7C3C6' }]}>
-                        <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Cancel Booking</Text>
+                        <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Cancel Booking</Text>
                       </TouchableOpacity>
                     )}
                   </>
@@ -560,7 +561,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                       {v.loi_document
                         ? <TouchableOpacity onPress={() => openLoi(v.id)}
                             style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: COLORS.linkBg }}>
-                            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}>📄 LOI</Text>
+                            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}><AppIcon name="file" size={12} /> LOI</Text>
                           </TouchableOpacity>
                         : <Text style={{ fontSize: 11, color: MUTED }}>no LOI on file</Text>}
                       <TouchableOpacity onPress={() => setRevDetails((o) => ({ ...o, [v.id]: !o[v.id] }))}

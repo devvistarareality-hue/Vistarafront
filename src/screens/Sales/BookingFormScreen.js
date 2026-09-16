@@ -20,6 +20,7 @@ import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 import { computeShop, impliedUnitPct } from '../../lib/pratishthaShop';
 import { computeFlat } from '../../lib/pratishthaFlat';
 
+import AppIcon from '../../components/AppIcon';
 const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
 
@@ -813,7 +814,7 @@ export default function BookingFormScreen({ navigation, route }) {
         // resetting saving here left a window where a stray tap could still
         // re-fire submit before the screen navigates away, producing an
         // identical duplicate booking (confirmed in production).
-        Alert.alert('Booking submitted ✅', 'Your booking has been submitted and sent for approval.', [
+        Alert.alert('Booking submitted', 'Your booking has been submitted and sent for approval.', [
           { text: 'OK', onPress: () => navigation.navigate(kioskCtx ? 'Kiosk' : 'ClosureProjects') },
         ]);
         return;
@@ -1055,7 +1056,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Sec title="Pricing">
             <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 14, padding: 14 }}>
               <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.errorStrong, marginBottom: 6 }}>
-                ⚠️ This unit has no price book
+                <AppIcon name="alert" size={13} /> This unit has no price book
               </Text>
               <Text style={{ fontSize: 12, color: COLORS.errorStrong }}>{pratMissingMsg}</Text>
               <Text style={{ fontSize: 12, color: COLORS.errorStrong, marginTop: 8 }}>
@@ -1254,12 +1255,12 @@ export default function BookingFormScreen({ navigation, route }) {
           </Sec>
         )}
 
-        <Sec title="📝 Extra Terms & Conditions (optional — added below the default terms)">
+        <Sec title="Extra Terms & Conditions (optional — added below the default terms)">
           {extraTerms.map((t, i) => (
             <View key={i} style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 10, marginBottom: 10, backgroundColor: COLORS.surfaceAlt }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED }}>Term {i + 1}</Text>
-                <TouchableOpacity onPress={() => removeTerm(i)}><Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.error }}>✕ Remove</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => removeTerm(i)}><Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.error }}><AppIcon name="x" size={12} /> Remove</Text></TouchableOpacity>
               </View>
               <TextInput value={t.title} onChangeText={(x) => setTerm(i, 'title', x)} placeholder="Title (e.g. Possession)" style={[inpS, { marginBottom: 8 }]} />
               <TextInput value={t.desc} onChangeText={(x) => setTerm(i, 'desc', x)} placeholder="Description / clause text" multiline style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
@@ -1273,30 +1274,30 @@ export default function BookingFormScreen({ navigation, route }) {
         <Sec title="LOI Document">
           {!!savedLoiPath && !loiFile && (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.successBg, borderWidth: 1, borderColor: '#A4F5A6', borderRadius: 8, padding: 10, marginBottom: 10, gap: 8 }}>
-              <Text style={{ color: COLORS.success, fontSize: 12, flex: 1 }}>📎 Signed LOI already attached from your last save.</Text>
+              <Text style={{ color: COLORS.success, fontSize: 12, flex: 1 }}><AppIcon name="clip" size={12} /> Signed LOI already attached from your last save.</Text>
               <TouchableOpacity onPress={() => openLoi(draftId || savedDraftId)}><Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 12, textDecorationLine: 'underline' }}>View</Text></TouchableOpacity>
             </View>
           )}
           <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: '#2f6db5', borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📄 Generate LOI (Download)</Text>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}><AppIcon name="file" size={14} /> Generate LOI (Download)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.success, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📷 Capture signed LOI (multi-page → PDF)</Text>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}><AppIcon name="camera" size={14} /> Capture signed LOI (multi-page → PDF)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={pickLoi} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center' }}>
-            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}>📎 {loiFile ? loiFile.name : (savedLoiPath ? 'Attach a different signed LOI (replace)' : 'Attach signed LOI (image / PDF)')}</Text>
+            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}><AppIcon name="clip" size={14} /> {loiFile ? loiFile.name : (savedLoiPath ? 'Attach a different signed LOI (replace)' : 'Attach signed LOI (image / PDF)')}</Text>
           </TouchableOpacity>
           <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Generate → print/sign → capture pages or attach the signed copy → Submit.</Text>
         </Sec>
 
         {!!msg && (() => { const ok = msg.startsWith('✅') || msg.startsWith('📎'); return (
         <View style={{ padding: 12, borderRadius: 8, backgroundColor: ok ? COLORS.successBg : COLORS.errorBg, marginBottom: 12 }}>
-          <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}>{msg}</Text>
+          <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}><AppIcon name={msg.startsWith('📎') ? 'clip' : ok ? 'check-circle' : 'alert'} size={14} /> {msg.replace(/^[^A-Za-z0-9]+/, '')}</Text>
         </View>); })()}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity onPress={saveDraft} disabled={saving || !projectId || pratBookMissing}
             style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
-            {saving ? <ActivityIndicator color={COLORS.link} /> : <Text style={{ color: COLORS.link, fontWeight: '800', fontSize: 15 }}>💾 Save Draft</Text>}
+            {saving ? <ActivityIndicator color={COLORS.link} /> : <Text style={{ color: COLORS.link, fontWeight: '800', fontSize: 15 }}><AppIcon name="save" size={15} /> Save Draft</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={submit} disabled={saving || pratBookMissing} style={{ flex: 1, backgroundColor: COLORS.navy, borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: (saving || pratBookMissing) ? 0.6 : 1 }}>
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}

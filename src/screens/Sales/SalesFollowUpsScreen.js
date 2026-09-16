@@ -9,6 +9,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
@@ -350,7 +351,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                 identically to one set on the lead. */}
             {newStatus === 'sv_scheduled' ? (
               <View style={{ backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 16, padding: 12, marginTop: 10 }}>
-                <Text style={{ fontSize: 12, fontWeight: '800', color: '#23874A', letterSpacing: 0.4, marginBottom: 8 }}>📍 SCHEDULE SITE VISIT</Text>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#23874A', letterSpacing: 0.4, marginBottom: 8 }}><AppIcon name="pin" size={12} /> SCHEDULE SITE VISIT</Text>
                 <TouchableOpacity onPress={() => setSvPickerOpen(true)}
                   style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 10, backgroundColor: COLORS.white }}>
                   <Text style={{ fontSize: 13, color: svAt instanceof Date ? TEXT : MUTED }}>
@@ -367,7 +368,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             {newStatus === 'closed' ? (
               <View style={{ backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 16, padding: 12, marginTop: 10 }}>
                 <Text style={{ fontSize: 12, color: '#23874A', fontWeight: '600' }}>
-                  ✅ Marking done takes you to the booking flow — pick the unit(s) and record the booking for this lead.
+                  <AppIcon name="check-circle" size={12} /> Marking done takes you to the booking flow — pick the unit(s) and record the booking for this lead.
                 </Text>
               </View>
             ) : null}

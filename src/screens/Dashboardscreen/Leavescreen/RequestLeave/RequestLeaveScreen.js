@@ -22,6 +22,7 @@ import { COLORS } from '../../../../constants/theme';
 import { requestLeave, resetRequestLeave } from '../../../../redux/actions/requestLeaveActions';
 import styles from './styles';
 
+import AppIcon from '../../../../components/AppIcon';
 const { height } = Dimensions.get('window');
 
 const LEAVE_OPTIONS = ['Paid Leave', 'Sick Leave', 'Casual Leave', 'LOP'];
@@ -221,7 +222,7 @@ const RequestLeaveScreen = () => {
 
         {/* Start Date */}
         <TouchableOpacity style={styles.dateCard} onPress={() => setShowStartPicker(true)}>
-          <Text style={styles.calendarIcon}>📅</Text>
+          <Text style={styles.calendarIcon}><AppIcon name="calendar" size={15} /></Text>
           <Text style={styles.dateTextFilled}>{formatDate(startDate)}</Text>
         </TouchableOpacity>
 

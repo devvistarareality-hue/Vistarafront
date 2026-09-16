@@ -7,6 +7,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const RED = COLORS.error; const BLUE = COLORS.link || COLORS.primary || '#2F6DB5';
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
@@ -163,7 +164,7 @@ export default function SalesDataResetScreen({ navigation }) {
 
         {/* Danger zone */}
         <View style={{ backgroundColor: '#FDECEC', borderWidth: 1.5, borderColor: RED, borderRadius: 18, padding: 16 }}>
-          <Text style={{ fontSize: 14, fontWeight: '800', color: RED, marginBottom: 6 }}>⚠️ Danger zone — cannot be undone</Text>
+          <Text style={{ fontSize: 14, fontWeight: '800', color: RED, marginBottom: 6 }}><AppIcon name="alert" size={14} /> Danger zone — cannot be undone</Text>
           <Text style={{ fontSize: 13, color: '#A52A31', marginBottom: 12 }}>Take a database backup first. Then type DELETE and enter the reset key.</Text>
           <TextInput value={confirmText} onChangeText={setConfirmText} placeholder="Type DELETE" autoCapitalize="characters"
             placeholderTextColor={COLORS.shadow}
@@ -175,7 +176,7 @@ export default function SalesDataResetScreen({ navigation }) {
             style={{ backgroundColor: (confirmText === 'DELETE' && !!resetKey.trim() && !busy && !nothingSelected) ? RED : '#F7C3C6', borderRadius: 14, paddingVertical: 13, alignItems: 'center' }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>{nothingSelected ? 'Select at least one item' : !resetKey.trim() ? 'Enter the reset key' : `Permanently delete ${total} records`}</Text>}
           </TouchableOpacity>
-          {!!msg && <Text style={{ marginTop: 12, fontSize: 13, fontWeight: '600', color: msg[0] === '✅' ? COLORS.success : RED }}>{msg}</Text>}
+          {!!msg && <Text style={{ marginTop: 12, fontSize: 13, fontWeight: '600', color: msg[0] === '✅' ? COLORS.success : RED }}><AppIcon name={msg[0] === '✅' ? 'check-circle' : 'alert'} size={14} /> {msg.replace(/^[^A-Za-z0-9]+/, '')}</Text>}
         </View>
       </ScrollView>
       )}

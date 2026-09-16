@@ -12,6 +12,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const TEAL = '#23874A';
@@ -209,7 +210,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
             <TouchableOpacity onPress={() => toggle(pn)} activeOpacity={0.7}
               style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: open[pn] ? '#C9F8CA' : 'transparent' }]}>
               <Text style={{ flex: 1, fontSize: 12, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                🏢 {pn} · {groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}
+                <AppIcon name="building" size={12} /> {pn} · {groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}
               </Text>
               <Text style={{ fontSize: 14, fontWeight: '800', color: '#245A96', marginRight: 10 }}>{rupee(projectTotal(pn))}</Text>
               <Text style={{ fontSize: 16, fontWeight: '800', color: MUTED }}>{open[pn] ? '⌄' : '›'}</Text>
@@ -259,7 +260,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                     ) : null}
                     {b.loi_document ? (
                       <TouchableOpacity onPress={() => openLoi(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#C9F8CA', backgroundColor: COLORS.white }}>
-                        <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>📄 View / Download {isEoi(b) ? 'EOI' : 'LOI'}</Text>
+                        <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}><AppIcon name="file" size={12} /> View / Download {isEoi(b) ? 'EOI' : 'LOI'}</Text>
                       </TouchableOpacity>
                     ) : null}
                     {/* Only the latest version is listed here, at its current terms.
@@ -302,7 +303,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                           <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                             {v.loi_document ? (
                               <TouchableOpacity onPress={() => openLoi(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#C9F8CA', backgroundColor: COLORS.white }}>
-                                <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>{`📄 View / Download ${isEoi(v) ? 'EOI' : 'LOI'}`}</Text>
+                                <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>{`View / Download ${isEoi(v) ? 'EOI' : 'LOI'}`}</Text>
                               </TouchableOpacity>
                             ) : <Text style={{ fontSize: 11, color: MUTED }}>no document on file</Text>}
                             <TouchableOpacity onPress={() => toggleRevDetails(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#C9CDD2', backgroundColor: COLORS.white }}>

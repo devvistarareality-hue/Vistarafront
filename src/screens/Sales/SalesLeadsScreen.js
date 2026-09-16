@@ -15,6 +15,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
 import { Field, TextField } from '../../components/Field';
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 // Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.white, marginBottom: 8 };
@@ -125,14 +126,14 @@ function PickerDropdown({ items, value, onChange, placeholder = '— Select —'
             <View style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary }}>{title}</Text>
               <TouchableOpacity onPress={() => setOpen(false)} style={{ padding: 4 }}>
-                <Text style={{ fontSize: 18, color: COLORS.textSecondary }}>✕</Text>
+                <Text style={{ fontSize: 18, color: COLORS.textSecondary }}><AppIcon name="x" size={18} /></Text>
               </TouchableOpacity>
             </View>
             <ScrollView bounces={false}>
               <TouchableOpacity onPress={() => { onChange(''); setOpen(false); }}
                 style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 14, color: COLORS.textTertiary }}>— None —</Text>
-                {!value && <Text style={{ color: COLORS.link, fontSize: 16 }}>✓</Text>}
+                {!value && <Text style={{ color: COLORS.link, fontSize: 16 }}><AppIcon name="check" size={16} /></Text>}
               </TouchableOpacity>
               {items.map(item => (
                 <TouchableOpacity key={item.value} onPress={() => { onChange(item.value); setOpen(false); }}
@@ -141,7 +142,7 @@ function PickerDropdown({ items, value, onChange, placeholder = '— Select —'
                     <Text style={{ fontSize: 14, fontWeight: String(value) === String(item.value) ? '700' : '500', color: String(value) === String(item.value) ? COLORS.link : COLORS.textPrimary }}>{item.label}</Text>
                     {!!item.sublabel && <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 1 }}>{item.sublabel}</Text>}
                   </View>
-                  {String(value) === String(item.value) && <Text style={{ color: COLORS.link, fontSize: 16 }}>✓</Text>}
+                  {String(value) === String(item.value) && <Text style={{ color: COLORS.link, fontSize: 16 }}><AppIcon name="check" size={16} /></Text>}
                 </TouchableOpacity>
               ))}
               <View style={{ height: 34 }} />
@@ -538,7 +539,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                     <TouchableOpacity key={p.value}
                       onPress={() => set('purpose', on ? (form.purpose || []).filter(x => x !== p.value) : [...(form.purpose || []), p.value])}
                       style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: on ? BLUE : COLORS.surfaceAlt, backgroundColor: on ? '#F3F9FF' : COLORS.white }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: on ? BLUE : MUTED }}>{on ? '✓ ' : ''}{p.label}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: on ? BLUE : MUTED }}>{on ? <AppIcon name="check" size={13} /> : ''}{p.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -808,7 +809,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                 <View style={{ alignItems: 'center' }}>
                   <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.link + '18', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 16 }}>📥</Text>
+                    <Text style={{ fontSize: 16 }}><AppIcon name="download" size={16} /></Text>
                   </View>
                   <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />
                 </View>
@@ -826,14 +827,14 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               {(detail?.history || []).filter(h => h.field_changed !== 'created').map((h, idx, arr) => {
                 const isLast = idx === arr.length - 1;
                 const color  = HISTORY_COLOR[h.field_changed] || MUTED;
-                const icon   = h.field_changed === 'created'       ? '📥'
-                             : h.field_changed === 'warm_transfer' ? '🔥'
-                             : h.field_changed === 'telecaller'    ? '👤'
-                             : h.field_changed === 'stm'           ? '🏢'
-                             : h.field_changed === 'site_visit'    ? '🏠'
-                             : h.field_changed === 'closure'       ? '✅'
-                             : h.field_changed.includes('remarks') ? '📝'
-                             : '🔄';
+                const icon   = h.field_changed === 'created'       ? 'download'
+                             : h.field_changed === 'warm_transfer' ? 'flame'
+                             : h.field_changed === 'telecaller'    ? 'user'
+                             : h.field_changed === 'stm'           ? 'building'
+                             : h.field_changed === 'site_visit'    ? 'home'
+                             : h.field_changed === 'closure'       ? 'check-circle'
+                             : h.field_changed.includes('remarks') ? 'note'
+                             : 'refresh';
                 const singleValue = ['created', 'warm_transfer', 'closure', 'telecaller_remarks', 'stm_remarks'].includes(h.field_changed) || !h.old_value;
                 const byLabel = h.changed_by_name
                   || (['created', 'telecaller', 'stm'].includes(h.field_changed) ? 'System (auto)' : null);
@@ -841,7 +842,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                     <View style={{ alignItems: 'center' }}>
                       <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontSize: 16 }}>{icon}</Text>
+                        <AppIcon name={icon} size={16} color={color} />
                       </View>
                       {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}
                     </View>
@@ -901,7 +902,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   {!!fu.assigned_to_name && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Assigned to: {fu.assigned_to_name}</Text>}
                   {!!fu.remarks && <Text style={{ fontSize: 12, color: TEXT, marginTop: 6 }}>{fu.remarks}</Text>}
                   {fu.status === 'completed' && !!fu.completed_at && (
-                    <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 4 }}>✓ Done {fmtDateTime(fu.completed_at)}</Text>
+                    <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 4 }}><AppIcon name="check" size={11} /> Done {fmtDateTime(fu.completed_at)}</Text>
                   )}
                 </View>
               ))}
@@ -1277,7 +1278,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     <TouchableOpacity key={p.value}
                       onPress={() => set('purpose', on ? (form.purpose || []).filter(x => x !== p.value) : [...(form.purpose || []), p.value])}
                       style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: on ? BLUE : COLORS.surfaceAlt, backgroundColor: on ? '#F3F9FF' : COLORS.white }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: on ? BLUE : MUTED }}>{on ? '✓ ' : ''}{p.label}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: on ? BLUE : MUTED }}>{on ? <AppIcon name="check" size={13} /> : ''}{p.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -1895,7 +1896,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
                 <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, flexShrink: 1 }} numberOfLines={1}>{item.name}</Text>
                 {item.is_duplicate && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: COLORS.screenBg, borderWidth: 1, borderColor: COLORS.errorBg, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 9, fontWeight: '800', color: COLORS.errorStrong }}>⚠ DUP</Text>
+                    <Text style={{ fontSize: 9, fontWeight: '800', color: COLORS.errorStrong }}><AppIcon name="alert" size={9} /> DUP</Text>
                   </View>
                 )}
               </View>
@@ -1917,9 +1918,9 @@ export default function SalesLeadsScreen({ navigation, route }) {
             )}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 }}>
-                {item.project_name    ? <Text style={{ fontSize: 11, color: MUTED }}>📂 {item.project_name}</Text>    : null}
+                {item.project_name    ? <Text style={{ fontSize: 11, color: MUTED }}><AppIcon name="folder" size={11} /> {item.project_name}</Text>    : null}
                 {item.source_name     ? <Text style={{ fontSize: 11, color: MUTED }}>• {item.source_name}</Text>      : null}
-                {item.telecaller_name ? <Text style={{ fontSize: 11, color: MUTED }}>👤 {item.telecaller_name}</Text> : null}
+                {item.telecaller_name ? <Text style={{ fontSize: 11, color: MUTED }}><AppIcon name="user" size={11} /> {item.telecaller_name}</Text> : null}
               </View>
               {!!dateStr && (
                 <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>

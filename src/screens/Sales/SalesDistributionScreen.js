@@ -13,6 +13,7 @@ import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW, marginBottom: 16 };
 
@@ -352,7 +353,7 @@ export default function SalesDistributionScreen({ navigation }) {
           {blocked.length > 0 && (
             <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 16, padding: 14, marginBottom: 14 }}>
               <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.errorStrong, marginBottom: 6 }}>
-                ⚠️ {blocked.reduce((n, b) => n + b.count, 0)} lead{blocked.reduce((n, b) => n + b.count, 0) === 1 ? '' : 's'} can never be distributed
+                <AppIcon name="alert" size={14} /> {blocked.reduce((n, b) => n + b.count, 0)} lead{blocked.reduce((n, b) => n + b.count, 0) === 1 ? '' : 's'} can never be distributed
               </Text>
               <Text style={{ fontSize: 12, color: COLORS.errorStrong, marginBottom: 10 }}>
                 Distribution skips a lead when nobody of the required role is assigned to its
@@ -374,7 +375,7 @@ export default function SalesDistributionScreen({ navigation }) {
           {/* ═══ 1. Distribution Settings ═══ */}
           <View style={CARD}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 12 }}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>⚙ Distribution Settings</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}><AppIcon name="settings" size={17} /> Distribution Settings</Text>
               {settingsForm === null && (
                 <TouchableOpacity onPress={() => setSettingsForm({ ...settings })}
                   style={{ paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8 }}>
@@ -438,7 +439,7 @@ export default function SalesDistributionScreen({ navigation }) {
           {/* ═══ 2. Today's Availability ═══ */}
           <View style={CARD}>
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 12, gap: 8 }}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, flex: 1 }}>👥 Availability</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, flex: 1 }}><AppIcon name="users" size={17} /> Availability</Text>
               {[['today', 'Today'], ['history', 'History']].map(([k, lbl]) => {
                 const on = availTab === k;
                 return (
@@ -525,7 +526,7 @@ export default function SalesDistributionScreen({ navigation }) {
                       <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
                         style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 }}>
                         <Text style={{ fontSize: 18, color: a.is_available ? COLORS.successAlt : COLORS.divider, fontWeight: '800', width: 20 }}>
-                          {a.is_available ? '✓' : '✗'}
+                          {a.is_available ? <AppIcon name="check" size={18} /> : <AppIcon name="x" size={18} />}
                         </Text>
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -554,7 +555,7 @@ export default function SalesDistributionScreen({ navigation }) {
                       <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
                         style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 }}>
                         <Text style={{ fontSize: 18, color: a.is_available ? COLORS.successAlt : COLORS.divider, fontWeight: '800', width: 20 }}>
-                          {a.is_available ? '✓' : '✗'}
+                          {a.is_available ? <AppIcon name="check" size={18} /> : <AppIcon name="x" size={18} />}
                         </Text>
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -580,7 +581,7 @@ export default function SalesDistributionScreen({ navigation }) {
             <View style={CARD}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', padding: 16, paddingBottom: 12 }}>
                 <View>
-                  <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>📊 Lead Distribution Ratio</Text>
+                  <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}><AppIcon name="chart" size={17} /> Lead Distribution Ratio</Text>
                   <Text style={{ fontSize: 13, color: MUTED, marginTop: 3 }}>Higher weight = more leads assigned</Text>
                 </View>
                 <TouchableOpacity onPress={saveWeights} disabled={savingWeights || !weightsChanged}
@@ -663,7 +664,7 @@ export default function SalesDistributionScreen({ navigation }) {
                     {distributing === type
                       ? <ActivityIndicator color={COLORS.white} size="small" />
                       : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>
-                          ⚡ Distribute to {type === 'telecaller' ? 'Telecallers' : 'STMs'}
+                          <AppIcon name="zap" size={15} /> Distribute to {type === 'telecaller' ? 'Telecallers' : 'STMs'}
                         </Text>}
                   </TouchableOpacity>
 
@@ -680,7 +681,7 @@ export default function SalesDistributionScreen({ navigation }) {
           {/* ═══ 6. Distribution History ═══ */}
           <View style={CARD}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>🕐 Recent Distribution History</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}><AppIcon name="clock" size={17} /> Recent Distribution History</Text>
               {distLog.length > 0 && (
                 <TouchableOpacity onPress={clearLog}>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.error }}>Clear</Text>
