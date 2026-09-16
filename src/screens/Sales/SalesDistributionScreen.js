@@ -6,6 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
@@ -148,6 +150,32 @@ export default function SalesDistributionScreen({ navigation }) {
   const [history, setHistory]     = useState([]);
   const [histLoading, setHistLoading] = useState(false);
   const [histDays, setHistDays]   = useState(7);         // trailing window
+  const [histDl,   setHistDl]     = useState(false);
+
+  // Download the sign-in history the card is showing, over the same trailing window.
+  // Saved and handed to the share sheet, the same route the lead import template takes.
+  async function downloadHistory() {
+    setHistDl(true);
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const from = isoDaysAgo(histDays - 1);
+      const target = `${FileSystem.cacheDirectory}Sign-in-History-${from}.xlsx`;
+      const { uri, status } = await FileSystem.downloadAsync(
+        `${SALES_ENDPOINTS.availabilityHistoryExport}?date_from=${from}`, target,
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (status === 403) { Alert.alert('No access', 'You do not have access to download this.'); return; }
+      if (status !== 200) { Alert.alert('Download failed', 'Could not build the sheet. Try again.'); return; }
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          dialogTitle: 'Sign-in history', UTI: 'org.openxmlformats.spreadsheetml.sheet' });
+      } else {
+        Alert.alert('Saved', 'Sheet saved to:\n' + uri);
+      }
+    } catch (e) {
+      Alert.alert('Download failed', e.message);
+    } finally { setHistDl(false); }
+  }
   const [allUsers,       setAllUsers]       = useState([]);
   const [weights,        setWeights]        = useState({});
   const [savedWeights,   setSavedWeights]   = useState({});
@@ -436,6 +464,16 @@ export default function SalesDistributionScreen({ navigation }) {
                       </TouchableOpacity>
                     );
                   })}
+                  {/* The same records this card is showing, over the same window — a
+                      sheet is the form you sort and pivot them in. */}
+                  <TouchableOpacity onPress={downloadHistory} disabled={histDl}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginLeft: 'auto',
+                             paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+                             backgroundColor: COLORS.success, opacity: histDl ? 0.7 : 1 }}>
+                    {histDl ? <ActivityIndicator size="small" color="#fff" />
+                            : <Ionicons name="download-outline" size={14} color="#fff" />}
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>{histDl ? 'Preparing…' : 'Excel'}</Text>
+                  </TouchableOpacity>
                 </View>
                 {/* Fixed height with its own scroll, matching web. nestedScrollEnabled so
                     it works inside the screen's ScrollView on Android. */}
