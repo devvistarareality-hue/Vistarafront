@@ -9,6 +9,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
+import AppLoader from '../../components/AppLoader';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
@@ -21,9 +22,9 @@ const CATEGORY_OPTIONS = [
   { value: 'referral', label: 'Referral' },
 ];
 const CATEGORY_COLOR = {
-  premium:  { bg: '#FFF3E0', color: '#A3671A' },
-  normal:   { bg: '#E6F2FF', color: BLUE },
-  referral: { bg: '#E9FBEA', color: '#23874A' },
+  premium:  { bg: COLORS.warningBg, color: COLORS.warning },
+  normal:   { bg: COLORS.accentSoft, color: BLUE },
+  referral: { bg: COLORS.successBg, color: COLORS.success },
 };
 const SEGMENT_OPTIONS = [
   { value: '',            label: '— Select —' },
@@ -63,7 +64,7 @@ function Fld({ label, value, onChange, placeholder, keyboardType }) {
       <TextInput value={value} onChangeText={onChange} placeholder={placeholder}
         placeholderTextColor={COLORS.textTertiary || MUTED} keyboardType={keyboardType}
         style={{ height: 42, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5,
-                 borderColor: COLORS.border, backgroundColor: COLORS.white, color: TEXT,
+                 borderColor: COLORS.border, backgroundColor: COLORS.surface, color: TEXT,
                  fontSize: 14, marginBottom: 14 }} />
     </>
   );
@@ -113,8 +114,8 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.45)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%' }}>
+      <View style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
             <Text style={{ flex: 1, fontSize: 16, fontWeight: '800', color: TEXT }}>
               {isEdit ? 'Edit Channel Partner' : 'Add Channel Partner'}
@@ -209,10 +210,10 @@ export default function ChannelPartnersScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12,
-                     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color={TEXT} /></TouchableOpacity>
+                     backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} /></TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Channel Partners</Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{rows.length} in the directory</Text>
@@ -229,12 +230,12 @@ export default function ChannelPartnersScreen({ navigation }) {
         <TextInput value={q} onChangeText={setQ} placeholder="Search name, contact no or firm name…"
           placeholderTextColor={MUTED}
           style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border,
-                   backgroundColor: COLORS.white, color: TEXT, fontSize: 14, marginBottom: 10 }} />
+                   backgroundColor: COLORS.surface, color: TEXT, fontSize: 14, marginBottom: 10 }} />
         <FilterSelect label="All categories" value={category} onChange={setCategory}
           options={[{ value: '', label: 'All categories' }, ...CATEGORY_OPTIONS]}
           style={{ alignSelf: 'flex-start', marginBottom: 12 }} />
 
-        {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} />
+        {loading ? <AppLoader style={{ marginTop: 24 }} />
           : !visible.length ? (
             <Text style={{ textAlign: 'center', color: MUTED, marginTop: 40 }}>
               {rows.length ? 'No partner matches that search.' : 'No channel partners yet. Add the first one.'}
@@ -263,7 +264,7 @@ export default function ChannelPartnersScreen({ navigation }) {
                   <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => remove(cp)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#F7C3C6', backgroundColor: '#FDECEC' }}>
+                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.error2, backgroundColor: COLORS.errorBg }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.error }}>Remove</Text>
                 </TouchableOpacity>
               </View>

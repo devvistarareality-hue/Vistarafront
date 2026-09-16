@@ -5,6 +5,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW, MODULE_ACCENT } from '../../constants/theme';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const MODULE_CONFIG = {
   Sales: {
@@ -89,7 +90,7 @@ const ModulesScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }}>
 
         {/* ── Top Bar ── */}
@@ -102,6 +103,7 @@ const ModulesScreen = () => {
             <Text style={{ fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' }}>Welcome back</Text>
             <Text style={{ fontSize: 20, fontWeight: '800', color: COLORS.textPrimary }}>{user?.name || '—'}</Text>
           </View>
+          <ThemeToggle compact />
         </View>
 
         {/* ── Module Manager Banner ── */}

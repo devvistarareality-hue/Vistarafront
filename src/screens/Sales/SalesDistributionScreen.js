@@ -14,6 +14,8 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW, marginBottom: 16 };
 
@@ -30,7 +32,7 @@ function currentIST() {
 
 function WeightBar({ pct, color }) {
   return (
-    <View style={{ width: 52, height: 6, backgroundColor: color + '30', borderRadius: 4, overflow: 'hidden' }}>
+    <View style={{ width: 52, height: 6, backgroundColor: withAlpha(color, '30'), borderRadius: 4, overflow: 'hidden' }}>
       <View style={{ width: `${pct}%`, height: '100%', backgroundColor: color, borderRadius: 4 }} />
     </View>
   );
@@ -105,7 +107,7 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
                     const w   = weights[m.user_id] ?? 1;
                     const pct = total > 0 ? Math.round((w / total) * 100) : 0;
                     return (
-                      <View key={m.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.white, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: border, marginBottom: 7 }}>
+                      <View key={m.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.surface, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: border, marginBottom: 7 }}>
                         <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{m.name}</Text>
                         <WeightBar pct={pct} color={barColor} />
                         <Text style={{ fontSize: 13, fontWeight: '700', color: headColor, width: 36, textAlign: 'right' }}>{pct}%</Text>
@@ -131,9 +133,9 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
             })
       }
       {noProject.length > 0 && (
-        <View style={{ marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F7C3C6' }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#D9434B', marginBottom: 3 }}>Not assigned to any project — won&apos;t receive leads:</Text>
-          <Text style={{ fontSize: 13, color: '#A52A31' }}>{noProject.map(m => m.name).join(', ')}</Text>
+        <View style={{ marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error2 }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.error, marginBottom: 3 }}>Not assigned to any project — won&apos;t receive leads:</Text>
+          <Text style={{ fontSize: 13, color: COLORS.errorStrong }}>{noProject.map(m => m.name).join(', ')}</Text>
         </View>
       )}
       </ScrollView>
@@ -325,12 +327,12 @@ export default function SalesDistributionScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="arrow-back" size={22} color={NAVY} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: TEXT }}>Lead Distribution</Text>
         <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
@@ -340,7 +342,7 @@ export default function SalesDistributionScreen({ navigation }) {
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={NAVY} />
+          <AppLoader />
         </View>
       ) : (
         <ScrollView
@@ -395,7 +397,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                     <Text style={{ fontSize: 15, fontWeight: '600', color: TEXT }}>{f.label}</Text>
                     <TextInput
-                      value={settingsForm[f.key] || ''} placeholder="HH:MM" placeholderTextColor="#55585E"
+                      value={settingsForm[f.key] || ''} placeholder="HH:MM" placeholderTextColor={COLORS.text3}
                       onChangeText={v => setSettingsForm(s => ({ ...s, [f.key]: v }))}
                       style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, fontSize: 15, width: 100, textAlign: 'center', color: TEXT }}
                     />
@@ -445,7 +447,7 @@ export default function SalesDistributionScreen({ navigation }) {
                 return (
                   <TouchableOpacity key={k} onPress={() => setAvailTab(k)}
                     style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5,
-                      borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                      borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.surface }}>
                     <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{lbl}</Text>
                   </TouchableOpacity>
                 );
@@ -460,7 +462,7 @@ export default function SalesDistributionScreen({ navigation }) {
                     return (
                       <TouchableOpacity key={n} onPress={() => setHistDays(n)}
                         style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5,
-                          borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? COLORS.linkBg : COLORS.white }}>
+                          borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? COLORS.linkBg : COLORS.surface }}>
                         <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{n} days</Text>
                       </TouchableOpacity>
                     );
@@ -680,7 +682,7 @@ export default function SalesDistributionScreen({ navigation }) {
 
           {/* ═══ 6. Distribution History ═══ */}
           <View style={CARD}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.surface, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}><AppIcon name="clock" size={17} /> Recent Distribution History</Text>
               {distLog.length > 0 && (
                 <TouchableOpacity onPress={clearLog}>

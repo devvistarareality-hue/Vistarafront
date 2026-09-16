@@ -238,7 +238,7 @@ const LoginScreen = () => {
 
                 {!!error && (
                   <View style={s.errorBox}>
-                    <Ionicons name="alert-circle-outline" size={15} color="#D9434B" style={{ marginRight: 6 }} />
+                    <Ionicons name="alert-circle-outline" size={15} color={COLORS.error} style={{ marginRight: 6 }} />
                     <Text style={s.errorText}>{error}</Text>
                   </View>
                 )}
@@ -290,7 +290,7 @@ const LoginScreen = () => {
 
                 {!!error && (
                   <View style={s.errorBox}>
-                    <Ionicons name="alert-circle-outline" size={15} color="#D9434B" style={{ marginRight: 6 }} />
+                    <Ionicons name="alert-circle-outline" size={15} color={COLORS.error} style={{ marginRight: 6 }} />
                     <Text style={s.errorText}>{error}</Text>
                   </View>
                 )}
@@ -415,7 +415,7 @@ const s = StyleSheet.create({
   },
   logoCircle: {
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center', alignItems: 'center',
     shadowColor: ORANGE, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45, shadowRadius: 12, elevation: 8,
@@ -457,7 +457,7 @@ const s = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 20,
+    backgroundColor: COLORS.surface, borderRadius: 20,
     paddingHorizontal: 16, height: 56, marginBottom: 22,
     borderWidth: 1.5, borderColor: COLORS.border,
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
@@ -473,10 +473,10 @@ const s = StyleSheet.create({
 
   errorBox: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F7C3C6',
+    backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error2,
     borderRadius: 16, padding: 12, marginBottom: 16,
   },
-  errorText: { fontSize: 13, color: '#D9434B', flex: 1 },
+  errorText: { fontSize: 13, color: COLORS.error, flex: 1 },
 
   resendTimer: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
   resendLink:  { fontSize: 13, color: COLORS.navy, fontWeight: '700', textDecorationLine: 'underline' },

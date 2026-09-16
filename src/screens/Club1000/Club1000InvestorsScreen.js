@@ -19,7 +19,8 @@ import { TextField, inputStyle } from '../../components/Field';
 import { buildInvestorLOIHtml } from '../../lib/investorLOIHtml';
 
 import AppIcon from '../../components/AppIcon';
-const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
+import AppLoader from '../../components/AppLoader';
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
@@ -384,7 +385,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
             <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
               {schemes.map((s, i) => (
                 <TouchableOpacity key={s.id} onPress={() => selectScheme(s)}
-                  style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt, backgroundColor: String(form.scheme) === String(s.id) ? COLORS.linkBg : COLORS.white }}>
+                  style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt, backgroundColor: String(form.scheme) === String(s.id) ? COLORS.linkBg : COLORS.surface }}>
                   <Text style={{ fontSize: 14, color: TEXT, fontWeight: String(form.scheme) === String(s.id) ? '700' : '400' }}>{s.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -404,7 +405,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
             <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
               {payoutOptions.map((v) => (
                 <TouchableOpacity key={v} onPress={() => selectInterestPayout(v)}
-                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.white }}>
+                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.surface }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: form.interest_payout === v ? COLORS.white : MUTED }}>{INTEREST_PAYOUT_LABELS[v] || v}</Text>
                 </TouchableOpacity>
               ))}
@@ -416,9 +417,9 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         </View>
 
         {Number(form.amount_invested) > 0 && Number(form.total_return_pct) > 0 && (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
-            <Text style={{ color: '#23874A', fontWeight: '600', fontSize: 13 }}>Maturity Value</Text>
-            <Text style={{ color: '#23874A', fontWeight: '800', fontSize: 13 }}>{fmtMoney(maturityValuePreview)}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.success2, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
+            <Text style={{ color: COLORS.success, fontWeight: '600', fontSize: 13 }}>Maturity Value</Text>
+            <Text style={{ color: COLORS.success, fontWeight: '800', fontSize: 13 }}>{fmtMoney(maturityValuePreview)}</Text>
           </View>
         )}
 
@@ -465,7 +466,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
           <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
             {Object.entries(SOURCE_LABELS).map(([v, label]) => (
               <TouchableOpacity key={v} onPress={() => set('source', v)}
-                style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.source === v ? TEAL : COLORS.white }}>
+                style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.source === v ? TEAL : COLORS.surface }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: form.source === v ? COLORS.white : MUTED }}>{label}</Text>
               </TouchableOpacity>
             ))}
@@ -482,7 +483,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
                 onChangeText={(v) => { set('reference_name', v); setRefOpen(true); }}
                 onFocus={() => setRefOpen(true)}
                 style={inputStyle}
-                placeholderTextColor="#55585E"
+                placeholderTextColor={COLORS.text3}
               />
               {refOpen && filteredRefSuggestions.length > 0 && (
                 <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
@@ -731,7 +732,7 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
             <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
               {(scheme?.interest_payout_options?.length ? scheme.interest_payout_options : ['maturity']).map((v) => (
                 <TouchableOpacity key={v} onPress={() => selectInterestPayout(v)}
-                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.white }}>
+                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.surface }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: form.interest_payout === v ? COLORS.white : MUTED }}>{INTEREST_PAYOUT_LABELS[v] || v}</Text>
                 </TouchableOpacity>
               ))}
@@ -970,7 +971,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
             <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
               {(scheme?.interest_payout_options?.length ? scheme.interest_payout_options : ['maturity']).map((v) => (
                 <TouchableOpacity key={v} onPress={() => selectInterestPayout(v)}
-                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.white }}>
+                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.surface }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: form.interest_payout === v ? COLORS.white : MUTED }}>{INTEREST_PAYOUT_LABELS[v] || v}</Text>
                 </TouchableOpacity>
               ))}
@@ -1080,8 +1081,8 @@ function LedgerModal({ investorId, onClose }) {
 
   return (
     <Modal visible={!!investorId} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Ledger{inv ? ` — ${inv.name}` : ''}</Text>
@@ -1091,7 +1092,7 @@ function LedgerModal({ investorId, onClose }) {
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 30 }}>
             {loading ? (
-              <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} />
+              <AppLoader style={{ marginTop: 24 }} />
             ) : err ? (
               <Text style={{ textAlign: 'center', color: COLORS.error, marginTop: 30 }}>{err}</Text>
             ) : (
@@ -1222,7 +1223,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <AddInvestorSheet visible={showAdd} onClose={() => { setShowAdd(false); setPrefillLead(null); }} onSaved={() => load()} schemes={schemes} prefillLead={prefillLead} />
       <ReviseInvestorSheet visible={!!revising} investor={revising}
         scheme={schemes.find((s) => String(s.id) === String(revising?.scheme))}
@@ -1232,9 +1233,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         onClose={() => setRenewing(null)} onSaved={() => load()} />
       <LedgerModal investorId={ledgerFor} onClose={() => setLedgerFor(null)} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Investors</Text>
@@ -1255,7 +1256,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceAlt, borderRadius: 14, paddingHorizontal: 12, height: 40 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
-          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email, investor no.…" placeholderTextColor="#55585E"
+          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email, investor no.…" placeholderTextColor={COLORS.text3}
             style={{ flex: 1, marginLeft: 8, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {searchText ? <TouchableOpacity onPress={() => setSearchText('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
@@ -1264,7 +1265,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, gap: 8, alignItems: 'center' }}>
         {[{ key: '', label: 'All' }, { key: 'active', label: 'Active' }, { key: 'matured', label: 'Matured' }, { key: 'redeemed', label: 'Redeemed' }, { key: 'premature_redeemed', label: 'Premature' }].map((f) => (
           <TouchableOpacity key={f.key} onPress={() => setStatusFilter(f.key)}
-            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: statusFilter === f.key ? NAVY : COLORS.white, borderWidth: 1, borderColor: statusFilter === f.key ? NAVY : COLORS.border }}>
+            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: statusFilter === f.key ? NAVY : COLORS.surface, borderWidth: 1, borderColor: statusFilter === f.key ? NAVY : COLORS.border }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: statusFilter === f.key ? COLORS.white : MUTED }}>{f.label}</Text>
           </TouchableOpacity>
         ))}
@@ -1272,7 +1273,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : investors.length === 0 ? (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : investors.length === 0 ? (
           <Text style={{ textAlign: 'center', color: MUTED, marginTop: 30 }}>{search ? 'No investors match your search.' : 'No investors yet.'}</Text>
         ) : investors.map((inv) => {
           const sc = STATUS_COLOR[inv.status] || { bg: COLORS.surfaceAlt, fg: MUTED };
@@ -1315,7 +1316,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                     <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.link }}>View LOI</Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: '#E9FBEA' }}>
+                <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}><AppIcon name="book" size={11} /> Ledger</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setRevising(inv)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.purpleBg }}>

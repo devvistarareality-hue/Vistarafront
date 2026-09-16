@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ATTENDANCE_ENDPOINTS } from '../../../../constants/api';
 import { COLORS } from '../../../../constants/theme';
+import AppLoader from '../../../../components/AppLoader';
 
 // ── Office geofence ──────────────────────────────────────────────────
 const OFFICE = { latitude: 23.1318, longitude: 72.5691, radius: 500 };
@@ -269,7 +270,7 @@ export default function SignInInternalScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -331,7 +332,7 @@ export default function SignInInternalScreen({ navigation }) {
         <View style={s.mapCard}>
           {locLoading ? (
             <View style={s.mapLoader}>
-              <ActivityIndicator size="large" color={COLORS.navy} />
+              <AppLoader size={0.6} />
               <Text style={s.mapLoaderText}>Getting your location...</Text>
             </View>
           ) : (
@@ -611,7 +612,7 @@ const s = StyleSheet.create({
   screen:        { flex: 1, backgroundColor: COLORS.screenBg },
   scrollContent: { paddingBottom: 40 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
   iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
@@ -619,23 +620,23 @@ const s = StyleSheet.create({
   sectionLabelText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8 },
 
   statsRow:  { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 16 },
-  statCard:  { flex: 1, backgroundColor: COLORS.white, borderRadius: 18, padding: 12, alignItems: 'center', elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  statCard:  { flex: 1, backgroundColor: COLORS.surface, borderRadius: 18, padding: 12, alignItems: 'center', elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
   statIcon:  { width: 38, height: 38, borderRadius: 11, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   statLabel: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 4 },
   statValue: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
 
-  mapCard:       { marginHorizontal: 16, borderRadius: 18, overflow: 'hidden', backgroundColor: COLORS.white, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  mapCard:       { marginHorizontal: 16, borderRadius: 18, overflow: 'hidden', backgroundColor: COLORS.surface, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
   map:           { width: '100%', height: 210 },
   mapLoader:     { height: 210, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: COLORS.screenBg },
   mapLoaderText: { fontSize: 13, color: COLORS.textSecondary },
   geofenceBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, gap: 8, flexWrap: 'wrap' },
-  geofenceDot:   { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.white },
+  geofenceDot:   { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.surface },
   userDot:       { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(47,109,181,0.25)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: COLORS.white },
   userDotInner:  { width: 11, height: 11, borderRadius: 6, backgroundColor: COLORS.link },
   geofenceBadgeText: { color: COLORS.white, fontWeight: '700', fontSize: 12, flex: 1 },
   geofenceCoords:    { color: 'rgba(255,255,255,0.75)', fontSize: 10 },
 
-  card:    { marginHorizontal: 16, backgroundColor: COLORS.white, borderRadius: 18, padding: 16, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  card:    { marginHorizontal: 16, backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
   divider: { height: 1, backgroundColor: COLORS.surfaceAlt, marginVertical: 12 },
 
   timeRow:       { flexDirection: 'row', gap: 10, marginBottom: 4 },
@@ -682,8 +683,8 @@ const s = StyleSheet.create({
   completedSub:    { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 
   // Modify Modal
-  modalOverlay:    { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.40)' },
-  modalSheet:      { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalOverlay:    { flex: 1, justifyContent: 'flex-end', backgroundColor: COLORS.overlay },
+  modalSheet:      { backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHeader:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   modalHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   modalTitle:      { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },

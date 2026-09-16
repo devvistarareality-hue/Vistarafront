@@ -89,10 +89,10 @@ export default function SalesImportScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} /></TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Import Leads</Text>
       </View>
 
@@ -103,7 +103,7 @@ export default function SalesImportScreen({ navigation }) {
           <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Full Pipeline template</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>{isStm ? 'Lead → STM → site visit → closure, with dropdowns. Fill it, then upload below.' : 'Lead → telecaller → STM → site visit → closure, with dropdowns. Fill it, then upload below.'}</Text>
           <TouchableOpacity onPress={downloadTemplate} disabled={dlTpl}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 16, borderWidth: 1.5, borderColor: BLUE, backgroundColor: COLORS.white }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 16, borderWidth: 1.5, borderColor: BLUE, backgroundColor: COLORS.surface }}>
             {dlTpl ? <ActivityIndicator color={BLUE} /> : (
               <>
                 <Ionicons name="download-outline" size={18} color={BLUE} />
@@ -122,7 +122,7 @@ export default function SalesImportScreen({ navigation }) {
             <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Select File</Text>
           </View>
           <TouchableOpacity onPress={pickFile}
-            style={{ borderWidth: 1.5, borderColor: file ? COLORS.success : COLORS.border, borderStyle: 'dashed', borderRadius: 16, paddingVertical: 22, alignItems: 'center', backgroundColor: file ? COLORS.successBg : COLORS.white }}>
+            style={{ borderWidth: 1.5, borderColor: file ? COLORS.success : COLORS.border, borderStyle: 'dashed', borderRadius: 16, paddingVertical: 22, alignItems: 'center', backgroundColor: file ? COLORS.successBg : COLORS.surface }}>
             <Ionicons name={file ? 'document-text' : 'cloud-upload-outline'} size={30} color={file ? COLORS.success : COLORS.shadow} />
             <Text style={{ fontSize: 13, color: file ? COLORS.success : MUTED, marginTop: 8, fontWeight: '600' }}>
               {file ? file.name : 'Tap to pick CSV or Excel file'}
@@ -201,7 +201,7 @@ export default function SalesImportScreen({ navigation }) {
             {(result.site_visits > 0 || result.closures > 0) && (
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
                 {[
-                  { label: 'Site visits', value: result.site_visits ?? 0, color: '#245A96', bg: COLORS.infoBg || COLORS.surfaceAlt },
+                  { label: 'Site visits', value: result.site_visits ?? 0, color: COLORS.accentDeep, bg: COLORS.infoBg || COLORS.surfaceAlt },
                   { label: 'Closures',    value: result.closures ?? 0,    color: COLORS.purple, bg: COLORS.surfaceAlt },
                 ].map(r => (
                   <View key={r.label} style={{ flex: 1, padding: 12, borderRadius: 16, backgroundColor: r.bg, alignItems: 'center' }}>

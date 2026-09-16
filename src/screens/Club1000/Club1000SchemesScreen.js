@@ -10,8 +10,9 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import FormSheet from '../../components/FormSheet';
 import { TextField } from '../../components/Field';
+import AppLoader from '../../components/AppLoader';
 
-const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
@@ -121,7 +122,7 @@ function NewSchemeSheet({ visible, scheme, onClose, onSaved }) {
               return (
                 <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <TouchableOpacity onPress={() => toggleInterestPayoutOption(key)}
-                    style={{ width: 110, paddingVertical: 11, alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: checked ? TEAL : COLORS.border, backgroundColor: checked ? TEAL : COLORS.white }}>
+                    style={{ width: 110, paddingVertical: 11, alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: checked ? TEAL : COLORS.border, backgroundColor: checked ? TEAL : COLORS.surface }}>
                     <Text style={{ fontSize: 12, fontWeight: '700', color: checked ? COLORS.white : MUTED }}>{label}</Text>
                   </TouchableOpacity>
                   <View style={{ flex: 1 }}>
@@ -199,13 +200,13 @@ export default function Club1000SchemesScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       {manager && <NewSchemeSheet visible={showNew} onClose={() => setShowNew(false)} onSaved={() => load()} />}
       {manager && <NewSchemeSheet visible={!!editing} scheme={editing} onClose={() => setEditing(null)} onSaved={() => load()} />}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Schemes</Text>
         {manager && (
@@ -218,7 +219,7 @@ export default function Club1000SchemesScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : schemes.length === 0 ? (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : schemes.length === 0 ? (
           <Text style={{ textAlign: 'center', color: MUTED, marginTop: 30 }}>No schemes yet — create one to get started.</Text>
         ) : schemes.map((s) => (
           <View key={s.id} style={[CARD, { padding: 14, marginBottom: 10 }]}>

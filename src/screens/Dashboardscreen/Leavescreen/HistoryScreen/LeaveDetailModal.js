@@ -121,7 +121,7 @@ const LeaveDetailModal = ({ visible, leave, onClose, onApprove, onReject, action
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: COLORS.overlay,
   },
   sheet: {
     position: 'absolute',
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: SHEET_HEIGHT,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: width * 0.05,
     borderTopRightRadius: width * 0.05,
     paddingHorizontal: width * 0.05,

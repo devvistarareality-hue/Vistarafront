@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { COLORS } from '../constants/theme';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { navigationRef } from './navigationRef';
 import { useSelector } from 'react-redux';
@@ -68,6 +69,16 @@ import PostSignOutScreen  from '../screens/PostSignOut/PostSignOutScreen';
 // Kiosk — client-facing self-booking (role=Kiosk)
 import KioskScreen        from '../screens/Kiosk/KioskScreen';
 
+// Navigation chrome follows the app theme so screen transitions never flash white.
+const NAV_THEME = {
+  ...(COLORS.isDark ? DarkTheme : DefaultTheme),
+  colors: {
+    ...(COLORS.isDark ? DarkTheme : DefaultTheme).colors,
+    primary: COLORS.link, background: COLORS.screenBg, card: COLORS.surface,
+    text: COLORS.textPrimary, border: COLORS.border, notification: COLORS.error,
+  },
+};
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -84,8 +95,8 @@ const AppNavigator = () => {
   const isKiosk     = user?.role === 'Kiosk';
 
   return (
-    <NavigationContainer ref={navigationRef}>
-      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+    <NavigationContainer ref={navigationRef} theme={NAV_THEME}>
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: COLORS.screenBg } }}>
 
         {!user ? (
           // ── Unauthenticated ──────────────────────────────────────

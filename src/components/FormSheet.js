@@ -65,7 +65,7 @@ export default function FormSheet({ visible, onClose, children, maxHeight = '92%
 
 const styles = StyleSheet.create({
   // Scrim on the root so the content behind the sheet is clearly dimmed (not messy).
-  root: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(29,29,31,0.4)' },
+  root: { flex: 1, justifyContent: 'flex-end', backgroundColor: `rgba(${COLORS.inkRgb},0.4)` },
   backdrop: { ...StyleSheet.absoluteFillObject },  // transparent — tap target to close
   kav: { width: '100%' },
   sheet: {

@@ -190,7 +190,7 @@ const s = StyleSheet.create({
   },
   logoCircle: {
     width: 78, height: 78, borderRadius: 39,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center', alignItems: 'center',
     shadowColor: COLORS.error, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 14, elevation: 10,
@@ -253,7 +253,7 @@ const s = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 20,
+    backgroundColor: COLORS.surface, borderRadius: 20,
     paddingHorizontal: 16, height: 56, marginBottom: 24,
     borderWidth: 1.5, borderColor: COLORS.border,
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },

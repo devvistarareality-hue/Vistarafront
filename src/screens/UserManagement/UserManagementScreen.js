@@ -13,6 +13,7 @@ import {
 } from '../../redux/actions/userManagementActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
+import AppLoader from '../../components/AppLoader';
 
 const ROLE_AVATAR_COLOR = {
   Admin:       COLORS.navy,
@@ -78,7 +79,7 @@ export default function UserManagementScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -129,7 +130,7 @@ export default function UserManagementScreen({ navigation }) {
 
       {/* List */}
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.navy} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filtered}

@@ -131,7 +131,7 @@ const s = StyleSheet.create({
   },
   logoCircle: {
     width: 78, height: 78, borderRadius: 39,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center', alignItems: 'center',
     shadowColor: ORANGE, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 14, elevation: 10,

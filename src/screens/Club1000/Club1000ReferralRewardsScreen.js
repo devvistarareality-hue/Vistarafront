@@ -9,8 +9,9 @@ import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { formatDMY } from '../../utils/dateFormat';
+import AppLoader from '../../components/AppLoader';
 
-const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
@@ -70,11 +71,11 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Referral Rewards</Text>
       </View>
@@ -82,7 +83,7 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
       <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 }}>
         {[{ key: 'pending', label: 'Pending' }, { key: 'paid', label: 'Paid' }, { key: '', label: 'All' }].map((f) => (
           <TouchableOpacity key={f.key} onPress={() => setFilter(f.key)}
-            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: filter === f.key ? NAVY : COLORS.white, borderWidth: 1, borderColor: filter === f.key ? NAVY : COLORS.border }}>
+            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: filter === f.key ? NAVY : COLORS.surface, borderWidth: 1, borderColor: filter === f.key ? NAVY : COLORS.border }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: filter === f.key ? COLORS.white : MUTED }}>{f.label}</Text>
           </TouchableOpacity>
         ))}
@@ -90,7 +91,7 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : (
           <>
             {referrers.length > 0 && (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>

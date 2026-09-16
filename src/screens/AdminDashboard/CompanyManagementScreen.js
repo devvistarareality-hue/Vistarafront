@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchCompanies, updateCompany, resetUpdateCompany, deleteCompany } from '../../redux/actions/companiesActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
 const STATUS_FILTERS = ['All', 'Active', 'Inactive'];
 
@@ -107,7 +108,7 @@ export default function CompanyManagementScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
       <View style={s.header}>
@@ -145,7 +146,7 @@ export default function CompanyManagementScreen({ navigation }) {
 
       {/* List */}
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.navy} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filtered}

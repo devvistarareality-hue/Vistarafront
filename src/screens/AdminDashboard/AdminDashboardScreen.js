@@ -11,6 +11,7 @@ import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import FilterSelect from '../../components/FilterSelect';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const ADMIN_MODULES = [
   { name: 'User Management',    icon: 'account-cog-outline',  color: COLORS.navy, iconBg: COLORS.linkBg, screen: 'UserManagement',     params: undefined },
@@ -22,7 +23,7 @@ const ADMIN_MODULES = [
   { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Execution', name: 'Execution' } },
   { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'ModuleHome',  params: { module: 'Purchase', name: 'Purchase' } },
   { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'ModuleHome',  params: { module: 'Land', name: 'Land' } },
-  { name: 'Club 1000',          icon: 'trending-up',          color: '#23874A', iconBg: '#A4F5A6', screen: 'Club1000Hub', params: undefined },
+  { name: 'Club 1000',          icon: 'trending-up',          color: COLORS.success, iconBg: COLORS.green, screen: 'Club1000Hub', params: undefined },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
@@ -43,7 +44,7 @@ export default function AdminDashboardScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -56,9 +57,12 @@ export default function AdminDashboardScreen({ navigation }) {
             <Ionicons name="shield-checkmark" size={11} color={COLORS.warningAlt} />
             <Text style={s.adminBadgeText}>Administrator</Text>
           </View>
-          <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color={COLORS.textPrimary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <ThemeToggle compact />
+            <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={20} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

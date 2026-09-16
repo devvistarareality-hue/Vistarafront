@@ -8,9 +8,10 @@ import { apiFetch } from '../../utils/apiFetch';
 import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
+import { withAlpha } from '../../constants/theme';
 
 const NAVY  = COLORS.navy;
-const TEAL  = '#23874A';
+const TEAL  = COLORS.success;
 const BG    = COLORS.screenBg;
 const TEXT  = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
@@ -19,7 +20,7 @@ const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW
 const MENU = [
   { key: 'Club1000Leads',      label: 'Leads',        icon: 'person-add-outline',    color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },
   { key: 'Club1000FollowUps',  label: 'Follow-Ups',   icon: 'calendar-outline',      color: COLORS.warning,  bg: COLORS.warningBg, managerOnly: false },
-  { key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: '#E9FBEA',        managerOnly: false },
+  { key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: COLORS.successBg,        managerOnly: false },
   { key: 'Club1000InvestorApprovals', label: 'Approvals', icon: 'checkmark-done-outline', color: COLORS.success, bg: COLORS.successBg, managerOnly: true },
   { key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: false },
   { key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
@@ -170,12 +171,12 @@ export default function Club1000HubScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         {navigation.canGoBack() && (
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="arrow-back" size={20} color={NAVY} />
+            <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }}>
@@ -192,8 +193,8 @@ export default function Club1000HubScreen({ navigation, route }) {
 
       {/* Filter Bottom Sheet */}
       <Modal visible={showFilter} transparent animationType="slide" onRequestClose={closeFilter}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={closeFilter} />
-        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 36, maxHeight: '80%' }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={closeFilter} />
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 36, maxHeight: '80%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Filter</Text>
             <TouchableOpacity onPress={closeFilter}>
@@ -249,7 +250,7 @@ export default function Club1000HubScreen({ navigation, route }) {
                     onPress={() => { setPendingQuarter(prev => sel ? prev.filter(k => k !== key) : [...prev, key]); setPendingFrom(null); setPendingTo(null); setPendingMonths([]); }}
                     style={{ flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: sel ? COLORS.white : TEXT }}>{label}</Text>
-                    <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? COLORS.white + 'CC' : MUTED, marginTop: 2 }}>{sub}</Text>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? withAlpha(COLORS.white, 'CC') : MUTED, marginTop: 2 }}>{sub}</Text>
                   </TouchableOpacity>
                 );
               })}

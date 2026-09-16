@@ -10,6 +10,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { MyBookingsList } from './MyBookingsScreen';
 
 import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
@@ -47,11 +48,11 @@ export default function ClosureProjectsScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Select Project</Text>
@@ -71,7 +72,7 @@ export default function ClosureProjectsScreen({ navigation, route }) {
       </View>
 
       {view === 'mybookings' ? <MyBookingsList navigation={navigation} cpOnly={cpOnly} /> : loading ? (
-        <ActivityIndicator size="large" color={BLUE} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
@@ -111,8 +112,8 @@ export default function ClosureProjectsScreen({ navigation, route }) {
                       <Text style={{ fontSize: 12, color: COLORS.error, fontWeight: '700' }}><AppIcon name="x" size={12} /> {pc.sold || 0}</Text>
                     </View>
                   )}
-                  <View style={{ marginTop: 12, backgroundColor: (!p.block_industrial && noPlots) ? '#FFF3E0' : COLORS.linkBg, borderRadius: 14, paddingVertical: 9, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: (!p.block_industrial && noPlots) ? '#D98A1F' : BLUE }}>{(!p.block_industrial && noPlots) ? 'Create EOI →' : 'View units →'}</Text>
+                  <View style={{ marginTop: 12, backgroundColor: (!p.block_industrial && noPlots) ? COLORS.warningBg : COLORS.linkBg, borderRadius: 14, paddingVertical: 9, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: (!p.block_industrial && noPlots) ? COLORS.warningAlt : BLUE }}>{(!p.block_industrial && noPlots) ? 'Create EOI →' : 'View units →'}</Text>
                   </View>
                 </View>
               </TouchableOpacity>

@@ -14,7 +14,8 @@ import BookingDetails from '../../components/BookingDetails';
 import { unitLabel } from '../../lib/bookingUnit';
 
 import AppIcon from '../../components/AppIcon';
-const TEAL = '#23874A';
+import AppLoader from '../../components/AppLoader';
+const TEAL = COLORS.success;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -50,8 +51,8 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
                 ['Unit', u.isUnit ? `Unit ${u.text}` : u.text], ['Amount', rupee(b.final_amount)]];
   return (
     <Modal visible transparent animationType="fade" onRequestClose={busy ? undefined : onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.45)', justifyContent: 'center', padding: 20 }}>
-        <View style={{ backgroundColor: COLORS.white, borderRadius: 20, padding: 20 }}>
+      <View style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'center', padding: 20 }}>
+        <View style={{ backgroundColor: COLORS.surface, borderRadius: 20, padding: 20 }}>
           <Text style={{ fontSize: 16, fontWeight: '800', color: COLORS.error, marginBottom: 6 }}>Cancel this booking?</Text>
           <Text style={{ fontSize: 13, color: MUTED, lineHeight: 20, marginBottom: 14 }}>
             {`This frees the unit back to available, permanently deletes the signed ${isEoi(b) ? 'EOI' : 'LOI'} from storage, and removes it from conversions. It will then show under Cancelled in Bookings. This cannot be undone.`}
@@ -70,7 +71,7 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
               <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Keep Booking</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onConfirm} disabled={busy}
-              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 9, backgroundColor: busy ? '#F7C3C6' : COLORS.error }}>
+              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 9, backgroundColor: busy ? COLORS.error2 : COLORS.error }}>
               <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>{busy ? 'Cancelling…' : 'Yes, Cancel Booking'}</Text>
             </TouchableOpacity>
           </View>
@@ -84,7 +85,7 @@ function RejectModal({ b, busy, onClose, onConfirm }) {
   const [reason, setReason] = useState('');
   return (
     <Modal visible={!!b} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.45)', justifyContent: 'center', padding: 20 }}>
+      <View style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'center', padding: 20 }}>
         <View style={[CARD, { padding: 20 }]}>
           <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Reject this booking?</Text>
           <Text style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>
@@ -102,7 +103,7 @@ function RejectModal({ b, busy, onClose, onConfirm }) {
             <TouchableOpacity disabled={busy || !reason.trim()}
               onPress={() => reason.trim() && onConfirm(reason.trim())}
               style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 9,
-                backgroundColor: (busy || !reason.trim()) ? '#F7C3C6' : COLORS.error }}>
+                backgroundColor: (busy || !reason.trim()) ? COLORS.error2 : COLORS.error }}>
               <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>
                 {busy ? 'Rejecting…' : 'Reject'}
               </Text>
@@ -264,7 +265,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
         <TextInput value={q} onChangeText={(t) => { setQ(t); setOpen({}); }}
           placeholder="Search name, phone or LOI / unit no…" placeholderTextColor={MUTED}
           style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5,
-            borderColor: COLORS.border, backgroundColor: COLORS.white, fontSize: 13,
+            borderColor: COLORS.border, backgroundColor: COLORS.surface, fontSize: 13,
             color: TEXT, marginBottom: 10 }} />
 
         {(projOptions.length > 1 || stmOptions.length > 1) && (
@@ -280,7 +281,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
           </View>
         )}
 
-        {loading ? <ActivityIndicator color={TEAL} style={{ marginTop: 30 }} />
+        {loading ? <AppLoader style={{ marginTop: 24 }} />
         : err ? <View style={[CARD, { alignItems: 'center' }]}><Text style={{ color: COLORS.error }}>{err}</Text></View>
         : projectNames.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}>
@@ -291,7 +292,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
           </View>
         ) : <>
           <View style={{ marginBottom: 12, borderRadius: 18, padding: 16, backgroundColor: TEAL }}>
-            <Text style={{ color: '#C9F8CA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Text style={{ color: COLORS.success2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
               {`${narrowed ? 'Matching' : 'Total'} ${tabLabel} · ${grandCount} booking${grandCount === 1 ? '' : 's'}`}
             </Text>
             <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
@@ -301,7 +302,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
             <View key={pn} style={{ marginBottom: 12 }}>
               <TouchableOpacity onPress={() => toggle(pn)} activeOpacity={0.7}
                 style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                  paddingVertical: 14, borderWidth: 1.5, borderColor: open[pn] ? '#C9F8CA' : 'transparent' }]}>
+                  paddingVertical: 14, borderWidth: 1.5, borderColor: open[pn] ? COLORS.success2 : 'transparent' }]}>
                 <Text style={{ fontSize: 12, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.4 }}>
                   <AppIcon name="building" size={12} /> {pn} · {groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}
                 </Text>
@@ -321,7 +322,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                         <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
                           {b.client_name || '—'} · {b.phone}
                         </Text>
-                        <Text style={{ fontSize: 11, color: '#55585E', marginTop: 3 }}>
+                        <Text style={{ fontSize: 11, color: COLORS.text3, marginTop: 3 }}>
                           {`STM ${b.stm_name || '—'} · Booked ${fmtDateTime(b.created_at)}`}
                         </Text>
                         {b.approved_by_name ? (
@@ -343,7 +344,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                         ) : null}
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 15, fontWeight: '800', color: '#245A96' }}>{rupee(b.final_amount)}</Text>
+                        <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.accentDeep }}>{rupee(b.final_amount)}</Text>
                         <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, marginTop: 4 }}>
                           {isEoi(b) ? 'EOI' : 'LOI'}
                         </Text>
@@ -353,7 +354,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                     {tab === 'rejected' && b.accounts_rejected_reason ? (
                       <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: COLORS.errorBg }}>
                         <Text style={{ fontSize: 10, fontWeight: '800', color: COLORS.error, letterSpacing: 0.4 }}>REASON</Text>
-                        <Text style={{ fontSize: 13, color: '#A52A31', marginTop: 2 }}>{b.accounts_rejected_reason}</Text>
+                        <Text style={{ fontSize: 13, color: COLORS.errorStrong, marginTop: 2 }}>{b.accounts_rejected_reason}</Text>
                       </View>
                     ) : null}
 
@@ -361,7 +362,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                       {b.loi_document ? (
                         <TouchableOpacity onPress={() => openLoi(b.id)}
                           style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
-                            borderWidth: 1.5, borderColor: '#C9F8CA', backgroundColor: COLORS.white }}>
+                            borderWidth: 1.5, borderColor: COLORS.success2, backgroundColor: COLORS.surface }}>
                           <Text style={{ color: TEAL, fontWeight: '700', fontSize: 13 }}>
                             {`View / Download ${isEoi(b) ? 'EOI' : 'LOI'}`}
                           </Text>
@@ -369,8 +370,8 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                       ) : null}
                       <TouchableOpacity onPress={() => setDetailsOpen((o) => ({ ...o, [b.id]: !o[b.id] }))}
                         style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
-                          borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.white }}>
-                        <Text style={{ color: '#1D1D1F', fontWeight: '700', fontSize: 13 }}>
+                          borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface }}>
+                        <Text style={{ color: COLORS.textPrimary, fontWeight: '700', fontSize: 13 }}>
                           {detailsOpen[b.id] ? '▴ Hide Details' : '▾ Details'}
                         </Text>
                       </TouchableOpacity>
@@ -397,7 +398,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                       {tab === 'approved' && b.can_accounts_cancel ? (
                         <TouchableOpacity disabled={busy === b.id} onPress={() => setToCancel(b)}
                           style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
-                            borderWidth: 1.5, borderColor: '#F7C3C6', backgroundColor: '#FDECEC' }}>
+                            borderWidth: 1.5, borderColor: COLORS.error2, backgroundColor: COLORS.errorBg }}>
                           <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Cancel Booking</Text>
                         </TouchableOpacity>
                       ) : null}

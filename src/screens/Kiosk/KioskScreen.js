@@ -9,18 +9,20 @@ import { logout } from '../../redux/actions/authActions';
 import { stripPlotPrefix } from '../../lib/plotNumber';
 
 import AppIcon from '../../components/AppIcon';
+import { COLORS, withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 // Client-facing full-screen Kiosk self-booking (mirrors the web /kiosk flow).
 // Kiosk-role device is logged in; walk-in client self-serves:
 //   project (kiosk-enabled) -> plot(s) on interactive map (or EOI if no plots) -> booking form.
-const NAVY = '#1D1D1F', BLUE = '#2F6DB5', BLUEBG = '#E6F2FF', MUTED = '#6E7278', GREEN = '#23874A';
+const NAVY = COLORS.textPrimary, BLUE = COLORS.link, BLUEBG = COLORS.accentSoft, MUTED = COLORS.textSecondary, GREEN = COLORS.success;
 const STEPS = [{ key: 'project', label: 'Project' }, { key: 'select', label: 'Unit' }, { key: 'details', label: 'Details' }];
 // Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
 const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
 
 const KSTATUS = {
-  available: { label: 'Available', dot: '#23874A', bg: '#E9FBEA' },
-  hold:      { label: 'On Hold',   dot: '#D98A1F', bg: '#FFF3E0' },
-  sold:      { label: 'Sold',      dot: '#D9434B', bg: '#FDECEC' },
+  available: { label: 'Available', dot: COLORS.success, bg: COLORS.successBg },
+  hold:      { label: 'On Hold',   dot: COLORS.warningAlt, bg: COLORS.warningBg },
+  sold:      { label: 'Sold',      dot: COLORS.error, bg: COLORS.errorBg },
 };
 const isImageUrl = (u) => !!u && /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i.test(u);
 // Visual centre of a zone. Uses the polygon's area centroid (shoelace), not the average
@@ -195,7 +197,7 @@ export default function KioskScreen({ navigation }) {
           <View>
             <Text style={s.hero}>Find your space.</Text>
             <Text style={s.heroSub}>Choose a project to begin your booking.</Text>
-            {projects === null ? <ActivityIndicator color={BLUE} style={{ marginTop: 40 }} />
+            {projects === null ? <AppLoader style={{ marginTop: 24 }} />
               : projects.length === 0 ? <Text style={s.empty}>No projects are open for kiosk booking right now. Please ask our staff.</Text>
               : projects.map((p) => (
                 <TouchableOpacity key={p.id} style={s.card} activeOpacity={0.85} onPress={() => pickProject(p)}>
@@ -259,7 +261,7 @@ export default function KioskScreen({ navigation }) {
                         return (
                           <TouchableOpacity key={`b${i}`} onPress={() => { setBlockIdx(i); setFloorIdx(0); }}
                             style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
-                              borderColor: on ? BLUE : '#DFE2E6', backgroundColor: on ? BLUEBG : '#fff' }}>
+                              borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUEBG : COLORS.surface }}>
                             <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{b || '—'}</Text>
                           </TouchableOpacity>
                         );
@@ -272,7 +274,7 @@ export default function KioskScreen({ navigation }) {
                       return (
                         <TouchableOpacity key={i} onPress={() => setFloorIdx(i)}
                           style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
-                            borderColor: on ? BLUE : '#DFE2E6', backgroundColor: on ? BLUEBG : '#fff' }}>
+                            borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUEBG : COLORS.surface }}>
                           <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>
                             {f.label || `Floor ${f.floor}`} · {n}
                           </Text>
@@ -286,7 +288,7 @@ export default function KioskScreen({ navigation }) {
                   {['available', 'hold', 'sold'].map((k) => {
                     const n = visiblePlots.filter((p) => p.status === k).length;
                     return (
-                      <View key={k} style={[s.statCard, { borderColor: KSTATUS[k].dot + '55' }]}>
+                      <View key={k} style={[s.statCard, { borderColor: withAlpha(KSTATUS[k].dot, '55') }]}>
                         <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: KSTATUS[k].dot }} />
                         <Text style={s.statN}>{n}</Text>
                         <Text style={s.statL}>{KSTATUS[k].label}</Text>
@@ -306,15 +308,15 @@ export default function KioskScreen({ navigation }) {
                       const { cx, cy } = zoneCenter(zone);
                       const label = stripPlotPrefix(zone.plotNumber);
                       const press = () => togglePlot(pl);
-                      const fillC = isSel ? '#2F6DB5' : cfg.dot + '99';
-                      const strokeC = isSel ? '#1D1D1F' : cfg.dot;
+                      const fillC = isSel ? COLORS.link : withAlpha(cfg.dot, '99');
+                      const strokeC = isSel ? COLORS.textPrimary : cfg.dot;
                       const sw = isSel ? '0.9' : '0.5';
                       return (
                         <React.Fragment key={zone.id}>
                           {zone.points?.length
                             ? <Polygon points={zone.points.map((p) => `${p.x},${p.y}`).join(' ')} fill={fillC} stroke={strokeC} strokeWidth={sw} onPress={press} />
                             : <Rect x={zone.x} y={zone.y} width={zone.width} height={zone.height} rx="0.4" fill={fillC} stroke={strokeC} strokeWidth={sw} onPress={press} />}
-                          <SvgText x={cx} y={cy} textAnchor="middle" fontSize="2.6" fontWeight="bold" fill="#fff" onPress={press}>{isSel ? `${label}` : label}</SvgText>
+                          <SvgText x={cx} y={cy} textAnchor="middle" fontSize="2.6" fontWeight="bold" fill={COLORS.surface} onPress={press}>{isSel ? `${label}` : label}</SvgText>
                         </React.Fragment>
                       );
                     })}
@@ -331,10 +333,10 @@ export default function KioskScreen({ navigation }) {
                       {/* size already carries its own unit (e.g. "84 sqyrd") — don't append another */}
                       {!!pl.size && <Text style={s.chipS}>{pl.size}</Text>}
                       {/* Facing and terrace both move the price, so surface them here. */}
-                      {!!pl.facing && <Text style={[s.chipS, { color: '#2F6DB5' }]}>{FACING_LABEL[pl.facing] || pl.facing}</Text>}
-                      {!!(pl.terrace_area || '').trim() && <Text style={[s.chipS, { color: '#23874A' }]}>Terrace {pl.terrace_area} sq.yd</Text>}
+                      {!!pl.facing && <Text style={[s.chipS, { color: COLORS.link }]}>{FACING_LABEL[pl.facing] || pl.facing}</Text>}
+                      {!!(pl.terrace_area || '').trim() && <Text style={[s.chipS, { color: COLORS.success }]}>Terrace {pl.terrace_area} sq.yd</Text>}
                       {/* Who is on a taken unit — saves the visitor asking. */}
-                      {!!pl.agent_name && <Text style={[s.chipS, { color: '#3A3C40' }]}>{pl.status === 'hold' ? 'On hold by' : 'Sold by'} {pl.agent_name}</Text>}
+                      {!!pl.agent_name && <Text style={[s.chipS, { color: COLORS.text2 }]}>{pl.status === 'hold' ? 'On hold by' : 'Sold by'} {pl.agent_name}</Text>}
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -368,62 +370,62 @@ export default function KioskScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F3F9FF' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ECEEF0' },
+  root: { flex: 1, backgroundColor: COLORS.accentSofter },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surface3 },
   logo: { width: 42, height: 42, borderRadius: 16, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
   brand: { fontSize: 17, fontWeight: '800', color: NAVY },
   brandSub: { fontSize: 11, color: MUTED },
-  dot: { width: 24, height: 24, borderRadius: 16, backgroundColor: '#ECEEF0', alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 24, height: 24, borderRadius: 16, backgroundColor: COLORS.surface3, alignItems: 'center', justifyContent: 'center' },
   dotActive: { backgroundColor: BLUE }, dotDone: { backgroundColor: GREEN },
-  dotTxt: { fontSize: 11, fontWeight: '800', color: '#9A9EA5' },
-  stepBar: { width: 18, height: 2, backgroundColor: '#DFE2E6', marginHorizontal: 6 },
-  signout: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: '#FDECEC', borderWidth: 1.5, borderColor: '#F7C3C6' },
-  signoutT: { fontSize: 13, fontWeight: '700', color: '#D9434B' },
+  dotTxt: { fontSize: 11, fontWeight: '800', color: COLORS.textTertiary },
+  stepBar: { width: 18, height: 2, backgroundColor: COLORS.border, marginHorizontal: 6 },
+  signout: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: COLORS.error2 },
+  signoutT: { fontSize: 13, fontWeight: '700', color: COLORS.error },
 
   hero: { fontSize: 30, fontWeight: '800', color: NAVY, letterSpacing: -0.5 },
-  heroSub: { fontSize: 15, color: '#55585E', marginTop: 4, marginBottom: 20 },
+  heroSub: { fontSize: 15, color: COLORS.text3, marginTop: 4, marginBottom: 20 },
   h1: { fontSize: 22, fontWeight: '800', color: NAVY, marginBottom: 12, marginTop: 6 },
 
-  card: { backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 18, shadowColor: NAVY, shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
+  card: { backgroundColor: COLORS.surface, borderRadius: 20, overflow: 'hidden', marginBottom: 18, shadowColor: NAVY, shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   cardImg: { width: '100%', height: 180 },
   cardTitle: { fontSize: 20, fontWeight: '800', color: NAVY },
   cardLoc: { fontSize: 13, color: MUTED, marginTop: 3 },
   tag: { fontSize: 12, fontWeight: '700', color: BLUE, backgroundColor: BLUEBG, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, overflow: 'hidden' },
-  tagGhost: { color: '#55585E', backgroundColor: '#F4F5F7' },
+  tagGhost: { color: COLORS.text3, backgroundColor: COLORS.surface2 },
   cardCta: { fontSize: 14, fontWeight: '800', color: BLUE, marginTop: 12 },
 
-  back: { color: '#55585E', fontSize: 14, fontWeight: '700', marginBottom: 4 },
-  master: { width: '100%', height: 220, backgroundColor: '#F4F5F7', borderRadius: 18, marginBottom: 18 },
-  mapWrap: { width: '100%', borderRadius: 18, overflow: 'hidden', backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#ECEEF0' },
-  statCard: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10 },
+  back: { color: COLORS.text3, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  master: { width: '100%', height: 220, backgroundColor: COLORS.surface2, borderRadius: 18, marginBottom: 18 },
+  mapWrap: { width: '100%', borderRadius: 18, overflow: 'hidden', backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.surface3 },
+  statCard: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.surface, borderWidth: 1.5, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10 },
   statN: { fontSize: 18, fontWeight: '800', color: NAVY },
-  statL: { fontSize: 11, fontWeight: '600', color: '#55585E' },
-  note: { fontSize: 15, color: '#3A3C40', lineHeight: 22, marginBottom: 14 },
+  statL: { fontSize: 11, fontWeight: '600', color: COLORS.text3 },
+  note: { fontSize: 15, color: COLORS.text2, lineHeight: 22, marginBottom: 14 },
   label: { fontSize: 12, fontWeight: '800', letterSpacing: 0.4, color: MUTED, marginTop: 16, marginBottom: 8 },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  chip: { minWidth: 92, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 18, borderWidth: 1.5, borderColor: '#DFE2E6', backgroundColor: '#fff' },
+  chip: { minWidth: 92, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 18, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   chipOn: { borderColor: BLUE, backgroundColor: BLUEBG },
-  chipT: { fontSize: 15, fontWeight: '800', color: '#3A3C40' },
-  chipS: { fontSize: 11, color: '#55585E', marginTop: 2 },
-  plot: { minWidth: 88, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 18, borderWidth: 1.5, borderColor: '#DFE2E6', backgroundColor: '#fff' },
-  plotNo: { fontSize: 16, fontWeight: '800', color: '#3A3C40' },
+  chipT: { fontSize: 15, fontWeight: '800', color: COLORS.text2 },
+  chipS: { fontSize: 11, color: COLORS.text3, marginTop: 2 },
+  plot: { minWidth: 88, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 18, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  plotNo: { fontSize: 16, fontWeight: '800', color: COLORS.text2 },
 
-  stepper: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 1.5, borderColor: '#DFE2E6', borderRadius: 16, overflow: 'hidden', backgroundColor: '#fff' },
-  stepBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F4F5F7' },
+  stepper: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 16, overflow: 'hidden', backgroundColor: COLORS.surface },
+  stepBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface2 },
   stepBtnT: { fontSize: 22, fontWeight: '700', color: BLUE },
   stepInput: { width: 72, height: 50, textAlign: 'center', fontSize: 17, fontWeight: '700', color: NAVY },
-  summary: { marginTop: 14, fontSize: 15, color: '#3A3C40' },
+  summary: { marginTop: 14, fontSize: 15, color: COLORS.text2 },
 
-  input: { height: 52, paddingHorizontal: 14, borderRadius: 16, borderWidth: 1.5, borderColor: '#DFE2E6', fontSize: 16, backgroundColor: '#fff', color: NAVY },
+  input: { height: 52, paddingHorizontal: 14, borderRadius: 16, borderWidth: 1.5, borderColor: COLORS.border, fontSize: 16, backgroundColor: COLORS.surface, color: NAVY },
   primary: { height: 54, borderRadius: 18, backgroundColor: BLUE, alignItems: 'center', justifyContent: 'center', marginTop: 26 },
   primaryT: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  fine: { fontSize: 12, color: '#9A9EA5', marginTop: 12, textAlign: 'center' },
-  err: { marginTop: 14, backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F7C3C6', borderRadius: 14, padding: 12, fontSize: 14, color: '#D9434B' },
+  fine: { fontSize: 12, color: COLORS.textTertiary, marginTop: 12, textAlign: 'center' },
+  err: { marginTop: 14, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error2, borderRadius: 14, padding: 12, fontSize: 14, color: COLORS.error },
 
-  check: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#E9FBEA', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  doneMsg: { fontSize: 16, color: '#3A3C40', textAlign: 'center', marginTop: 8 },
-  empty: { backgroundColor: '#fff', borderRadius: 20, padding: 30, textAlign: 'center', color: '#55585E', fontSize: 15, marginTop: 10 },
+  check: { width: 88, height: 88, borderRadius: 44, backgroundColor: COLORS.successBg, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  doneMsg: { fontSize: 16, color: COLORS.text2, textAlign: 'center', marginTop: 8 },
+  empty: { backgroundColor: COLORS.surface, borderRadius: 20, padding: 30, textAlign: 'center', color: COLORS.text3, fontSize: 15, marginTop: 10 },
   exit: { position: 'absolute', bottom: 10, right: 14 },
-  exitT: { fontSize: 11, color: '#9A9EA5' },
+  exitT: { fontSize: 11, color: COLORS.textTertiary },
 });

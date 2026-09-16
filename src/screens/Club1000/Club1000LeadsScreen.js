@@ -12,8 +12,10 @@ import { isClub1000Manager } from '../../utils/club1000Access';
 import FormSheet from '../../components/FormSheet';
 import { TextField, Field, inputStyle } from '../../components/Field';
 import AppIcon from '../../components/AppIcon';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
-const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
@@ -62,8 +64,8 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
         <Ionicons name="chevron-down" size={16} color={MUTED} />
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' }} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{placeholder}</Text>
               <TouchableOpacity onPress={() => setOpen(false)}><Ionicons name="close" size={20} color={MUTED} /></TouchableOpacity>
@@ -96,7 +98,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
 
   return (
     <FormSheet visible={visible} onClose={onClose}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.surface }}>
         <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Filters</Text>
         <TouchableOpacity onPress={() => { setLocal(EMPTY_FILTERS); setFilters(EMPTY_FILTERS); onClose(); }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.error }}>Clear All</Text>
@@ -509,7 +511,7 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
             return (
               <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                 <View style={{ alignItems: 'center' }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: withAlpha(color, '18'), alignItems: 'center', justifyContent: 'center' }}>
                     <AppIcon name={icon} size={16} color={color} />
                   </View>
                   {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}
@@ -638,15 +640,15 @@ export default function Club1000LeadsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <AddLeadSheet visible={showAdd} onClose={() => setShowAdd(false)} onSaved={() => load()} schemes={schemes} assignees={assignees} manager={manager} />
       <LeadDetailSheet lead={selected} assignees={assignees} manager={manager} onClose={() => setSelected(null)} onStatusChange={changeStatus} onConvert={convert} onScheduleFollowUp={scheduleFollowUp} onAssigneeChange={changeAssignee} />
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters} schemes={schemes} assignees={assignees} showAssignees={manager} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Leads</Text>
@@ -660,10 +662,10 @@ export default function Club1000LeadsScreen({ navigation }) {
       </View>
 
       {/* Search + Filter button */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', gap: 10 }}>
+      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
-          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" placeholderTextColor="#55585E" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
+          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" placeholderTextColor={COLORS.text3} style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {searchText ? <TouchableOpacity onPress={() => { setSearchText(''); setSearch(''); }}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
         <TouchableOpacity onPress={() => setFilterSheet(true)}
@@ -679,7 +681,7 @@ export default function Club1000LeadsScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : loadError ? (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : loadError ? (
           <View style={{ alignItems: 'center', marginTop: 60 }}>
             <Ionicons name="cloud-offline-outline" size={48} color={COLORS.divider} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: MUTED, marginTop: 12 }}>Couldn't load leads</Text>

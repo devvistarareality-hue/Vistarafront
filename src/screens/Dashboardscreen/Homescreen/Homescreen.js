@@ -18,6 +18,8 @@ import { apiFetch } from '../../../utils/apiFetch';
 import { COLORS, CARD_SHADOW as THEME_SHADOW } from '../../../constants/theme';
 
 import AppIcon from '../../../components/AppIcon';
+import { withAlpha } from '../../../constants/theme';
+import AppLoader from '../../../components/AppLoader';
 const { width } = Dimensions.get('window');
 
 const MONTH_NAMES = [
@@ -216,7 +218,7 @@ const HomeScreen = () => {
   if (loading && !user) {
     return (
       <View style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={NAVY} />
+        <AppLoader />
       </View>
     );
   }
@@ -276,7 +278,7 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 28 }}
@@ -305,7 +307,7 @@ const HomeScreen = () => {
               onPress={() => { setUnread(0); navigation.navigate('Modules', { screen: 'SalesNotifications', initial: false }); }}
               style={{
                 width: 40, height: 40, borderRadius: 20,
-                backgroundColor: COLORS.white,
+                backgroundColor: COLORS.surface,
                 justifyContent: 'center', alignItems: 'center',
                 shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.18, shadowRadius: 10, elevation: 3,
@@ -353,7 +355,7 @@ const HomeScreen = () => {
         {/* ── Quick Actions ── */}
         <View style={{
           marginHorizontal: 20, marginBottom: 28, padding: 16,
-          backgroundColor: COLORS.white, borderRadius: 20,
+          backgroundColor: COLORS.surface, borderRadius: 20,
           shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
         }}>
@@ -395,7 +397,7 @@ const HomeScreen = () => {
         {isTcOrStm && (
           <View style={{
             marginHorizontal: 20, marginBottom: 28, padding: 16,
-            backgroundColor: COLORS.white, borderRadius: 20,
+            backgroundColor: COLORS.surface, borderRadius: 20,
             shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
           }}>
@@ -484,7 +486,7 @@ const HomeScreen = () => {
                 style={{
                   flex: 1, paddingVertical: 8, borderRadius: 14,
                   alignItems: 'center',
-                  backgroundColor: attendanceTab === tab ? COLORS.white : 'transparent',
+                  backgroundColor: attendanceTab === tab ? COLORS.surface : 'transparent',
                   shadowColor: attendanceTab === tab ? COLORS.shadow : 'transparent',
                   shadowOpacity: attendanceTab === tab ? 0.10 : 0,
                   shadowRadius: 4, elevation: attendanceTab === tab ? 2 : 0,
@@ -518,7 +520,7 @@ const HomeScreen = () => {
                       <View style={{ flex: 1, alignItems: 'center' }}>
                         <View style={{
                           width: 40, height: 40, borderRadius: 16,
-                          backgroundColor: item.color + '18',
+                          backgroundColor: withAlpha(item.color, '18'),
                           justifyContent: 'center', alignItems: 'center', marginBottom: 8,
                         }}>
                           <Ionicons name={item.icon} size={20} color={item.color} />
@@ -582,7 +584,7 @@ const HomeScreen = () => {
                   style={{ width: 36, height: 36, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="chevron-back" size={18} color={NAVY} />
+                  <Ionicons name="chevron-back" size={18} color={COLORS.textPrimary} />
                 </TouchableOpacity>
                 <Text style={{ fontSize: 15, fontWeight: '800', color: NAVY }}>
                   {MONTH_NAMES[calMonth - 1]} {calYear}
@@ -706,7 +708,7 @@ const HomeScreen = () => {
 
           {/* Dark backdrop — tap anywhere outside sheet to close */}
           <TouchableOpacity
-            style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: COLORS.overlay }]}
             activeOpacity={1}
             onPress={closeProfileSheet}
           />
@@ -714,7 +716,7 @@ const HomeScreen = () => {
           {/* Sheet — position:absolute so it sits cleanly on top of backdrop */}
           <Animated.View style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
-            backgroundColor: COLORS.white,
+            backgroundColor: COLORS.surface,
             borderTopLeftRadius: 28, borderTopRightRadius: 28,
             paddingHorizontal: 24, paddingBottom: 40,
             transform: [{ translateY: profileSheetY }],
@@ -767,7 +769,7 @@ const HomeScreen = () => {
               activeOpacity={0.85}
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-                backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border,
+                backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border,
                 borderRadius: 18, paddingVertical: 14, marginBottom: 10,
               }}
             >

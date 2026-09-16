@@ -1,3 +1,4 @@
+import { Appearance } from 'react-native';
 /**
  * Nexora — Design System
  * ------------------------------------------------------------------
@@ -14,160 +15,222 @@
  */
 
 /* ============================================================== *
- *  1. PALETTE  —  raw color scales (don't use directly in UI)    *
+ *  0. THEME MODE — light (blue) or dark (black)                  *
+ *  Picked once at startup (Root.js sets global.__NX_THEME__ from  *
+ *  the saved preference before any screen module loads), so every *
+ *  StyleSheet below is built with the right colours. Switching    *
+ *  theme saves the choice and reloads the app (see lib/appTheme). *
  * ============================================================== */
+const saved = global.__NX_THEME__;
+export const THEME_MODE = saved === 'dark' || saved === 'light'
+  ? saved
+  : (Appearance.getColorScheme() === 'dark' ? 'dark' : 'light');
+export const IS_DARK = THEME_MODE === 'dark';
+
+/* ============================================================== *
+ *  1. PALETTE  —  raw colors (don't use directly in UI)          *
+ * ============================================================== */
+const LIGHT = {
+  inkRgb: '14,27,46',
+  screenBg: '#E9F1FA', surface: '#FFFFFF', surface2: '#F3F7FC', surface3: '#E9F0F8',
+  border: '#DCE5F0', borderStrong: '#C3D2E3',
+  text: '#0E1B2E', text2: '#22324A', text3: '#43536B', muted: '#5B6B82', faint: '#8A98AD',
+  strong: '#2F6DB5', strong2: '#245A96',
+  primary: '#2F6DB5', primaryDeep: '#245A96', accent: '#2F6DB5', accentDeep: '#245A96',
+  blue: '#A2D2FF', blue2: '#CCE5FF', accentSoft: '#E6F2FF', accentSofter: '#F3F9FF',
+  success: '#23874A', successSolid: '#23874A', successDeep: '#145A32', green: '#A4F5A6', success2: '#C9F8CA', successSoft: '#E9FBEA',
+  danger: '#D9434B', dangerSolid: '#D9434B', dangerDeep: '#A52A31', danger2: '#F7C3C6', dangerSoft: '#FDECEC',
+  warning: '#A3671A', warningSolid: '#A3671A', warningDeep: '#6B420C', warning2: '#D98A1F', peach: '#FFD89D', peach2: '#F5B453', warningSoft: '#FFF3E0',
+  mutedSolid: '#5B6B82', mutedSolid2: '#43536B', faintSolid: '#8A98AD',
+  shadow: '#2F6DB5',
+};
+const DARK = {
+  inkRgb: '236,240,246',
+  screenBg: '#07080A', surface: '#121418', surface2: '#171A1F', surface3: '#1E2228',
+  border: '#23272E', borderStrong: '#323843',
+  text: '#ECF0F6', text2: '#D2D8E2', text3: '#B3BCC9', muted: '#8E98A8', faint: '#667080',
+  strong: '#3274C4', strong2: '#245A96',
+  primary: '#3B82D6', primaryDeep: '#2F6DB5', accent: '#8EC6FF', accentDeep: '#A2D2FF',
+  blue: 'rgba(162,210,255,0.16)', blue2: 'rgba(162,210,255,0.24)', accentSoft: 'rgba(162,210,255,0.12)', accentSofter: 'rgba(162,210,255,0.06)',
+  success: '#6EE7A0', successSolid: '#2E9E5B', successDeep: '#A4F5A6', green: 'rgba(164,245,166,0.2)', success2: 'rgba(110,231,160,0.24)', successSoft: 'rgba(110,231,160,0.10)',
+  danger: '#FF7B82', dangerSolid: '#E5484D', dangerDeep: '#FFA3A8', danger2: 'rgba(255,123,130,0.30)', dangerSoft: 'rgba(255,123,130,0.10)',
+  warning: '#FFC877', warningSolid: '#C98A2E', warningDeep: '#FFD89D', warning2: '#FFB547', peach: 'rgba(255,216,157,0.2)', peach2: '#F5B453', warningSoft: 'rgba(255,200,119,0.10)',
+  mutedSolid: '#3A414C', mutedSolid2: '#454C58', faintSolid: '#56606E',
+  shadow: '#000000',
+};
+const T = IS_DARK ? DARK : LIGHT;
+
 export const PALETTE = {
-  // Core palette (shared with the web + Labour ledger design)
-  blue:        '#A2D2FF',
-  green:       '#A4F5A6',
-  peach:       '#FFD89D',
-  grey:        '#ECEEF0',
-  ink:         '#1D1D1F',
+  // Core palette (shared with the web)
+  blue:        T.blue,
+  green:       T.green,
+  peach:       T.peach,
+  grey:        T.surface3,
+  ink:         T.text,
 
-  // Brand — "navy" is now ink; the scale steps up towards grey
-  navy900: '#1D1D1F',
-  navy800: '#1D1D1F', // legacy "navy"
-  navy700: '#2C2D30',
-  navy600: '#3A3C40',
-  navy500: '#55585E',
-  navy300: '#9A9EA5',
-  navy100: '#DFE2E6',
-  navy50:  '#ECEEF0',
+  navy900: T.strong2,
+  navy800: T.strong, // legacy "navy"
+  navy700: T.strong2,
+  navy600: T.text2,
+  navy500: T.text3,
+  navy300: T.faint,
+  navy100: T.border,
+  navy50:  T.surface3,
 
-  // Brand — Gold (secondary) → peach
-  gold700: '#A3671A',
-  gold600: '#C98A2E', // legacy "gold"
-  gold400: '#FFD89D',
-  gold100: '#FFF3E0',
-  gold50:  '#FFF8EC',
+  gold700: T.warning,
+  gold600: T.warning2, // legacy "gold"
+  gold400: T.peach2,
+  gold100: T.warningSoft,
+  gold50:  T.warningSoft,
 
-  // Interactive — Blue
-  blue600: '#245A96',
-  blue500: '#2F6DB5', // legacy "link"
-  blue100: '#E6F2FF',
-  blue50:  '#F3F9FF',
+  blue600: T.accentDeep,
+  blue500: T.accent, // legacy "link"
+  blue100: T.accentSoft,
+  blue50:  T.accentSofter,
   powderBlue: '#A2D2FF',
 
-  // Neutrals / Gray
-  gray900: '#1D1D1F', // text primary
-  gray700: '#3A3C40',
-  gray500: '#6E7278', // text secondary
-  gray400: '#9A9EA5',
-  gray300: '#DFE2E6',
-  gray200: '#E3E5E8',
-  gray100: '#ECEEF0',
-  gray50:  '#EEF3F5', // screen bg — soft blue/green tint
+  gray900: T.text,
+  gray700: T.text2,
+  gray500: T.muted,
+  gray400: T.faint,
+  gray300: T.borderStrong,
+  gray200: T.border,
+  gray100: T.surface3,
+  gray50:  T.screenBg,
   white:   '#FFFFFF',
   black:   '#000000',
 
-  // Status — Success (green)
-  green600: '#23874A',
-  green500: '#34A45D',
-  green100: '#E9FBEA',
+  green600: T.success,
+  green500: T.successSolid,
+  green100: T.successSoft,
 
-  // Status — Error (red)
-  red600: '#B8323A',
-  red500: '#D9434B',
-  red100: '#FDECEC',
+  red600: T.dangerDeep,
+  red500: T.danger,
+  red100: T.dangerSoft,
 
-  // Status — Warning (peach)
-  amber600: '#A3671A',
-  amber500: '#D98A1F',
-  amber100: '#FFF3E0',
+  amber600: T.warning,
+  amber500: T.warning2,
+  amber100: T.warningSoft,
 
-  // Status — Info (blue)
-  info600: '#2F6DB5',
-  info100: '#E6F2FF',
+  info600: T.accent,
+  info100: T.accentSoft,
 
-  // Accent — was purple; a deeper blue keeps it distinct from links
-  purple600: '#245A96',
-  purple100: '#DCEBFA',
+  purple600: T.accentDeep,
+  purple100: T.blue2,
 
-  // Status — In progress (neutral grey; distinct from success/error/warning)
-  slate600: '#55585E',
-  slate400: '#9A9EA5',
-  slate100: '#ECEEF0',
+  slate600: T.muted,
+  slate400: T.faint,
+  slate100: T.surface3,
 };
 
 /* ============================================================== *
  *  2. SEMANTIC COLORS  —  use these in components                *
  * ============================================================== */
 export const COLORS = {
+  mode: THEME_MODE,
+  isDark: IS_DARK,
+  inkRgb: T.inkRgb,
+  statusBar: IS_DARK ? 'light-content' : 'dark-content',
+
   // Surfaces / backgrounds
-  screenBg:  PALETTE.gray50,
-  surface:   PALETTE.white,   // cards, sheets
-  surfaceAlt: PALETTE.gray100, // subtle raised areas, inputs
-  cardBg:    PALETTE.white,
-  overlay:   'rgba(29,29,31,0.45)', // modal scrim (navy900 based)
+  screenBg:  T.screenBg,
+  surface:   T.surface,       // cards, sheets
+  surface2:  T.surface2,
+  surface3:  T.surface3,
+  surfaceAlt: T.surface3,     // subtle raised areas, inputs
+  cardBg:    T.surface,
+  overlay:   IS_DARK ? 'rgba(0,0,0,0.62)' : 'rgba(14,27,46,0.38)',
+  glass:     IS_DARK ? 'rgba(18,20,24,0.9)' : 'rgba(255,255,255,0.9)',
 
   // Text
-  textPrimary:   PALETTE.gray900,
-  textSecondary: PALETTE.gray500,
-  textTertiary:  PALETTE.gray400,
-  textInverse:   PALETTE.white,
-  textOnBrand:   PALETTE.white,
+  textPrimary:   T.text,
+  text2:         T.text2,
+  text3:         T.text3,
+  textSecondary: T.muted,
+  textTertiary:  T.faint,
+  textInverse:   '#FFFFFF',
+  textOnBrand:   '#FFFFFF',
 
   // Borders / dividers
-  border:      PALETTE.gray200,
-  borderLight: PALETTE.gray100,
-  divider:     PALETTE.gray300,
+  border:      T.border,
+  borderLight: T.surface3,
+  borderStrong: T.borderStrong,
+  divider:     T.borderStrong,
 
-  // Brand
-  navy:        PALETTE.navy800,
-  navyDark:    PALETTE.navy900,
-  navyMedium:  PALETTE.navy500,
-  navyLight:   PALETTE.navy100,
-  gold:        PALETTE.gold600,
-  goldDark:    PALETTE.gold700,
-  goldLight:   PALETTE.gold400,
-  goldBg:      PALETTE.gold100,
-  powderBlue:  PALETTE.powderBlue,
-  black:       PALETTE.black,
-  shadow:      '#8C94A0', // soft shadow tint used app-wide
+  // "Strong" surfaces: headers, active states, primary buttons — blue in light
+  strong:      T.strong,
+  strong2:     T.strong2,
+  navy:        T.strong,
+  navyDark:    T.strong2,
+  navyMedium:  T.text3,
+  navyLight:   T.border,
+  gold:        T.warning2,
+  goldDark:    T.warning,
+  goldLight:   T.peach2,
+  goldBg:      T.warningSoft,
+  powderBlue:  '#A2D2FF',
+  black:       '#000000',
+  shadow:      T.shadow,
 
   // Palette shortcuts
-  blue:        PALETTE.blue,
-  green:       PALETTE.green,
-  peach:       PALETTE.peach,
-  grey:        PALETTE.grey,
-  ink:         PALETTE.ink,
-  primaryButton: PALETTE.ink,
+  blue:        T.blue,
+  blue2:       T.blue2,
+  green:       T.green,
+  peach:       T.peach,
+  peach2:      T.peach2,
+  grey:        T.surface3,
+  ink:         T.text,
+  primaryButton: T.primary,
+  primaryDeep: T.primaryDeep,
+  accentDeep:  T.accentDeep,
+  accentSoft:  T.accentSoft,
+  accentSofter: T.accentSofter,
+  mutedSolid:  T.mutedSolid,
+  mutedSolid2: T.mutedSolid2,
+  faintSolid:  T.faintSolid,
 
   // Interactive
-  link:        PALETTE.blue500,
-  linkPressed: PALETTE.blue600,
-  linkBg:      PALETTE.blue100,
+  link:        T.accent,
+  linkPressed: T.accentDeep,
+  linkBg:      T.accentSoft,
 
-  // Accent — purple
-  purple:    PALETTE.purple600,
-  purpleBg:  PALETTE.purple100,
+  // Accent — was purple
+  purple:    T.accentDeep,
+  purpleBg:  T.blue2,
 
   // Accent — grey (in-progress plot status: soft pick or pending-approval hold)
-  inProgress:   PALETTE.slate600,
-  inProgressAlt: PALETTE.slate400,
-  inProgressBg: PALETTE.slate100,
+  inProgress:   T.muted,
+  inProgressAlt: T.faint,
+  inProgressBg: T.surface3,
 
   // Semantic status (color + matching tint background)
-  success:    PALETTE.green600,
-  successAlt:  PALETTE.green500,
-  successBg:  PALETTE.green100,
-  error:      PALETTE.red500,
-  errorStrong: PALETTE.red600,
-  errorBg:    PALETTE.red100,
-  warning:    PALETTE.amber600,
-  warningAlt:  PALETTE.amber500,
-  warningBg:  PALETTE.amber100,
-  info:       PALETTE.info600,
-  infoBg:     PALETTE.info100,
+  success:     T.success,
+  successAlt:  T.successSolid,
+  successSolid: T.successSolid,
+  successDeep: T.successDeep,
+  success2:    T.success2,
+  successBg:   T.successSoft,
+  error:       T.danger,
+  errorStrong: T.dangerDeep,
+  errorSolid:  T.dangerSolid,
+  error2:      T.danger2,
+  errorBg:     T.dangerSoft,
+  warning:     T.warning,
+  warningAlt:  T.warning2,
+  warningSolid: T.warningSolid,
+  warningDeep: T.warningDeep,
+  warningBg:   T.warningSoft,
+  info:        T.accent,
+  infoBg:      T.accentSoft,
 
   // ---- Legacy aliases (keep so existing imports still work) ----
-  primary:    PALETTE.navy800,
-  accent:     PALETTE.gold600,
-  secondary:  PALETTE.blue500,
-  white:      PALETTE.white,
-  background: PALETTE.gray50,
-  text:       PALETTE.gray900,
-  lightGray:  PALETTE.gray200,
+  primary:    T.primary,
+  accent:     T.warning2,
+  secondary:  T.accent,
+  white:      '#FFFFFF',
+  background: T.screenBg,
+  text:       T.text,
+  lightGray:  T.border,
 };
 
 /* ============================================================== *
@@ -240,23 +303,23 @@ export const TYPE = {
  * ============================================================== */
 export const SHADOWS = {
   sm: {
-    shadowColor: PALETTE.gray400,
+    shadowColor: T.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 2,
   },
   md: {
-    shadowColor: '#3C5A82',
+    shadowColor: T.shadow,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
+    shadowOpacity: IS_DARK ? 0.4 : 0.08,
     shadowRadius: 16,
     elevation: 4,
   },
   lg: {
-    shadowColor: PALETTE.navy900,
+    shadowColor: IS_DARK ? '#000000' : '#0E1B2E',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
+    shadowOpacity: IS_DARK ? 0.5 : 0.18,
     shadowRadius: 20,
     elevation: 8,
   },
@@ -304,6 +367,8 @@ export const FONTS = {
 };
 
 export default {
+  THEME_MODE,
+  IS_DARK,
   PALETTE,
   COLORS,
   SPACING,
@@ -318,3 +383,19 @@ export default {
   SIZES,
   FONTS,
 };
+
+// Tint any theme colour: withAlpha('#2F6DB5', '18') or withAlpha('rgba(1,2,3,0.5)', '18').
+// Screens used to do `color + '18'`, which breaks for dark-mode rgba tokens.
+export function withAlpha(color, hh) {
+  const a = parseInt(hh, 16) / 255;
+  if (typeof color !== 'string') return color;
+  if (color[0] === '#') {
+    let h = color.slice(1);
+    if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+    return `#${h.slice(0, 6)}${hh}`;
+  }
+  const m = color.match(/rgba?\(([^)]+)\)/);
+  if (!m) return color;
+  const [r, g, b, al = 1] = m[1].split(',').map((x) => parseFloat(x));
+  return `rgba(${r},${g},${b},${+(al * a).toFixed(3)})`;
+}

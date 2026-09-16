@@ -8,6 +8,8 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
 // Order siblings: heads/managers first, then STM, CP, telecallers — and keep
 // same-designation people contiguous (telecallers next to telecallers).
@@ -38,7 +40,7 @@ function accentFor(node) {
   return COLORS.textSecondary;
 }
 
-const LINE = '#C9CDD2';
+const LINE = COLORS.borderStrong;
 
 // One org-chart card (fixed width so the branching layout computes cleanly).
 function ChartCard({ node }) {
@@ -46,11 +48,11 @@ function ChartCard({ node }) {
   const color = accentFor(node);
   return (
     <View style={{ width: 150, borderRadius: 16, backgroundColor: root ? COLORS.navy : COLORS.cardBg,
-      borderWidth: root ? 0 : 1, borderColor: color + '33', overflow: 'hidden', ...CARD_SHADOW }}>
+      borderWidth: root ? 0 : 1, borderColor: withAlpha(color, '33'), overflow: 'hidden', ...CARD_SHADOW }}>
       {!root && <View style={{ height: 3, backgroundColor: color }} />}
       <View style={{ padding: 10, alignItems: 'center', gap: 4 }}>
         <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: root ? 'rgba(255,255,255,0.2)' : color + '18' }}>
+          backgroundColor: root ? 'rgba(255,255,255,0.2)' : withAlpha(color, '18') }}>
           <Text style={{ fontWeight: '800', fontSize: 15, color: root ? COLORS.white : color }}>{(node.name || '?')[0].toUpperCase()}</Text>
         </View>
         <Text style={{ fontSize: 13, fontWeight: '700', color: root ? COLORS.white : COLORS.textPrimary, textAlign: 'center' }} numberOfLines={1}>{node.name || '—'}</Text>
@@ -194,10 +196,10 @@ export default function MyTeamScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }} numberOfLines={1}>{title}</Text>
@@ -206,7 +208,7 @@ export default function MyTeamScreen({ navigation, route }) {
         <View style={{ flexDirection: 'row', backgroundColor: COLORS.surfaceAlt, borderRadius: 9, padding: 3 }}>
           {[['tree', 'git-network-outline'], ['list', 'list-outline']].map(([k, icon]) => (
             <TouchableOpacity key={k} onPress={() => setView(k)}
-              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 7, backgroundColor: view === k ? COLORS.white : 'transparent' }}>
+              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 7, backgroundColor: view === k ? COLORS.surface : 'transparent' }}>
               <Ionicons name={icon} size={18} color={view === k ? BLUE : MUTED} />
             </TouchableOpacity>
           ))}
@@ -214,7 +216,7 @@ export default function MyTeamScreen({ navigation, route }) {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={BLUE} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 40 }} />
       ) : team.length === 0 ? (
         <View style={[CARD, { padding: 32, alignItems: 'center', margin: 16 }]}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, marginBottom: 4 }}>No org chart yet.</Text>
@@ -232,7 +234,7 @@ export default function MyTeamScreen({ navigation, route }) {
         <ScrollView contentContainerStyle={{ padding: 16, gap: 10 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
           <TextInput value={q} onChangeText={setQ} placeholder="Search name, code or designation…"
-            style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 6 }} />
+            style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 6 }} />
 
           {visible.map((m) => (
             <View key={m.id} style={[CARD, { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }]}>

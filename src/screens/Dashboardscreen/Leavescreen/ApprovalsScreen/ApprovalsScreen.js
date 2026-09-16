@@ -8,6 +8,7 @@ import { updateLeaveStatus, resetLeaveAction } from '../../../../redux/actions/l
 import Toast from '../../../../components/Toast';
 import styles from '../HistoryScreen/styles';
 import LeaveDetailModal from '../HistoryScreen/LeaveDetailModal';
+import AppLoader from '../../../../components/AppLoader';
 
 const getStatusStyle = (status) => {
   switch (status) {
@@ -95,7 +96,7 @@ const ApprovalsScreen = () => {
   };
 
   if (teamLoading && teamData.length === 0) {
-    return <View style={styles.centered}><ActivityIndicator size="large" color={COLORS.navyMedium} /></View>;
+    return <View style={styles.centered}><AppLoader /></View>;
   }
   if (teamError) {
     return <View style={styles.centered}><Text style={styles.errorText}>{teamError}</Text></View>;

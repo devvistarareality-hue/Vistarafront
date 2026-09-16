@@ -151,7 +151,7 @@ const RequestLeaveScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor={COLORS.screenBg} barStyle="dark-content" />
+      <StatusBar backgroundColor={COLORS.screenBg} barStyle={COLORS.statusBar} />
 
       {/* Header */}
       <View style={styles.header}>

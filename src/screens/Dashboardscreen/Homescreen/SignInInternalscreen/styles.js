@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
 
   mapCard: {
     margin: 16, borderRadius: 18, overflow: 'hidden', ...CARD_SHADOW,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
   },
   map: { width: '100%', height: 220 },
   mapLoader: {
@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 10, gap: 8, flexWrap: 'wrap',
   },
-  locDot:        { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.white },
+  locDot:        { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.surface },
   mapStatusText: { color: COLORS.white, fontWeight: '700', fontSize: 13, flex: 1 },
   mapCoordsText: { color: 'rgba(255,255,255,0.8)', fontSize: 11 },
   locLoadingText:{ color: MUTED, fontSize: 13 },
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   statusValue: { color: COLORS.white, fontSize: 18, fontWeight: '800' },
 
   card: {
-    backgroundColor: COLORS.white, marginHorizontal: 16,
+    backgroundColor: COLORS.surface, marginHorizontal: 16,
     marginBottom: 16, borderRadius: 18, padding: 16, ...CARD_SHADOW,
   },
   timeRow: { flexDirection: 'row', marginBottom: 16, gap: 10 },

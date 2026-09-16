@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { withAlpha } from '../../constants/theme';
 
 const NAVY = COLORS.navy;
 const BLUE = COLORS.link;
@@ -100,7 +101,7 @@ function MiniAreaChart({ data = [], color, gradId, width, showAmount }) {
             <Stop offset="100%" stopColor={color} stopOpacity={0} />
           </LinearGradient>
         </Defs>
-        <Line x1={padL} y1={H - padB} x2={padL + W} y2={H - padB} stroke="#F4F5F7" strokeWidth={1} />
+        <Line x1={padL} y1={H - padB} x2={padL + W} y2={H - padB} stroke={COLORS.surface2} strokeWidth={1} />
         <Path d={fillPts} fill={`url(#${gradId})`} />
         <Path d={linePts} stroke={color} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
         {labelIdxs.map(i => (
@@ -112,11 +113,11 @@ function MiniAreaChart({ data = [], color, gradId, width, showAmount }) {
           <>
             <Line x1={activePx} y1={padT} x2={activePx} y2={H - padB} stroke={color} strokeWidth={1} strokeDasharray="3 3" />
             <Circle cx={activePx} cy={activePy} r={5} fill={color} stroke="#fff" strokeWidth={2} />
-            <Rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={6} fill="#1D1D1F" />
-            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 13} fontSize={9} fill="#A2D2FF" textAnchor="middle">{shortDate(active.date)}</SvgText>
-            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 27} fontSize={13} fontWeight="700" fill="#fff" textAnchor="middle">{active.count}</SvgText>
+            <Rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={6} fill={COLORS.strong} />
+            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 13} fontSize={9} fill={COLORS.blue} textAnchor="middle">{shortDate(active.date)}</SvgText>
+            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 27} fontSize={13} fontWeight="700" fill={COLORS.surface} textAnchor="middle">{active.count}</SvgText>
             {showAmt && (
-              <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 42} fontSize={10} fontWeight="700" fill="#F5B453" textAnchor="middle">{fmtAmount(active.amount)}</SvgText>
+              <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 42} fontSize={10} fontWeight="700" fill={COLORS.peach2} textAnchor="middle">{fmtAmount(active.amount)}</SvgText>
             )}
           </>
         )}
@@ -134,7 +135,7 @@ function TrendCard({ title, badge, total, data, color, gradId, showAmount }) {
           <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>{title}</Text>
           <Text style={{ fontSize: 26, fontWeight: '800', color: TEXT }}>{total}</Text>
         </View>
-        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, backgroundColor: color + '22' }}>
+        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, backgroundColor: withAlpha(color, '22') }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color }}>{badge}</Text>
         </View>
       </View>
@@ -352,12 +353,12 @@ export default function SalesReportsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: TEXT }}>Reports</Text>
         <TouchableOpacity onPress={() => reload(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
@@ -370,8 +371,8 @@ export default function SalesReportsScreen({ navigation }) {
 
       {/* Filter Bottom Sheet */}
       <Modal visible={showFilter} transparent animationType="slide" onRequestClose={closeFilter}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={closeFilter} />
-        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 36, maxHeight: '80%' }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={closeFilter} />
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 36, maxHeight: '80%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Filter</Text>
             <TouchableOpacity onPress={closeFilter}>
@@ -427,7 +428,7 @@ export default function SalesReportsScreen({ navigation }) {
                     onPress={() => { setPendingQuarter(prev => sel ? prev.filter(k => k !== key) : [...prev, key]); setPendingFrom(null); setPendingTo(null); setPendingMonths([]); }}
                     style={{ flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: sel ? COLORS.white : TEXT }}>{label}</Text>
-                    <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? COLORS.white + 'CC' : MUTED, marginTop: 2 }}>{sub}</Text>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? withAlpha(COLORS.white, 'CC') : MUTED, marginTop: 2 }}>{sub}</Text>
                   </TouchableOpacity>
                 );
               })}

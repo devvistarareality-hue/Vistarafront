@@ -11,6 +11,8 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 
 import AppIcon from '../../components/AppIcon';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
@@ -38,8 +40,8 @@ const endOfToday   = () => { const d = new Date(); d.setHours(23, 59, 59, 999); 
 const defaultDate  = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
 
 const lblS = { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.5, marginBottom: 6, marginTop: 4 };
-const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white };
-const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.white };
+const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
+const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.surface };
 
 export default function SalesSiteVisitsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
@@ -269,13 +271,13 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         {navigation.canGoBack() && (
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="arrow-back" size={20} color={NAVY} />
+            <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }}>
@@ -289,7 +291,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       </View>
 
       {/* Tabs */}
-      <View style={{ backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8 }}>
           {TABS.map((t) => {
             const active = filter === t.key;
@@ -313,7 +315,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
             return (
               <TouchableOpacity key={label} onPress={() => setRange(r)}
                 style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1.5,
-                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#F3F9FF' : COLORS.white }}>
+                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? COLORS.accentSofter : COLORS.surface }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>{label}</Text>
               </TouchableOpacity>
             );
@@ -334,7 +336,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
             return (
               <TouchableOpacity key={val || 'all'} onPress={() => setOutcomeFilter(val)}
                 style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1.5,
-                  borderColor: color, backgroundColor: active ? color : COLORS.white }}>
+                  borderColor: color, backgroundColor: active ? color : COLORS.surface }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
               </TouchableOpacity>
             );
@@ -343,7 +345,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={NAVY} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 24 }} />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
@@ -357,11 +359,11 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
             <View key={sv.id} style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{sv.lead_name || 'Lead'}</Text>
-                <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: (SV_COLOR[sv.status] || MUTED) + '22' }}>
+                <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: withAlpha(SV_COLOR[sv.status] || MUTED, '22') }}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: SV_COLOR[sv.status] || MUTED, textTransform: 'capitalize' }}>{(sv.status || '').replace('_', ' ')}</Text>
                 </View>
                 {!!sv.outcome && (
-                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: (OUTCOME_COLOR[sv.outcome] || MUTED) + '22' }}>
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: withAlpha(OUTCOME_COLOR[sv.outcome] || MUTED, '22') }}>
                     <Text style={{ fontSize: 10, fontWeight: '700', color: OUTCOME_COLOR[sv.outcome] || MUTED }}>{OUTCOME_LABEL[sv.outcome] || sv.outcome}</Text>
                   </View>
                 )}
@@ -398,8 +400,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
       {/* ── Schedule Modal ── */}
       <Modal visible={schedOpen} transparent animationType="slide" onRequestClose={() => setSchedOpen(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
+        <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Schedule Site Visit</Text>
               <TouchableOpacity onPress={() => setSchedOpen(false)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
@@ -443,8 +445,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
       {/* ── Mark Done Modal ── */}
       <Modal visible={!!doneSv} transparent animationType="slide" onRequestClose={() => setDoneSv(null)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
+        <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Mark Site Visit Done</Text>
               <TouchableOpacity onPress={() => setDoneSv(null)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
@@ -457,7 +459,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
                   const active = doneForm.outcome === val;
                   return (
                     <TouchableOpacity key={val} onPress={() => setDoneForm((f) => ({ ...f, outcome: val }))}
-                      style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 14, paddingVertical: 11, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                      style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 14, paddingVertical: 11, alignItems: 'center', backgroundColor: active ? color : COLORS.surface }}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
                     </TouchableOpacity>
                   );
@@ -488,8 +490,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
       {/* ── Closure Modal ── */}
       <Modal visible={!!closureSv} transparent animationType="slide" onRequestClose={() => setClosureSv(null)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
+        <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Record Closure</Text>
               <TouchableOpacity onPress={() => setClosureSv(null)}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
@@ -535,8 +537,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
       {/* ── Lead / Project picker ── */}
       <Modal visible={!!picker} transparent animationType="fade" onRequestClose={() => setPicker(null)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setPicker(null)}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setPicker(null)}>
+          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{picker === 'lead' ? 'Select Lead' : 'Select Project'}</Text>
             </View>
@@ -558,8 +560,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       {/* ── Date/Time pickers (scheduled_at) ── */}
       {Platform.OS === 'ios' && showDate && (
         <Modal transparent animationType="slide" onRequestClose={() => setShowDate(false)}>
-          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowDate(false)}>
-            <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowDate(false)}>
+            <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                 <TouchableOpacity onPress={() => setShowDate(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
                 <Text style={{ fontWeight: '700', color: TEXT }}>Pick Date</Text>
@@ -573,8 +575,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       )}
       {Platform.OS === 'ios' && showTime && (
         <Modal transparent animationType="slide" onRequestClose={() => setShowTime(false)}>
-          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowTime(false)}>
-            <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowTime(false)}>
+            <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                 <TouchableOpacity onPress={() => setShowTime(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
                 <Text style={{ fontWeight: '700', color: TEXT }}>Pick Time</Text>
@@ -598,8 +600,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       {/* ── Closure date picker ── */}
       {Platform.OS === 'ios' && showCDate && (
         <Modal transparent animationType="slide" onRequestClose={() => setShowCDate(false)}>
-          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowCDate(false)}>
-            <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowCDate(false)}>
+            <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                 <TouchableOpacity onPress={() => setShowCDate(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
                 <Text style={{ fontWeight: '700', color: TEXT }}>Closure Date</Text>
@@ -619,8 +621,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       {/* ── Mark Done visit date picker ── */}
       {Platform.OS === 'ios' && showDoneDate && (
         <Modal transparent animationType="slide" onRequestClose={() => setShowDoneDate(false)}>
-          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowDoneDate(false)}>
-            <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setShowDoneDate(false)}>
+            <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 30 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                 <TouchableOpacity onPress={() => setShowDoneDate(false)}><Text style={{ color: MUTED, fontWeight: '600' }}>Cancel</Text></TouchableOpacity>
                 <Text style={{ fontWeight: '700', color: TEXT }}>Visit Date</Text>

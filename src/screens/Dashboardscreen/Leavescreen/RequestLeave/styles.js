@@ -10,7 +10,7 @@ export default StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.screenBg },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
     paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt,
   },
   backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
@@ -62,7 +62,7 @@ export default StyleSheet.create({
   dropdownValue: { fontSize: 14, fontWeight: '700', color: NAVY },
   dropdownArrow: { width: 16, height: 16, resizeMode: 'contain', tintColor: NAVY },
 
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  backdrop: { flex: 1, backgroundColor: COLORS.overlay },
   sheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: COLORS.cardBg, borderTopLeftRadius: 28, borderTopRightRadius: 28,

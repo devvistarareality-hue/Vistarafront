@@ -9,8 +9,9 @@ import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { formatDMY } from '../../utils/dateFormat';
+import AppLoader from '../../components/AppLoader';
 
-const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
@@ -75,11 +76,11 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Payouts</Text>
       </View>
@@ -87,7 +88,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
       <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 }}>
         {[{ key: 'pending', label: 'Pending' }, { key: 'paid', label: 'Paid' }, { key: '', label: 'All' }].map((f) => (
           <TouchableOpacity key={f.key} onPress={() => setFilter(f.key)}
-            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: filter === f.key ? NAVY : COLORS.white, borderWidth: 1, borderColor: filter === f.key ? NAVY : COLORS.border }}>
+            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: filter === f.key ? NAVY : COLORS.surface, borderWidth: 1, borderColor: filter === f.key ? NAVY : COLORS.border }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: filter === f.key ? COLORS.white : MUTED }}>{f.label}</Text>
           </TouchableOpacity>
         ))}
@@ -95,7 +96,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : payouts.length === 0 ? (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : payouts.length === 0 ? (
           <Text style={{ textAlign: 'center', color: MUTED, marginTop: 30 }}>No payouts.</Text>
         ) : payouts.map((p) => (
           <View key={p.id} style={[CARD, { padding: 14, marginBottom: 10 }]}>
@@ -132,8 +133,8 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
       </ScrollView>
 
       <Modal visible={!!payingFor} transparent animationType="slide" onRequestClose={() => setPayingFor(null)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 24 }}>
+        <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 24 }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Mark Payout Paid</Text>
               {!!payingFor && (

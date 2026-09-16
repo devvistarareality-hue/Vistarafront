@@ -10,6 +10,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { BASE_URL } from '../../constants/api';
 import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
 const ALL_MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase', 'Land'];
 
@@ -27,8 +28,8 @@ function ModuleDropdown({ value, onChange }) {
         <Ionicons name="chevron-down" size={16} color={meta.color} />
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>Select Module</Text>
             {ALL_MODULES.map(m => {
@@ -140,7 +141,7 @@ export default function DesignationMasterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
       <View style={s.header}>
@@ -196,7 +197,7 @@ export default function DesignationMasterScreen({ navigation }) {
 
         {/* Grouped list */}
         {loading ? (
-          <ActivityIndicator color={COLORS.secondary} style={{ marginTop: 30 }} />
+          <AppLoader style={{ marginTop: 24 }} />
         ) : (
           <View style={s.groupsWrap}>
             {ALL_MODULES.map((mod) => {
@@ -259,7 +260,7 @@ const s = StyleSheet.create({
   addBtnText:  { color: COLORS.white, fontWeight: '700', fontSize: 14 },
 
   groupsWrap:  { paddingHorizontal: 16, gap: 12 },
-  groupCard:   { backgroundColor: COLORS.white, borderRadius: 18, padding: 16, elevation: 1, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6 },
+  groupCard:   { backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, elevation: 1, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6 },
   groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   groupDot:    { width: 7, height: 7, borderRadius: 4 },
   groupName:   { flex: 1, fontSize: 13, fontWeight: '700' },
