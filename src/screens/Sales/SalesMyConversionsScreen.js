@@ -192,9 +192,12 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
+  const cpOnly = !!route?.params?.cpOnly;
   const cqParts = [];
   if (companyId) cqParts.push(`company_id=${companyId}`);
   if (adminView) cqParts.push('admin_view=1');
+  // Channel Partner module: the same screen, restricted to partner-sourced work.
+  if (cpOnly) cqParts.push('cp_only=true');
   const cq = cqParts.length ? `?${cqParts.join('&')}` : '';
   const des = (user?.designation || '').toLowerCase();
   const isStm = des.includes('stm') || des.includes('sales team') || des.includes('sales executive');

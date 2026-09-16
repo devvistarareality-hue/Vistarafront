@@ -45,6 +45,8 @@ import SalesSourcesScreen      from '../screens/Sales/SalesSourcesScreen';
 import SalesTeamScreen         from '../screens/Sales/SalesTeamScreen';
 import SalesDistributionScreen from '../screens/Sales/SalesDistributionScreen';
 import SalesReportsScreen      from '../screens/Sales/SalesReportsScreen';
+import ChannelPartnerHubScreen from '../screens/Sales/ChannelPartnerHubScreen';
+import ChannelPartnersScreen  from '../screens/Sales/ChannelPartnersScreen';
 import SalesImportScreen       from '../screens/Sales/SalesImportScreen';
 import SalesDataResetScreen    from '../screens/Sales/SalesDataResetScreen';
 import NotificationsScreen      from '../screens/Sales/NotificationsScreen';
@@ -127,6 +129,8 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesTeam"           component={SalesTeamScreen} />
             <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
             <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
+            <Stack.Screen name="ChannelPartnerHub" component={ChannelPartnerHubScreen} />
+            <Stack.Screen name="ChannelPartners"    component={ChannelPartnersScreen} />
             <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
             <Stack.Screen name="SalesDataReset"      component={SalesDataResetScreen} />
             <Stack.Screen name="SalesNotifications"  component={NotificationsScreen} />
@@ -160,6 +164,8 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesTeam"           component={SalesTeamScreen} />
             <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
             <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
+            <Stack.Screen name="ChannelPartnerHub" component={ChannelPartnerHubScreen} />
+            <Stack.Screen name="ChannelPartners"    component={ChannelPartnersScreen} />
             <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
             <Stack.Screen name="SalesDataReset"      component={SalesDataResetScreen} />
             <Stack.Screen name="SalesNotifications"  component={NotificationsScreen} />

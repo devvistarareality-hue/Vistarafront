@@ -39,6 +39,46 @@ function fmtDateTime(iso) {
 // Rejecting at the Accounts gate sends the deal back with a reason attached, so the
 // remark is required rather than optional — "rejected" with no cause is a dead end for
 // whoever has to act on it.
+// Cancelling frees the unit and destroys the signed LOI — irreversible, so spell out
+// exactly which booking is going and what it costs before letting it through. Mirrors
+// the web modal, which mirrors Sales' own: same endpoint, same consequence.
+function CancelBookingModal({ b, busy, onClose, onConfirm }) {
+  if (!b) return null;
+  const u = unitLabel(b);
+  const rows = [['Client', b.client_name || '—'], ['Project', b.project_name || '—'],
+                ['Unit', u.isUnit ? `Unit ${u.text}` : u.text], ['Amount', rupee(b.final_amount)]];
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={busy ? undefined : onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'center', padding: 20 }}>
+        <View style={{ backgroundColor: COLORS.white, borderRadius: 16, padding: 20 }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: COLORS.error, marginBottom: 6 }}>Cancel this booking?</Text>
+          <Text style={{ fontSize: 13, color: MUTED, lineHeight: 20, marginBottom: 14 }}>
+            {`This frees the unit back to available, permanently deletes the signed ${isEoi(b) ? 'EOI' : 'LOI'} from storage, and removes it from conversions. It will then show under Cancelled in Bookings. This cannot be undone.`}
+          </Text>
+          <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 12, marginBottom: 18 }}>
+            {rows.map(([k, v]) => (
+              <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 3 }}>
+                <Text style={{ fontSize: 12, color: MUTED, fontWeight: '600' }}>{k}</Text>
+                <Text style={{ fontSize: 13, color: TEXT, fontWeight: '700', flexShrink: 1, textAlign: 'right' }}>{v}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'flex-end' }}>
+            <TouchableOpacity onPress={onClose} disabled={busy}
+              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border }}>
+              <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Keep Booking</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onConfirm} disabled={busy}
+              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 9, backgroundColor: busy ? '#F3B4B4' : COLORS.error }}>
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>{busy ? 'Cancelling…' : 'Yes, Cancel Booking'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function RejectModal({ b, busy, onClose, onConfirm }) {
   const [reason, setReason] = useState('');
   return (
@@ -87,6 +127,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const [tab, setTab] = useState('pending');
   const [busy, setBusy] = useState(null);
   const [toReject, setToReject] = useState(null);
+  const [toCancel, setToCancel] = useState(null);  // approved booking awaiting cancel confirmation
   const [q, setQ] = useState('');
   const [proj, setProj] = useState('');
   const [stm, setStm] = useState('');
@@ -120,6 +161,25 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
       Alert.alert('Network error', 'Please try again.');
     }
     setBusy(null); setToReject(null); load();
+  }
+
+  // Cancelling an approved booking goes through its closure: that endpoint frees the
+  // plot(s), purges the signed LOI from storage and marks the booking CANCELLED — the
+  // same endpoint Sales' own Cancel Booking uses, reachable by an Accounts approver
+  // for the booking's project (see ClosureCancelView's dual-authority gate).
+  async function cancelBooking(b) {
+    setBusy(b.id);
+    try {
+      const r = await apiFetch(SALES_ENDPOINTS.closureCancel(b.closure)
+        + (companyId ? `?company_id=${companyId}` : ''), { method: 'POST' });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        Alert.alert('Cancel failed', d.detail || `HTTP ${r.status}`);
+      }
+    } catch (e) {
+      Alert.alert('Cancel failed', e.message);
+    }
+    setToCancel(null); setBusy(null); load();
   }
 
   // A booking cancelled after Accounts approval drops out of Approved — it belongs to
@@ -330,6 +390,16 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                           </TouchableOpacity>
                         </>
                       ) : null}
+                      {/* Undoing an Accounts approval — same authority, same server-computed
+                          gate (can_accounts_cancel), only once it has a closure to cancel
+                          through (it always will if it is status='sold'). */}
+                      {tab === 'approved' && b.can_accounts_cancel ? (
+                        <TouchableOpacity disabled={busy === b.id} onPress={() => setToCancel(b)}
+                          style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
+                            borderWidth: 1.5, borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}>
+                          <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Cancel Booking</Text>
+                        </TouchableOpacity>
+                      ) : null}
                       {(tab === 'awaiting_sales' || tab === 'awaiting_cp') ? (
                         <Text style={{ fontSize: 12, color: COLORS.warning, alignSelf: 'center' }}>
                           {tab === 'awaiting_cp' ? 'Waiting on the CP approver' : 'Waiting on the Sales approver'}
@@ -349,6 +419,9 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
       <RejectModal b={toReject} busy={busy === (toReject && toReject.id)}
         onClose={() => setToReject(null)}
         onConfirm={(reason) => act(toReject.id, 'reject', reason)} />
+
+      <CancelBookingModal b={toCancel} busy={busy === (toCancel && toCancel.id)}
+        onClose={() => setToCancel(null)} onConfirm={() => cancelBooking(toCancel)} />
     </SafeAreaView>
   );
 }

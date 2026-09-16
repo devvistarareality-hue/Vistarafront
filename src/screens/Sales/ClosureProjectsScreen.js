@@ -17,6 +17,9 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW 
 // /sales/closure). No add/edit/manage — STM only picks a project to drill in.
 export default function ClosureProjectsScreen({ navigation, route }) {
   const sv        = route.params?.sv || null;
+  // Channel Partner module: My Bookings here covers the partner pool, the same
+  // distinction the web CP Booking page makes.
+  const cpOnly    = !!route.params?.cpOnly;
   const companyId = useSelector((s) => s.adminFilter?.companyId);
 
   const [projects,   setProjects]   = useState([]);
@@ -66,7 +69,7 @@ export default function ClosureProjectsScreen({ navigation, route }) {
         ))}
       </View>
 
-      {view === 'mybookings' ? <MyBookingsList navigation={navigation} /> : loading ? (
+      {view === 'mybookings' ? <MyBookingsList navigation={navigation} cpOnly={cpOnly} /> : loading ? (
         <ActivityIndicator size="large" color={BLUE} style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}

@@ -98,6 +98,10 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const isAdmin = me?.role === 'Admin' || me?.is_staff || (me?.admin_modules || []).includes('Sales');
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
+  // Channel Partner module: partner-sourced bookings only, and the CP approver
+  // list rather than the regular one — the two flags the web CP page passes.
+  const cpOnly = !!route?.params?.cpOnly;
+  const cpMode = !!route?.params?.cpMode;
   const [tab, setTab] = useState('pending');
   // Resale cuts across every status — a resold unit can be pending, approved or
   // cancelled — so it is a filter beside the others rather than a tab of its own.
@@ -137,12 +141,12 @@ export default function BookingApprovalsScreen({ navigation, route }) {
 
   const load = useCallback(async () => {
     try {
-      const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : ''].filter(Boolean).join('&');
+      const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : ''].filter(Boolean).join('&');
       const res = await apiFetch(SALES_ENDPOINTS.bookings + q);
       if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
-  }, [tab, companyId, adminView]);
+  }, [tab, companyId, adminView, cpOnly]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   useEffect(() => {
@@ -254,15 +258,19 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const isOpen = (pn) => (openGroup[pn] === undefined ? autoOpen : openGroup[pn]);
   const tabLabel = (TABS.find(([k]) => k === tab) || ['', 'All'])[1];
 
+  // Which approver list this module configures: the CP module names the CP approvers,
+  // Sales names the regular ones. Same panel, different field — as on the web.
+  const approverField = cpMode ? 'cp_booking_approvers' : 'booking_approvers';
+
   async function toggleApprover(projId, mgrId) {
     let next = [];
     setProjects((ps) => ps.map((p) => {
       if (p.id !== projId) return p;
-      const arr = p.booking_approvers || [];
+      const arr = p[approverField] || [];
       next = arr.includes(mgrId) ? arr.filter((x) => x !== mgrId) : [...arr, mgrId];
-      return { ...p, booking_approvers: next };
+      return { ...p, [approverField]: next };
     }));
-    await apiFetch(SALES_ENDPOINTS.project(projId) + cq('?'), { method: 'PATCH', body: JSON.stringify({ booking_approvers: next }) }).catch(() => {});
+    await apiFetch(SALES_ENDPOINTS.project(projId) + cq('?'), { method: 'PATCH', body: JSON.stringify({ [approverField]: next }) }).catch(() => {});
   }
 
   return (
@@ -310,10 +318,10 @@ export default function BookingApprovalsScreen({ navigation, route }) {
         {isAdmin && (
           <View style={[CARD, { marginBottom: 12 }]}>
             <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: BLUE }}>⚙ Booking Approvers — by project {cfgOpen ? '▴' : '▾'}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: BLUE }}>{`⚙ ${cpMode ? 'CP ' : ''}Booking Approvers — by project ${cfgOpen ? '▴' : '▾'}`}</Text>
             </TouchableOpacity>
             {cfgOpen && projects.map((p) => {
-              const exp = openProj === p.id; const sel = p.booking_approvers || [];
+              const exp = openProj === p.id; const sel = p[approverField] || [];
               const names = managers.filter((m) => sel.includes(m.id)).map((m) => m.name).join(', ');
               return (
                 <View key={p.id} style={{ borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt, paddingVertical: 10 }}>

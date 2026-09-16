@@ -20,6 +20,8 @@ import ModuleApprovalsScreen from '../screens/Modulesscreen/ModuleApprovalsScree
 import BookingFormScreen from '../screens/Sales/BookingFormScreen';
 import BookingApprovalsScreen from '../screens/Sales/BookingApprovalsScreen';
 import SalesReportsScreen from '../screens/Sales/SalesReportsScreen';
+import ChannelPartnerHubScreen from '../screens/Sales/ChannelPartnerHubScreen';
+import ChannelPartnersScreen from '../screens/Sales/ChannelPartnersScreen';
 import ClosureProjectsScreen from '../screens/Sales/ClosureProjectsScreen';
 import ClosureViewerScreen from '../screens/Sales/ClosureViewerScreen';
 import Club1000HubScreen from '../screens/Club1000/Club1000HubScreen';
@@ -51,6 +53,8 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="BookingForm" component={BookingFormScreen} />
       <ModulesStack.Screen name="BookingApprovals" component={BookingApprovalsScreen} />
       <ModulesStack.Screen name="SalesReports"  component={SalesReportsScreen} />
+      <ModulesStack.Screen name="ChannelPartnerHub" component={ChannelPartnerHubScreen} />
+      <ModulesStack.Screen name="ChannelPartners" component={ChannelPartnersScreen} />
       <ModulesStack.Screen name="ClosureProjects" component={ClosureProjectsScreen} />
       <ModulesStack.Screen name="ClosureViewer" component={ClosureViewerScreen} />
       <ModulesStack.Screen name="Club1000Hub" component={Club1000HubScreen} />
