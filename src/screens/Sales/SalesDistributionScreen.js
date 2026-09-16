@@ -14,7 +14,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW, marginBottom: 16 };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW, marginBottom: 16 };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -79,7 +79,7 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
   });
   const projectNames = Object.keys(byProject).sort();
   return (
-    <View style={{ marginHorizontal: 16, marginBottom: 12, borderWidth: 1.5, borderColor: border, borderRadius: 12, padding: 14, backgroundColor: COLORS.screenBg }}>
+    <View style={{ marginHorizontal: 16, marginBottom: 12, borderWidth: 1.5, borderColor: border, borderRadius: 16, padding: 14, backgroundColor: COLORS.screenBg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: dotColor }} />
         <SectionLabel color={headColor}>{title}</SectionLabel>
@@ -130,9 +130,9 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
             })
       }
       {noProject.length > 0 && (
-        <View style={{ marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: '#FEF3F2', borderWidth: 1, borderColor: '#FECDCA' }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#B42318', marginBottom: 3 }}>Not assigned to any project — won&apos;t receive leads:</Text>
-          <Text style={{ fontSize: 13, color: '#912018' }}>{noProject.map(m => m.name).join(', ')}</Text>
+        <View style={{ marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F7C3C6' }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#D9434B', marginBottom: 3 }}>Not assigned to any project — won&apos;t receive leads:</Text>
+          <Text style={{ fontSize: 13, color: '#A52A31' }}>{noProject.map(m => m.name).join(', ')}</Text>
         </View>
       )}
       </ScrollView>
@@ -328,7 +328,7 @@ export default function SalesDistributionScreen({ navigation }) {
 
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="arrow-back" size={22} color={NAVY} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: TEXT }}>Lead Distribution</Text>
@@ -350,7 +350,7 @@ export default function SalesDistributionScreen({ navigation }) {
 
           {/* ═══ Stuck leads — the skip _distribute never surfaces on auto-runs ═══ */}
           {blocked.length > 0 && (
-            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 16, padding: 14, marginBottom: 14 }}>
               <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.errorStrong, marginBottom: 6 }}>
                 ⚠️ {blocked.reduce((n, b) => n + b.count, 0)} lead{blocked.reduce((n, b) => n + b.count, 0) === 1 ? '' : 's'} can never be distributed
               </Text>
@@ -394,7 +394,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                     <Text style={{ fontSize: 15, fontWeight: '600', color: TEXT }}>{f.label}</Text>
                     <TextInput
-                      value={settingsForm[f.key] || ''} placeholder="HH:MM" placeholderTextColor="#666666"
+                      value={settingsForm[f.key] || ''} placeholder="HH:MM" placeholderTextColor="#55585E"
                       onChangeText={v => setSettingsForm(s => ({ ...s, [f.key]: v }))}
                       style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, fontSize: 15, width: 100, textAlign: 'center', color: TEXT }}
                     />
@@ -419,7 +419,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   { role: 'TELECALLER', signin: settings.tc_signin_time, signout: settings.tc_signout_time },
                   { role: 'STM',        signin: settings.stm_signin_time, signout: settings.stm_signout_time },
                 ].map(({ role, signin, signout }) => (
-                  <View key={role} style={{ flex: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 13 }}>
+                  <View key={role} style={{ flex: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 13 }}>
                     <SectionLabel>{role}</SectionLabel>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 9, marginBottom: 6 }}>
                       <Text style={{ fontSize: 13, color: MUTED }}>Sign-in</Text>
@@ -659,7 +659,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   )}
 
                   <TouchableOpacity onPress={() => triggerDist(type)} disabled={disabled}
-                    style={{ paddingVertical: 14, backgroundColor: NAVY, borderRadius: 10, alignItems: 'center', opacity: disabled ? 0.45 : 1 }}>
+                    style={{ paddingVertical: 14, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center', opacity: disabled ? 0.45 : 1 }}>
                     {distributing === type
                       ? <ActivityIndicator color={COLORS.white} size="small" />
                       : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>

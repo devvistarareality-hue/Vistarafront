@@ -187,21 +187,21 @@ const s = StyleSheet.create({
   statDot:     { width: 7, height: 7, borderRadius: 4 },
   statText:    { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
   filterRow:    { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 14 },
 
-  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginTop: 10, ...CARD_SHADOW },
+  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginTop: 10, ...CARD_SHADOW },
   avatar:      { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText:  { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardBody:    { flex: 1 },
   userName:    { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 2 },
   userMeta:    { fontSize: 12, color: COLORS.textSecondary, marginBottom: 6 },
   badgeRow:    { flexDirection: 'row', gap: 6 },
-  badge:       { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badge:       { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14 },
   badgeText:   { fontSize: 10, fontWeight: '700' },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14 },
   statusText:  { fontSize: 10, fontWeight: '700' },
 
   actions:     { flexDirection: 'column', gap: 6, marginLeft: 8 },

@@ -169,7 +169,7 @@ const s = StyleSheet.create({
   iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
-  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
   tabsWrapper: { height: 44, marginTop: 14 },
@@ -181,7 +181,7 @@ const s = StyleSheet.create({
 
   countLabel: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 10, ...CARD_SHADOW },
+  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginBottom: 10, ...CARD_SHADOW },
   avatar:     { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText: { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardBody:   { flex: 1 },

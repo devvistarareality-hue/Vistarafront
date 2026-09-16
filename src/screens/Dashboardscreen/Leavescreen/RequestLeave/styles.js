@@ -23,38 +23,38 @@ export default StyleSheet.create({
   },
 
   toggleCard: {
-    flexDirection: 'row', backgroundColor: COLORS.surfaceAlt, borderRadius: 12,
+    flexDirection: 'row', backgroundColor: COLORS.surfaceAlt, borderRadius: 16,
     marginBottom: 16, padding: 4,
   },
-  toggleBtn:       { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  toggleBtn:       { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 14 },
   toggleBtnActive: { backgroundColor: COLORS.cardBg, ...CARD_SHADOW },
   toggleText:      { fontSize: 13, fontWeight: '600', color: MUTED },
   toggleTextActive:{ color: NAVY, fontWeight: '800' },
 
   dateCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg,
-    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
+    borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14,
     marginBottom: 14, ...CARD_SHADOW,
   },
   dateText:     { fontSize: 14, color: COLORS.shadow },
   dateTextFilled: { color: NAVY, fontWeight: '600' },
 
   descCard: {
-    backgroundColor: COLORS.cardBg, borderRadius: 14, paddingHorizontal: 16,
+    backgroundColor: COLORS.cardBg, borderRadius: 18, paddingHorizontal: 16,
     paddingVertical: 12, marginBottom: 16, ...CARD_SHADOW, minHeight: 120,
   },
   descInput: { fontSize: 14, color: TEXT, flex: 1, minHeight: 100 },
 
   footer:    { backgroundColor: COLORS.screenBg, paddingHorizontal: 20, paddingVertical: 16 },
   submitBtn: {
-    backgroundColor: NAVY, borderRadius: 16, paddingVertical: 15, alignItems: 'center',
+    backgroundColor: NAVY, borderRadius: 20, paddingVertical: 15, alignItems: 'center',
     shadowColor: NAVY, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.28, shadowRadius: 10, elevation: 4,
   },
   submitText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
 
   dropdownCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: COLORS.cardBg, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: COLORS.cardBg, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14,
     marginBottom: 14, ...CARD_SHADOW,
   },
   dropdownLabel: { fontSize: 14, fontWeight: '600', color: TEXT },
@@ -74,6 +74,6 @@ export default StyleSheet.create({
   sheetOptionText:    { fontSize: 15, color: MUTED, fontWeight: '500' },
   sheetOptionTextActive: { color: NAVY, fontWeight: '700' },
   sheetCheckDot:      { width: 10, height: 10, borderRadius: 5, backgroundColor: NAVY },
-  sheetCancelBtn:     { marginTop: 16, paddingVertical: 14, alignItems: 'center', backgroundColor: COLORS.screenBg, borderRadius: 14 },
+  sheetCancelBtn:     { marginTop: 16, paddingVertical: 14, alignItems: 'center', backgroundColor: COLORS.screenBg, borderRadius: 18 },
   sheetCancelText:    { fontSize: 14, fontWeight: '600', color: MUTED },
 });

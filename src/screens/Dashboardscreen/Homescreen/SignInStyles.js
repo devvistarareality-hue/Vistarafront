@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   timeBox: {
     flex: 1,
     backgroundColor: COLORS.surfaceAlt,
-    borderRadius: 14,
+    borderRadius: 18,
     paddingVertical: 14,
     alignItems: 'center',
   },
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceAlt,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 10,
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   bottomBtn: {
     flex: 1,
     paddingVertical: 16,
-    borderRadius: 14,
+    borderRadius: 18,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',

@@ -12,7 +12,7 @@ import FilterSelect from '../../components/FilterSelect';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 const SV_COLOR = { scheduled: COLORS.warning, completed: COLORS.success, no_show: COLORS.error, cancelled: COLORS.textSecondary };
 const OUTCOME_COLOR = { hot: COLORS.error, warm: COLORS.warning, cold: COLORS.link, not_interested: COLORS.textSecondary };
@@ -37,8 +37,8 @@ const endOfToday   = () => { const d = new Date(); d.setHours(23, 59, 59, 999); 
 const defaultDate  = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
 
 const lblS = { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.5, marginBottom: 6, marginTop: 4 };
-const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white };
-const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.white };
+const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white };
+const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.white };
 
 export default function SalesSiteVisitsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
@@ -281,7 +281,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Site Visits</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{visible.length} visit{visible.length === 1 ? '' : 's'} · {user?.name || ''}</Text>
         </View>
-        <TouchableOpacity onPress={openSchedule} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10 }}>
+        <TouchableOpacity onPress={openSchedule} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 14 }}>
           <Ionicons name="add" size={16} color={COLORS.white} />
           <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>Schedule</Text>
         </TouchableOpacity>
@@ -311,8 +311,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
             const on = range.from === r.from && range.to === r.to;
             return (
               <TouchableOpacity key={label} onPress={() => setRange(r)}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
-                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1.5,
+                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#F3F9FF' : COLORS.white }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>{label}</Text>
               </TouchableOpacity>
             );
@@ -332,7 +332,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
             const label = val ? OUTCOME_LABEL[val] : 'All';
             return (
               <TouchableOpacity key={val || 'all'} onPress={() => setOutcomeFilter(val)}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1.5,
                   borderColor: color, backgroundColor: active ? color : COLORS.white }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
               </TouchableOpacity>
@@ -356,11 +356,11 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
             <View key={sv.id} style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{sv.lead_name || 'Lead'}</Text>
-                <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (SV_COLOR[sv.status] || MUTED) + '22' }}>
+                <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: (SV_COLOR[sv.status] || MUTED) + '22' }}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: SV_COLOR[sv.status] || MUTED, textTransform: 'capitalize' }}>{(sv.status || '').replace('_', ' ')}</Text>
                 </View>
                 {!!sv.outcome && (
-                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (OUTCOME_COLOR[sv.outcome] || MUTED) + '22' }}>
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: (OUTCOME_COLOR[sv.outcome] || MUTED) + '22' }}>
                     <Text style={{ fontSize: 10, fontWeight: '700', color: OUTCOME_COLOR[sv.outcome] || MUTED }}>{OUTCOME_LABEL[sv.outcome] || sv.outcome}</Text>
                   </View>
                 )}
@@ -432,7 +432,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               <TextInput value={sForm.remarks} onChangeText={(v) => setSForm((f) => ({ ...f, remarks: v }))} placeholder="Location, notes…" placeholderTextColor={MUTED} style={inpS} />
 
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
-              <TouchableOpacity onPress={scheduleVisit} disabled={saving} style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
+              <TouchableOpacity onPress={scheduleVisit} disabled={saving} style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 16, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
                 <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Schedule Visit'}</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -456,7 +456,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
                   const active = doneForm.outcome === val;
                   return (
                     <TouchableOpacity key={val} onPress={() => setDoneForm((f) => ({ ...f, outcome: val }))}
-                      style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 11, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                      style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 14, paddingVertical: 11, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
                     </TouchableOpacity>
                   );
@@ -476,7 +476,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
               <TouchableOpacity onPress={submitDone} disabled={saving || !doneForm.outcome || !doneForm.remarks.trim()}
-                style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 12, paddingVertical: 13, alignItems: 'center',
+                style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 16, paddingVertical: 13, alignItems: 'center',
                   opacity: (saving || !doneForm.outcome || !doneForm.remarks.trim()) ? 0.5 : 1 }}>
                 <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
@@ -524,7 +524,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               <TextInput value={cForm.remarks} onChangeText={(v) => setCForm((f) => ({ ...f, remarks: v }))} placeholder="Notes…" placeholderTextColor={MUTED} multiline style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
 
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
-              <TouchableOpacity onPress={recordClosure} disabled={saving} style={{ marginTop: 16, backgroundColor: COLORS.success, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
+              <TouchableOpacity onPress={recordClosure} disabled={saving} style={{ marginTop: 16, backgroundColor: COLORS.success, borderRadius: 16, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
                 <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Record Closure'}</Text>
               </TouchableOpacity>
             </ScrollView>

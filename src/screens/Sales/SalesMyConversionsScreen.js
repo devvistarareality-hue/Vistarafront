@@ -14,13 +14,13 @@ const HISTORY_LABEL = {
   warm_transfer: 'Transferred to STM', site_visit: 'Site Visit', closure: 'Closure',
 };
 const HISTORY_COLOR = {
-  created: '#64748B', status: COLORS.link, telecaller_status: '#0097A7', stm_status: COLORS.warning,
-  telecaller: COLORS.purple, stm: COLORS.success, warm_transfer: COLORS.error, site_visit: '#F9A825', closure: '#15803D',
+  created: '#55585E', status: COLORS.link, telecaller_status: '#23874A', stm_status: COLORS.warning,
+  telecaller: COLORS.purple, stm: COLORS.success, warm_transfer: COLORS.error, site_visit: '#D98A1F', closure: '#23874A',
 };
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 const SV_COLOR = {
   scheduled: { bg: COLORS.warningBg, text: COLORS.warning },
@@ -108,7 +108,7 @@ function LeadHistoryModal({ lead, onClose }) {
             {/* Lead received */}
             <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
               <View style={{ alignItems: 'center' }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.link + '18', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.link + '18', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 16 }}>📥</Text>
                 </View>
                 <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />
@@ -138,7 +138,7 @@ function LeadHistoryModal({ lead, onClose }) {
               return (
                 <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                   <View style={{ alignItems: 'center' }}>
-                    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ fontSize: 16 }}>{icon}</Text>
                     </View>
                     {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}

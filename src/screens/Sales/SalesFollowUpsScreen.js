@@ -11,7 +11,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 const STATUS_COLOR = { pending: COLORS.warning, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
 
@@ -282,7 +282,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                       <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{fu.lead_name || 'Lead'}</Text>
                       <Text style={{ fontSize: 10, fontWeight: '700', textTransform: 'uppercase', color: fu.role_context === 'stm' ? COLORS.error : COLORS.info }}>{fu.role_context}</Text>
-                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (STATUS_COLOR[fu.status] || MUTED) + '22' }}>
+                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: (STATUS_COLOR[fu.status] || MUTED) + '22' }}>
                         <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLOR[fu.status] || MUTED }}>{fu.status}</Text>
                       </View>
                     </View>
@@ -317,7 +317,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
 
       {/* Complete follow-up: remarks + optional next follow-up */}
       <Modal visible={!!done} transparent animationType="slide" onRequestClose={() => !submitting && setDone(null)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(10,18,30,0.45)', justifyContent: 'flex-end' }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.45)', justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Complete follow-up</Text>
             {!!done && (
@@ -349,24 +349,24 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             {/* Same two hand-offs the lead modal offers, so a status set here behaves
                 identically to one set on the lead. */}
             {newStatus === 'sv_scheduled' ? (
-              <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 10 }}>
-                <Text style={{ fontSize: 12, fontWeight: '800', color: '#166534', letterSpacing: 0.4, marginBottom: 8 }}>📍 SCHEDULE SITE VISIT</Text>
+              <View style={{ backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 16, padding: 12, marginTop: 10 }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#23874A', letterSpacing: 0.4, marginBottom: 8 }}>📍 SCHEDULE SITE VISIT</Text>
                 <TouchableOpacity onPress={() => setSvPickerOpen(true)}
-                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, backgroundColor: COLORS.white }}>
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 10, backgroundColor: COLORS.white }}>
                   <Text style={{ fontSize: 13, color: svAt instanceof Date ? TEXT : MUTED }}>
                     {svAt instanceof Date ? fmtDateTime(svAt.toISOString()) : 'Pick date & time'}
                   </Text>
                 </TouchableOpacity>
-                <TextInput value={svRemarks} onChangeText={setSvRemarks} placeholder="Location, notes…" placeholderTextColor="#AEB6C7"
-                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, fontSize: 13, marginTop: 8, color: TEXT, backgroundColor: COLORS.white }} />
+                <TextInput value={svRemarks} onChangeText={setSvRemarks} placeholder="Location, notes…" placeholderTextColor="#9A9EA5"
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 10, fontSize: 13, marginTop: 8, color: TEXT, backgroundColor: COLORS.white }} />
                 {!(svAt instanceof Date) ? (
-                  <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 8 }}>Set a date &amp; time to create the site visit automatically.</Text>
+                  <Text style={{ fontSize: 11, color: '#23874A', marginTop: 8 }}>Set a date &amp; time to create the site visit automatically.</Text>
                 ) : null}
               </View>
             ) : null}
             {newStatus === 'closed' ? (
-              <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 10 }}>
-                <Text style={{ fontSize: 12, color: '#166534', fontWeight: '600' }}>
+              <View style={{ backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 16, padding: 12, marginTop: 10 }}>
+                <Text style={{ fontSize: 12, color: '#23874A', fontWeight: '600' }}>
                   ✅ Marking done takes you to the booking flow — pick the unit(s) and record the booking for this lead.
                 </Text>
               </View>
@@ -377,8 +377,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             ) : null}
 
             <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6, marginTop: 14 }}>Remarks</Text>
-            <TextInput value={outcome} onChangeText={setOutcome} multiline placeholder="Outcome of this follow-up…" placeholderTextColor="#AEB6C7"
-              style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, fontSize: 13, minHeight: 64, textAlignVertical: 'top', color: TEXT }} />
+            <TextInput value={outcome} onChangeText={setOutcome} multiline placeholder="Outcome of this follow-up…" placeholderTextColor="#9A9EA5"
+              style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 10, fontSize: 13, minHeight: 64, textAlignVertical: 'top', color: TEXT }} />
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>Schedule next follow-up</Text>
@@ -388,15 +388,15 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             {schedNext && (
               <View style={{ marginTop: 12 }}>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <TouchableOpacity onPress={() => setShowDate(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, alignItems: 'center' }}>
+                  <TouchableOpacity onPress={() => setShowDate(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 12, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, color: BLUE, fontWeight: '600' }}>{nextAt instanceof Date ? nextAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Pick Date'}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setShowTime(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, alignItems: 'center' }}>
+                  <TouchableOpacity onPress={() => setShowTime(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 12, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, color: BLUE, fontWeight: '600' }}>{nextAt instanceof Date ? nextAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Pick Time'}</Text>
                   </TouchableOpacity>
                 </View>
-                <TextInput value={nextRemarks} onChangeText={setNextRemarks} multiline placeholder="What to discuss next…" placeholderTextColor="#AEB6C7"
-                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, fontSize: 13, minHeight: 48, textAlignVertical: 'top', marginTop: 10, color: TEXT }} />
+                <TextInput value={nextRemarks} onChangeText={setNextRemarks} multiline placeholder="What to discuss next…" placeholderTextColor="#9A9EA5"
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 10, fontSize: 13, minHeight: 48, textAlignVertical: 'top', marginTop: 10, color: TEXT }} />
                 {showDate && (
                   <DateTimePicker value={nextAt instanceof Date ? nextAt : defaultNext()} mode="date" display="default"
                     onChange={(e, d) => { setShowDate(false); if (e.type === 'dismissed') return; if (d) { const cur = nextAt instanceof Date ? nextAt : defaultNext(); const m = new Date(d); m.setHours(cur.getHours(), cur.getMinutes(), 0, 0); setNextAt(m); if (Platform.OS === 'android') setShowTime(true); } }} />
@@ -409,11 +409,11 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             )}
 
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
-              <TouchableOpacity onPress={() => setDone(null)} disabled={submitting} style={{ flex: 1, backgroundColor: COLORS.screenBg, borderRadius: 10, padding: 13, alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => setDone(null)} disabled={submitting} style={{ flex: 1, backgroundColor: COLORS.screenBg, borderRadius: 14, padding: 13, alignItems: 'center' }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: MUTED }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={completeFollowUp} disabled={submitting || (schedNext && !(nextAt instanceof Date))}
-                style={{ flex: 1, backgroundColor: COLORS.success, borderRadius: 10, padding: 13, alignItems: 'center', opacity: (submitting || (schedNext && !(nextAt instanceof Date))) ? 0.6 : 1 }}>
+                style={{ flex: 1, backgroundColor: COLORS.success, borderRadius: 14, padding: 13, alignItems: 'center', opacity: (submitting || (schedNext && !(nextAt instanceof Date))) ? 0.6 : 1 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{submitting ? 'Saving…' : newStatus === 'closed' ? 'Record Closure →' : 'Mark Done'}</Text>
               </TouchableOpacity>
             </View>

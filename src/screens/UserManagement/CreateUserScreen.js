@@ -576,7 +576,7 @@ export default function CreateUserScreen({ navigation, route }) {
             </View>
 
             {/* Search */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', margin: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', margin: 12, backgroundColor: COLORS.screenBg, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 }}>
               <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} style={{ marginRight: 8 }} />
               <TextInput
                 style={{ flex: 1, fontSize: 14, color: COLORS.textPrimary }}

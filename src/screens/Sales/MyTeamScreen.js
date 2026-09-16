@@ -38,14 +38,14 @@ function accentFor(node) {
   return COLORS.textSecondary;
 }
 
-const LINE = '#C5CEDC';
+const LINE = '#C9CDD2';
 
 // One org-chart card (fixed width so the branching layout computes cleanly).
 function ChartCard({ node }) {
   const root = node._root;
   const color = accentFor(node);
   return (
-    <View style={{ width: 150, borderRadius: 12, backgroundColor: root ? COLORS.navy : COLORS.cardBg,
+    <View style={{ width: 150, borderRadius: 16, backgroundColor: root ? COLORS.navy : COLORS.cardBg,
       borderWidth: root ? 0 : 1, borderColor: color + '33', overflow: 'hidden', ...CARD_SHADOW }}>
       {!root && <View style={{ height: 3, backgroundColor: color }} />}
       <View style={{ padding: 10, alignItems: 'center', gap: 4 }}>
@@ -100,7 +100,7 @@ function ChartNode({ node }) {
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 // `cp` is the Channel Partner chart: scoped by CP designation rather than by
 // module, since CP staff sit in Sales and there is no module to assign them to.
@@ -232,11 +232,11 @@ export default function MyTeamScreen({ navigation, route }) {
         <ScrollView contentContainerStyle={{ padding: 16, gap: 10 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
           <TextInput value={q} onChangeText={setQ} placeholder="Search name, code or designation…"
-            style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 6 }} />
+            style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 6 }} />
 
           {visible.map((m) => (
             <View key={m.id} style={[CARD, { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.linkBg, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 40, height: 40, borderRadius: 16, backgroundColor: COLORS.linkBg, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 16, fontWeight: '800', color: BLUE }}>{(m.name || '?')[0].toUpperCase()}</Text>
               </View>
               <View style={{ flex: 1 }}>

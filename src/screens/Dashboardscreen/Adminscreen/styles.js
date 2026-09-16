@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
 
   buttonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   button: {
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 9,
     paddingHorizontal: 10,
     minWidth: (width - 40 - 28 - 8) / 3,

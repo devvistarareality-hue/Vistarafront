@@ -9,7 +9,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 // Designations that can be assigned projects (mirrors the web Team Users page).
 // Frontline designations always take project assignments; Manager does too, since
@@ -91,8 +91,8 @@ function AssignProjectsModal({ member, projects, onClose }) {
                 const checked = selected.includes(p.id);
                 return (
                   <TouchableOpacity key={p.id} onPress={() => toggle(p.id)} activeOpacity={0.7}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1.5, borderColor: checked ? BLUE : COLORS.border, backgroundColor: checked ? '#F0F3FF' : '#FAFAFA' }}>
-                    <View style={{ width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: checked ? BLUE : '#C8D0E0', backgroundColor: checked ? BLUE : '#fff', alignItems: 'center', justifyContent: 'center' }}>
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, marginBottom: 8, borderWidth: 1.5, borderColor: checked ? BLUE : COLORS.border, backgroundColor: checked ? '#F3F9FF' : '#F5F6F7' }}>
+                    <View style={{ width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: checked ? BLUE : '#C9CDD2', backgroundColor: checked ? BLUE : '#fff', alignItems: 'center', justifyContent: 'center' }}>
                       {checked && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>✓</Text>}
                     </View>
                     <View style={{ flex: 1 }}>
@@ -106,7 +106,7 @@ function AssignProjectsModal({ member, projects, onClose }) {
           )}
 
           <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
-            <TouchableOpacity onPress={save} disabled={saving} style={{ backgroundColor: NAVY, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
+            <TouchableOpacity onPress={save} disabled={saving} style={{ backgroundColor: NAVY, borderRadius: 16, paddingVertical: 14, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
               {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Save ({selected.length} project{selected.length === 1 ? '' : 's'})</Text>}
             </TouchableOpacity>
           </View>
@@ -195,7 +195,7 @@ export default function SalesTeamScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Sales Team</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{filtered.length} of {members.length} members</Text>
@@ -207,7 +207,7 @@ export default function SalesTeamScreen({ navigation }) {
 
       {/* Search */}
       <View style={{ paddingHorizontal: 16, paddingTop: 10, backgroundColor: COLORS.white }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
           <TextInput value={search} onChangeText={setSearch} placeholder="Search by name, user code, designation…" style={{ flex: 1, fontSize: 14, color: TEXT }} />
           {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
@@ -218,12 +218,12 @@ export default function SalesTeamScreen({ navigation }) {
       {!loading && (
         <View style={{ backgroundColor: COLORS.white, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' }}>
-            <Text style={{ fontSize: 10, fontWeight: '800', color: '#9CA3AF', marginRight: 8 }}>ROLE</Text>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: '#9A9EA5', marginRight: 8 }}>ROLE</Text>
             <Chip label="All" active={!roleFilter} onPress={() => setRoleFilter(null)} />
             {roles.map(r => <Chip key={r} label={r} active={roleFilter === r} onPress={() => setRoleFilter(roleFilter === r ? null : r)} />)}
           </ScrollView>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, alignItems: 'center' }}>
-            <Text style={{ fontSize: 10, fontWeight: '800', color: '#9CA3AF', marginRight: 8 }}>DESIG</Text>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: '#9A9EA5', marginRight: 8 }}>DESIG</Text>
             <Chip label="All" active={!desigFilter} onPress={() => setDesigFilter(null)} />
             {desigs.map(d => <Chip key={d} label={`${d} (${members.filter(m => (m.designation || '').toUpperCase() === d).length})`} active={desigFilter === d} onPress={() => setDesigFilter(desigFilter === d ? null : d)} />)}
           </ScrollView>

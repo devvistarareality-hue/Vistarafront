@@ -16,7 +16,7 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
 // Booking web app (own login + form → records booking, auto-LOI, Google Sheet).
 const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypnmUmBmBIrL5rC6xqSEbLFDvSw1XvES6D-JyL1beY8-AeEREnfvVM_TbbbV1t1i883g/exec';
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 // Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
 const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
@@ -409,8 +409,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {!!notice && (
-          <View style={{ padding: 12, borderRadius: 10, backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warning, marginBottom: 12 }}>
-            <Text style={{ color: '#78350F', fontSize: 13, fontWeight: '600' }}>⚠ {notice}</Text>
+          <View style={{ padding: 12, borderRadius: 14, backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warning, marginBottom: 12 }}>
+            <Text style={{ color: '#6B420C', fontSize: 13, fontWeight: '600' }}>⚠ {notice}</Text>
           </View>
         )}
         {/* Status filters */}
@@ -419,9 +419,9 @@ export default function ClosureViewerScreen({ navigation, route }) {
             const active = filter === key; const dot = STATUS[key]?.dot;
             return (
               <TouchableOpacity key={key} onPress={() => setFilter(key)}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: active ? COLORS.goldDark : COLORS.border, backgroundColor: active ? '#FBF4DF' : COLORS.white }}>
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: active ? COLORS.goldDark : COLORS.border, backgroundColor: active ? '#FFF3E0' : COLORS.white }}>
                 {dot && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} />}
-                <Text style={{ fontSize: 13, fontWeight: '700', color: active ? '#8a6d1f' : MUTED }}>{label}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: active ? '#a3671a' : MUTED }}>{label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -434,7 +434,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
               return (
                 <TouchableOpacity key={`b${i}`} onPress={() => { setBlockIdx(i); setFloorIdx(0); }}
                   style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
-                    borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#EEF1FF' : COLORS.white }}>
+                    borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#F3F9FF' : COLORS.white }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>
                     Block {b || '—'}{project?.block_industrial ? '' : ` · ${blockHeight(b)}`}
                   </Text>
@@ -453,7 +453,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
               return (
                 <TouchableOpacity key={i} onPress={() => setFloorIdx(i)}
                   style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
-                    borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#EEF1FF' : COLORS.white }}>
+                    borderColor: active ? BLUE : COLORS.border, backgroundColor: active ? '#F3F9FF' : COLORS.white }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: active ? BLUE : MUTED }}>
                     {f.label || `Floor ${f.floor}`} · {n}
                   </Text>
@@ -470,8 +470,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
               const active = typeFilter === t;
               return (
                 <TouchableOpacity key={t} onPress={() => setTypeFilter(t)}
-                  style={{ paddingHorizontal: 13, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: active ? COLORS.goldDark : COLORS.border, backgroundColor: active ? '#FBF4DF' : COLORS.white }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#8a6d1f' : MUTED }}>{t === 'all' ? 'All Types' : t}</Text>
+                  style={{ paddingHorizontal: 13, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: active ? COLORS.goldDark : COLORS.border, backgroundColor: active ? '#FFF3E0' : COLORS.white }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#a3671a' : MUTED }}>{t === 'all' ? 'All Types' : t}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -489,7 +489,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
             <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT }}>Interactive Unit Map</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#8a6d1f' }}>Showing {shownCount}/{total}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#a3671a' }}>Showing {shownCount}/{total}</Text>
                 <TouchableOpacity onPress={() => setZoomMaster(true)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: COLORS.linkBg }}>
                   <Ionicons name="expand-outline" size={15} color={BLUE} />
@@ -518,8 +518,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const labelText = stripPlotPrefix(zone.plotNumber);
                   const press = () => pickPlot(plot);
                   const isSel = selectedSet.has(plot.id);
-                  const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
-                  const strokeC = isSel ? '#1A237E' : cfg.dot;
+                  const fillC = isSel ? '#2F6DB5' : cfg.dot + '99';
+                  const strokeC = isSel ? '#1D1D1F' : cfg.dot;
                   const sw = isSel ? '0.9' : '0.5';
                   return (
                     <React.Fragment key={zone.id}>
@@ -556,7 +556,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 </Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('BookingForm', { project: project.id, eoi: '1', block: activeBlock, projectName: project?.name, formulaSet: project?.formula_set })}
-                  style={{ backgroundColor: BLUE, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 22 }}>
+                  style={{ backgroundColor: BLUE, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 22 }}>
                   <Text style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>Raise EOI for Block {activeBlock || 'this project'}</Text>
                 </TouchableOpacity>
               </View>
@@ -572,17 +572,17 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const clickable = plot.status === 'available' || plot.status === 'resale' || isSel || !!plot.drafted_booking_id || !!plot.can_cancel_hold || (plot.status === 'sold' && isManager);
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
-                      style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: isSel ? '#1A237E' : cfg.dot, backgroundColor: isSel ? '#3D5AFE' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
+                      style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1.5, borderColor: isSel ? '#1D1D1F' : cfg.dot, backgroundColor: isSel ? '#2F6DB5' : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
                       <Text style={{ fontWeight: '800', fontSize: 13, color: isSel ? '#fff' : cfg.dot }}>{isSel ? `✓ ${plot.number}` : plot.number}</Text>
                       {/* No plan drawn for this floor, so the chip is the only place these
                           price-affecting details can surface. Same reasoning for who
                           drafted a grey unit: print the name, don't rely on a tap-and-hold. */}
-                      {plot.drafted_booking_id && !!plot.held_by_name && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E8EEFF' : MUTED }}>{plot.held_by_name}</Text>}
-                      {!!plot.size && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E8EEFF' : MUTED }}>{plot.size}</Text>}
-                      {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
-                      {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
+                      {plot.drafted_booking_id && !!plot.held_by_name && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E6F2FF' : MUTED }}>{plot.held_by_name}</Text>}
+                      {!!plot.size && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? '#E6F2FF' : MUTED }}>{plot.size}</Text>}
+                      {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E6F2FF' : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
+                      {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E6F2FF' : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
                       {/* Who is on a booked unit, so the team can see it without opening the plot. */}
-                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E8EEFF' : MUTED }}>{plot.status === 'hold' ? 'In progress by' : 'Sold by'} {plot.agent_name}</Text>}
+                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? '#E6F2FF' : MUTED }}>{plot.status === 'hold' ? 'In progress by' : 'Sold by'} {plot.agent_name}</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -594,7 +594,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
 
       {/* Multi-select action bar — books all selected plots in one booking. */}
       {selPlots.length > 0 && (
-        <View style={{ position: 'absolute', left: 12, right: 12, bottom: 16, backgroundColor: COLORS.white, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, ...CARD_SHADOW }}>
+        <View style={{ position: 'absolute', left: 12, right: 12, bottom: 16, backgroundColor: COLORS.white, borderRadius: 18, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, ...CARD_SHADOW }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>
               {selPlots.length} plot{selPlots.length > 1 ? 's' : ''} selected{selArea > 0 ? ` · ${+selArea.toFixed(2)} area` : ''}
@@ -609,7 +609,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
           <TouchableOpacity onPress={() => { const ids = [...selectedIds]; setSelectedIds([]); releasePlots(ids); }} style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Clear</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={bookSelected} style={{ backgroundColor: COLORS.success, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 }}>
+          <TouchableOpacity onPress={bookSelected} style={{ backgroundColor: COLORS.success, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 11 }}>
             <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 14 }}>{sv ? 'Record Closure' : 'Book'} →</Text>
           </TouchableOpacity>
         </View>
@@ -637,7 +637,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => setDraftPanelPlot(null)}>
             <TouchableOpacity activeOpacity={1} onPress={() => setDraftPanelPlot(null)}
-              style={{ flex: 1, backgroundColor: 'rgba(15,28,46,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+              style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
                 style={{ backgroundColor: COLORS.white, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Drafted</Text>
@@ -651,13 +651,13 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       it, which is the wrong way round. */}
                   {canDiscard && (
                     <TouchableOpacity onPress={() => { setDraftPanelPlot(null); navigation.navigate('BookingForm', { draft: p.drafted_booking_id }); }}
-                      style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.link, alignItems: 'center' }}>
+                      style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.link, alignItems: 'center' }}>
                       <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>▸ {mine ? 'Resume' : 'Open Draft'}</Text>
                     </TouchableOpacity>
                   )}
                   {canDiscard && (
                     <TouchableOpacity disabled={cancelBusy} onPress={() => confirmCancelHold(p.id)}
-                      style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA', alignItems: 'center' }}>
+                      style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#F7C3C6', alignItems: 'center' }}>
                       <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>✕ Discard Draft</Text>
                     </TouchableOpacity>
                   )}
@@ -665,7 +665,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                     <Text style={{ fontSize: 12, color: MUTED }}>Only {p.held_by_name || 'the drafter'} or one of this project's booking approvers can resume or discard this.</Text>
                   )}
                   <TouchableOpacity onPress={() => setDraftPanelPlot(null)}
-                    style={{ paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                    style={{ paddingVertical: 10, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
                     <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Close</Text>
                   </TouchableOpacity>
                 </View>
@@ -685,7 +685,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => setHoldPanelPlot(null)}>
             <TouchableOpacity activeOpacity={1} onPress={() => !cancelBusy && setHoldPanelPlot(null)}
-              style={{ flex: 1, backgroundColor: 'rgba(15,28,46,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+              style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
                 style={{ backgroundColor: COLORS.white, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · In Progress</Text>
@@ -697,11 +697,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 </Text>
                 <View style={{ gap: 10 }}>
                   <TouchableOpacity disabled={cancelBusy} onPress={() => confirmCancelHold(p.id)}
-                    style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA', alignItems: 'center', opacity: cancelBusy ? 0.6 : 1 }}>
+                    style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#F7C3C6', alignItems: 'center', opacity: cancelBusy ? 0.6 : 1 }}>
                     <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 14 }}>{cancelBusy ? 'Cancelling…' : '✕ Cancel In Progress'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity disabled={cancelBusy} onPress={() => setHoldPanelPlot(null)}
-                    style={{ paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                    style={{ paddingVertical: 10, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
                     <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Close</Text>
                   </TouchableOpacity>
                 </View>
@@ -718,7 +718,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => !resaleBusy && setSoldPanelPlot(null)}>
             <TouchableOpacity activeOpacity={1} onPress={() => !resaleBusy && setSoldPanelPlot(null)}
-              style={{ flex: 1, backgroundColor: 'rgba(15,28,46,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+              style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
                 style={{ backgroundColor: COLORS.white, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Sold</Text>
@@ -730,11 +730,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Move to Resale', onPress: () => moveToResaleFromPanel(p.id) },
                   ])} disabled={resaleBusy}
-                    style={{ paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.purple, alignItems: 'center', opacity: resaleBusy ? 0.7 : 1 }}>
+                    style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.purple, alignItems: 'center', opacity: resaleBusy ? 0.7 : 1 }}>
                     <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{resaleBusy ? 'Moving…' : '↻ Move to Resale'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => setSoldPanelPlot(null)} disabled={resaleBusy}
-                    style={{ paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                    style={{ paddingVertical: 10, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
                     <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Close</Text>
                   </TouchableOpacity>
                 </View>
@@ -765,7 +765,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(15,28,46,0.5)', justifyContent: 'flex-end' }}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.5)', justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' }}>
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: cfg.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
@@ -776,7 +776,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
             <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
               {!!plot.cluster_type && (
                 <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: COLORS.white }}>
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#673AB7' }}>{plot.cluster_type}</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#2F6DB5' }}>{plot.cluster_type}</Text>
                 </View>
               )}
               <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: COLORS.white }}>
@@ -807,7 +807,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {typePlans.map((fp, i) => (
                     <TouchableOpacity key={i} onPress={() => openPlan(fp.url)}
-                      style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.goldDark + '40', backgroundColor: COLORS.goldDark + '12' }}>
+                      style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.goldDark + '40', backgroundColor: COLORS.goldDark + '12' }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.goldDark }}>🔍 {fp.label}</Text>
                     </TouchableOpacity>
                   ))}
@@ -817,7 +817,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
 
             {/* Native ERP booking form. */}
             <TouchableOpacity onPress={onBook}
-              style={{ backgroundColor: COLORS.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
+              style={{ backgroundColor: COLORS.success, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
               <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{booking ? `Book Unit ${plot.number}` : `Record Closure for Unit ${plot.number}`}</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -909,8 +909,8 @@ function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, sele
                   // no-op), so this gate just forwards every tap rather than duplicating
                   // that logic (this modal doesn't have the logged-in user to check with).
                   const press = () => onPick(plot);
-                  const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
-                  const strokeC = isSel ? '#1A237E' : cfg.dot;
+                  const fillC = isSel ? '#2F6DB5' : cfg.dot + '99';
+                  const strokeC = isSel ? '#1D1D1F' : cfg.dot;
                   const sw = isSel ? '0.9' : '0.5';
                   return (
                     <React.Fragment key={zone.id}>
@@ -939,7 +939,7 @@ function InteractiveMapModal({ visible, uri, zones, plotByNumber, isHidden, sele
 
 function InfoBox({ label, value }) {
   return (
-    <View style={{ flexGrow: 1, minWidth: '46%', backgroundColor: BG, borderRadius: 12, padding: 12 }}>
+    <View style={{ flexGrow: 1, minWidth: '46%', backgroundColor: BG, borderRadius: 16, padding: 12 }}>
       <Text style={{ fontSize: 11, color: MUTED, marginBottom: 3 }}>{label}</Text>
       <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{value}</Text>
     </View>
@@ -948,5 +948,5 @@ function InfoBox({ label, value }) {
 
 const zBtn = { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' };
 const lblS = { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.5, marginBottom: 6, marginTop: 8 };
-const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white };
-const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.white };
+const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white };
+const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.white };

@@ -11,7 +11,7 @@ import { MyBookingsList } from './MyBookingsScreen';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 // Read-only project picker for the Record Closure flow (mobile mirror of web
 // /sales/closure). No add/edit/manage — STM only picks a project to drill in.
@@ -110,8 +110,8 @@ export default function ClosureProjectsScreen({ navigation, route }) {
                       <Text style={{ fontSize: 12, color: COLORS.error, fontWeight: '700' }}>✕ {pc.sold || 0}</Text>
                     </View>
                   )}
-                  <View style={{ marginTop: 12, backgroundColor: (!p.block_industrial && noPlots) ? '#FFF4ED' : COLORS.linkBg, borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: (!p.block_industrial && noPlots) ? '#E4571A' : BLUE }}>{(!p.block_industrial && noPlots) ? 'Create EOI →' : 'View units →'}</Text>
+                  <View style={{ marginTop: 12, backgroundColor: (!p.block_industrial && noPlots) ? '#FFF3E0' : COLORS.linkBg, borderRadius: 14, paddingVertical: 9, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: (!p.block_industrial && noPlots) ? '#D98A1F' : BLUE }}>{(!p.block_industrial && noPlots) ? 'Create EOI →' : 'View units →'}</Text>
                   </View>
                 </View>
               </TouchableOpacity>

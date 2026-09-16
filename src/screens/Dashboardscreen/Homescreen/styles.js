@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   statIconBox: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 18,
     paddingVertical: 14,
     alignItems: 'center',
     elevation: 4,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   tabRow: {
     flexDirection: 'row',
     backgroundColor: COLORS.border,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 4,
     marginBottom: 14,
   },
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 14,
   },
   tabActive: {
     backgroundColor: COLORS.white,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   // ── Week View Day Cards ──
   dayCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 12,
     marginRight: 10,
     width: 90,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   calNavBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 14,
     backgroundColor: COLORS.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
@@ -263,11 +263,11 @@ const styles = StyleSheet.create({
   },
   calCellToday: {
     backgroundColor: COLORS.linkBg,
-    borderRadius: 10,
+    borderRadius: 14,
   },
   calCellSelected: {
     backgroundColor: NAVY,
-    borderRadius: 10,
+    borderRadius: 14,
   },
   calDayNum: {
     fontSize: 13,
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   calDetail: {
     marginTop: 14,
     backgroundColor: COLORS.screenBg,
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,

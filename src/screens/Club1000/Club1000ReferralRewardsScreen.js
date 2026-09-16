@@ -10,9 +10,9 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { formatDMY } from '../../utils/dateFormat';
 
-const NAVY = COLORS.navy; const TEAL = '#00838F'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 function fmtMoney(n) {
   const num = Number(n || 0);

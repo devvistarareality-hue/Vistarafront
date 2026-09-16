@@ -8,7 +8,7 @@ import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
 
 // Generic module landing — for now each module surfaces a "My Team" card
 // (department org chart). More cards can be added as modules grow.
@@ -24,12 +24,12 @@ export default function ModuleHomeScreen({ navigation, route }) {
       color: COLORS.link, bg: COLORS.linkBg, params: { module, title: `My Team · ${name}` } }] : []),
     // Accounts & Finance: read-only view of all sales bookings (LOI / EOI).
     ...(isAccounts ? [{ key: 'ModuleBookings', label: 'Bookings', desc: 'All sales bookings — LOI & EOI', icon: 'document-text-outline',
-      color: '#0D9488', bg: '#CCFBF1', params: { module, name } }] : []),
+      color: '#23874A', bg: '#C9F8CA', params: { module, name } }] : []),
     // The second approval gate. Sales/CP puts a deal on the books; a unit does not
     // actually turn sold until Accounts signs off here — which, until now, could only
     // be done from a desktop.
     ...(isAccounts ? [{ key: 'ModuleApprovals', label: 'Approvals', desc: 'Sign off bookings — the Accounts gate', icon: 'checkmark-done-outline',
-      color: '#0D9488', bg: '#CCFBF1', params: { module, name } }] : []),
+      color: '#23874A', bg: '#C9F8CA', params: { module, name } }] : []),
   ];
 
   return (

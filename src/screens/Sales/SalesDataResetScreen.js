@@ -8,8 +8,8 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const RED = COLORS.error; const BLUE = COLORS.link || COLORS.primary || '#3D5AFE';
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const RED = COLORS.error; const BLUE = COLORS.link || COLORS.primary || '#2F6DB5';
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 const ITEMS = [
   ['leads', 'Leads'],
@@ -130,7 +130,7 @@ export default function SalesDataResetScreen({ navigation }) {
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7, opacity: isImplied ? 0.6 : 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                   <Ionicons name={checked ? 'checkbox' : 'square-outline'} size={20} color={checked ? BLUE : COLORS.shadow} />
-                  <Text style={{ fontSize: 13, color: '#374151' }}>{label}{isImplied ? '  (via Leads)' : ''}</Text>
+                  <Text style={{ fontSize: 13, color: '#3A3C40' }}>{label}{isImplied ? '  (via Leads)' : ''}</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: (counts?.[k] || 0) > 0 ? (k === 'plots_to_reset' ? COLORS.success : RED) : MUTED }}>{counts?.[k] ?? 0}</Text>
               </TouchableOpacity>
@@ -152,27 +152,27 @@ export default function SalesDataResetScreen({ navigation }) {
         {/* Options */}
         <View style={[CARD, { padding: 16, marginBottom: 14 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
-            <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>Also delete signed LOI PDFs from storage</Text>
+            <Text style={{ fontSize: 13, color: '#3A3C40', flex: 1 }}>Also delete signed LOI PDFs from storage</Text>
             <Switch value={withLoi} onValueChange={setWithLoi} />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
-            <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>Also clear attendance & leave records</Text>
+            <Text style={{ fontSize: 13, color: '#3A3C40', flex: 1 }}>Also clear attendance & leave records</Text>
             <Switch value={withAttendance} onValueChange={setWithAttendance} />
           </View>
         </View>
 
         {/* Danger zone */}
-        <View style={{ backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: RED, borderRadius: 14, padding: 16 }}>
+        <View style={{ backgroundColor: '#FDECEC', borderWidth: 1.5, borderColor: RED, borderRadius: 18, padding: 16 }}>
           <Text style={{ fontSize: 14, fontWeight: '800', color: RED, marginBottom: 6 }}>⚠️ Danger zone — cannot be undone</Text>
-          <Text style={{ fontSize: 13, color: '#7F1D1D', marginBottom: 12 }}>Take a database backup first. Then type DELETE and enter the reset key.</Text>
+          <Text style={{ fontSize: 13, color: '#A52A31', marginBottom: 12 }}>Take a database backup first. Then type DELETE and enter the reset key.</Text>
           <TextInput value={confirmText} onChangeText={setConfirmText} placeholder="Type DELETE" autoCapitalize="characters"
             placeholderTextColor={COLORS.shadow}
-            style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
+            style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
           <TextInput value={resetKey} onChangeText={setResetKey} placeholder="Reset key"
             secureTextEntry autoCapitalize="none" placeholderTextColor={COLORS.shadow}
-            style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
+            style={{ backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
           <TouchableOpacity onPress={confirmReset} disabled={confirmText !== 'DELETE' || !resetKey.trim() || busy || nothingSelected}
-            style={{ backgroundColor: (confirmText === 'DELETE' && !!resetKey.trim() && !busy && !nothingSelected) ? RED : '#F3B4B4', borderRadius: 10, paddingVertical: 13, alignItems: 'center' }}>
+            style={{ backgroundColor: (confirmText === 'DELETE' && !!resetKey.trim() && !busy && !nothingSelected) ? RED : '#F7C3C6', borderRadius: 14, paddingVertical: 13, alignItems: 'center' }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>{nothingSelected ? 'Select at least one item' : !resetKey.trim() ? 'Enter the reset key' : `Permanently delete ${total} records`}</Text>}
           </TouchableOpacity>
           {!!msg && <Text style={{ marginTop: 12, fontSize: 13, fontWeight: '600', color: msg[0] === '✅' ? COLORS.success : RED }}>{msg}</Text>}

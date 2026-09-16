@@ -11,7 +11,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
 
 // Same three lists the web directory uses — kept identical so a partner added on
 // either side reads the same on the other.
@@ -21,9 +21,9 @@ const CATEGORY_OPTIONS = [
   { value: 'referral', label: 'Referral' },
 ];
 const CATEGORY_COLOR = {
-  premium:  { bg: '#FEF3C7', color: '#B45309' },
-  normal:   { bg: '#E8EEFF', color: BLUE },
-  referral: { bg: '#E8F5E9', color: '#2E7D32' },
+  premium:  { bg: '#FFF3E0', color: '#A3671A' },
+  normal:   { bg: '#E6F2FF', color: BLUE },
+  referral: { bg: '#E9FBEA', color: '#23874A' },
 };
 const SEGMENT_OPTIONS = [
   { value: '',            label: '— Select —' },
@@ -113,7 +113,7 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' }}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.45)', justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
             <Text style={{ flex: 1, fontSize: 16, fontWeight: '800', color: TEXT }}>
@@ -156,7 +156,7 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
             {err ? <Text style={{ color: COLORS.error, fontSize: 13, fontWeight: '600', marginBottom: 12 }}>{err}</Text> : null}
 
             <TouchableOpacity onPress={save} disabled={saving}
-              style={{ backgroundColor: BLUE, borderRadius: 10, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.7 : 1 }}>
+              style={{ backgroundColor: BLUE, borderRadius: 14, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.7 : 1 }}>
               <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>
                 {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Channel Partner'}
               </Text>
@@ -263,7 +263,7 @@ export default function ChannelPartnersScreen({ navigation }) {
                   <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => remove(cp)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}>
+                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#F7C3C6', backgroundColor: '#FDECEC' }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.error }}>Remove</Text>
                 </TouchableOpacity>
               </View>

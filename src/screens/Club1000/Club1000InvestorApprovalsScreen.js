@@ -9,13 +9,13 @@ import { CLUB1000_ENDPOINTS, SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
 
-const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const TEAL = '#00838F'; const PURPLE = '#7C3AED'; const AMBER = '#D97706';
+const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const TEAL = '#23874A'; const PURPLE = '#2F6DB5'; const AMBER = '#A3671A';
 
 function fmtMoney(n) {
   const num = Number(n || 0);
   return `₹${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 }
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
 const TABS = [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']];
 const APPROVAL_BADGE_COLOR = {
   pending: { bg: COLORS.warningBg, fg: COLORS.warning },
@@ -186,7 +186,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   <TouchableOpacity onPress={() => setOpenScheme(exp ? null : s.id)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{s.name}</Text>
-                      <Text style={{ fontSize: 11, color: names ? MUTED : '#9CA3AF' }} numberOfLines={1}>{names || 'No approvers'}</Text>
+                      <Text style={{ fontSize: 11, color: names ? MUTED : '#9A9EA5' }} numberOfLines={1}>{names || 'No approvers'}</Text>
                     </View>
                     <Ionicons name={exp ? 'chevron-up' : 'chevron-down'} size={18} color={MUTED} />
                   </TouchableOpacity>
@@ -208,9 +208,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
           </View>
         )}
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, height: 40, marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceAlt, borderRadius: 14, paddingHorizontal: 12, height: 40, marginBottom: 12 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
-          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email, investor no.…" placeholderTextColor="#666666"
+          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email, investor no.…" placeholderTextColor="#55585E"
             style={{ flex: 1, marginLeft: 8, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {searchText ? <TouchableOpacity onPress={() => setSearchText('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
@@ -237,7 +237,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{inv.name}</Text>
                     {inv.revision_no > 0 && (
-                      <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: isRenewal ? '#FEF3C7' : '#F3E8FF' }}>
+                      <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: isRenewal ? '#FFF3E0' : '#E6F2FF' }}>
                         <Text style={{ fontSize: 10, fontWeight: '800', color: accent }}>{isRenewal ? 'RENEW' : `R${inv.revision_no}`}</Text>
                       </View>
                     )}
@@ -246,7 +246,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   {isRevision && <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>Proposed: {revisionSummary(inv)}</Text>}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#0D47A1' }}>{fmtMoney(inv.amount_invested)}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#245A96' }}>{fmtMoney(inv.amount_invested)}</Text>
                   <View style={{ marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, backgroundColor: ac.bg }}>
                     <Text style={{ fontSize: 10, fontWeight: '800', color: ac.fg, textTransform: 'uppercase' }}>{inv.approval_status}</Text>
                   </View>
@@ -254,7 +254,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                 {isRevision
-                  ? (!!inv.pending_loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, { backgroundColor: isRenewal ? '#FEF3C7' : '#F3E8FF' }]}><Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}>📄 {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)
+                  ? (!!inv.pending_loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, { backgroundColor: isRenewal ? '#FFF3E0' : '#E6F2FF' }]}><Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}>📄 {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)
                   : (!!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: COLORS.link, fontWeight: '700', fontSize: 13 }}>📄 Signed LOI</Text></TouchableOpacity>)}
                 {inv.approval_status === 'pending' && (
                   canApprove(inv) ? (

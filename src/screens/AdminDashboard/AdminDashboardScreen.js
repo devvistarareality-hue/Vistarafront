@@ -22,7 +22,7 @@ const ADMIN_MODULES = [
   { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Execution', name: 'Execution' } },
   { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'ModuleHome',  params: { module: 'Purchase', name: 'Purchase' } },
   { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'ModuleHome',  params: { module: 'Land', name: 'Land' } },
-  { name: 'Club 1000',          icon: 'trending-up',          color: '#00838F', iconBg: '#80DEEA', screen: 'Club1000Hub', params: undefined },
+  { name: 'Club 1000',          icon: 'trending-up',          color: '#23874A', iconBg: '#A4F5A6', screen: 'Club1000Hub', params: undefined },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
@@ -107,16 +107,16 @@ const s = StyleSheet.create({
   userName:     { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginTop: 3 },
   headerRight:  { alignItems: 'flex-end', gap: 10 },
 
-  adminBadge:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(249,168,37,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(249,168,37,0.35)' },
+  adminBadge:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(217,138,31,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(217,138,31,0.35)' },
   adminBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.warningAlt },
-  logoutBtn:      { padding: 8, borderRadius: 10, backgroundColor: COLORS.surfaceAlt },
+  logoutBtn:      { padding: 8, borderRadius: 14, backgroundColor: COLORS.surfaceAlt },
 
   scrollContent: { padding: 20, paddingBottom: 40 },
   sectionTitle:  { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8, marginBottom: 16 },
 
   grid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  card:      { width: '47%', backgroundColor: COLORS.cardBg, borderRadius: 16, padding: 16, ...CARD_SHADOW },
-  iconBg:    { width: 50, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  card:      { width: '47%', backgroundColor: COLORS.cardBg, borderRadius: 20, padding: 16, ...CARD_SHADOW },
+  iconBg:    { width: 50, height: 50, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   cardName:  { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 10, lineHeight: 20 },
   cardArrow: { fontSize: 12, fontWeight: '700' },
 });

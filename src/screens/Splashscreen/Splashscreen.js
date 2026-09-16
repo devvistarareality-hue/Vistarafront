@@ -102,31 +102,31 @@ const s = StyleSheet.create({
   blobTop: {
     position: 'absolute', top: -80, right: -60,
     width: 260, height: 260, borderRadius: 130,
-    backgroundColor: 'rgba(255,107,43,0.06)',
+    backgroundColor: 'rgba(162,210,255,0.06)',
   },
   blobBottom: {
     position: 'absolute', bottom: -60, left: -80,
     width: 240, height: 240, borderRadius: 120,
-    backgroundColor: 'rgba(41,98,255,0.07)',
+    backgroundColor: 'rgba(47,109,181,0.07)',
   },
 
   ring3: {
     width: 168, height: 168, borderRadius: 84,
-    backgroundColor: 'rgba(255,107,43,0.06)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.15)',
+    backgroundColor: 'rgba(162,210,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.15)',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 32,
   },
   ring2: {
     width: 134, height: 134, borderRadius: 67,
-    backgroundColor: 'rgba(255,107,43,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.28)',
+    backgroundColor: 'rgba(162,210,255,0.08)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.28)',
     justifyContent: 'center', alignItems: 'center',
   },
   ring1: {
     width: 104, height: 104, borderRadius: 52,
-    backgroundColor: 'rgba(255,107,43,0.10)',
-    borderWidth: 1.5, borderColor: 'rgba(255,107,43,0.55)',
+    backgroundColor: 'rgba(162,210,255,0.10)',
+    borderWidth: 1.5, borderColor: 'rgba(162,210,255,0.55)',
     justifyContent: 'center', alignItems: 'center',
   },
   logoCircle: {
@@ -142,7 +142,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     marginBottom: 18, width: 160,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,107,43,0.35)' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(162,210,255,0.35)' },
   dividerDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: ORANGE, marginHorizontal: 8 },
 
   brandName: {

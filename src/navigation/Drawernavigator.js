@@ -101,8 +101,8 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   drawerLogo: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: 'rgba(175,210,250,0.12)',
+    width: 44, height: 44, borderRadius: 18,
+    backgroundColor: 'rgba(162,210,255,0.12)',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 12,
   },

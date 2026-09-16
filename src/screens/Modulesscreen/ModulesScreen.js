@@ -107,15 +107,15 @@ const ModulesScreen = () => {
         {/* ── Module Manager Banner ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
           <View style={{
-            backgroundColor: COLORS.navy, borderRadius: 18, padding: 18,
+            backgroundColor: COLORS.navy, borderRadius: 28, padding: 18,
             flexDirection: 'row', alignItems: 'center',
           }}>
             <View style={{
-              width: 48, height: 48, borderRadius: 14,
-              backgroundColor: 'rgba(175,210,250,0.18)',
+              width: 48, height: 48, borderRadius: 18,
+              backgroundColor: 'rgba(162,210,255,0.18)',
               justifyContent: 'center', alignItems: 'center', marginRight: 14,
             }}>
-              <Ionicons name="grid" size={24} color={COLORS.white} />
+              <Ionicons name="grid" size={24} color={COLORS.blue} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white, marginBottom: 3 }}>
@@ -126,11 +126,11 @@ const ModulesScreen = () => {
               </Text>
             </View>
             <View style={{
-              backgroundColor: COLORS.gold, borderRadius: 8,
+              backgroundColor: COLORS.peach, borderRadius: 999,
               paddingHorizontal: 10, paddingVertical: 5,
             }}>
               <Text style={{
-                color: COLORS.white, fontSize: 10, fontWeight: '800',
+                color: COLORS.ink, fontSize: 10, fontWeight: '800',
                 textTransform: 'uppercase', letterSpacing: 0.8,
               }}>SOON</Text>
             </View>
@@ -166,7 +166,7 @@ const ModulesScreen = () => {
                   style={{
                     width: '47%',
                     backgroundColor: COLORS.cardBg,
-                    borderRadius: 18,
+                    borderRadius: 24,
                     padding: 16,
                     ...CARD_SHADOW,
                   }}
@@ -174,7 +174,7 @@ const ModulesScreen = () => {
                   onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}
                 >
                   <View style={{
-                    width: 48, height: 48, borderRadius: 14,
+                    width: 48, height: 48, borderRadius: 18,
                     backgroundColor: accent.bg,
                     justifyContent: 'center', alignItems: 'center', marginBottom: 12,
                   }}>

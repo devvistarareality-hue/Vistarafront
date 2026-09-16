@@ -13,9 +13,9 @@ const val = (v) => (v === '' || v == null) ? '—' : String(v);
 
 // One label:value row inside the Details panel.
 const DRow = ({ l, v }) => (
-  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-    <Text style={{ fontSize: 11, color: '#8492A6', fontWeight: '600', flexShrink: 1 }}>{l}</Text>
-    <Text style={{ fontSize: 12, color: '#1A1A2E', fontWeight: '700', textAlign: 'right' }}>{v}</Text>
+  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#F4F5F7' }}>
+    <Text style={{ fontSize: 11, color: '#6E7278', fontWeight: '600', flexShrink: 1 }}>{l}</Text>
+    <Text style={{ fontSize: 12, color: '#1D1D1F', fontWeight: '700', textAlign: 'right' }}>{v}</Text>
   </View>
 );
 // Due dates are stored yyyy-mm-dd; show them as dd-mm-yyyy for the accounts view.
@@ -23,13 +23,13 @@ const fmtDate = (d) => {
   const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(d || ''));
   return m ? `${m[3].padStart(2, '0')}-${m[2].padStart(2, '0')}-${m[1]}` : (d || '—');
 };
-export default function BookingDetails({ b, accent = '#0D9488' }) {
+export default function BookingDetails({ b, accent = '#23874A' }) {
   const rawInsts = Array.isArray(b.installments) ? b.installments : [];
   // Sort the payment schedule by due date ascending (yyyy-mm-dd sorts chronologically).
   const insts = [...rawInsts].sort((a, x) => String(a.date || '').localeCompare(String(x.date || '')));
   const Head = ({ t }) => <Text style={{ fontSize: 10, fontWeight: '800', color: accent, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 10, marginBottom: 4 }}>{t}</Text>;
   return (
-    <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', borderStyle: 'dashed' }}>
+    <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#C9CDD2', borderStyle: 'dashed' }}>
       <Head t="Client & Property" />
       <DRow l="Client" v={val(b.client_name)} />
       <DRow l="Phone" v={val(b.phone)} />

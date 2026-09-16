@@ -11,7 +11,7 @@ export default StyleSheet.create({
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
   /* Search */
-  searchWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 14, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 2 },
+  searchWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 14, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 2 },
   searchIcon:  { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
@@ -30,7 +30,7 @@ export default StyleSheet.create({
   listContent: { paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 },
 
   /* Card */
-  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 },
+  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginBottom: 10, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 },
   avatar:      { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText:  { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardInfo:    { flex: 1 },

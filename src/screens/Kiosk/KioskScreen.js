@@ -11,15 +11,15 @@ import { stripPlotPrefix } from '../../lib/plotNumber';
 // Client-facing full-screen Kiosk self-booking (mirrors the web /kiosk flow).
 // Kiosk-role device is logged in; walk-in client self-serves:
 //   project (kiosk-enabled) -> plot(s) on interactive map (or EOI if no plots) -> booking form.
-const NAVY = '#182350', BLUE = '#3D5AFE', BLUEBG = '#E8EEFF', MUTED = '#8492A6', GREEN = '#16A34A';
+const NAVY = '#1D1D1F', BLUE = '#2F6DB5', BLUEBG = '#E6F2FF', MUTED = '#6E7278', GREEN = '#23874A';
 const STEPS = [{ key: 'project', label: 'Project' }, { key: 'select', label: 'Unit' }, { key: 'details', label: 'Details' }];
 // Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
 const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
 
 const KSTATUS = {
-  available: { label: 'Available', dot: '#16A34A', bg: '#DCFCE7' },
-  hold:      { label: 'On Hold',   dot: '#F59E0B', bg: '#FEF3C7' },
-  sold:      { label: 'Sold',      dot: '#EF4444', bg: '#FEE2E2' },
+  available: { label: 'Available', dot: '#23874A', bg: '#E9FBEA' },
+  hold:      { label: 'On Hold',   dot: '#D98A1F', bg: '#FFF3E0' },
+  sold:      { label: 'Sold',      dot: '#D9434B', bg: '#FDECEC' },
 };
 const isImageUrl = (u) => !!u && /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i.test(u);
 // Visual centre of a zone. Uses the polygon's area centroid (shoelace), not the average
@@ -258,7 +258,7 @@ export default function KioskScreen({ navigation }) {
                         return (
                           <TouchableOpacity key={`b${i}`} onPress={() => { setBlockIdx(i); setFloorIdx(0); }}
                             style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
-                              borderColor: on ? BLUE : '#E1E6F1', backgroundColor: on ? BLUEBG : '#fff' }}>
+                              borderColor: on ? BLUE : '#DFE2E6', backgroundColor: on ? BLUEBG : '#fff' }}>
                             <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{b || '—'}</Text>
                           </TouchableOpacity>
                         );
@@ -271,7 +271,7 @@ export default function KioskScreen({ navigation }) {
                       return (
                         <TouchableOpacity key={i} onPress={() => setFloorIdx(i)}
                           style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5,
-                            borderColor: on ? BLUE : '#E1E6F1', backgroundColor: on ? BLUEBG : '#fff' }}>
+                            borderColor: on ? BLUE : '#DFE2E6', backgroundColor: on ? BLUEBG : '#fff' }}>
                           <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>
                             {f.label || `Floor ${f.floor}`} · {n}
                           </Text>
@@ -305,8 +305,8 @@ export default function KioskScreen({ navigation }) {
                       const { cx, cy } = zoneCenter(zone);
                       const label = stripPlotPrefix(zone.plotNumber);
                       const press = () => togglePlot(pl);
-                      const fillC = isSel ? '#3D5AFE' : cfg.dot + '99';
-                      const strokeC = isSel ? '#1A237E' : cfg.dot;
+                      const fillC = isSel ? '#2F6DB5' : cfg.dot + '99';
+                      const strokeC = isSel ? '#1D1D1F' : cfg.dot;
                       const sw = isSel ? '0.9' : '0.5';
                       return (
                         <React.Fragment key={zone.id}>
@@ -330,10 +330,10 @@ export default function KioskScreen({ navigation }) {
                       {/* size already carries its own unit (e.g. "84 sqyrd") — don't append another */}
                       {!!pl.size && <Text style={s.chipS}>{pl.size}</Text>}
                       {/* Facing and terrace both move the price, so surface them here. */}
-                      {!!pl.facing && <Text style={[s.chipS, { color: '#2563EB' }]}>{FACING_LABEL[pl.facing] || pl.facing}</Text>}
-                      {!!(pl.terrace_area || '').trim() && <Text style={[s.chipS, { color: '#059669' }]}>Terrace {pl.terrace_area} sq.yd</Text>}
+                      {!!pl.facing && <Text style={[s.chipS, { color: '#2F6DB5' }]}>{FACING_LABEL[pl.facing] || pl.facing}</Text>}
+                      {!!(pl.terrace_area || '').trim() && <Text style={[s.chipS, { color: '#23874A' }]}>Terrace {pl.terrace_area} sq.yd</Text>}
                       {/* Who is on a taken unit — saves the visitor asking. */}
-                      {!!pl.agent_name && <Text style={[s.chipS, { color: '#475569' }]}>{pl.status === 'hold' ? 'On hold by' : 'Sold by'} {pl.agent_name}</Text>}
+                      {!!pl.agent_name && <Text style={[s.chipS, { color: '#3A3C40' }]}>{pl.status === 'hold' ? 'On hold by' : 'Sold by'} {pl.agent_name}</Text>}
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -367,20 +367,20 @@ export default function KioskScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F7FF' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#EDEFF5' },
-  logo: { width: 42, height: 42, borderRadius: 12, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: '#F3F9FF' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ECEEF0' },
+  logo: { width: 42, height: 42, borderRadius: 16, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
   brand: { fontSize: 17, fontWeight: '800', color: NAVY },
   brandSub: { fontSize: 11, color: MUTED },
-  dot: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#E4E8F2', alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 24, height: 24, borderRadius: 16, backgroundColor: '#ECEEF0', alignItems: 'center', justifyContent: 'center' },
   dotActive: { backgroundColor: BLUE }, dotDone: { backgroundColor: GREEN },
-  dotTxt: { fontSize: 11, fontWeight: '800', color: '#9AA4B8' },
-  stepBar: { width: 18, height: 2, backgroundColor: '#E1E6F1', marginHorizontal: 6 },
-  signout: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA' },
-  signoutT: { fontSize: 13, fontWeight: '700', color: '#DC2626' },
+  dotTxt: { fontSize: 11, fontWeight: '800', color: '#9A9EA5' },
+  stepBar: { width: 18, height: 2, backgroundColor: '#DFE2E6', marginHorizontal: 6 },
+  signout: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: '#FDECEC', borderWidth: 1.5, borderColor: '#F7C3C6' },
+  signoutT: { fontSize: 13, fontWeight: '700', color: '#D9434B' },
 
   hero: { fontSize: 30, fontWeight: '800', color: NAVY, letterSpacing: -0.5 },
-  heroSub: { fontSize: 15, color: '#6B7391', marginTop: 4, marginBottom: 20 },
+  heroSub: { fontSize: 15, color: '#55585E', marginTop: 4, marginBottom: 20 },
   h1: { fontSize: 22, fontWeight: '800', color: NAVY, marginBottom: 12, marginTop: 6 },
 
   card: { backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 18, shadowColor: NAVY, shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
@@ -388,41 +388,41 @@ const s = StyleSheet.create({
   cardTitle: { fontSize: 20, fontWeight: '800', color: NAVY },
   cardLoc: { fontSize: 13, color: MUTED, marginTop: 3 },
   tag: { fontSize: 12, fontWeight: '700', color: BLUE, backgroundColor: BLUEBG, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, overflow: 'hidden' },
-  tagGhost: { color: '#64748B', backgroundColor: '#F1F4FA' },
+  tagGhost: { color: '#55585E', backgroundColor: '#F4F5F7' },
   cardCta: { fontSize: 14, fontWeight: '800', color: BLUE, marginTop: 12 },
 
-  back: { color: '#6B7391', fontSize: 14, fontWeight: '700', marginBottom: 4 },
-  master: { width: '100%', height: 220, backgroundColor: '#F5F7FC', borderRadius: 14, marginBottom: 18 },
-  mapWrap: { width: '100%', borderRadius: 14, overflow: 'hidden', backgroundColor: '#F5F7FC', borderWidth: 1, borderColor: '#E6EBF4' },
-  statCard: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  back: { color: '#55585E', fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  master: { width: '100%', height: 220, backgroundColor: '#F4F5F7', borderRadius: 18, marginBottom: 18 },
+  mapWrap: { width: '100%', borderRadius: 18, overflow: 'hidden', backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#ECEEF0' },
+  statCard: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10 },
   statN: { fontSize: 18, fontWeight: '800', color: NAVY },
-  statL: { fontSize: 11, fontWeight: '600', color: '#6B7391' },
-  note: { fontSize: 15, color: '#4B5468', lineHeight: 22, marginBottom: 14 },
+  statL: { fontSize: 11, fontWeight: '600', color: '#55585E' },
+  note: { fontSize: 15, color: '#3A3C40', lineHeight: 22, marginBottom: 14 },
   label: { fontSize: 12, fontWeight: '800', letterSpacing: 0.4, color: MUTED, marginTop: 16, marginBottom: 8 },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  chip: { minWidth: 92, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5, borderColor: '#E1E6F1', backgroundColor: '#fff' },
+  chip: { minWidth: 92, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 18, borderWidth: 1.5, borderColor: '#DFE2E6', backgroundColor: '#fff' },
   chipOn: { borderColor: BLUE, backgroundColor: BLUEBG },
-  chipT: { fontSize: 15, fontWeight: '800', color: '#374151' },
-  chipS: { fontSize: 11, color: '#6B7280', marginTop: 2 },
-  plot: { minWidth: 88, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5, borderColor: '#E1E6F1', backgroundColor: '#fff' },
-  plotNo: { fontSize: 16, fontWeight: '800', color: '#374151' },
+  chipT: { fontSize: 15, fontWeight: '800', color: '#3A3C40' },
+  chipS: { fontSize: 11, color: '#55585E', marginTop: 2 },
+  plot: { minWidth: 88, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 18, borderWidth: 1.5, borderColor: '#DFE2E6', backgroundColor: '#fff' },
+  plotNo: { fontSize: 16, fontWeight: '800', color: '#3A3C40' },
 
-  stepper: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 1.5, borderColor: '#E1E6F1', borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff' },
-  stepBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F6F8FD' },
+  stepper: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 1.5, borderColor: '#DFE2E6', borderRadius: 16, overflow: 'hidden', backgroundColor: '#fff' },
+  stepBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F4F5F7' },
   stepBtnT: { fontSize: 22, fontWeight: '700', color: BLUE },
   stepInput: { width: 72, height: 50, textAlign: 'center', fontSize: 17, fontWeight: '700', color: NAVY },
-  summary: { marginTop: 14, fontSize: 15, color: '#4B5468' },
+  summary: { marginTop: 14, fontSize: 15, color: '#3A3C40' },
 
-  input: { height: 52, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#D9DEEA', fontSize: 16, backgroundColor: '#fff', color: NAVY },
-  primary: { height: 54, borderRadius: 14, backgroundColor: BLUE, alignItems: 'center', justifyContent: 'center', marginTop: 26 },
+  input: { height: 52, paddingHorizontal: 14, borderRadius: 16, borderWidth: 1.5, borderColor: '#DFE2E6', fontSize: 16, backgroundColor: '#fff', color: NAVY },
+  primary: { height: 54, borderRadius: 18, backgroundColor: BLUE, alignItems: 'center', justifyContent: 'center', marginTop: 26 },
   primaryT: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  fine: { fontSize: 12, color: '#9AA4B8', marginTop: 12, textAlign: 'center' },
-  err: { marginTop: 14, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 10, padding: 12, fontSize: 14, color: '#DC2626' },
+  fine: { fontSize: 12, color: '#9A9EA5', marginTop: 12, textAlign: 'center' },
+  err: { marginTop: 14, backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F7C3C6', borderRadius: 14, padding: 12, fontSize: 14, color: '#D9434B' },
 
-  check: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  doneMsg: { fontSize: 16, color: '#3B4256', textAlign: 'center', marginTop: 8 },
-  empty: { backgroundColor: '#fff', borderRadius: 16, padding: 30, textAlign: 'center', color: '#6B7391', fontSize: 15, marginTop: 10 },
+  check: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#E9FBEA', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  doneMsg: { fontSize: 16, color: '#3A3C40', textAlign: 'center', marginTop: 8 },
+  empty: { backgroundColor: '#fff', borderRadius: 20, padding: 30, textAlign: 'center', color: '#55585E', fontSize: 15, marginTop: 10 },
   exit: { position: 'absolute', bottom: 10, right: 14 },
-  exitT: { fontSize: 11, color: '#AEB6C7' },
+  exitT: { fontSize: 11, color: '#9A9EA5' },
 });

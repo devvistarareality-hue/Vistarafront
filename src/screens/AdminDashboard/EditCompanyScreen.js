@@ -218,7 +218,7 @@ const warnStyle = {
     flexDirection:   'row',
     alignItems:      'flex-start',
     backgroundColor: COLORS.warningBg,
-    borderRadius:    10,
+    borderRadius: 14,
     padding:         12,
     marginTop:       20,
     marginBottom:    4,

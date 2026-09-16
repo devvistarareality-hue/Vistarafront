@@ -238,7 +238,7 @@ const LoginScreen = () => {
 
                 {!!error && (
                   <View style={s.errorBox}>
-                    <Ionicons name="alert-circle-outline" size={15} color="#DC2626" style={{ marginRight: 6 }} />
+                    <Ionicons name="alert-circle-outline" size={15} color="#D9434B" style={{ marginRight: 6 }} />
                     <Text style={s.errorText}>{error}</Text>
                   </View>
                 )}
@@ -247,7 +247,7 @@ const LoginScreen = () => {
                   onPress={handleVerifyOtp}
                   activeOpacity={0.85}
                   disabled={!canSubmit}
-                  style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
+                  style={{ borderRadius: 20, overflow: 'hidden', marginTop: 4 }}
                 >
                   <LinearGradient
                     colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
@@ -290,7 +290,7 @@ const LoginScreen = () => {
 
                 {!!error && (
                   <View style={s.errorBox}>
-                    <Ionicons name="alert-circle-outline" size={15} color="#DC2626" style={{ marginRight: 6 }} />
+                    <Ionicons name="alert-circle-outline" size={15} color="#D9434B" style={{ marginRight: 6 }} />
                     <Text style={s.errorText}>{error}</Text>
                   </View>
                 )}
@@ -333,7 +333,7 @@ const LoginScreen = () => {
                   onPress={handleLogin}
                   activeOpacity={0.85}
                   disabled={!canSubmit}
-                  style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
+                  style={{ borderRadius: 20, overflow: 'hidden', marginTop: 4 }}
                 >
                   <LinearGradient
                     colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
@@ -379,12 +379,12 @@ const s = StyleSheet.create({
   blobTopRight: {
     position: 'absolute', top: -60, right: -60,
     width: 220, height: 220, borderRadius: 110,
-    backgroundColor: 'rgba(255,107,43,0.06)',
+    backgroundColor: 'rgba(162,210,255,0.06)',
   },
   blobBottomLeft: {
     position: 'absolute', bottom: 200, left: -80,
     width: 200, height: 200, borderRadius: 100,
-    backgroundColor: 'rgba(41,98,255,0.06)',
+    backgroundColor: 'rgba(47,109,181,0.06)',
   },
 
   header: {
@@ -396,21 +396,21 @@ const s = StyleSheet.create({
 
   ring3: {
     width: 148, height: 148, borderRadius: 74,
-    backgroundColor: 'rgba(255,107,43,0.06)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.15)',
+    backgroundColor: 'rgba(162,210,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.15)',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 28,
   },
   ring2: {
     width: 118, height: 118, borderRadius: 59,
-    backgroundColor: 'rgba(255,107,43,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.28)',
+    backgroundColor: 'rgba(162,210,255,0.08)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.28)',
     justifyContent: 'center', alignItems: 'center',
   },
   ring1: {
     width: 92, height: 92, borderRadius: 46,
-    backgroundColor: 'rgba(255,107,43,0.10)',
-    borderWidth: 1.5, borderColor: 'rgba(255,107,43,0.55)',
+    backgroundColor: 'rgba(162,210,255,0.10)',
+    borderWidth: 1.5, borderColor: 'rgba(162,210,255,0.55)',
     justifyContent: 'center', alignItems: 'center',
   },
   logoCircle: {
@@ -426,7 +426,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     marginBottom: 16, width: 160,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,107,43,0.35)' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(162,210,255,0.35)' },
   dividerDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: ORANGE, marginHorizontal: 8 },
 
   brandName: { fontSize: 34, fontWeight: '800', color: COLORS.white, letterSpacing: 1, marginBottom: 6 },
@@ -457,7 +457,7 @@ const s = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 16,
+    backgroundColor: COLORS.white, borderRadius: 20,
     paddingHorizontal: 16, height: 56, marginBottom: 22,
     borderWidth: 1.5, borderColor: COLORS.border,
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
@@ -466,17 +466,17 @@ const s = StyleSheet.create({
   input: { flex: 1, fontSize: 15, color: COLORS.navyDark, fontWeight: '600' },
 
   btn: {
-    height: 56, borderRadius: 16,
+    height: 56, borderRadius: 20,
     justifyContent: 'center', alignItems: 'center',
   },
   btnText: { color: COLORS.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
 
   errorBox: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA',
-    borderRadius: 12, padding: 12, marginBottom: 16,
+    backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F7C3C6',
+    borderRadius: 16, padding: 12, marginBottom: 16,
   },
-  errorText: { fontSize: 13, color: '#DC2626', flex: 1 },
+  errorText: { fontSize: 13, color: '#D9434B', flex: 1 },
 
   resendTimer: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
   resendLink:  { fontSize: 13, color: COLORS.navy, fontWeight: '700', textDecorationLine: 'underline' },

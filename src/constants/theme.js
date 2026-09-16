@@ -17,69 +17,76 @@
  *  1. PALETTE  —  raw color scales (don't use directly in UI)    *
  * ============================================================== */
 export const PALETTE = {
-  // Brand — Navy (primary)
-  navy900: '#0F1838',
-  navy800: '#182350', // legacy "navy"
-  navy700: '#243264',
-  navy600: '#33457F',
-  navy500: '#475A96',
-  navy300: '#8C9AC0',
-  navy100: '#DDE3F0',
-  navy50:  '#EEF1F7',
+  // Core palette (shared with the web + Labour ledger design)
+  blue:        '#A2D2FF',
+  green:       '#A4F5A6',
+  peach:       '#FFD89D',
+  grey:        '#ECEEF0',
+  ink:         '#1D1D1F',
 
-  // Brand — Gold (secondary)
-  gold700: '#9A7644',
-  gold600: '#B9915E', // legacy "gold"
-  gold400: '#D4B483',
-  gold100: '#F5ECDD',
-  gold50:  '#FBF6EE',
+  // Brand — "navy" is now ink; the scale steps up towards grey
+  navy900: '#1D1D1F',
+  navy800: '#1D1D1F', // legacy "navy"
+  navy700: '#2C2D30',
+  navy600: '#3A3C40',
+  navy500: '#55585E',
+  navy300: '#9A9EA5',
+  navy100: '#DFE2E6',
+  navy50:  '#ECEEF0',
+
+  // Brand — Gold (secondary) → peach
+  gold700: '#A3671A',
+  gold600: '#C98A2E', // legacy "gold"
+  gold400: '#FFD89D',
+  gold100: '#FFF3E0',
+  gold50:  '#FFF8EC',
 
   // Interactive — Blue
-  blue600: '#2E47E0',
-  blue500: '#3D5AFE', // legacy "link"
-  blue100: '#E8EEFF',
-  blue50:  '#F2F5FF',
-  powderBlue: '#AFD2FA',
+  blue600: '#245A96',
+  blue500: '#2F6DB5', // legacy "link"
+  blue100: '#E6F2FF',
+  blue50:  '#F3F9FF',
+  powderBlue: '#A2D2FF',
 
   // Neutrals / Gray
-  gray900: '#1A1A2E', // text primary
-  gray700: '#3A4256',
-  gray500: '#8492A6', // text secondary
-  gray400: '#B0BAC9',
-  gray300: '#DDE3F0',
-  gray200: '#E0E6F0',
-  gray100: '#EEF1F7',
-  gray50:  '#F5F6FA', // screen bg
+  gray900: '#1D1D1F', // text primary
+  gray700: '#3A3C40',
+  gray500: '#6E7278', // text secondary
+  gray400: '#9A9EA5',
+  gray300: '#DFE2E6',
+  gray200: '#E3E5E8',
+  gray100: '#ECEEF0',
+  gray50:  '#EEF3F5', // screen bg — soft blue/green tint
   white:   '#FFFFFF',
   black:   '#000000',
 
   // Status — Success (green)
-  green600: '#2E7D32',
-  green500: '#43A047',
-  green100: '#E8F5E9',
+  green600: '#23874A',
+  green500: '#34A45D',
+  green100: '#E9FBEA',
 
   // Status — Error (red)
-  red600: '#DC2626',
-  red500: '#EF4444',
-  red100: '#FEE2E2',
+  red600: '#B8323A',
+  red500: '#D9434B',
+  red100: '#FDECEC',
 
-  // Status — Warning (amber/orange)
-  amber600: '#E65100',
-  amber500: '#F9A825',
+  // Status — Warning (peach)
+  amber600: '#A3671A',
+  amber500: '#D98A1F',
   amber100: '#FFF3E0',
 
-  // Status — Info (cyan/blue, reuses blue scale)
-  info600: '#0097A7',
-  info100: '#E0F7FA',
+  // Status — Info (blue)
+  info600: '#2F6DB5',
+  info100: '#E6F2FF',
 
-  // Accent — Purple (used by some modules)
-  purple600: '#7B1FA2',
-  purple100: '#F3E5F5',
+  // Accent — was purple; a deeper blue keeps it distinct from links
+  purple600: '#245A96',
+  purple100: '#DCEBFA',
 
   // Status — In progress (neutral grey; distinct from success/error/warning)
-  slate600: '#475569',
-  slate400: '#94A3B8',
-  slate100: '#F1F5F9',
+  slate600: '#55585E',
+  slate400: '#9A9EA5',
+  slate100: '#ECEEF0',
 };
 
 /* ============================================================== *
@@ -91,7 +98,7 @@ export const COLORS = {
   surface:   PALETTE.white,   // cards, sheets
   surfaceAlt: PALETTE.gray100, // subtle raised areas, inputs
   cardBg:    PALETTE.white,
-  overlay:   'rgba(15,24,56,0.45)', // modal scrim (navy900 based)
+  overlay:   'rgba(29,29,31,0.45)', // modal scrim (navy900 based)
 
   // Text
   textPrimary:   PALETTE.gray900,
@@ -116,7 +123,15 @@ export const COLORS = {
   goldBg:      PALETTE.gold100,
   powderBlue:  PALETTE.powderBlue,
   black:       PALETTE.black,
-  shadow:      '#B8C4D6', // soft shadow tint used app-wide
+  shadow:      '#8C94A0', // soft shadow tint used app-wide
+
+  // Palette shortcuts
+  blue:        PALETTE.blue,
+  green:       PALETTE.green,
+  peach:       PALETTE.peach,
+  grey:        PALETTE.grey,
+  ink:         PALETTE.ink,
+  primaryButton: PALETTE.ink,
 
   // Interactive
   link:        PALETTE.blue500,
@@ -173,9 +188,9 @@ export const SPACING = {
  * ============================================================== */
 export const RADIUS = {
   sm:   8,
-  md:   12,
-  lg:   16,
-  xl:   20,
+  md:   14,
+  lg:   20,
+  xl:   28,
   pill: 999,
   full: 9999,
 };
@@ -232,10 +247,10 @@ export const SHADOWS = {
     elevation: 2,
   },
   md: {
-    shadowColor: '#B8C4D6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.20,
-    shadowRadius: 12,
+    shadowColor: '#3C5A82',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 4,
   },
   lg: {
@@ -254,22 +269,22 @@ export const CARD_SHADOW = SHADOWS.md;
  *  7. MODULE ACCENTS  —  per-module tint + icon color           *
  * ============================================================== */
 export const MODULE_ACCENT = {
-  HR:          { bg: PALETTE.blue100,  icon: PALETTE.blue500 },
-  Sales:       { bg: PALETTE.gold100,  icon: PALETTE.amber500 },
-  Execution:   { bg: PALETTE.green100, icon: PALETTE.green600 },
-  Purchase:    { bg: PALETTE.amber100, icon: PALETTE.amber600 },
-  Land:        { bg: PALETTE.purple100,icon: PALETTE.purple600 },
-  'Accounts & Finance': { bg: PALETTE.green100, icon: PALETTE.green600 },
-  'Club 1000': { bg: '#80DEEA', icon: '#00838F' },
-  Reports:     { bg: PALETTE.green100, icon: PALETTE.green600 },
-  Settings:    { bg: PALETTE.purple100,icon: PALETTE.purple600 },
-  Admin:       { bg: PALETTE.blue100,  icon: PALETTE.blue500 },
-  Projects:    { bg: PALETTE.green100, icon: PALETTE.green600 },
-  Sites:       { bg: PALETTE.info100,  icon: PALETTE.info600 },
-  Contractors: { bg: PALETTE.amber100, icon: PALETTE.amber600 },
-  Inventory:   { bg: PALETTE.gold100,  icon: PALETTE.amber500 },
-  Payments:    { bg: PALETTE.green100, icon: PALETTE.green600 },
-  Clients:     { bg: PALETTE.blue100,  icon: PALETTE.blue500 },
+  HR:          { bg: PALETTE.blue,  icon: PALETTE.blue600 },
+  Sales:       { bg: PALETTE.peach, icon: PALETTE.amber600 },
+  Execution:   { bg: PALETTE.green, icon: PALETTE.green600 },
+  Purchase:    { bg: PALETTE.peach, icon: PALETTE.amber600 },
+  Land:        { bg: PALETTE.blue,  icon: PALETTE.blue600 },
+  'Accounts & Finance': { bg: PALETTE.green, icon: PALETTE.green600 },
+  'Club 1000': { bg: PALETTE.green, icon: PALETTE.green600 },
+  Reports:     { bg: PALETTE.green, icon: PALETTE.green600 },
+  Settings:    { bg: PALETTE.grey,  icon: PALETTE.gray700 },
+  Admin:       { bg: PALETTE.blue,  icon: PALETTE.blue600 },
+  Projects:    { bg: PALETTE.green, icon: PALETTE.green600 },
+  Sites:       { bg: PALETTE.blue,  icon: PALETTE.blue600 },
+  Contractors: { bg: PALETTE.peach, icon: PALETTE.amber600 },
+  Inventory:   { bg: PALETTE.peach, icon: PALETTE.amber600 },
+  Payments:    { bg: PALETTE.green, icon: PALETTE.green600 },
+  Clients:     { bg: PALETTE.blue,  icon: PALETTE.blue600 },
 };
 
 /* ============================================================== *

@@ -14,11 +14,11 @@ const BLUE = COLORS.link;
 const BG   = COLORS.screenBg;
 const TEXT = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
 const TILE  = { flexGrow: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
-                backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt };
+                backgroundColor: COLORS.screenBg, borderRadius: 16, borderWidth: 1, borderColor: COLORS.surfaceAlt };
 
 // How wide each tile is, given how many the group holds. Two and three share the
 // row; four splits 2+2 rather than 3+1, so no tile is ever left alone on a row
@@ -100,7 +100,7 @@ function MiniAreaChart({ data = [], color, gradId, width, showAmount }) {
             <Stop offset="100%" stopColor={color} stopOpacity={0} />
           </LinearGradient>
         </Defs>
-        <Line x1={padL} y1={H - padB} x2={padL + W} y2={H - padB} stroke="#F0F3FA" strokeWidth={1} />
+        <Line x1={padL} y1={H - padB} x2={padL + W} y2={H - padB} stroke="#F4F5F7" strokeWidth={1} />
         <Path d={fillPts} fill={`url(#${gradId})`} />
         <Path d={linePts} stroke={color} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
         {labelIdxs.map(i => (
@@ -112,11 +112,11 @@ function MiniAreaChart({ data = [], color, gradId, width, showAmount }) {
           <>
             <Line x1={activePx} y1={padT} x2={activePx} y2={H - padB} stroke={color} strokeWidth={1} strokeDasharray="3 3" />
             <Circle cx={activePx} cy={activePy} r={5} fill={color} stroke="#fff" strokeWidth={2} />
-            <Rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={6} fill="#1A1A2E" />
-            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 13} fontSize={9} fill="#B0BAD0" textAnchor="middle">{shortDate(active.date)}</SvgText>
+            <Rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={6} fill="#1D1D1F" />
+            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 13} fontSize={9} fill="#A2D2FF" textAnchor="middle">{shortDate(active.date)}</SvgText>
             <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 27} fontSize={13} fontWeight="700" fill="#fff" textAnchor="middle">{active.count}</SvgText>
             {showAmt && (
-              <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 42} fontSize={10} fontWeight="700" fill="#E4B77C" textAnchor="middle">{fmtAmount(active.amount)}</SvgText>
+              <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 42} fontSize={10} fontWeight="700" fill="#F5B453" textAnchor="middle">{fmtAmount(active.amount)}</SvgText>
             )}
           </>
         )}
@@ -425,7 +425,7 @@ export default function SalesReportsScreen({ navigation }) {
                 return (
                   <TouchableOpacity key={key}
                     onPress={() => { setPendingQuarter(prev => sel ? prev.filter(k => k !== key) : [...prev, key]); setPendingFrom(null); setPendingTo(null); setPendingMonths([]); }}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: sel ? COLORS.white : TEXT }}>{label}</Text>
                     <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? COLORS.white + 'CC' : MUTED, marginTop: 2 }}>{sub}</Text>
                   </TouchableOpacity>
@@ -461,11 +461,11 @@ export default function SalesReportsScreen({ navigation }) {
                   style={{ height: 160 }} />
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                   <TouchableOpacity onPress={() => setShowFromPick(false)}
-                    style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => { setShowFromPick(false); if (iosPickerDate) { setPendingFrom(iosPickerDate); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }}
-                    style={{ flex: 1, height: 40, borderRadius: 10, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>Done</Text>
                   </TouchableOpacity>
                 </View>
@@ -479,11 +479,11 @@ export default function SalesReportsScreen({ navigation }) {
                   style={{ height: 160 }} />
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                   <TouchableOpacity onPress={() => setShowToPick(false)}
-                    style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => { setShowToPick(false); if (iosPickerDate) { setPendingTo(iosPickerDate); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }}
-                    style={{ flex: 1, height: 40, borderRadius: 10, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>Done</Text>
                   </TouchableOpacity>
                 </View>
@@ -491,12 +491,12 @@ export default function SalesReportsScreen({ navigation }) {
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
                 <TouchableOpacity onPress={() => { setIosPickerDate(pendingFrom || new Date()); setShowFromPick(true); }}
-                  style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
                 </TouchableOpacity>
                 <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
                 <TouchableOpacity onPress={() => { setIosPickerDate(pendingTo || new Date()); setShowToPick(true); }}
-                  style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
                 </TouchableOpacity>
               </View>
@@ -504,7 +504,7 @@ export default function SalesReportsScreen({ navigation }) {
           </ScrollView>
 
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: NAVY, borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
+            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>

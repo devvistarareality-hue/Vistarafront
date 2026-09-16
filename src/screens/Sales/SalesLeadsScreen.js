@@ -17,9 +17,9 @@ import FormSheet from '../../components/FormSheet';
 import { Field, TextField } from '../../components/Field';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 // Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
-const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.white, marginBottom: 8 };
+const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.white, marginBottom: 8 };
 const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 3, letterSpacing: 0.4 };
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -105,7 +105,7 @@ function PickerDropdown({ items, value, onChange, placeholder = '— Select —'
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)}
-        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: COLORS.white, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: COLORS.white, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <View style={{ flex: 1 }}>
           {selected ? (
             <>
@@ -451,7 +451,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <StatusBadge status={lead.status} outcome={lead.sv_outcome} />
             </View>
             <TouchableOpacity onPress={save} disabled={saving}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 10, opacity: saving ? 0.6 : 1 }}>
+              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 }}>
               {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>{form.stm_status === 'closed' ? 'Record Closure →' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
@@ -478,7 +478,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
                 <View style={half}>
                   <Text style={lblS}>Alt Phone</Text>
-                  <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate" placeholderTextColor="#666666" />
+                  <TextInput value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" style={inpS} placeholder="Add alternate" placeholderTextColor="#55585E" />
                 </View>
               </View>
 
@@ -513,7 +513,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                     }}
                     placeholder="City" title="City" />
                   {cityOther && (
-                    <TextInput value={form.city} onChangeText={v => set('city', v)} style={{ ...inpS, marginTop: 6 }} placeholder="Enter city" placeholderTextColor="#666666" />
+                    <TextInput value={form.city} onChangeText={v => set('city', v)} style={{ ...inpS, marginTop: 6 }} placeholder="Enter city" placeholderTextColor="#55585E" />
                   )}
                 </View>
                 <View style={half}>
@@ -528,7 +528,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <Text style={lblS}>Address</Text>
               <TextInput value={form.address} onChangeText={v => set('address', v)}
                 style={{ ...inpS, height: 60, textAlignVertical: 'top', marginBottom: 8 }} multiline
-                placeholder="Address" placeholderTextColor="#666666" />
+                placeholder="Address" placeholderTextColor="#55585E" />
 
               <Text style={lblS}>Purpose</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2, marginBottom: 10 }}>
@@ -537,7 +537,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   return (
                     <TouchableOpacity key={p.value}
                       onPress={() => set('purpose', on ? (form.purpose || []).filter(x => x !== p.value) : [...(form.purpose || []), p.value])}
-                      style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: on ? BLUE : COLORS.surfaceAlt, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                      style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: on ? BLUE : COLORS.surfaceAlt, backgroundColor: on ? '#F3F9FF' : COLORS.white }}>
                       <Text style={{ fontSize: 13, fontWeight: '600', color: on ? BLUE : MUTED }}>{on ? '✓ ' : ''}{p.label}</Text>
                     </TouchableOpacity>
                   );
@@ -557,7 +557,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                       placeholder="Status" title="Overall Status" />
                   ) : (
                     // Auto-derived from the workflow — read-only for telecallers / STMs.
-                    <View style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.screenBg, marginBottom: 8 }}>
+                    <View style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.screenBg, marginBottom: 8 }}>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, textTransform: 'capitalize' }}>
                         {(STATUSES.find(s => s.key === form.status)?.label) || '—'}
                       </Text>
@@ -588,7 +588,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 <>
                   <View style={divider} />
                   <Text style={secH}>Telecaller (Pre-Sales)</Text>
-                  <View style={{ padding: 12, borderRadius: 10, backgroundColor: COLORS.screenBg, borderWidth: 1, borderColor: COLORS.border, marginTop: 8 }}>
+                  <View style={{ padding: 12, borderRadius: 14, backgroundColor: COLORS.screenBg, borderWidth: 1, borderColor: COLORS.border, marginTop: 8 }}>
                     {lead.telecaller_name && (
                       <Text style={{ fontSize: 12, color: MUTED }}>Telecaller: <Text style={{ color: TEXT, fontWeight: '600' }}>{lead.telecaller_name}</Text>{lead.telecaller_status ? ` · ${lead.telecaller_status.replace(/_/g, ' ')}` : ''}</Text>
                     )}
@@ -624,7 +624,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
               <Text style={lblS}>TC Remarks {_isTelecaller ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
               <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
-                multiline placeholder="Call notes…" placeholderTextColor="#666666"
+                multiline placeholder="Call notes…" placeholderTextColor="#55585E"
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
               </>)}
 
@@ -653,30 +653,30 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
               <Text style={lblS}>{_isCp ? 'CP Remarks' : 'STM Remarks'} {_isStm ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
-                multiline placeholder="Notes…" placeholderTextColor="#666666"
+                multiline placeholder="Notes…" placeholderTextColor="#55585E"
                 style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
 
               {/* Inline site-visit scheduling when STM picks "sv_scheduled" */}
               {form.stm_status === 'sv_scheduled' && (
-                <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 12 }}>
+                <View style={{ backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 16, padding: 12, marginTop: 12 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <Ionicons name="location-outline" size={14} color="#15803D" />
-                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 }}>SCHEDULE SITE VISIT</Text>
+                    <Ionicons name="location-outline" size={14} color="#23874A" />
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#23874A', letterSpacing: 0.5 }}>SCHEDULE SITE VISIT</Text>
                   </View>
-                  <Text style={[lblS, { color: '#166534' }]}>Date & Time *</Text>
+                  <Text style={[lblS, { color: '#23874A' }]}>Date & Time *</Text>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TouchableOpacity onPress={() => setShowSvDate(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                    <TouchableOpacity onPress={() => setShowSvDate(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
                       <Ionicons name="calendar-outline" size={16} color={BLUE} />
                       <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{svAt instanceof Date ? svAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Pick Date'}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setShowSvTime(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                    <TouchableOpacity onPress={() => setShowSvTime(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
                       <Ionicons name="time-outline" size={16} color={BLUE} />
                       <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{svAt instanceof Date ? svAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Pick Time'}</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={[lblS, { color: '#166534', marginTop: 8 }]}>Visit Remarks</Text>
+                  <Text style={[lblS, { color: '#23874A', marginTop: 8 }]}>Visit Remarks</Text>
                   <TextInput value={svRemarks} onChangeText={setSvRemarks} placeholder="Location, notes…" placeholderTextColor={COLORS.shadow} style={inpS} />
-                  {!svAt && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Set a date & time to create a site visit entry automatically on save.</Text>}
+                  {!svAt && <Text style={{ fontSize: 11, color: '#23874A', marginTop: 6 }}>Set a date & time to create a site visit entry automatically on save.</Text>}
 
                   {/* iOS pickers */}
                   {Platform.OS === 'ios' && showSvDate && (
@@ -727,28 +727,28 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   STM Status stays "sv done". Uses STM Remarks above as the visit's
                   remarks — no separate field needed since it's already required. */}
               {form.stm_status === 'sv_done' && (
-                <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 12 }}>
+                <View style={{ backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 16, padding: 12, marginTop: 12 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <Ionicons name="location-outline" size={14} color="#15803D" />
-                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 }}>VISIT OUTCOME</Text>
+                    <Ionicons name="location-outline" size={14} color="#23874A" />
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#23874A', letterSpacing: 0.5 }}>VISIT OUTCOME</Text>
                   </View>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                    {[['hot', 'Hot', '#EF4444'], ['warm', 'Warm', '#F97316'], ['cold', 'Cold', '#3B82F6'], ['not_interested', 'Not Interested', COLORS.textSecondary]].map(([val, label, color]) => {
+                    {[['hot', 'Hot', '#D9434B'], ['warm', 'Warm', '#D98A1F'], ['cold', 'Cold', '#2F6DB5'], ['not_interested', 'Not Interested', COLORS.textSecondary]].map(([val, label, color]) => {
                       const active = svOutcome === val;
                       return (
                         <TouchableOpacity key={val} onPress={() => setSvOutcome(val)}
-                          style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                          style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 14, paddingVertical: 10, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
                           <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
-                  <Text style={[lblS, { color: '#166534', marginTop: 10 }]}>Visit Date *</Text>
-                  <TouchableOpacity onPress={() => setShowSvVisitedDate(true)} style={{ borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                  <Text style={[lblS, { color: '#23874A', marginTop: 10 }]}>Visit Date *</Text>
+                  <TouchableOpacity onPress={() => setShowSvVisitedDate(true)} style={{ borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
                     <Ionicons name="calendar-outline" size={16} color={BLUE} />
                     <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>{svVisitedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
                   </TouchableOpacity>
-                  {!svOutcome && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Pick how the visit went — recorded on the site visit.</Text>}
+                  {!svOutcome && <Text style={{ fontSize: 11, color: '#23874A', marginTop: 6 }}>Pick how the visit went — recorded on the site visit.</Text>}
 
                   {Platform.OS === 'ios' && showSvVisitedDate && (
                     <Modal transparent animationType="slide" onRequestClose={() => setShowSvVisitedDate(false)}>
@@ -775,9 +775,9 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               {/* STM picked "closed" → saving routes into the booking flow with this
                   lead prefilled; the lead becomes CLOSED only when the booking is approved. */}
               {form.stm_status === 'closed' && (
-                <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Ionicons name="checkmark-circle-outline" size={16} color="#15803D" />
-                  <Text style={{ fontSize: 12, color: '#166534', fontWeight: '600', flex: 1 }}>
+                <View style={{ backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 16, padding: 12, marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="checkmark-circle-outline" size={16} color="#23874A" />
+                  <Text style={{ fontSize: 12, color: '#23874A', fontWeight: '600', flex: 1 }}>
                     Saving takes you to the booking flow — pick the plot(s) and record the booking for this lead.
                   </Text>
                 </View>
@@ -786,7 +786,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
               {/* Meta Ads Info */}
               {(lead.meta_campaign_name || lead.meta_adset_name || lead.meta_ad_name) && (
-                <View style={{ marginTop: 8, padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border }}>
+                <View style={{ marginTop: 8, padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border }}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>Meta Ads</Text>
                   {!!lead.meta_campaign_name && <View style={{ flexDirection: 'row', marginBottom: 3 }}><Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, width: 66 }}>CAMPAIGN</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_campaign_name}</Text></View>}
                   {!!lead.meta_adset_name    && <View style={{ flexDirection: 'row', marginBottom: 3 }}><Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, width: 66 }}>AD SET</Text><Text style={{ fontSize: 12, color: TEXT, fontWeight: '600', flex: 1 }}>{lead.meta_adset_name}</Text></View>}
@@ -796,7 +796,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
               {/* Only admins/managers may delete leads — telecallers & STMs cannot. */}
               {canAssign && (
-              <TouchableOpacity onPress={deleteLead} style={{ marginTop: 14, paddingVertical: 11, borderRadius: 12, backgroundColor: COLORS.errorBg, alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.goldLight }}>
+              <TouchableOpacity onPress={deleteLead} style={{ marginTop: 14, paddingVertical: 11, borderRadius: 16, backgroundColor: COLORS.errorBg, alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.goldLight }}>
                 <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>Delete Lead</Text>
               </TouchableOpacity>
               )}
@@ -807,7 +807,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               {/* Lead received event */}
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                 <View style={{ alignItems: 'center' }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.link + '18', alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.link + '18', alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ fontSize: 16 }}>📥</Text>
                   </View>
                   <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />
@@ -840,7 +840,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 return (
                   <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                     <View style={{ alignItems: 'center' }}>
-                      <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
+                      <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={{ fontSize: 16 }}>{icon}</Text>
                       </View>
                       {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}
@@ -882,11 +882,11 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 <Text style={{ fontSize: 13, color: COLORS.textTertiary, textAlign: 'center', marginTop: 8 }}>No follow-ups yet.</Text>
               )}
               {detail?.follow_ups?.map(fu => (
-                <View key={fu.id} style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+                <View key={fu.id} style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 16, padding: 14, marginBottom: 12 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <Text style={{ fontSize: 10, fontWeight: '700', color: fu.role_context === 'stm' ? COLORS.error : COLORS.info, textTransform: 'uppercase' }}>{fu.role_context}</Text>
-                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (FU_STATUS_COLOR[fu.status] || MUTED) + '18' }}>
+                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: (FU_STATUS_COLOR[fu.status] || MUTED) + '18' }}>
                         <Text style={{ fontSize: 10, fontWeight: '700', color: FU_STATUS_COLOR[fu.status] || MUTED }}>{fu.status}</Text>
                       </View>
                     </View>
@@ -920,7 +920,7 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)}
-        style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }, triggerStyle]}>
+        style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }, triggerStyle]}>
         <Text style={{ fontSize: 14, color: selected ? TEXT : MUTED, fontWeight: selected ? '600' : '400' }}>
           {selected ? selected.label : placeholder}
         </Text>
@@ -956,7 +956,7 @@ function FollowUpScheduler({ fuForm, setFuForm, canAssign, hint }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   return (
-      <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 12, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 20 }}>
+      <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 20 }}>
         <Text style={[lblS, { marginBottom: 10 }]}>Schedule Follow-up</Text>
         {/* Role picker only for admins/managers — telecaller/STM portals auto-set their own role */}
         {canAssign && (
@@ -976,7 +976,7 @@ function FollowUpScheduler({ fuForm, setFuForm, canAssign, hint }) {
         {/* Date button */}
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
           <TouchableOpacity onPress={() => setShowDatePicker(true)}
-            style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.screenBg, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.screenBg, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ionicons name="calendar-outline" size={16} color={BLUE} />
             <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>
               {fuForm.scheduled_at instanceof Date
@@ -985,7 +985,7 @@ function FollowUpScheduler({ fuForm, setFuForm, canAssign, hint }) {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowTimePicker(true)}
-            style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.screenBg, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.screenBg, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ionicons name="time-outline" size={16} color={BLUE} />
             <Text style={{ fontSize: 14, color: BLUE, fontWeight: '600' }}>
               {fuForm.scheduled_at instanceof Date
@@ -1081,7 +1081,7 @@ function FollowUpScheduler({ fuForm, setFuForm, canAssign, hint }) {
         )}
         <Text style={lblS}>Remarks</Text>
         <TextInput value={fuForm.remarks} onChangeText={v => setFuForm(f => ({ ...f, remarks: v }))}
-          placeholder="Call notes, instructions…" placeholderTextColor="#666666" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
+          placeholder="Call notes, instructions…" placeholderTextColor="#55585E" multiline style={[inpS, { minHeight: 70, textAlignVertical: 'top' }]} />
         <Text style={{ fontSize: 11, color: MUTED, fontStyle: 'italic' }}>{hint}</Text>
       </View>
   );
@@ -1200,11 +1200,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     <FormSheet visible={visible} onClose={onClose}>
           <View style={{ backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}>
+              <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}>
                 <Ionicons name="close" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity onPress={create} disabled={saving}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 10, opacity: saving ? 0.6 : 1 }}>
+                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 }}>
                 {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Add Lead</Text>}
               </TouchableOpacity>
             </View>
@@ -1218,7 +1218,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <TextField label="Email" value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" autoCapitalize="none" placeholder="name@email.com" />
             <Field label="Lead Received Date">
               <TouchableOpacity onPress={() => setShowLeadDatePicker(true)}
-                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
                 <Ionicons name="calendar-outline" size={16} color={MUTED} />
                 <Text style={{ fontSize: 14, fontWeight: '600', color: form.lead_date ? TEXT : MUTED }}>{form.lead_date || 'Today'}</Text>
                 {!!form.lead_date && (
@@ -1276,7 +1276,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                   return (
                     <TouchableOpacity key={p.value}
                       onPress={() => set('purpose', on ? (form.purpose || []).filter(x => x !== p.value) : [...(form.purpose || []), p.value])}
-                      style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: on ? BLUE : COLORS.surfaceAlt, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
+                      style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: on ? BLUE : COLORS.surfaceAlt, backgroundColor: on ? '#F3F9FF' : COLORS.white }}>
                       <Text style={{ fontSize: 13, fontWeight: '600', color: on ? BLUE : MUTED }}>{on ? '✓ ' : ''}{p.label}</Text>
                     </TouchableOpacity>
                   );
@@ -1352,28 +1352,28 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 {/* A lead added directly at sv_done needs its visit outcome recorded too —
                     same panel as the Lead Detail modal's inline "Visit Outcome". */}
                 {form.stm_status === 'sv_done' && (
-                  <View style={{ backgroundColor: '#ECFDF3', borderWidth: 1, borderColor: '#A6E9C5', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                  <View style={{ backgroundColor: '#F4F5F7', borderWidth: 1, borderColor: '#C9F8CA', borderRadius: 16, padding: 12, marginBottom: 16 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                      <Ionicons name="location-outline" size={14} color="#15803D" />
-                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 }}>VISIT OUTCOME</Text>
+                      <Ionicons name="location-outline" size={14} color="#23874A" />
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#23874A', letterSpacing: 0.5 }}>VISIT OUTCOME</Text>
                     </View>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                      {[['hot', 'Hot', '#EF4444'], ['warm', 'Warm', '#F97316'], ['cold', 'Cold', '#3B82F6'], ['not_interested', 'Not Interested', COLORS.textSecondary]].map(([val, label, color]) => {
+                      {[['hot', 'Hot', '#D9434B'], ['warm', 'Warm', '#D98A1F'], ['cold', 'Cold', '#2F6DB5'], ['not_interested', 'Not Interested', COLORS.textSecondary]].map(([val, label, color]) => {
                         const active = svOutcome === val;
                         return (
                           <TouchableOpacity key={val} onPress={() => setSvOutcome(val)}
-                            style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
+                            style={{ flexBasis: '47%', flexGrow: 1, borderWidth: 1.5, borderColor: color, borderRadius: 14, paddingVertical: 10, alignItems: 'center', backgroundColor: active ? color : COLORS.white }}>
                             <Text style={{ fontSize: 13, fontWeight: '700', color: active ? COLORS.white : color }}>{label}</Text>
                           </TouchableOpacity>
                         );
                       })}
                     </View>
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#166534', marginTop: 10, marginBottom: 6 }}>Visit Date *</Text>
-                    <TouchableOpacity onPress={() => setShowSvVisitedDate(true)} style={{ borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#23874A', marginTop: 10, marginBottom: 6 }}>Visit Date *</Text>
+                    <TouchableOpacity onPress={() => setShowSvVisitedDate(true)} style={{ borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
                       <Ionicons name="calendar-outline" size={16} color={COLORS.link} />
                       <Text style={{ fontSize: 14, color: COLORS.link, fontWeight: '600' }}>{svVisitedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
                     </TouchableOpacity>
-                    {!svOutcome && <Text style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>Pick how the visit went — recorded on the site visit.</Text>}
+                    {!svOutcome && <Text style={{ fontSize: 11, color: '#23874A', marginTop: 6 }}>Pick how the visit went — recorded on the site visit.</Text>}
 
                     {Platform.OS === 'ios' && showSvVisitedDate && (
                       <Modal transparent animationType="slide" onRequestClose={() => setShowSvVisitedDate(false)}>
@@ -1448,7 +1448,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
                 const active = local.date_from === from && local.date_to === to;
                 return (
                   <TouchableOpacity key={label} onPress={() => { set('date_from', active ? '' : from); set('date_to', active ? '' : to); }}
-                    style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: active ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: active ? NAVY : COLORS.border }}>
+                    style={{ flex: 1, paddingVertical: 9, borderRadius: 14, alignItems: 'center', backgroundColor: active ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: active ? NAVY : COLORS.border }}>
                     <Text style={{ fontSize: 12, fontWeight: '700', color: active ? COLORS.white : MUTED }}>{label}</Text>
                   </TouchableOpacity>
                 );
@@ -1458,12 +1458,12 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
             {/* Custom range — pick any From/To, independent of the quick buttons above. */}
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
               <TouchableOpacity onPress={() => setShowFromPicker(true)}
-                style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
                 <Ionicons name="calendar-outline" size={16} color={MUTED} />
                 <Text style={{ fontSize: 13, fontWeight: '600', color: local.date_from ? TEXT : MUTED }}>{local.date_from || 'From'}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setShowToPicker(true)}
-                style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
+                style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white }}>
                 <Ionicons name="calendar-outline" size={16} color={MUTED} />
                 <Text style={{ fontSize: 13, fontWeight: '600', color: local.date_to ? TEXT : MUTED }}>{local.date_to || 'To'}</Text>
               </TouchableOpacity>
@@ -1581,14 +1581,14 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
 
           {/* Duplicates toggle */}
           <TouchableOpacity onPress={() => set('is_duplicate', !local.is_duplicate)}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: local.is_duplicate ? COLORS.errorStrong : COLORS.border, backgroundColor: local.is_duplicate ? COLORS.screenBg : COLORS.white }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 16, borderWidth: 1.5, borderColor: local.is_duplicate ? COLORS.errorStrong : COLORS.border, backgroundColor: local.is_duplicate ? COLORS.screenBg : COLORS.white }}>
             <Text style={{ fontSize: 14, fontWeight: '600', color: local.is_duplicate ? COLORS.errorStrong : TEXT }}>Duplicates Only</Text>
             <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: local.is_duplicate ? COLORS.errorStrong : COLORS.border, alignItems: 'center', justifyContent: 'center' }}>
               {local.is_duplicate && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
             </View>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => set('unassigned', !local.unassigned)}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 12, marginTop: 10, borderWidth: 1.5, borderColor: local.unassigned ? COLORS.gold : COLORS.border, backgroundColor: local.unassigned ? COLORS.screenBg : COLORS.white }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 16, marginTop: 10, borderWidth: 1.5, borderColor: local.unassigned ? COLORS.gold : COLORS.border, backgroundColor: local.unassigned ? COLORS.screenBg : COLORS.white }}>
             <Text style={{ fontSize: 14, fontWeight: '600', color: local.unassigned ? COLORS.gold : TEXT }}>Unassigned Only</Text>
             <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: local.unassigned ? COLORS.gold : COLORS.border, alignItems: 'center', justifyContent: 'center' }}>
               {local.unassigned && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
@@ -1598,7 +1598,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
 
         <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
           <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
-            style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}>
+            style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}>
             <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
@@ -1951,7 +1951,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={NAVY} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
@@ -1961,7 +1961,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
           </Text>
         </View>
         <TouchableOpacity onPress={() => setCreateModal(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 }}>
           <Ionicons name="add" size={16} color={COLORS.white} />
           <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>Add</Text>
         </TouchableOpacity>
@@ -2004,16 +2004,16 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       {/* Search + Filter button */}
       <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', gap: 10 }}>
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
-          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" placeholderTextColor="#666666" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
+          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" placeholderTextColor="#55585E" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {searchText ? <TouchableOpacity onPress={() => { setSearchText(''); setSearch(''); }}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
         <TouchableOpacity onPress={() => setFilterSheet(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: activeFilterCount > 0 ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: activeFilterCount > 0 ? NAVY : COLORS.border }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: activeFilterCount > 0 ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: activeFilterCount > 0 ? NAVY : COLORS.border }}>
           <Ionicons name="options-outline" size={16} color={activeFilterCount > 0 ? COLORS.white : MUTED} />
           {activeFilterCount > 0 && (
-            <View style={{ backgroundColor: COLORS.error, borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+            <View style={{ backgroundColor: COLORS.error, borderRadius: 14, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
               <Text style={{ color: COLORS.white, fontSize: 10, fontWeight: '800' }}>{activeFilterCount}</Text>
             </View>
           )}
@@ -2062,9 +2062,9 @@ export default function SalesLeadsScreen({ navigation, route }) {
       {/* Transfer sheet, opened straight from a lead card */}
       <Modal visible={!!xferLead} transparent animationType="fade" onRequestClose={() => setXferLead(null)}>
         <TouchableOpacity activeOpacity={1} onPress={() => setXferLead(null)}
-          style={{ flex: 1, backgroundColor: 'rgba(12,20,40,0.45)', justifyContent: 'center', padding: 20 }}>
+          style={{ flex: 1, backgroundColor: 'rgba(29,29,31,0.45)', justifyContent: 'center', padding: 20 }}>
           <TouchableOpacity activeOpacity={1} onPress={() => {}}
-            style={{ backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden' }}>
+            style={{ backgroundColor: COLORS.white, borderRadius: 20, overflow: 'hidden' }}>
             <View style={{ backgroundColor: NAVY, padding: 16 }}>
               <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Transfer to another STM</Text>
               <Text style={{ color: COLORS.surfaceAlt, fontSize: 12, marginTop: 2 }}>
@@ -2079,14 +2079,14 @@ export default function SalesLeadsScreen({ navigation, route }) {
                 value={xferTo} onChange={setXferTo} placeholder="Select STM" title="Transfer to" />
               <TextInput value={xferReason} onChangeText={setXferReason}
                 placeholder="Why is it moving? (optional)" placeholderTextColor={COLORS.textTertiary}
-                multiline style={{ backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 10, height: 60, textAlignVertical: 'top', marginTop: 10, color: TEXT }} />
+                multiline style={{ backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 10, height: 60, textAlignVertical: 'top', marginTop: 10, color: TEXT }} />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                 <TouchableOpacity onPress={() => setXferLead(null)}
-                  style={{ flex: 1, paddingVertical: 11, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
                   <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={submitRowTransfer} disabled={!xferTo || xferBusy}
-                  style={{ flex: 1, paddingVertical: 11, borderRadius: 10, backgroundColor: (!xferTo || xferBusy) ? COLORS.border : NAVY, alignItems: 'center' }}>
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 14, backgroundColor: (!xferTo || xferBusy) ? COLORS.border : NAVY, alignItems: 'center' }}>
                   <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>{xferBusy ? 'Sending…' : 'Request transfer'}</Text>
                 </TouchableOpacity>
               </View>

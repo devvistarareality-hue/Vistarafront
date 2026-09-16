@@ -337,7 +337,7 @@ const HomeScreen = () => {
           {statCards.map((s, i) => (
             <View key={i} style={{ width: '47%', ...CARD, padding: 16 }}>
               <View style={{
-                width: 44, height: 44, borderRadius: 14,
+                width: 44, height: 44, borderRadius: 18,
                 backgroundColor: s.iconBg,
                 justifyContent: 'center', alignItems: 'center', marginBottom: 12,
               }}>
@@ -374,7 +374,7 @@ const HomeScreen = () => {
                 activeOpacity={0.75}
               >
                 <View style={{
-                  width: 52, height: 52, borderRadius: 16, backgroundColor: a.backgroundColor,
+                  width: 52, height: 52, borderRadius: 20, backgroundColor: a.backgroundColor,
                   alignItems: 'center', justifyContent: 'center', marginBottom: 8,
                 }}>
                   <Ionicons name={a.icon} size={24} color={a.color} />
@@ -412,7 +412,7 @@ const HomeScreen = () => {
                 so today's count will trail the room's. Said plainly here, or it reads
                 as distribution being broken. */}
             {avail?.is_available && avail?.signed_in_late && (
-              <View style={{ backgroundColor: COLORS.warningBg, borderRadius: 10, padding: 12, marginBottom: 12 }}>
+              <View style={{ backgroundColor: COLORS.warningBg, borderRadius: 14, padding: 12, marginBottom: 12 }}>
                 <Text style={{ fontSize: 12, fontWeight: '800', color: COLORS.warning }}>
                   ⏰ Signed in late{avail.signin_time ? ` · after ${avail.signin_time}` : ''}
                 </Text>
@@ -436,7 +436,7 @@ const HomeScreen = () => {
                     alignSelf: 'flex-start',
                     flexDirection: 'row', alignItems: 'center', gap: 6,
                     backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.border,
-                    borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14,
+                    borderRadius: 14, paddingVertical: 9, paddingHorizontal: 14,
                   }}
                 >
                   <Ionicons name="close-circle-outline" size={16} color={MUTED} />
@@ -455,7 +455,7 @@ const HomeScreen = () => {
                   style={{
                     alignSelf: 'flex-start',
                     flexDirection: 'row', alignItems: 'center', gap: 6,
-                    backgroundColor: COLORS.success, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 16,
+                    backgroundColor: COLORS.success, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 16,
                   }}
                 >
                   <Ionicons name="checkmark-circle" size={16} color={COLORS.white} />
@@ -475,13 +475,13 @@ const HomeScreen = () => {
           {/* Tab Switcher */}
           <View style={{
             flexDirection: 'row', backgroundColor: COLORS.surfaceAlt,
-            borderRadius: 12, padding: 4, marginBottom: 16,
+            borderRadius: 16, padding: 4, marginBottom: 16,
           }}>
             {['today', 'week', 'month'].map(tab => (
               <TouchableOpacity
                 key={tab}
                 style={{
-                  flex: 1, paddingVertical: 8, borderRadius: 10,
+                  flex: 1, paddingVertical: 8, borderRadius: 14,
                   alignItems: 'center',
                   backgroundColor: attendanceTab === tab ? COLORS.white : 'transparent',
                   shadowColor: attendanceTab === tab ? COLORS.shadow : 'transparent',
@@ -516,7 +516,7 @@ const HomeScreen = () => {
                     <React.Fragment key={i}>
                       <View style={{ flex: 1, alignItems: 'center' }}>
                         <View style={{
-                          width: 40, height: 40, borderRadius: 12,
+                          width: 40, height: 40, borderRadius: 16,
                           backgroundColor: item.color + '18',
                           justifyContent: 'center', alignItems: 'center', marginBottom: 8,
                         }}>
@@ -531,7 +531,7 @@ const HomeScreen = () => {
                 </View>
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-                  <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: COLORS.linkBg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                  <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: COLORS.linkBg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
                     <Ionicons name="home-outline" size={28} color={COLORS.link} />
                   </View>
                   <Text style={{ fontSize: 14, color: MUTED, fontWeight: '500' }}>No attendance recorded today</Text>
@@ -578,7 +578,7 @@ const HomeScreen = () => {
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <TouchableOpacity
                   onPress={prevMonth}
-                  style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="chevron-back" size={18} color={NAVY} />
@@ -588,7 +588,7 @@ const HomeScreen = () => {
                 </Text>
                 <TouchableOpacity
                   onPress={nextMonth}
-                  style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="chevron-forward" size={18} color={NAVY} />
@@ -620,7 +620,7 @@ const HomeScreen = () => {
                         style={{
                           width: CAL_CELL, height: CAL_CELL + 14,
                           alignItems: 'center', justifyContent: 'center', marginBottom: 2,
-                          borderRadius: 10,
+                          borderRadius: 14,
                           backgroundColor: isSelected ? NAVY : isToday ? COLORS.linkBg : 'transparent',
                         }}
                         onPress={() => setSelectedDay(isSelected ? null : day)}
@@ -660,7 +660,7 @@ const HomeScreen = () => {
 
               {/* Selected Day Detail */}
               {selectedDay && (
-                <View style={{ marginTop: 14, backgroundColor: COLORS.screenBg, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: COLORS.border }}>
+                <View style={{ marginTop: 14, backgroundColor: COLORS.screenBg, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: COLORS.border }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 14, textAlign: 'center' }}>
                     {new Date(calYear, calMonth - 1, selectedDay)
                       .toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -731,7 +731,7 @@ const HomeScreen = () => {
             <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginBottom: 20 }}>User Details</Text>
 
             {/* Details list */}
-            <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 16, overflow: 'hidden', marginBottom: 24 }}>
+            <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 20, overflow: 'hidden', marginBottom: 24 }}>
               {profileLoading ? (
                 <ActivityIndicator color={NAVY} style={{ marginVertical: 32 }} />
               ) : userDetails.map((item, i) => (
@@ -742,7 +742,7 @@ const HomeScreen = () => {
                   borderBottomColor: COLORS.surfaceAlt,
                 }}>
                   <View style={{
-                    width: 40, height: 40, borderRadius: 12,
+                    width: 40, height: 40, borderRadius: 16,
                     backgroundColor: COLORS.linkBg,
                     justifyContent: 'center', alignItems: 'center', flexShrink: 0,
                   }}>
@@ -767,7 +767,7 @@ const HomeScreen = () => {
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                 backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border,
-                borderRadius: 14, paddingVertical: 14, marginBottom: 10,
+                borderRadius: 18, paddingVertical: 14, marginBottom: 10,
               }}
             >
               <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
@@ -781,7 +781,7 @@ const HomeScreen = () => {
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                 backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.errorBg,
-                borderRadius: 14, paddingVertical: 14,
+                borderRadius: 18, paddingVertical: 14,
               }}
             >
               <Ionicons name="log-out-outline" size={20} color={COLORS.error} />

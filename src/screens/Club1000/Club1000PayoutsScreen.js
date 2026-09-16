@@ -10,9 +10,9 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { formatDMY } from '../../utils/dateFormat';
 
-const NAVY = COLORS.navy; const TEAL = '#00838F'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 const TYPE_LABELS = { interest: 'Interest', maturity: 'Maturity', premature_redemption: 'Premature Redemption' };
 
@@ -145,19 +145,19 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
             <View style={{ padding: 16 }}>
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Amount Paid (₹)</Text>
               <TextInput value={payForm.amount} onChangeText={(v) => setPayForm((f) => ({ ...f, amount: v }))} keyboardType="decimal-pad"
-                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT }} />
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT }} />
               {!!payingFor && <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Scheduled: {fmtMoney(payingFor.amount_due)}</Text>}
 
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginTop: 14, marginBottom: 6 }}>Remarks</Text>
               <TextInput value={payForm.notes} onChangeText={(v) => setPayForm((f) => ({ ...f, notes: v }))}
                 placeholder="e.g. paid via NEFT, rounded to nearest ₹10…" placeholderTextColor={MUTED} multiline
-                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, minHeight: 70, textAlignVertical: 'top' }} />
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, minHeight: 70, textAlignVertical: 'top' }} />
 
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 18 }}>
-                <TouchableOpacity onPress={() => setPayingFor(null)} style={{ flex: 1, height: 46, borderRadius: 12, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => setPayingFor(null)} style={{ flex: 1, height: 46, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: MUTED }}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={submitMarkPaid} disabled={saving} style={{ flex: 1, height: 46, borderRadius: 12, backgroundColor: TEAL, alignItems: 'center', justifyContent: 'center', opacity: saving ? 0.6 : 1 }}>
+                <TouchableOpacity onPress={submitMarkPaid} disabled={saving} style={{ flex: 1, height: 46, borderRadius: 16, backgroundColor: TEAL, alignItems: 'center', justifyContent: 'center', opacity: saving ? 0.6 : 1 }}>
                   {saving ? <ActivityIndicator color={COLORS.white} /> : <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.white }}>Mark Paid</Text>}
                 </TouchableOpacity>
               </View>

@@ -115,7 +115,7 @@ const HomeScreen = () => {
             onPress={handleSubmit}
             activeOpacity={0.85}
             disabled={!canSubmit}
-            style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
+            style={{ borderRadius: 20, overflow: 'hidden', marginTop: 4 }}
           >
             <LinearGradient
               colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
@@ -152,12 +152,12 @@ const s = StyleSheet.create({
   blobTopRight: {
     position: 'absolute', top: -60, right: -60,
     width: 220, height: 220, borderRadius: 110,
-    backgroundColor: 'rgba(41,98,255,0.08)',
+    backgroundColor: 'rgba(47,109,181,0.08)',
   },
   blobBottomLeft: {
     position: 'absolute', bottom: 200, left: -80,
     width: 200, height: 200, borderRadius: 100,
-    backgroundColor: 'rgba(100,160,255,0.06)',
+    backgroundColor: 'rgba(47,109,181,0.06)',
   },
 
   // ── Header ──
@@ -172,20 +172,20 @@ const s = StyleSheet.create({
   ring3: {
     width: 148, height: 148, borderRadius: 74,
     backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.15)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.15)',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 28,
   },
   ring2: {
     width: 120, height: 120, borderRadius: 60,
     backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.25)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.25)',
     justifyContent: 'center', alignItems: 'center',
   },
   ring1: {
     width: 94, height: 94, borderRadius: 47,
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1.5, borderColor: 'rgba(255,107,43,0.5)',
+    borderWidth: 1.5, borderColor: 'rgba(162,210,255,0.5)',
     justifyContent: 'center', alignItems: 'center',
   },
   logoCircle: {
@@ -204,7 +204,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     marginBottom: 16, width: 160,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,107,43,0.35)' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(162,210,255,0.35)' },
   dividerDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: GOLD, marginHorizontal: 8 },
 
   // ── Text ──
@@ -253,7 +253,7 @@ const s = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 16,
+    backgroundColor: COLORS.white, borderRadius: 20,
     paddingHorizontal: 16, height: 56, marginBottom: 24,
     borderWidth: 1.5, borderColor: COLORS.border,
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
@@ -266,7 +266,7 @@ const s = StyleSheet.create({
 
   // ── Button ──
   btn: {
-    height: 56, borderRadius: 16,
+    height: 56, borderRadius: 20,
     justifyContent: 'center', alignItems: 'center',
   },
   btnText: {

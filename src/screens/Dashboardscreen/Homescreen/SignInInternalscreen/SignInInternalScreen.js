@@ -351,7 +351,7 @@ export default function SignInInternalScreen({ navigation }) {
                 radius={OFFICE.radius}
                 strokeColor={inGeofence ? COLORS.success : COLORS.error}
                 strokeWidth={3}
-                fillColor={inGeofence ? 'rgba(46,125,50,0.22)' : 'rgba(239,68,68,0.18)'}
+                fillColor={inGeofence ? 'rgba(35,135,74,0.22)' : 'rgba(217,67,75,0.18)'}
               />
                <Marker coordinate={{ latitude: OFFICE.latitude, longitude: OFFICE.longitude }} title="Office" pinColor={COLORS.navy} />
               {userLocation && (
@@ -619,33 +619,33 @@ const s = StyleSheet.create({
   sectionLabelText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8 },
 
   statsRow:  { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 16 },
-  statCard:  { flex: 1, backgroundColor: COLORS.white, borderRadius: 14, padding: 12, alignItems: 'center', elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  statCard:  { flex: 1, backgroundColor: COLORS.white, borderRadius: 18, padding: 12, alignItems: 'center', elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
   statIcon:  { width: 38, height: 38, borderRadius: 11, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   statLabel: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 4 },
   statValue: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
 
-  mapCard:       { marginHorizontal: 16, borderRadius: 14, overflow: 'hidden', backgroundColor: COLORS.white, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  mapCard:       { marginHorizontal: 16, borderRadius: 18, overflow: 'hidden', backgroundColor: COLORS.white, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
   map:           { width: '100%', height: 210 },
   mapLoader:     { height: 210, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: COLORS.screenBg },
   mapLoaderText: { fontSize: 13, color: COLORS.textSecondary },
   geofenceBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, gap: 8, flexWrap: 'wrap' },
   geofenceDot:   { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.white },
-  userDot:       { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(66,133,244,0.25)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: COLORS.white },
+  userDot:       { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(47,109,181,0.25)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: COLORS.white },
   userDotInner:  { width: 11, height: 11, borderRadius: 6, backgroundColor: COLORS.link },
   geofenceBadgeText: { color: COLORS.white, fontWeight: '700', fontSize: 12, flex: 1 },
   geofenceCoords:    { color: 'rgba(255,255,255,0.75)', fontSize: 10 },
 
-  card:    { marginHorizontal: 16, backgroundColor: COLORS.white, borderRadius: 14, padding: 16, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  card:    { marginHorizontal: 16, backgroundColor: COLORS.white, borderRadius: 18, padding: 16, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
   divider: { height: 1, backgroundColor: COLORS.surfaceAlt, marginVertical: 12 },
 
   timeRow:       { flexDirection: 'row', gap: 10, marginBottom: 4 },
-  timeChip:      { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
+  timeChip:      { flex: 1, borderRadius: 16, padding: 12, alignItems: 'center' },
   timeChipIcon:  { width: 30, height: 30, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
   timeChipLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, marginBottom: 4 },
   timeChipValue: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
 
   fieldRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  fieldIcon:     { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
+  fieldIcon:     { width: 34, height: 34, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
   fieldRowLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 3 },
   fieldRowValue: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   remarksInput:  { fontSize: 14, color: COLORS.textPrimary, paddingTop: 0, minHeight: 36 },
@@ -654,13 +654,13 @@ const s = StyleSheet.create({
   btnSection: { marginHorizontal: 16, marginTop: 20 },
 
   // Sign In — full width
-  primaryBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 14, paddingVertical: 17, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
+  primaryBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 18, paddingVertical: 17, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
   primaryBtnText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
   signInBtn:      { backgroundColor: COLORS.success, shadowColor: COLORS.success },
 
   // Sign Out + Check Out — side by side
   actionRow:     { flexDirection: 'row', gap: 12 },
-  actionBtn:     { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 16, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
+  actionBtn:     { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 18, paddingVertical: 16, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
   breakBtn:      { backgroundColor: COLORS.warning, shadowColor: COLORS.warning },
   signOutBtn:    { backgroundColor: COLORS.navy, shadowColor: COLORS.navy },
   actionBtnText: { color: COLORS.white, fontSize: 14, fontWeight: '700', marginTop: 4 },
@@ -669,15 +669,15 @@ const s = StyleSheet.create({
   btnDisabled: { opacity: 0.40 },
 
   // Break banner
-  breakBanner:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.warningBg, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: COLORS.warningAlt },
+  breakBanner:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.warningBg, borderRadius: 18, padding: 16, borderWidth: 1.5, borderColor: COLORS.warningAlt },
   breakBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   breakBannerTitle:{ fontSize: 15, fontWeight: '700', color: COLORS.warning },
   breakBannerSub:  { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-  resumeBtn:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.success, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  resumeBtn:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.success, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 },
   resumeBtnText:   { color: COLORS.white, fontSize: 13, fontWeight: '700' },
 
   // Day complete banner
-  completedBanner: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.successBg, borderRadius: 14, padding: 18, borderWidth: 1.5, borderColor: COLORS.textTertiary },
+  completedBanner: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.successBg, borderRadius: 18, padding: 18, borderWidth: 1.5, borderColor: COLORS.textTertiary },
   completedTitle:  { fontSize: 15, fontWeight: '700', color: COLORS.success },
   completedSub:    { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 
@@ -689,8 +689,8 @@ const s = StyleSheet.create({
   modalTitle:      { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
   modalSubtitle:   { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   modFieldLabel:   { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 6, marginTop: 14 },
-  modFieldRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.screenBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  modFieldRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.screenBg, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 },
   modFieldValue:   { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
-  saveBtn:         { marginTop: 24, backgroundColor: COLORS.navy, borderRadius: 14, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
+  saveBtn:         { marginTop: 24, backgroundColor: COLORS.navy, borderRadius: 18, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
   saveBtnText:     { color: COLORS.white, fontSize: 15, fontWeight: '700' },
 });

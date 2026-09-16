@@ -43,7 +43,7 @@ export default StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt,
   },
   menuIcon: {
-    width: 44, height: 44, borderRadius: 14,
+    width: 44, height: 44, borderRadius: 18,
     justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
   menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
@@ -51,7 +51,7 @@ export default StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     marginHorizontal: 20, marginTop: 20,
     backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.errorBg,
-    borderRadius: 14, paddingVertical: 14,
+    borderRadius: 18, paddingVertical: 14,
   },
   logoutText: { fontSize: 14, fontWeight: '700', color: COLORS.error },
 });

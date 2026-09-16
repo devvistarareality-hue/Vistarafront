@@ -16,11 +16,11 @@ const BLUE  = COLORS.link;
 const BG    = COLORS.screenBg;
 const TEXT  = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
 const TILE  = { flexGrow: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
-                backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt };
+                backgroundColor: COLORS.screenBg, borderRadius: 16, borderWidth: 1, borderColor: COLORS.surfaceAlt };
 
 // How wide each tile is, given how many the group holds. Two and three share the
 // row; four splits 2+2 rather than 3+1, so no tile is ever left alone on a row
@@ -323,19 +323,19 @@ export default function SalesCRMScreen({ navigation, route }) {
           <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Custom Range</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
             <TouchableOpacity onPress={() => setShowFromPick(true)}
-              style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
             </TouchableOpacity>
             <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
             <TouchableOpacity onPress={() => setShowToPick(true)}
-              style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Apply button */}
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: NAVY, borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center' }}>
+            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center' }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>

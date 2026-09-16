@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   locLoadingText:{ color: MUTED, fontSize: 13 },
 
   statusRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 16, gap: 12 },
-  statusBox: { flex: 1, backgroundColor: NAVY, borderRadius: 14, padding: 14, alignItems: 'center', ...CARD_SHADOW },
+  statusBox: { flex: 1, backgroundColor: NAVY, borderRadius: 18, padding: 14, alignItems: 'center', ...CARD_SHADOW },
   statusBoxRight: { backgroundColor: ERROR },
   statusLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, marginBottom: 4, fontWeight: '600' },
   statusValue: { color: COLORS.white, fontSize: 18, fontWeight: '800' },
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
   timeRow: { flexDirection: 'row', marginBottom: 16, gap: 10 },
   timeBox: {
-    flex: 1, backgroundColor: COLORS.successBg, borderRadius: 12,
+    flex: 1, backgroundColor: COLORS.successBg, borderRadius: 16,
     padding: 12, alignItems: 'center',
   },
   timeLabel: { fontSize: 11, fontWeight: '700', color: MUTED, marginBottom: 4 },
@@ -64,15 +64,15 @@ const styles = StyleSheet.create({
 
   expandBtn: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: COLORS.linkBg, borderRadius: 12, padding: 14, marginBottom: 8,
+    backgroundColor: COLORS.linkBg, borderRadius: 16, padding: 14, marginBottom: 8,
   },
   expandText:  { fontSize: 13, fontWeight: '700', color: NAVY },
   expandArrow: { fontSize: 18, color: NAVY },
-  moreDetail:  { padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, marginBottom: 8 },
+  moreDetail:  { padding: 12, backgroundColor: COLORS.screenBg, borderRadius: 14, marginBottom: 8 },
   moreDetailText: { fontSize: 12, color: MUTED, marginBottom: 4 },
 
   bottomRow: { flexDirection: 'row', marginHorizontal: 16, gap: 12, marginBottom: 16 },
-  bottomBtn: { flex: 1, borderRadius: 14, paddingVertical: 16, alignItems: 'center', ...CARD_SHADOW },
+  bottomBtn: { flex: 1, borderRadius: 18, paddingVertical: 16, alignItems: 'center', ...CARD_SHADOW },
   signOutBtn:     { backgroundColor: NAVY },
   checkInBtn:     { backgroundColor: SUCCESS },
   btnDisabled:    { opacity: 0.4 },

@@ -12,7 +12,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -91,7 +91,7 @@ export default function SalesImportScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Import Leads</Text>
       </View>
 
@@ -102,7 +102,7 @@ export default function SalesImportScreen({ navigation }) {
           <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Full Pipeline template</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>{isStm ? 'Lead → STM → site visit → closure, with dropdowns. Fill it, then upload below.' : 'Lead → telecaller → STM → site visit → closure, with dropdowns. Fill it, then upload below.'}</Text>
           <TouchableOpacity onPress={downloadTemplate} disabled={dlTpl}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: BLUE, backgroundColor: COLORS.white }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 16, borderWidth: 1.5, borderColor: BLUE, backgroundColor: COLORS.white }}>
             {dlTpl ? <ActivityIndicator color={BLUE} /> : (
               <>
                 <Ionicons name="download-outline" size={18} color={BLUE} />
@@ -121,7 +121,7 @@ export default function SalesImportScreen({ navigation }) {
             <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Select File</Text>
           </View>
           <TouchableOpacity onPress={pickFile}
-            style={{ borderWidth: 1.5, borderColor: file ? COLORS.success : COLORS.border, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 22, alignItems: 'center', backgroundColor: file ? COLORS.successBg : COLORS.white }}>
+            style={{ borderWidth: 1.5, borderColor: file ? COLORS.success : COLORS.border, borderStyle: 'dashed', borderRadius: 16, paddingVertical: 22, alignItems: 'center', backgroundColor: file ? COLORS.successBg : COLORS.white }}>
             <Ionicons name={file ? 'document-text' : 'cloud-upload-outline'} size={30} color={file ? COLORS.success : COLORS.shadow} />
             <Text style={{ fontSize: 13, color: file ? COLORS.success : MUTED, marginTop: 8, fontWeight: '600' }}>
               {file ? file.name : 'Tap to pick CSV or Excel file'}
@@ -142,7 +142,7 @@ export default function SalesImportScreen({ navigation }) {
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {projects.map(p => (
                 <TouchableOpacity key={p.id} onPress={() => setProject(p.id)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, backgroundColor: String(project) === String(p.id) ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: String(project) === String(p.id) ? NAVY : COLORS.border }}>
+                  style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14, backgroundColor: String(project) === String(p.id) ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: String(project) === String(p.id) ? NAVY : COLORS.border }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: String(project) === String(p.id) ? COLORS.white : MUTED }}>{p.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -162,7 +162,7 @@ export default function SalesImportScreen({ navigation }) {
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {sources.map(s => (
                 <TouchableOpacity key={s.id} onPress={() => setSource(s.id)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, backgroundColor: String(source) === String(s.id) ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: String(source) === String(s.id) ? NAVY : COLORS.border }}>
+                  style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14, backgroundColor: String(source) === String(s.id) ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: String(source) === String(s.id) ? NAVY : COLORS.border }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: String(source) === String(s.id) ? COLORS.white : MUTED }}>{s.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -172,7 +172,7 @@ export default function SalesImportScreen({ navigation }) {
 
         {/* Import button */}
         <TouchableOpacity onPress={doImport} disabled={importing || !file}
-          style={{ paddingVertical: 15, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center', marginBottom: 16, opacity: (!file) ? 0.5 : 1 }}>
+          style={{ paddingVertical: 15, backgroundColor: NAVY, borderRadius: 18, alignItems: 'center', marginBottom: 16, opacity: (!file) ? 0.5 : 1 }}>
           {importing ? <ActivityIndicator color={COLORS.white} /> : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="cloud-upload-outline" size={18} color={COLORS.white} />
@@ -191,7 +191,7 @@ export default function SalesImportScreen({ navigation }) {
                 { label: 'Duplicates', value: result.duplicates ?? 0,                   color: COLORS.warning, bg: COLORS.warningBg },
                 { label: 'Errors',     value: result.errors     ?? result.failed ?? 0,  color: COLORS.error, bg: COLORS.errorBg },
               ].map(r => (
-                <View key={r.label} style={{ flex: 1, padding: 12, borderRadius: 12, backgroundColor: r.bg, alignItems: 'center' }}>
+                <View key={r.label} style={{ flex: 1, padding: 12, borderRadius: 16, backgroundColor: r.bg, alignItems: 'center' }}>
                   <Text style={{ fontSize: 22, fontWeight: '800', color: r.color }}>{r.value}</Text>
                   <Text style={{ fontSize: 11, color: MUTED, marginTop: 3, fontWeight: '600' }}>{r.label}</Text>
                 </View>
@@ -200,10 +200,10 @@ export default function SalesImportScreen({ navigation }) {
             {(result.site_visits > 0 || result.closures > 0) && (
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
                 {[
-                  { label: 'Site visits', value: result.site_visits ?? 0, color: '#0D47A1', bg: COLORS.infoBg || COLORS.surfaceAlt },
+                  { label: 'Site visits', value: result.site_visits ?? 0, color: '#245A96', bg: COLORS.infoBg || COLORS.surfaceAlt },
                   { label: 'Closures',    value: result.closures ?? 0,    color: COLORS.purple, bg: COLORS.surfaceAlt },
                 ].map(r => (
-                  <View key={r.label} style={{ flex: 1, padding: 12, borderRadius: 12, backgroundColor: r.bg, alignItems: 'center' }}>
+                  <View key={r.label} style={{ flex: 1, padding: 12, borderRadius: 16, backgroundColor: r.bg, alignItems: 'center' }}>
                     <Text style={{ fontSize: 22, fontWeight: '800', color: r.color }}>{r.value}</Text>
                     <Text style={{ fontSize: 11, color: MUTED, marginTop: 3, fontWeight: '600' }}>{r.label}</Text>
                   </View>
@@ -214,7 +214,7 @@ export default function SalesImportScreen({ navigation }) {
         )}
 
         {/* Info */}
-        <View style={{ marginTop: 14, padding: 14, backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: BLUE + '30' }}>
+        <View style={{ marginTop: 14, padding: 14, backgroundColor: COLORS.screenBg, borderRadius: 16, borderWidth: 1, borderColor: BLUE + '30' }}>
           <Text style={{ fontSize: 12, color: COLORS.link, fontWeight: '600', marginBottom: 4 }}>Supported formats</Text>
           <Text style={{ fontSize: 11, color: MUTED }}>CSV, XLS, XLSX. Use the Full Pipeline template above to import the whole journey — {isStm ? 'STM' : 'telecaller, STM'}, statuses, site visits and closures — all linked. A plain name/phone sheet works too.</Text>
         </View>

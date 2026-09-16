@@ -6,7 +6,7 @@ import { COLORS } from '../constants/theme';
 export const inputStyle = {
   borderWidth: 1,
   borderColor: COLORS.border,
-  borderRadius: 12,
+  borderRadius: 16,
   paddingHorizontal: 14,
   paddingVertical: 12,
   fontSize: 15,
@@ -32,7 +32,7 @@ export function Field({ label, required, children, style }) {
 export function TextField({ label, required, style, ...props }) {
   return (
     <Field label={label} required={required}>
-      <TextInput placeholderTextColor="#666666" style={[inputStyle, style]} {...props} />
+      <TextInput placeholderTextColor="#55585E" style={[inputStyle, style]} {...props} />
     </Field>
   );
 }

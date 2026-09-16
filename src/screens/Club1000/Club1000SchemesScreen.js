@@ -11,9 +11,9 @@ import { isClub1000Manager } from '../../utils/club1000Access';
 import FormSheet from '../../components/FormSheet';
 import { TextField } from '../../components/Field';
 
-const NAVY = COLORS.navy; const TEAL = '#00838F'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = '#23874A'; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
 
 const EMPTY_FORM = {
   name: '', tenure_months: '12', min_ticket_size: '',
@@ -99,7 +99,7 @@ function NewSchemeSheet({ visible, scheme, onClose, onSaved }) {
     <FormSheet visible={visible} onClose={onClose}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: TEXT }}>{isEdit ? 'Edit Scheme' : 'New Scheme'}</Text>
-        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
       </View>
@@ -121,7 +121,7 @@ function NewSchemeSheet({ visible, scheme, onClose, onSaved }) {
               return (
                 <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <TouchableOpacity onPress={() => toggleInterestPayoutOption(key)}
-                    style={{ width: 110, paddingVertical: 11, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: checked ? TEAL : COLORS.border, backgroundColor: checked ? TEAL : COLORS.white }}>
+                    style={{ width: 110, paddingVertical: 11, alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: checked ? TEAL : COLORS.border, backgroundColor: checked ? TEAL : COLORS.white }}>
                     <Text style={{ fontSize: 12, fontWeight: '700', color: checked ? COLORS.white : MUTED }}>{label}</Text>
                   </TouchableOpacity>
                   <View style={{ flex: 1 }}>
@@ -157,7 +157,7 @@ function NewSchemeSheet({ visible, scheme, onClose, onSaved }) {
         )}
 
         <TouchableOpacity onPress={submit} disabled={saving}
-          style={{ backgroundColor: TEAL, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: saving ? 0.7 : 1, marginTop: 8 }}>
+          style={{ backgroundColor: TEAL, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: saving ? 0.7 : 1, marginTop: 8 }}>
           {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
           <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>{isEdit ? 'Save Changes' : 'Create Scheme'}</Text>
         </TouchableOpacity>
@@ -209,7 +209,7 @@ export default function Club1000SchemesScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Schemes</Text>
         {manager && (
-          <TouchableOpacity onPress={() => setShowNew(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
+          <TouchableOpacity onPress={() => setShowNew(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 }}>
             <Ionicons name="add" size={16} color={COLORS.white} />
             <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>New</Text>
           </TouchableOpacity>

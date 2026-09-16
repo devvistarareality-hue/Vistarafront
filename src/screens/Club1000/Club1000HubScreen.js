@@ -10,16 +10,16 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 
 const NAVY  = COLORS.navy;
-const TEAL  = '#00838F';
+const TEAL  = '#23874A';
 const BG    = COLORS.screenBg;
 const TEXT  = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
 
 const MENU = [
   { key: 'Club1000Leads',      label: 'Leads',        icon: 'person-add-outline',    color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },
   { key: 'Club1000FollowUps',  label: 'Follow-Ups',   icon: 'calendar-outline',      color: COLORS.warning,  bg: COLORS.warningBg, managerOnly: false },
-  { key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: '#E0F7FA',        managerOnly: false },
+  { key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: '#E9FBEA',        managerOnly: false },
   { key: 'Club1000InvestorApprovals', label: 'Approvals', icon: 'checkmark-done-outline', color: COLORS.success, bg: COLORS.successBg, managerOnly: true },
   { key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: false },
   { key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
@@ -247,7 +247,7 @@ export default function Club1000HubScreen({ navigation, route }) {
                 return (
                   <TouchableOpacity key={key}
                     onPress={() => { setPendingQuarter(prev => sel ? prev.filter(k => k !== key) : [...prev, key]); setPendingFrom(null); setPendingTo(null); setPendingMonths([]); }}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: sel ? COLORS.white : TEXT }}>{label}</Text>
                     <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? COLORS.white + 'CC' : MUTED, marginTop: 2 }}>{sub}</Text>
                   </TouchableOpacity>
@@ -282,11 +282,11 @@ export default function Club1000HubScreen({ navigation, route }) {
                   style={{ height: 160 }} />
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                   <TouchableOpacity onPress={() => setShowFromPick(false)}
-                    style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => { setShowFromPick(false); if (iosPickerDate) { setPendingFrom(iosPickerDate); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }}
-                    style={{ flex: 1, height: 40, borderRadius: 10, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>Done</Text>
                   </TouchableOpacity>
                 </View>
@@ -300,11 +300,11 @@ export default function Club1000HubScreen({ navigation, route }) {
                   style={{ height: 160 }} />
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                   <TouchableOpacity onPress={() => setShowToPick(false)}
-                    style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => { setShowToPick(false); if (iosPickerDate) { setPendingTo(iosPickerDate); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }}
-                    style={{ flex: 1, height: 40, borderRadius: 10, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>Done</Text>
                   </TouchableOpacity>
                 </View>
@@ -312,12 +312,12 @@ export default function Club1000HubScreen({ navigation, route }) {
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
                 <TouchableOpacity onPress={() => { setIosPickerDate(pendingFrom || new Date()); setShowFromPick(true); }}
-                  style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
                 </TouchableOpacity>
                 <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
                 <TouchableOpacity onPress={() => { setIosPickerDate(pendingTo || new Date()); setShowToPick(true); }}
-                  style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
                 </TouchableOpacity>
               </View>
@@ -325,7 +325,7 @@ export default function Club1000HubScreen({ navigation, route }) {
           </ScrollView>
 
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: NAVY, borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
+            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>

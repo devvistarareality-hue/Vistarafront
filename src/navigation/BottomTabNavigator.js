@@ -88,7 +88,7 @@ const BottomTabNavigator = () => {
           shadowRadius: 16,
           elevation: 16,
         },
-        tabBarActiveTintColor: COLORS.link,
+        tabBarActiveTintColor: COLORS.textPrimary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarLabelStyle: {
           fontSize: 11,

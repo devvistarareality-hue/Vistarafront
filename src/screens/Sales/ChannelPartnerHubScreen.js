@@ -8,7 +8,7 @@ import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
 
 // The Channel Partner module — the same eight destinations the web nav lists, each
 // one an existing Sales screen asked for the partner-sourced slice (cpOnly), plus the
