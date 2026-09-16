@@ -160,11 +160,14 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const [xfers, setXfers] = useState([]);
   const [xferBusy, setXferBusy] = useState(null);
   const loadTransfers = useCallback(() => {
-    apiFetch(`${SALES_ENDPOINTS.leadTransfers}?status=pending${companyId ? `&company_id=${companyId}` : ''}`)
+    // cp_only in the Channel Partner module: a lead transfer is a Sales activity, so
+    // without it the CP approver was shown transfers for leads that never came through
+    // a partner.
+    apiFetch(`${SALES_ENDPOINTS.leadTransfers}?status=pending${companyId ? `&company_id=${companyId}` : ''}${cpOnly ? '&cp_only=true' : ''}`)
       .then(r => (r.ok ? r.json() : []))
       .then(d => setXfers(Array.isArray(d) ? d : []))
       .catch(() => setXfers([]));
-  }, [companyId]);
+  }, [companyId, cpOnly]);
   useFocusEffect(useCallback(() => { loadTransfers(); }, [loadTransfers]));
 
   async function actOnTransfer(id, action) {
