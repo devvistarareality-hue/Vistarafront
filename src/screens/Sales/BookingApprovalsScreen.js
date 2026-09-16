@@ -12,9 +12,11 @@ import FilterSelect from '../../components/FilterSelect';
 import { isManagerRole } from '../../lib/roles';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
+import ExportBookings from '../../components/ExportBookings';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
+
 // Cancelled sits beside Rejected rather than inside it: both are stored at
 // status='rejected', but one was refused before it counted and the other was a live
 // sale that came off the books and keeps its signed LOI. The server splits them.
@@ -339,6 +341,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
             })}
           </View>
         )}
+
+        <ExportBookings projects={projects} companyId={companyId} />
 
         <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10 }}>
           {TABS.map(([k, label]) => (

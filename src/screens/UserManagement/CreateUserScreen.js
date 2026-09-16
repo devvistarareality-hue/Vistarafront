@@ -118,6 +118,7 @@ export default function CreateUserScreen({ navigation, route }) {
   const [modules,         setModules]         = useState(editUser?.modules         ?? []);
   const [managerModules,  setManagerModules]  = useState(editUser?.manager_modules ?? []);
   const [adminModules,    setAdminModules]    = useState(editUser?.admin_modules   ?? []);
+  const [canExport,       setCanExport]       = useState(!!editUser?.can_export_bookings);
   const [allDesignations, setAllDesignations] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [reportingManager,    setReportingManager]    = useState(editUser?.reporting_manager ?? null);
@@ -211,12 +212,12 @@ export default function CreateUserScreen({ navigation, route }) {
 
     if (isEdit) {
       setUserCodeError('');
-      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, reporting_manager_id: reportingManager?.id ?? null };
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
       if (isVRLAdmin && !selectedCompany) return Alert.alert('Validation', 'Please select a company.');
-      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
       if (isVRLAdmin && selectedCompany) payload.company_id = selectedCompany.id;
       dispatch(createUser(payload));
     }
@@ -529,6 +530,20 @@ export default function CreateUserScreen({ navigation, route }) {
             </View>
           </>
         )}
+
+        {/* Data Access — the Sales module's booking export: every approved deal in the
+            company, Sales and CP together, with all its commercial figures. Kept apart
+            from module access on purpose; working your own bookings and downloading
+            everyone's are different things. */}
+        <Text style={styles.label}>DATA ACCESS</Text>
+        <TouchableOpacity
+          style={[styles.adminPill, canExport && styles.adminPillActive, { alignSelf: 'flex-start', marginBottom: 6 }]}
+          onPress={() => setCanExport((v) => !v)}
+        >
+          <Ionicons name="download-outline" size={13} color={canExport ? COLORS.white : COLORS.textSecondary} />
+          <Text style={[styles.adminPillText, canExport && styles.adminPillTextActive]}>Download booking Excel</Text>
+        </TouchableOpacity>
+        <Text style={styles.managerSubtitle}>Approved bookings, Sales &amp; CP together, with totals</Text>
 
         {/* Submit */}
         <TouchableOpacity style={[styles.submitBtn, busy && { opacity: 0.7 }]} onPress={handleSubmit} disabled={busy}>

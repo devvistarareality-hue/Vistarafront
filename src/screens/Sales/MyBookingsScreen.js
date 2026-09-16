@@ -8,6 +8,7 @@ import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
+import ExportBookings from '../../components/ExportBookings';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
@@ -315,6 +316,10 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
+      {/* The booking export. Also on Approvals, but that screen is manager-only —
+          anyone granted the permission needs to reach it from here too. */}
+      {!cpOnly && <ExportBookings companyId={companyId} />}
+
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         {TABS.map(([k, label]) => (
           <TouchableOpacity key={k} onPress={() => { setTab(k); setOpen({}); }}
