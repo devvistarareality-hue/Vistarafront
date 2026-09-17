@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SHADOWS } from '../../constants/theme';
 import AppIcon from '../AppIcon';
@@ -87,3 +87,16 @@ const st = StyleSheet.create({
   badgeText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.2 },
   section: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
 });
+
+// Entrance animation: fades and rises in, staggered by index.
+export function FadeInUp({ children, index = 0, delay = 45, style }) {
+  const v = React.useRef(new Animated.Value(0)).current;
+  React.useEffect(() => {
+    Animated.timing(v, { toValue: 1, duration: 420, delay: Math.min(index, 10) * delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, []);
+  return (
+    <Animated.View style={[style, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }]}>
+      {children}
+    </Animated.View>
+  );
+}

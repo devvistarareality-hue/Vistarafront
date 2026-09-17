@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW, MODULE_ACCENT } from '../../constants/theme';
 import ThemeToggle from '../../components/ThemeToggle';
 import AppLoader from '../../components/AppLoader';
+import { FadeInUp } from '../../components/ui';
 
 const MODULE_CONFIG = {
   Sales: {
@@ -161,13 +162,13 @@ const ModulesScreen = () => {
           </View>
         ) : (
           <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {userModules.map((mod) => {
+            {userModules.map((mod, idx) => {
               const accent = mod.accent || { bg: COLORS.linkBg, icon: COLORS.link };
               return (
+                <FadeInUp key={mod.key} index={idx} style={{ width: '47%' }}>
                 <TouchableOpacity
-                  key={mod.key}
                   style={{
-                    width: '47%',
+                    width: '100%',
                     backgroundColor: COLORS.cardBg,
                     borderRadius: 24,
                     padding: 16,
@@ -193,6 +194,7 @@ const ModulesScreen = () => {
                     Open →
                   </Text>
                 </TouchableOpacity>
+                </FadeInUp>
               );
             })}
           </View>

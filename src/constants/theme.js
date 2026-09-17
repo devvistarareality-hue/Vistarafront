@@ -46,19 +46,20 @@ const LIGHT = {
   shadow: '#2F6DB5', glow: '#2F6DB5',
 };
 const DARK = {
-  inkRgb: '232,238,247',
-  screenBg: '#050608', surface: '#0D0F13', surface2: '#12151A', surface3: '#181C22',
-  border: 'rgba(255,255,255,0.075)', borderStrong: 'rgba(255,255,255,0.13)', cardBorder: 'rgba(255,255,255,0.08)', inputBg: '#0A0C10',
-  text: '#F1F4F9', text2: '#D6DDE7', text3: '#AEB8C6', muted: '#8791A2', faint: '#5E6878',
-  strong: '#2F6DB5', strong2: '#245A96',
-  primary: '#3A7FD4', primaryTop: '#5C9BEA', primaryDeep: '#2F6DB5', accent: '#A2D2FF', accentDeep: '#CFE7FF',
-  navActiveBg: 'rgba(162,210,255,0.14)', navActiveFg: '#CFE7FF',
-  blue: 'rgba(162,210,255,0.12)', blue2: 'rgba(162,210,255,0.20)', accentSoft: 'rgba(162,210,255,0.10)', accentSofter: 'rgba(162,210,255,0.045)',
-  success: '#7BE3A4', successSolid: '#2A9657', successDeep: '#B5F3B7', green: 'rgba(123,227,164,0.14)', success2: 'rgba(123,227,164,0.22)', successSoft: 'rgba(123,227,164,0.08)',
-  danger: '#FF8A91', dangerSolid: '#D9434B', dangerDeep: '#FFB0B5', danger2: 'rgba(255,138,145,0.28)', dangerSoft: 'rgba(255,138,145,0.08)',
-  warning: '#FFCB80', warningSolid: '#B8741E', warningDeep: '#FFE2B5', warning2: '#FFBA5C', peach: 'rgba(255,203,128,0.16)', peach2: '#F5B453', warningSoft: 'rgba(255,203,128,0.08)',
-  mutedSolid: '#2A3039', mutedSolid2: '#333A45', faintSolid: '#454D5A',
-  shadow: '#000000', glow: '#5C9BEA',
+  // Midnight Aurora — blue-black base, indigo-tinted surfaces, blue→violet accent (matches web)
+  inkRgb: '226,232,255',
+  screenBg: '#04050A', surface: '#0B0E17', surface2: '#10141F', surface3: '#161B29',
+  border: 'rgba(148,170,230,0.10)', borderStrong: 'rgba(148,170,230,0.18)', cardBorder: 'rgba(148,170,230,0.11)', inputBg: '#070910',
+  text: '#EEF2FF', text2: '#D3DAEE', text3: '#A9B3CC', muted: '#8791AD', faint: '#5B6583',
+  strong: '#4F7FE8', strong2: '#3D68CF',
+  primary: '#6E6BFF', primaryTop: '#5AA2FF', primaryDeep: '#4A63E0', accent: '#A9C8FF', accentDeep: '#D6E4FF',
+  navActiveBg: 'rgba(110,140,255,0.18)', navActiveFg: '#DDE8FF',
+  blue: 'rgba(140,170,255,0.12)', blue2: 'rgba(140,170,255,0.22)', accentSoft: 'rgba(140,170,255,0.11)', accentSofter: 'rgba(140,170,255,0.05)',
+  success: '#6FE3A8', successSolid: '#22A06B', successDeep: '#B8F5D2', green: 'rgba(111,227,168,0.13)', success2: 'rgba(111,227,168,0.22)', successSoft: 'rgba(111,227,168,0.08)',
+  danger: '#FF8A9B', dangerSolid: '#E5485F', dangerDeep: '#FFB6C1', danger2: 'rgba(255,138,155,0.28)', dangerSoft: 'rgba(255,138,155,0.08)',
+  warning: '#FFCF86', warningSolid: '#C98A2E', warningDeep: '#FFE4B8', warning2: '#FFBE5E', peach: 'rgba(255,207,134,0.15)', peach2: '#F5B453', warningSoft: 'rgba(255,207,134,0.08)',
+  mutedSolid: '#262C3D', mutedSolid2: '#2E3548', faintSolid: '#3F475C',
+  shadow: '#000000', glow: '#6E6BFF',
 };
 const T = IS_DARK ? DARK : LIGHT;
 

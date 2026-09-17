@@ -96,7 +96,7 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer ref={navigationRef} theme={NAV_THEME}>
-      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: COLORS.screenBg } }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade_from_bottom', animationDuration: 280, contentStyle: { backgroundColor: COLORS.screenBg } }}>
 
         {!user ? (
           // ── Unauthenticated ──────────────────────────────────────
