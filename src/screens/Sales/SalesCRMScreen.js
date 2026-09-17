@@ -11,13 +11,14 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
 import { ThemeIconButton } from '../../components/ThemeToggle';
+import AppLoader from '../../components/AppLoader';
 
 const NAVY  = COLORS.navy;
 const BLUE  = COLORS.link;
 const BG    = COLORS.screenBg;
 const TEXT  = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
 const TILE  = { flexGrow: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
@@ -337,7 +338,7 @@ export default function SalesCRMScreen({ navigation, route }) {
 
           {/* Apply button */}
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center' }}>
+            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>
@@ -373,7 +374,7 @@ export default function SalesCRMScreen({ navigation, route }) {
         {/* Stats */}
         <View style={{ paddingHorizontal: 16, paddingTop: 4, marginBottom: 8 }}>
           {loading ? (
-            <ActivityIndicator color={NAVY} style={{ marginVertical: 20 }} />
+            <AppLoader size={0.7} style={{ marginVertical: 20 }} />
           ) : STAT_SECTIONS.map(sec => (
             <View key={sec.title} style={[CARD, { padding: 14, marginBottom: 12 }]}>
               <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>{sec.title}</Text>

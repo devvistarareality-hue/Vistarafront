@@ -620,12 +620,12 @@ const s = StyleSheet.create({
   sectionLabelText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8 },
 
   statsRow:  { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 16 },
-  statCard:  { flex: 1, backgroundColor: COLORS.surface, borderRadius: 18, padding: 12, alignItems: 'center', elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  statCard:  { flex: 1, backgroundColor: COLORS.surface, borderRadius: 18, padding: 12, alignItems: 'center', elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 , borderWidth: 1, borderColor: COLORS.cardBorder },
   statIcon:  { width: 38, height: 38, borderRadius: 11, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   statLabel: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 4 },
   statValue: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
 
-  mapCard:       { marginHorizontal: 16, borderRadius: 18, overflow: 'hidden', backgroundColor: COLORS.surface, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  mapCard:       { marginHorizontal: 16, borderRadius: 18, overflow: 'hidden', backgroundColor: COLORS.surface, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 , borderWidth: 1, borderColor: COLORS.cardBorder },
   map:           { width: '100%', height: 210 },
   mapLoader:     { height: 210, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: COLORS.screenBg },
   mapLoaderText: { fontSize: 13, color: COLORS.textSecondary },
@@ -636,7 +636,7 @@ const s = StyleSheet.create({
   geofenceBadgeText: { color: COLORS.white, fontWeight: '700', fontSize: 12, flex: 1 },
   geofenceCoords:    { color: 'rgba(255,255,255,0.75)', fontSize: 10 },
 
-  card:    { marginHorizontal: 16, backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 },
+  card:    { marginHorizontal: 16, backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, elevation: 2, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8 , borderWidth: 1, borderColor: COLORS.cardBorder },
   divider: { height: 1, backgroundColor: COLORS.surfaceAlt, marginVertical: 12 },
 
   timeRow:       { flexDirection: 'row', gap: 10, marginBottom: 4 },

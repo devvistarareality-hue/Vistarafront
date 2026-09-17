@@ -119,7 +119,7 @@ const s = StyleSheet.create({
   sectionTitle:  { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8, marginBottom: 16 },
 
   grid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  card:      { width: '47%', backgroundColor: COLORS.cardBg, borderRadius: 20, padding: 16, ...CARD_SHADOW },
+  card:      { width: '47%', backgroundColor: COLORS.cardBg, borderRadius: 20, padding: 16, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   iconBg:    { width: 50, height: 50, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   cardName:  { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 10, lineHeight: 20 },
   cardArrow: { fontSize: 12, fontWeight: '700' },

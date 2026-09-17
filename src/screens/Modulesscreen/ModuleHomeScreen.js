@@ -8,7 +8,7 @@ import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Generic module landing — for now each module surfaces a "My Team" card
 // (department org chart). More cards can be added as modules grow.

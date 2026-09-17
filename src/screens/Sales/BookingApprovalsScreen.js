@@ -17,7 +17,7 @@ import ExportBookings from '../../components/ExportBookings';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Cancelled sits beside Rejected rather than inside it: both are stored at
 // status='rejected', but one was refused before it counted and the other was a live
@@ -598,7 +598,7 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
   return (
     <Modal visible={!!b} transparent animationType="fade" onRequestClose={busy ? undefined : onClose}>
       <View style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'center', padding: 22 }}>
-        <View style={{ backgroundColor: COLORS.surface, borderRadius: 20, padding: 20 }}>
+        <View style={{ backgroundColor: COLORS.surface, borderRadius: 20, padding: 20 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: COLORS.error, marginBottom: 6 }}>Cancel this booking?</Text>
           <Text style={{ fontSize: 13, color: MUTED, lineHeight: 20, marginBottom: 14 }}>
             This frees the unit back to available, permanently deletes the signed {doc} from

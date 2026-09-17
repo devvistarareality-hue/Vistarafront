@@ -8,9 +8,10 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const RED = COLORS.error; const BLUE = COLORS.link || COLORS.primary || COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const ITEMS = [
   ['leads', 'Leads'],
@@ -123,7 +124,7 @@ export default function SalesDataResetScreen({ navigation }) {
               </TouchableOpacity>
             )}
           </View>
-          {loading ? <ActivityIndicator color={NAVY} /> : ITEMS.map(([k, label]) => {
+          {loading ? <AppLoader size={0.7} /> : ITEMS.map(([k, label]) => {
             const isImplied = implied(k) && !selected.has(k);
             const checked = selected.has(k) || isImplied;
             return (

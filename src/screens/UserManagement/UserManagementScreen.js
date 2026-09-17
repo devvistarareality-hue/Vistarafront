@@ -188,12 +188,12 @@ const s = StyleSheet.create({
   statDot:     { width: 7, height: 7, borderRadius: 4 },
   statText:    { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
   filterRow:    { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 14 },
 
-  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginTop: 10, ...CARD_SHADOW },
+  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginTop: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   avatar:      { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText:  { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardBody:    { flex: 1 },

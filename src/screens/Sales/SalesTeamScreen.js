@@ -11,7 +11,7 @@ import { isManagerRole } from '../../lib/roles';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Designations that can be assigned projects (mirrors the web Team Users page).
 // Frontline designations always take project assignments; Manager does too, since
@@ -84,7 +84,7 @@ function AssignProjectsModal({ member, projects, onClose }) {
           </View>
 
           {loading ? (
-            <ActivityIndicator color={NAVY} style={{ margin: 36 }} />
+            <AppLoader size={0.7} style={{ margin: 36 }} />
           ) : (
             <ScrollView contentContainerStyle={{ padding: 16 }}>
               {projects.length === 0 ? (
@@ -108,7 +108,7 @@ function AssignProjectsModal({ member, projects, onClose }) {
           )}
 
           <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
-            <TouchableOpacity onPress={save} disabled={saving} style={{ backgroundColor: NAVY, borderRadius: 16, paddingVertical: 14, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
+            <TouchableOpacity onPress={save} disabled={saving} style={{ backgroundColor: NAVY, borderRadius: 16, paddingVertical: 14, alignItems: 'center', opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
               {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Save ({selected.length} project{selected.length === 1 ? '' : 's'})</Text>}
             </TouchableOpacity>
           </View>
@@ -244,7 +244,7 @@ export default function SalesTeamScreen({ navigation }) {
           renderItem={({ item: m }) => (
             <View style={[CARD, { padding: 14, marginBottom: 10 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                   <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{initials(m.name)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>

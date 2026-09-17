@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: TEXT,
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   submitButton: {
     width: '100%',
     height: 54,
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     ...CARD_SHADOW,
-  },
+   shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   submitButtonDisabled: {
     backgroundColor: COLORS.textTertiary,
     elevation: 0,

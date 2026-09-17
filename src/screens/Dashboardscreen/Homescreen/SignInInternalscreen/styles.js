@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
   mapCard: {
     margin: 16, borderRadius: 18, overflow: 'hidden', ...CARD_SHADOW,
     backgroundColor: COLORS.surface,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   map: { width: '100%', height: 220 },
   mapLoader: {
     height: 220, justifyContent: 'center', alignItems: 'center', gap: 10, backgroundColor: COLORS.screenBg,
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface, marginHorizontal: 16,
     marginBottom: 16, borderRadius: 18, padding: 16, ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   timeRow: { flexDirection: 'row', marginBottom: 16, gap: 10 },
   timeBox: {
     flex: 1, backgroundColor: COLORS.successBg, borderRadius: 16,

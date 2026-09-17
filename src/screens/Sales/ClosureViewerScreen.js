@@ -19,7 +19,7 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
 // Booking web app (own login + form → records booking, auto-LOI, Google Sheet).
 const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypnmUmBmBIrL5rC6xqSEbLFDvSw1XvES6D-JyL1beY8-AeEREnfvVM_TbbbV1t1i883g/exec';
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
 const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
@@ -642,7 +642,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
             <TouchableOpacity activeOpacity={1} onPress={() => setDraftPanelPlot(null)}
               style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.5)`, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
-                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
+                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Drafted</Text>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4, marginBottom: 18 }}>
                   {p.held_by_name ? `Drafted by ${p.held_by_name}` : 'Drafted'}
@@ -654,7 +654,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       it, which is the wrong way round. */}
                   {canDiscard && (
                     <TouchableOpacity onPress={() => { setDraftPanelPlot(null); navigation.navigate('BookingForm', { draft: p.drafted_booking_id }); }}
-                      style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.link, alignItems: 'center' }}>
+                      style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.link, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                       <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>▸ {mine ? 'Resume' : 'Open Draft'}</Text>
                     </TouchableOpacity>
                   )}
@@ -690,7 +690,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
             <TouchableOpacity activeOpacity={1} onPress={() => !cancelBusy && setHoldPanelPlot(null)}
               style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.5)`, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
-                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
+                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · In Progress</Text>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4 }}>
                   {mine ? 'Selected by you' : (p.held_by_name ? `Selected by ${p.held_by_name}` : 'Selected')}
@@ -723,7 +723,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
             <TouchableOpacity activeOpacity={1} onPress={() => !resaleBusy && setSoldPanelPlot(null)}
               style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.5)`, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
-                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 }}>
+                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Sold</Text>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4, marginBottom: 18 }}>
                   {p.agent_name ? `Sold by ${p.agent_name}` : 'Sold'}
@@ -782,7 +782,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
                   <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.link }}>{plot.cluster_type}</Text>
                 </View>
               )}
-              <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: COLORS.surface }}>
+              <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: COLORS.surface , borderWidth: 1, borderColor: COLORS.cardBorder }}>
                 <Text style={{ fontSize: 11, fontWeight: '800', color: cfg.dot }}>
                   {cfg.label}{plot.held_by_name && plot.status === 'hold' ? ` · ${plot.held_by_name}` : ''}
                 </Text>

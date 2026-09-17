@@ -102,7 +102,7 @@ function ChartNode({ node }) {
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // `cp` is the Channel Partner chart: scoped by CP designation rather than by
 // module, since CP staff sit in Sales and there is no module to assign them to.

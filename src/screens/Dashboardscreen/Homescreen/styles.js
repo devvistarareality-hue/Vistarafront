@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   statIconBox: {
     width: 44,
     height: 44,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   todayDate: {
     fontSize: 14,
     fontWeight: '700',
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 6,
     alignItems: 'center',
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   dayName:  { fontSize: 12, fontWeight: '800', color: NAVY, letterSpacing: 0.5 },
   dayDate:  { fontSize: 11, color: COLORS.textSecondary, marginBottom: 8, marginTop: 2 },
   dayDivider: { height: 1, backgroundColor: COLORS.surfaceAlt, width: '100%', marginBottom: 8 },
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   calNav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',

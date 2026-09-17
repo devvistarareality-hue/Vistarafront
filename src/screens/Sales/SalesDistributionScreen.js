@@ -17,7 +17,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW, marginBottom: 16 };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW, marginBottom: 16 , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -587,7 +587,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   <Text style={{ fontSize: 13, color: MUTED, marginTop: 3 }}>Higher weight = more leads assigned</Text>
                 </View>
                 <TouchableOpacity onPress={saveWeights} disabled={savingWeights || !weightsChanged}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 8, opacity: (!weightsChanged || savingWeights) ? 0.4 : 1 }}>
+                  style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 8, opacity: (!weightsChanged || savingWeights) ? 0.4 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                   {savingWeights
                     ? <ActivityIndicator size="small" color={COLORS.white} />
                     : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
@@ -662,7 +662,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   )}
 
                   <TouchableOpacity onPress={() => triggerDist(type)} disabled={disabled}
-                    style={{ paddingVertical: 14, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center', opacity: disabled ? 0.45 : 1 }}>
+                    style={{ paddingVertical: 14, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center', opacity: disabled ? 0.45 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                     {distributing === type
                       ? <ActivityIndicator color={COLORS.white} size="small" />
                       : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>

@@ -12,7 +12,7 @@ import FilterSelect from '../../components/FilterSelect';
 import AppLoader from '../../components/AppLoader';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Same three lists the web directory uses — kept identical so a partner added on
 // either side reads the same on the other.

@@ -22,7 +22,7 @@ const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; 
 // Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface, marginBottom: 8 };
 const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 3, letterSpacing: 0.4 };
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -454,7 +454,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <StatusBadge status={lead.status} outcome={lead.sv_outcome} />
             </View>
             <TouchableOpacity onPress={save} disabled={saving}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 }}>
+              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
               {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>{form.stm_status === 'closed' ? 'Record Closure →' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
@@ -1207,7 +1207,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 <Ionicons name="close" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity onPress={create} disabled={saving}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 }}>
+                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                 {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Add Lead</Text>}
               </TouchableOpacity>
             </View>
@@ -1601,7 +1601,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
 
         <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
           <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
-            style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}>
+            style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 16, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
@@ -1964,7 +1964,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
           </Text>
         </View>
         <TouchableOpacity onPress={() => setCreateModal(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
           <Ionicons name="add" size={16} color={COLORS.white} />
           <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>Add</Text>
         </TouchableOpacity>
@@ -2047,7 +2047,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(true); }} colors={[NAVY]} tintColor={NAVY} />}
           onViewableItemsChanged={onViewableItemsChanged.current}
           viewabilityConfig={viewabilityConfig.current}
-          ListFooterComponent={loadingMore ? <ActivityIndicator color={NAVY} style={{ marginVertical: 16 }} /> : null}
+          ListFooterComponent={loadingMore ? <AppLoader size={0.7} style={{ marginVertical: 16 }} /> : null}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
               <Ionicons name="people-outline" size={48} color={COLORS.divider} />
@@ -2067,7 +2067,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
         <TouchableOpacity activeOpacity={1} onPress={() => setXferLead(null)}
           style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'center', padding: 20 }}>
           <TouchableOpacity activeOpacity={1} onPress={() => {}}
-            style={{ backgroundColor: COLORS.surface, borderRadius: 20, overflow: 'hidden' }}>
+            style={{ backgroundColor: COLORS.surface, borderRadius: 20, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
             <View style={{ backgroundColor: NAVY, padding: 16 }}>
               <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Transfer to another STM</Text>
               <Text style={{ color: COLORS.surfaceAlt, fontSize: 12, marginTop: 2 }}>

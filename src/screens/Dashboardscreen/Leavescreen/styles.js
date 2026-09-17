@@ -20,7 +20,7 @@ export default StyleSheet.create({
     flexDirection: 'row', backgroundColor: COLORS.cardBg,
     marginHorizontal: 20, borderRadius: 16, padding: 4, marginBottom: 8, marginTop: 12,
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   tabItem:       { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 14 },
   tabItemActive: { backgroundColor: COLORS.navy },
   tabLabel:      { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },

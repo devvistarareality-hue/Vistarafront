@@ -194,7 +194,7 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     shadowColor: COLORS.error, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 14, elevation: 10,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   logoImg: {
     width: 60, height: 60,
   },

@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   locLoadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
 
   timeRow: {
     flexDirection: 'row',

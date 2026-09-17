@@ -386,7 +386,7 @@ const s = StyleSheet.create({
   heroSub: { fontSize: 15, color: COLORS.text3, marginTop: 4, marginBottom: 20 },
   h1: { fontSize: 22, fontWeight: '800', color: NAVY, marginBottom: 12, marginTop: 6 },
 
-  card: { backgroundColor: COLORS.surface, borderRadius: 20, overflow: 'hidden', marginBottom: 18, shadowColor: NAVY, shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
+  card: { backgroundColor: COLORS.surface, borderRadius: 20, overflow: 'hidden', marginBottom: 18, shadowColor: NAVY, shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.cardBorder },
   cardImg: { width: '100%', height: 180 },
   cardTitle: { fontSize: 20, fontWeight: '800', color: NAVY },
   cardLoc: { fontSize: 13, color: MUTED, marginTop: 3 },
@@ -425,7 +425,7 @@ const s = StyleSheet.create({
 
   check: { width: 88, height: 88, borderRadius: 44, backgroundColor: COLORS.successBg, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
   doneMsg: { fontSize: 16, color: COLORS.text2, textAlign: 'center', marginTop: 8 },
-  empty: { backgroundColor: COLORS.surface, borderRadius: 20, padding: 30, textAlign: 'center', color: COLORS.text3, fontSize: 15, marginTop: 10 },
+  empty: { backgroundColor: COLORS.surface, borderRadius: 20, padding: 30, textAlign: 'center', color: COLORS.text3, fontSize: 15, marginTop: 10 , borderWidth: 1, borderColor: COLORS.cardBorder },
   exit: { position: 'absolute', bottom: 10, right: 14 },
   exitT: { fontSize: 11, color: COLORS.textTertiary },
 });

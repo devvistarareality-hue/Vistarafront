@@ -419,7 +419,7 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     shadowColor: ORANGE, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45, shadowRadius: 12, elevation: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   logoImg: { width: 52, height: 52 },
 
   dividerRow: {

@@ -133,7 +133,7 @@ function ProjectCard({ project, onEdit, onManage }) {
         ) : null}
 
         <TouchableOpacity onPress={() => onManage(project)}
-          style={{ marginTop: 12, paddingVertical: 10, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center' }}>
+          style={{ marginTop: 12, paddingVertical: 10, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
           <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>Manage Plots →</Text>
         </TouchableOpacity>
       </View>
@@ -165,7 +165,7 @@ function TypeDropdown({ value, onChange }) {
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', paddingHorizontal: 40 }}
           activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
             {PROJECT_TYPES.map((t, i) => (
               <TouchableOpacity key={t} onPress={() => { onChange(t); setOpen(false); }}
                 style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: value === t ? COLORS.surfaceAlt : COLORS.surface,
@@ -200,7 +200,7 @@ function FormulaDropdown({ value, onChange }) {
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', paddingHorizontal: 40 }}
           activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
             {FORMULA_OPTIONS.map((o, i) => (
               <TouchableOpacity key={o.value} onPress={() => { onChange(o.value); setOpen(false); }}
                 style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: value === o.value ? COLORS.surfaceAlt : COLORS.surface,
@@ -492,7 +492,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 <Ionicons name="close" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity onPress={save} disabled={saving}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 }}>
+                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                 {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Save</Text>}
               </TouchableOpacity>
             </View>
@@ -849,7 +849,7 @@ export default function ProjectsScreen() {
           <Text style={{ fontSize: 12, color: MUTED }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</Text>
         </View>
         <TouchableOpacity onPress={openAdd}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: NAVY, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16 }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: NAVY, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
           <Ionicons name="add" size={18} color={COLORS.white} />
           <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Add Project</Text>
         </TouchableOpacity>
@@ -877,6 +877,6 @@ export default function ProjectsScreen() {
   );
 }
 
-const cardStyle = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
+const cardStyle = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const metaChip  = { backgroundColor: COLORS.surfaceAlt, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 };
 const metaChipTxt = { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary };

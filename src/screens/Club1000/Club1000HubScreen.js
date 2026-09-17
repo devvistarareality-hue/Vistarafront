@@ -9,13 +9,14 @@ import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
 const NAVY  = COLORS.navy;
 const TEAL  = COLORS.success;
 const BG    = COLORS.screenBg;
 const TEXT  = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const MENU = [
   { key: 'Club1000Leads',      label: 'Leads',        icon: 'person-add-outline',    color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },
@@ -326,7 +327,7 @@ export default function Club1000HubScreen({ navigation, route }) {
           </ScrollView>
 
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
+            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>
@@ -349,7 +350,7 @@ export default function Club1000HubScreen({ navigation, route }) {
         <View style={{ paddingHorizontal: 16, paddingTop: 14, marginBottom: 8 }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Overview</Text>
           {loading ? (
-            <ActivityIndicator color={NAVY} style={{ marginVertical: 20 }} />
+            <AppLoader size={0.7} style={{ marginVertical: 20 }} />
           ) : (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {STAT_CARDS.map((s) => (

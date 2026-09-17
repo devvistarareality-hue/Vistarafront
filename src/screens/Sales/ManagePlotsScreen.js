@@ -22,7 +22,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const STATUS_CFG = {
   available: { label: 'Available', color: COLORS.success, bg: COLORS.successBg, border: COLORS.success, zone: COLORS.successAlt },
@@ -234,7 +234,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
       <Modal visible={typeOpen} transparent animationType="fade" onRequestClose={() => setTypeOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', paddingHorizontal: 40 }}
           activeOpacity={1} onPress={() => setTypeOpen(false)}>
-          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
             {['', ...clusterTypes].map((t, i) => (
               <TouchableOpacity key={i} onPress={() => { setEditType(t); setTypeOpen(false); }}
                 style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: editType === t ? COLORS.surfaceAlt : COLORS.surface,

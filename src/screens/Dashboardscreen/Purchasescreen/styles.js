@@ -23,7 +23,7 @@ export default StyleSheet.create({
     marginHorizontal: 20, marginTop: 40,
     backgroundColor: COLORS.cardBg, borderRadius: 18,
     padding: 40, ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
     backgroundColor: COLORS.warningBg,

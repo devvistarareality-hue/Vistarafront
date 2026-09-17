@@ -22,7 +22,7 @@ export default StyleSheet.create({
     alignItems: 'center', paddingVertical: 28,
     backgroundColor: COLORS.navy, marginHorizontal: 20, marginTop: 20,
     borderRadius: 18, ...CARD_SHADOW,
-  },
+   shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   avatarCircle: {
     width: 72, height: 72, borderRadius: 36,
     backgroundColor: 'rgba(255,255,255,0.15)',
@@ -36,7 +36,7 @@ export default StyleSheet.create({
     marginHorizontal: 20, marginTop: 20,
     backgroundColor: COLORS.cardBg, borderRadius: 18, overflow: 'hidden',
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   menuItem: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 16,

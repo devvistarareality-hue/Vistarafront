@@ -47,7 +47,7 @@ function SectionLabel({ children }) {
 
 function Card({ children, style }) {
   return (
-    <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, marginBottom: 14, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, ...style }}>
+    <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, marginBottom: 14, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, ...style , borderWidth: 1, borderColor: COLORS.cardBorder }}>
       {children}
     </View>
   );
@@ -81,7 +81,7 @@ function SetupGuideModal({ visible, onClose }) {
         <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {GUIDE_STEPS.map(step => (
             <View key={step.n} style={{ flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: COLORS.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: COLORS.surfaceAlt }}>
-              <View style={{ width: 28, height: 28, borderRadius: 18, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 18, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.white }}>{step.n}</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -351,7 +351,7 @@ function MetaTab() {
               </>
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: BLUE, backgroundColor: COLORS.screenBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11 }} numberOfLines={1}>{masked}</Text>
+                <Text style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: BLUE, backgroundColor: COLORS.inputBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11 }} numberOfLines={1}>{masked}</Text>
                 <TouchableOpacity onPress={() => { setEditingToken(true); setMsg(''); setPagesDiag(''); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8 }}>
                   <Ionicons name="create-outline" size={15} color={MUTED} />
@@ -386,7 +386,7 @@ function MetaTab() {
               />
               {!editing && (
                 <TouchableOpacity onPress={saveConfig} disabled={saving || !appSecret.trim()}
-                  style={{ marginTop: 10, backgroundColor: NAVY, borderRadius: 14, paddingVertical: 12, alignItems: 'center', opacity: appSecret.trim() ? 1 : 0.5 }}>
+                  style={{ marginTop: 10, backgroundColor: NAVY, borderRadius: 14, paddingVertical: 12, alignItems: 'center', opacity: appSecret.trim() ? 1 : 0.5 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                   <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.white }}>Save App Secret</Text>
                 </TouchableOpacity>
               )}
@@ -545,7 +545,7 @@ function MetaTab() {
         )}
 
         <TouchableOpacity onPress={addMapping} disabled={mapSaving || !mapFormId.trim() || !mapProject}
-          style={{ backgroundColor: NAVY, borderRadius: 14, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: (!mapFormId.trim() || !mapProject) ? 0.5 : 1 }}>
+          style={{ backgroundColor: NAVY, borderRadius: 14, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: (!mapFormId.trim() || !mapProject) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
           {mapSaving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="add-circle-outline" size={16} color={COLORS.white} />}
           <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.white }}>+ Add Mapping</Text>
         </TouchableOpacity>
@@ -623,7 +623,7 @@ function SourcesTab() {
             style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: BG }}
             onSubmitEditing={() => addSource(newName)} returnKeyType="done" />
           <TouchableOpacity onPress={() => addSource(newName)} disabled={adding || !newName.trim()}
-            style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: NAVY, borderRadius: 14, justifyContent: 'center', opacity: !newName.trim() ? 0.5 : 1 }}>
+            style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: NAVY, borderRadius: 14, justifyContent: 'center', opacity: !newName.trim() ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             {adding ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="add" size={20} color={COLORS.white} />}
           </TouchableOpacity>
         </View>
@@ -645,7 +645,7 @@ function SourcesTab() {
       </Card>
 
       <SectionLabel>Active Sources ({sources.length})</SectionLabel>
-      {loading ? <ActivityIndicator color={NAVY} /> : (
+      {loading ? <AppLoader size={0.7} /> : (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {sources.map((s, i) => (
             <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingLeft: 14, paddingRight: 10, borderRadius: 30,
@@ -681,7 +681,7 @@ export default function SalesSourcesScreen({ navigation }) {
           </TouchableOpacity>
           <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Lead Setup</Text>
           <TouchableOpacity onPress={() => setGuideVisible(true)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: NAVY }}>
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: NAVY , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <Ionicons name="help-circle-outline" size={16} color={COLORS.white} />
             <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.white }}>Guide</Text>
           </TouchableOpacity>

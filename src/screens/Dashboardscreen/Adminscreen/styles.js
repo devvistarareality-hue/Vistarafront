@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   sectionHeader: { paddingHorizontal: 18, paddingVertical: 14 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionTitle: {

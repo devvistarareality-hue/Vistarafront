@@ -5,13 +5,13 @@ import { COLORS } from '../constants/theme';
 /** Shared form-field styling so every input across the app looks identical. */
 export const inputStyle = {
   borderWidth: 1.5,
-  borderColor: 'transparent',
+  borderColor: COLORS.border,
   borderRadius: 14,
   paddingHorizontal: 14,
   paddingVertical: 12,
   fontSize: 15,
   color: COLORS.textPrimary,
-  backgroundColor: COLORS.surfaceAlt,
+  backgroundColor: COLORS.inputBg,
 };
 
 /** Label + arbitrary control (use for dropdowns / custom inputs). */

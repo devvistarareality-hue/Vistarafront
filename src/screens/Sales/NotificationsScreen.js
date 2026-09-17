@@ -11,7 +11,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const NAVY = COLORS.navy; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, padding: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const TYPE_STYLE = {
   new_lead:         { icon: 'person-add',       color: COLORS.success, bg: COLORS.successBg },

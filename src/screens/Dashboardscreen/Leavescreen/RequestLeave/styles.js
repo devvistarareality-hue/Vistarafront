@@ -35,14 +35,14 @@ export default StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg,
     borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14,
     marginBottom: 14, ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   dateText:     { fontSize: 14, color: COLORS.shadow },
   dateTextFilled: { color: NAVY, fontWeight: '600' },
 
   descCard: {
     backgroundColor: COLORS.cardBg, borderRadius: 18, paddingHorizontal: 16,
     paddingVertical: 12, marginBottom: 16, ...CARD_SHADOW, minHeight: 120,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   descInput: { fontSize: 14, color: TEXT, flex: 1, minHeight: 100 },
 
   footer:    { backgroundColor: COLORS.screenBg, paddingHorizontal: 20, paddingVertical: 16 },
@@ -56,7 +56,7 @@ export default StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: COLORS.cardBg, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14,
     marginBottom: 14, ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   dropdownLabel: { fontSize: 14, fontWeight: '600', color: TEXT },
   dropdownRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dropdownValue: { fontSize: 14, fontWeight: '700', color: NAVY },

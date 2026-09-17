@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW, MODULE_ACCENT } from '../../constants/theme';
 import ThemeToggle from '../../components/ThemeToggle';
+import AppLoader from '../../components/AppLoader';
 
 const MODULE_CONFIG = {
   Sales: {
@@ -83,7 +84,7 @@ const ModulesScreen = () => {
   if (userModules.length === 1) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={COLORS.link} />
+        <AppLoader size={0.7} />
       </SafeAreaView>
     );
   }
@@ -111,7 +112,7 @@ const ModulesScreen = () => {
           <View style={{
             backgroundColor: COLORS.navy, borderRadius: 28, padding: 18,
             flexDirection: 'row', alignItems: 'center',
-          }}>
+           shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <View style={{
               width: 48, height: 48, borderRadius: 18,
               backgroundColor: 'rgba(162,210,255,0.18)',
@@ -171,7 +172,7 @@ const ModulesScreen = () => {
                     borderRadius: 24,
                     padding: 16,
                     ...CARD_SHADOW,
-                  }}
+                   borderWidth: 1, borderColor: COLORS.cardBorder }}
                   activeOpacity={0.85}
                   onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}
                 >

@@ -9,13 +9,14 @@ import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
 const NAVY = COLORS.navy;
 const BLUE = COLORS.link;
 const BG   = COLORS.screenBg;
 const TEXT = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
 const TILE  = { flexGrow: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
@@ -505,7 +506,7 @@ export default function SalesReportsScreen({ navigation }) {
           </ScrollView>
 
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
+            style={{ backgroundColor: NAVY, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>
@@ -528,7 +529,7 @@ export default function SalesReportsScreen({ navigation }) {
 
 
         {loading ? (
-          <ActivityIndicator color={NAVY} style={{ marginVertical: 40 }} />
+          <AppLoader size={0.7} style={{ marginVertical: 40 }} />
         ) : (
           <>
             {STAT_SECTIONS.map(sec => (

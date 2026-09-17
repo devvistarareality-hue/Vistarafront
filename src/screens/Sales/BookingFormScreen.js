@@ -26,7 +26,7 @@ const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginBottom: 12, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginBottom: 12, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const safeDate = (s) => { const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s || '')); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; };
 
 export default function BookingFormScreen({ navigation, route }) {
@@ -1279,7 +1279,7 @@ export default function BookingFormScreen({ navigation, route }) {
               <TouchableOpacity onPress={() => openLoi(draftId || savedDraftId)}><Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 12, textDecorationLine: 'underline' }}>View</Text></TouchableOpacity>
             </View>
           )}
-          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: COLORS.primaryButton, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 }}>
+          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: COLORS.primaryButton, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}><AppIcon name="file" size={14} /> Generate LOI (Download)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.success, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 }}>

@@ -39,7 +39,7 @@ const CARD = {
   backgroundColor: COLORS.cardBg,
   borderRadius: 18,
   ...THEME_SHADOW,
-};
+ borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const CAL_CELL = Math.floor((width - 40 - 32) / 7);
 
@@ -311,7 +311,7 @@ const HomeScreen = () => {
                 justifyContent: 'center', alignItems: 'center',
                 shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.18, shadowRadius: 10, elevation: 3,
-              }}>
+               borderWidth: 1, borderColor: COLORS.cardBorder }}>
               <Ionicons name="notifications-outline" size={20} color={TEXT} />
               {unread > 0 && (
                 <View style={{
@@ -328,7 +328,7 @@ const HomeScreen = () => {
               style={{
                 width: 40, height: 40, borderRadius: 20,
                 backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
-              }}
+               shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}
             >
               <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.powderBlue }}>{initials}</Text>
             </TouchableOpacity>
@@ -358,7 +358,7 @@ const HomeScreen = () => {
           backgroundColor: COLORS.surface, borderRadius: 20,
           shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
-        }}>
+         borderWidth: 1, borderColor: COLORS.cardBorder }}>
           <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 14 }}>Quick Actions</Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             {[
@@ -400,7 +400,7 @@ const HomeScreen = () => {
             backgroundColor: COLORS.surface, borderRadius: 20,
             shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
-          }}>
+           borderWidth: 1, borderColor: COLORS.cardBorder }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>Availability</Text>
               {avail?.is_available && (
@@ -736,7 +736,7 @@ const HomeScreen = () => {
             {/* Details list */}
             <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 20, overflow: 'hidden', marginBottom: 24 }}>
               {profileLoading ? (
-                <ActivityIndicator color={NAVY} style={{ marginVertical: 32 }} />
+                <AppLoader size={0.7} style={{ marginVertical: 32 }} />
               ) : userDetails.map((item, i) => (
                 <View key={i} style={{
                   flexDirection: 'row', alignItems: 'center', gap: 14,
