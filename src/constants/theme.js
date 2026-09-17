@@ -48,8 +48,8 @@ const LIGHT = {
 const DARK = {
   // Midnight Aurora — blue-black base, indigo-tinted surfaces, blue→violet accent (matches web)
   inkRgb: '226,232,255',
-  screenBg: '#04050A', surface: '#0B0E17', surface2: '#10141F', surface3: '#161B29',
-  border: 'rgba(148,170,230,0.10)', borderStrong: 'rgba(148,170,230,0.18)', cardBorder: 'rgba(148,170,230,0.11)', inputBg: '#070910',
+  screenBg: '#070B18', surface: '#0F1629', surface2: '#131B33', surface3: '#1A2340',
+  border: 'rgba(150,175,240,0.12)', borderStrong: 'rgba(150,175,240,0.22)', cardBorder: 'rgba(160,190,255,0.16)', inputBg: '#0A1022',
   text: '#EEF2FF', text2: '#D3DAEE', text3: '#A9B3CC', muted: '#8791AD', faint: '#5B6583',
   strong: '#4F7FE8', strong2: '#3D68CF',
   primary: '#6E6BFF', primaryTop: '#5AA2FF', primaryDeep: '#4A63E0', accent: '#A9C8FF', accentDeep: '#D6E4FF',
