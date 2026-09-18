@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StatusBar, RefreshControl, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StatusBar, RefreshControl, Switch, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -158,9 +158,9 @@ function NewSchemeSheet({ visible, scheme, onClose, onSaved }) {
         )}
 
         <TouchableOpacity onPress={submit} disabled={saving}
-          style={{ backgroundColor: TEAL, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: saving ? 0.7 : 1, marginTop: 8 }}>
-          {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>{isEdit ? 'Save Changes' : 'Create Scheme'}</Text>
+          style={[ClubSchemesScreenS.btn, (saving) && ClubSchemesScreenS.btnDim]}>
+          {saving ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Ionicons name="save-outline" size={17} color={COLORS.btnTextSuccess} />}
+          <Text style={ClubSchemesScreenS.box}>{isEdit ? 'Save Changes' : 'Create Scheme'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -210,9 +210,9 @@ export default function Club1000SchemesScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Schemes</Text>
         {manager && (
-          <TouchableOpacity onPress={() => setShowNew(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 }}>
-            <Ionicons name="add" size={16} color={COLORS.white} />
-            <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>New</Text>
+          <TouchableOpacity onPress={() => setShowNew(true)} style={ClubSchemesScreenS.btn2}>
+            <Ionicons name="add" size={16} color={COLORS.btnTextSuccess} />
+            <Text style={ClubSchemesScreenS.box2}>New</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -248,3 +248,12 @@ export default function Club1000SchemesScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ClubSchemesScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
+  btnDim: { opacity: 0.7 },
+  box: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
+  btn2: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 },
+  box2: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
+});

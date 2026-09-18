@@ -17,6 +17,7 @@ import TowerFloorBuilder from '../../components/TowerFloorBuilder';
 import { fieldFlags } from '../../lib/bookingFormulas';
 
 const { width: SW } = Dimensions.get('window');
+import FilterSelect from '../../components/FilterSelect';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
@@ -1404,29 +1405,18 @@ export default function ManagePlotsScreen({ route, navigation }) {
                 ))}
               </ScrollView>
               {/* A single-block tower has nothing to choose between, so only its floors show. */}
-              {towerBlocks.length > 1 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, flexDirection: 'row', marginBottom: 8 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, alignSelf: 'center', marginRight: 2 }}>BLOCK</Text>
-                  {[['', 'All'], ...towerBlocks.map(b => [b, b])].map(([val, label]) => (
-                    <TouchableOpacity key={val || 'all'} onPress={() => { setBlockF(val); setFloorF(''); }}
-                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1.5,
-                        borderColor: blockF === val ? BLUE : COLORS.border, backgroundColor: blockF === val ? COLORS.accentSofter : COLORS.surface }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: blockF === val ? BLUE : MUTED }}>{label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-              {towerFloors.length > 1 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, flexDirection: 'row', marginBottom: 10 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, alignSelf: 'center', marginRight: 2 }}>FLOOR</Text>
-                  {[['', 'All'], ...towerFloors.map(([n, label]) => [String(n), label])].map(([val, label]) => (
-                    <TouchableOpacity key={val || 'all'} onPress={() => setFloorF(val)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1.5,
-                        borderColor: floorF === val ? BLUE : COLORS.border, backgroundColor: floorF === val ? COLORS.accentSofter : COLORS.surface }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: floorF === val ? BLUE : MUTED }}>{label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+              {(towerBlocks.length > 1 || towerFloors.length > 1) && (
+                <View style={mpS.filterBar}>
+                  {towerBlocks.length > 1 && (
+                    <FilterSelect label="All blocks" value={blockF} style={mpS.filterSel}
+                      onChange={(v) => { setBlockF(v); setFloorF(''); }}
+                      options={[{ value: '', label: 'All blocks' }, ...towerBlocks.map((b) => ({ value: b, label: `Block ${b}` }))]} />
+                  )}
+                  {towerFloors.length > 1 && (
+                    <FilterSelect label="All floors" value={floorF} style={mpS.filterSel} onChange={setFloorF}
+                      options={[{ value: '', label: 'All floors' }, ...towerFloors.map(([n, label]) => ({ value: String(n), label }))]} />
+                  )}
+                </View>
               )}
               {plots.length > 0 && (
                 <TouchableOpacity onPress={async () => {
@@ -1482,3 +1472,9 @@ export default function ManagePlotsScreen({ route, navigation }) {
     </SafeAreaView>
   );
 }
+
+// Block / floor pickers: dropdowns, not rows of chips.
+const mpS = StyleSheet.create({
+  filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  filterSel: { flexGrow: 1, flexBasis: 150, justifyContent: 'space-between' },
+});

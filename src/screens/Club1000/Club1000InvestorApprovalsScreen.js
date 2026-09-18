@@ -261,8 +261,8 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                 {inv.approval_status === 'pending' && (
                   canApprove(inv) ? (
                     <>
-                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
-                      <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, btnOk]}><Text style={btnTOk}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, btnBad]}><Text style={btnTBad}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
                     </>
                   ) : <Text style={{ fontSize: 11, color: MUTED, alignSelf: 'center' }}>Not an approver</Text>
                 )}
@@ -275,4 +275,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   );
 }
 const btn = { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 };
-const btnT = { color: '#fff', fontWeight: '700', fontSize: 13 };
+// Approve / Reject: tinted glass, like every other button in the app.
+const btnOk  = { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess };
+const btnBad = { backgroundColor: COLORS.btnTintDanger, borderWidth: 1, borderColor: COLORS.btnBorderDanger };
+const btnT   = { color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 13 };
+const btnTOk  = { ...btnT, color: COLORS.btnTextSuccess };
+const btnTBad = { ...btnT, color: COLORS.btnTextDanger };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Linking, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Linking, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -564,9 +564,9 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         </View>
 
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
-          style={{ backgroundColor: TEAL, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
-          {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Submit for Approval</Text>
+          style={[ClubInvestorsScreenS.btn, (saving || !loiFile) && ClubInvestorsScreenS.btnDim]}>
+          {saving ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Ionicons name="save-outline" size={17} color={COLORS.btnTextSuccess} />}
+          <Text style={ClubInvestorsScreenS.box}>Submit for Approval</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -1242,9 +1242,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
           <Text style={{ fontSize: 12, color: MUTED }}>{manager ? 'All investors' : 'Investors you\'ve added'}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowAdd(true)} disabled={!schemes.length}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, opacity: schemes.length ? 1 : 0.5 }}>
-          <Ionicons name="add" size={16} color={COLORS.white} />
-          <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>Add</Text>
+          style={[ClubInvestorsScreenS.btn2, (schemes.length) && ClubInvestorsScreenS.btn2Dim]}>
+          <Ionicons name="add" size={16} color={COLORS.btnTextSuccess} />
+          <Text style={ClubInvestorsScreenS.box2}>Add</Text>
         </TouchableOpacity>
       </View>
       {!loading && !schemes.length && (
@@ -1348,3 +1348,13 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ClubInvestorsScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
+  btnDim: { opacity: 0.5 },
+  box: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
+  btn2: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, opacity: 0.5 },
+  btn2Dim: { opacity: 1 },
+  box2: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
+});
