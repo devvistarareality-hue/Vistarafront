@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   locLoadingText:{ color: MUTED, fontSize: 13 },
 
   statusRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 16, gap: 12 },
-  statusBox: { flex: 1, backgroundColor: NAVY, borderRadius: 18, padding: 14, alignItems: 'center', ...CARD_SHADOW },
+  statusBox: { flex: 1, backgroundColor: COLORS.panel, borderRadius: 18, padding: 14, alignItems: 'center', ...CARD_SHADOW },
   statusBoxRight: { backgroundColor: ERROR },
   statusLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, marginBottom: 4, fontWeight: '600' },
   statusValue: { color: COLORS.white, fontSize: 18, fontWeight: '800' },
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
 
   bottomRow: { flexDirection: 'row', marginHorizontal: 16, gap: 12, marginBottom: 16 },
   bottomBtn: { flex: 1, borderRadius: 18, paddingVertical: 16, alignItems: 'center', ...CARD_SHADOW },
-  signOutBtn:     { backgroundColor: NAVY },
+  signOutBtn:     { backgroundColor: COLORS.panel },
   checkInBtn:     { backgroundColor: SUCCESS },
   btnDisabled:    { opacity: 0.4 },
   bottomBtnText:  { color: COLORS.white, fontWeight: '700', fontSize: 15 },

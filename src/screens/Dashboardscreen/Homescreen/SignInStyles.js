@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
 
   statusRow: {
     flexDirection: 'row',
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.panel,
     marginHorizontal: 20,
     borderRadius: 18,
     overflow: 'hidden',
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     ...CARD_SHADOW,
   },
   signOutBtn: {
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.panel,
   },
   checkInBtn: {
     backgroundColor: COLORS.success,

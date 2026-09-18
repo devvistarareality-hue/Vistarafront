@@ -139,6 +139,14 @@ export default function BookingApprovalsScreen({ navigation, route }) {
     ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
     ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
   ];
+  // `range` stays the source of truth; the dropdown just picks one of the presets.
+  const datePreset = (DATE_PRESETS.find(([, make]) => {
+    const r = make(); return r.from === range.from && r.to === range.to;
+  }) || ['All'])[0];
+  const pickDatePreset = (label) => {
+    const item = DATE_PRESETS.find(([l]) => l === (label || 'All')) || DATE_PRESETS[0];
+    setRange(item[1]()); setOpenGroup({});
+  };
   const [toCancel, setToCancel] = useState(null);      // booking awaiting cancel confirmation
 
   const load = useCallback(async () => {
@@ -402,21 +410,12 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           )}
         </View>
 
-        {/* Booking-date range */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 14, alignItems: 'center' }}>
-          <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>BOOKED</Text>
-          {DATE_PRESETS.map(([label, make]) => {
-            const r = make();
-            const on = range.from === r.from && range.to === r.to;
-            return (
-              <TouchableOpacity key={label} onPress={() => { setRange(r); setOpenGroup({}); }}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1.5,
-                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? COLORS.accentSofter : COLORS.surface }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>{label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        {/* Booking-date range — a dropdown, like every other filter here */}
+        <View style={s.filterBar}>
+          <FilterSelect label="Any booking date" value={datePreset === 'All' ? '' : datePreset} style={s.filterSel}
+            onChange={pickDatePreset}
+            options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any booking date' : l }))} />
+        </View>
 
         {/* Which project and whose bookings — sheets rather than chips, since there are
             a dozen STMs and the names are too long to scan in a row. */}
@@ -654,6 +653,8 @@ const btn = { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 };
 const btnT = { color: '#fff', fontWeight: '700', fontSize: 13 };
 
 const s = StyleSheet.create({
+  filterBar:        { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  filterSel:        { flexGrow: 1, flexBasis: 160, justifyContent: 'space-between' },
   screenTitle:      { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
   sectionTabs:      { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 6 },
   sectionTab:       { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center',

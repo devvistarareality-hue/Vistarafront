@@ -111,7 +111,7 @@ const ModulesScreen = () => {
         {/* ── Module Manager Banner ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
           <View style={{
-            backgroundColor: COLORS.navy, borderRadius: 28, padding: 18,
+            backgroundColor: COLORS.panel, borderRadius: 28, padding: 18,
             flexDirection: 'row', alignItems: 'center',
            shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <View style={{

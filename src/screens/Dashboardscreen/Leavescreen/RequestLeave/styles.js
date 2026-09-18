@@ -36,7 +36,7 @@ export default StyleSheet.create({
     borderRadius: 22, paddingHorizontal: 16, paddingVertical: 14,
     marginBottom: 14, ...CARD_SHADOW,
    borderWidth: 1, borderColor: COLORS.cardBorder },
-  dateText:     { fontSize: 14, color: COLORS.shadow },
+  dateText:     { fontSize: 14, color: COLORS.textTertiary },
   dateTextFilled: { color: NAVY, fontWeight: '600' },
 
   descCard: {
@@ -47,7 +47,7 @@ export default StyleSheet.create({
 
   footer:    { backgroundColor: COLORS.screenBg, paddingHorizontal: 20, paddingVertical: 16 },
   submitBtn: {
-    backgroundColor: NAVY, borderRadius: 20, paddingVertical: 15, alignItems: 'center',
+    backgroundColor: COLORS.panel, borderRadius: 20, paddingVertical: 15, alignItems: 'center',
     shadowColor: NAVY, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.28, shadowRadius: 10, elevation: 4,
   },
   submitText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },

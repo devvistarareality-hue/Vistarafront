@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StatusBar, RefreshControl, Modal, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StatusBar, RefreshControl, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
@@ -73,7 +73,7 @@ function AssignProjectsModal({ member, projects, onClose }) {
     <Modal visible transparent animationType="slide" onRequestClose={() => onClose(null)}>
       <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '82%' }}>
-          <View style={{ backgroundColor: NAVY, paddingHorizontal: 20, paddingVertical: 18, borderTopLeftRadius: 22, borderTopRightRadius: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={SalesTeamScreenS.panel}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Assign Projects</Text>
               <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>{member.name} · {member.designation}</Text>
@@ -108,7 +108,7 @@ function AssignProjectsModal({ member, projects, onClose }) {
           )}
 
           <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
-            <TouchableOpacity onPress={save} disabled={saving} style={{ backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 14, alignItems: 'center', opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            <TouchableOpacity onPress={save} disabled={saving} style={[SalesTeamScreenS.btn, (saving) && SalesTeamScreenS.btnDim]}>
               {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Save ({selected.length} project{selected.length === 1 ? '' : 's'})</Text>}
             </TouchableOpacity>
           </View>
@@ -218,7 +218,7 @@ export default function SalesTeamScreen({ navigation }) {
 
       {/* Filters: role + designation */}
       {!loading && (
-        <View style={{ backgroundColor: COLORS.surface, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <View style={SalesTeamScreenS.header}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' }}>
             <Text style={{ fontSize: 10, fontWeight: '800', color: COLORS.textTertiary, marginRight: 8 }}>ROLE</Text>
             <Chip label="All" active={!roleFilter} onPress={() => setRoleFilter(null)} />
@@ -244,7 +244,7 @@ export default function SalesTeamScreen({ navigation }) {
           renderItem={({ item: m }) => (
             <View style={[CARD, { padding: 14, marginBottom: 10 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
+                <View style={[SalesTeamScreenS.panel2, (COLORS.isDark) && SalesTeamScreenS.panel2Alt]}>
                   <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{initials(m.name)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
@@ -282,3 +282,13 @@ export default function SalesTeamScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesTeamScreenS = StyleSheet.create({
+  panel: { backgroundColor: COLORS.panel, paddingHorizontal: 20, paddingVertical: 18, borderTopLeftRadius: 22, borderTopRightRadius: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btnDim: { opacity: 0.6 },
+  header: { backgroundColor: 'transparent', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  panel2: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.panel, justifyContent: 'center', alignItems: 'center', marginRight: 12, shadowColor: COLORS.glow, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3, shadowOpacity: 0.28 },
+  panel2Alt: { shadowOpacity: 0.45 },
+});

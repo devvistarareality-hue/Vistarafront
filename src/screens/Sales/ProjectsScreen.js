@@ -133,7 +133,7 @@ function ProjectCard({ project, onEdit, onManage }) {
         ) : null}
 
         <TouchableOpacity onPress={() => onManage(project)}
-          style={{ marginTop: 12, paddingVertical: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          style={ProjectsScreenS.btn}>
           <Text style={{ color: COLORS.btnText, fontSize: 13, fontWeight: '700' }}>Manage Plots →</Text>
         </TouchableOpacity>
       </View>
@@ -486,13 +486,13 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   return (
     <FormSheet visible={visible} onClose={onClose}>
           {/* Header */}
-          <View style={{ backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
+          <View style={ProjectsScreenS.header}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}>
                 <Ionicons name="close" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity onPress={save} disabled={saving}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                style={[ProjectsScreenS.btn2, (saving) && ProjectsScreenS.btn2Dim]}>
                 {saving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>Save</Text>}
               </TouchableOpacity>
             </View>
@@ -849,7 +849,7 @@ export default function ProjectsScreen() {
           <Text style={{ fontSize: 12, color: MUTED }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</Text>
         </View>
         <TouchableOpacity onPress={openAdd}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTint, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          style={ProjectsScreenS.btn3}>
           <Ionicons name="add" size={18} color={COLORS.btnText} />
           <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>Add Project</Text>
         </TouchableOpacity>
@@ -880,3 +880,12 @@ export default function ProjectsScreen() {
 const cardStyle = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const metaChip  = { backgroundColor: COLORS.surfaceAlt, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 };
 const metaChipTxt = { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary };
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ProjectsScreenS = StyleSheet.create({
+  btn: { marginTop: 12, paddingVertical: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+  header: { backgroundColor: 'transparent', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
+  btn2: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btn2Dim: { opacity: 0.6 },
+  btn3: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTint, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, borderWidth: 1, borderColor: COLORS.btnBorder },
+});

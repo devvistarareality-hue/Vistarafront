@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -52,6 +52,15 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
     ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
   ];
+  // `range` stays the source of truth; the dropdown just picks one of the presets.
+  const datePreset = (DATE_PRESETS.find(([, make]) => {
+    const r = make(); return r.from === range.from && r.to === range.to;
+  }) || ['All'])[0];
+  const pickDatePreset = (label) => {
+    const item = DATE_PRESETS.find(([l]) => l === (label || 'All')) || DATE_PRESETS[0];
+    setRange(item[1]()); setOpen({});
+  };
+
   const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
   // Revision history, fetched per booking on demand: only a handful of deals are ever
   // revised, so loading every chain up front would be work for nothing.
@@ -165,21 +174,12 @@ export default function ModuleBookingsScreen({ navigation, route }) {
           )}
           {approved.length > 0 && (
             <>
-              {/* Booking-date range */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 10, alignItems: 'center' }}>
-                <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>BOOKED</Text>
-                {DATE_PRESETS.map(([label, make]) => {
-                  const r = make();
-                  const on = range.from === r.from && range.to === r.to;
-                  return (
-                    <TouchableOpacity key={label} onPress={() => { setRange(r); setOpen({}); }}
-                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1.5,
-                        borderColor: on ? TEAL : COLORS.border, backgroundColor: on ? COLORS.success2 : COLORS.surface }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: on ? TEAL : MUTED }}>{label}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+              {/* Booking-date range — a dropdown, like the project / STM filters */}
+              <View style={s.filterBar}>
+                <FilterSelect label="Any booking date" value={datePreset === 'All' ? '' : datePreset} style={s.filterSel}
+                  onChange={pickDatePreset}
+                  options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any booking date' : l }))} />
+              </View>
               {(projOptions.length > 1 || stmOptions.length > 1) && (
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
                   {projOptions.length > 1 && (
@@ -329,3 +329,8 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+const s = StyleSheet.create({
+  filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  filterSel: { flexGrow: 1, flexBasis: 160, justifyContent: 'space-between' },
+});

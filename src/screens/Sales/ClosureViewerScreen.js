@@ -654,7 +654,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       it, which is the wrong way round. */}
                   {canDiscard && (
                     <TouchableOpacity onPress={() => { setDraftPanelPlot(null); navigation.navigate('BookingForm', { draft: p.drafted_booking_id }); }}
-                      style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.btnTint, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                      style={ClosureViewerScreenS.btn}>
                       <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 14 }}>▸ {mine ? 'Resume' : 'Open Draft'}</Text>
                     </TouchableOpacity>
                   )}
@@ -953,3 +953,8 @@ const zBtn = { width: 44, height: 44, borderRadius: 22, alignItems: 'center', ju
 const lblS = { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.5, marginBottom: 6, marginTop: 8 };
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
 const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.surface };
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ClosureViewerScreenS = StyleSheet.create({
+  btn: { paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.btnTint, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+});

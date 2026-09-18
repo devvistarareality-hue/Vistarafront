@@ -94,7 +94,7 @@ export default function UserManagementScreen({ navigation }) {
           <Ionicons name="git-network-outline" size={20} color={COLORS.link} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[s.iconBtn, { backgroundColor: COLORS.navy }]}
+          style={[s.iconBtn, UserManagementScreenS.panel]}
           onPress={() => navigation.navigate('CreateUser')}
         >
           <Ionicons name="add" size={20} color={COLORS.white} />
@@ -209,4 +209,9 @@ const s = StyleSheet.create({
   editBtn:     { padding: 6, borderRadius: 8, backgroundColor: COLORS.linkBg },
   toggleBtn:   { padding: 2 },
   deleteBtn:   { padding: 6, borderRadius: 8, backgroundColor: COLORS.screenBg },
+});
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const UserManagementScreenS = StyleSheet.create({
+  panel: { backgroundColor: COLORS.panel },
 });

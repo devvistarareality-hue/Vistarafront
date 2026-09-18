@@ -20,7 +20,7 @@ export default StyleSheet.create({
 
   profileCard: {
     alignItems: 'center', paddingVertical: 28,
-    backgroundColor: COLORS.navy, marginHorizontal: 20, marginTop: 20,
+    backgroundColor: COLORS.panel, marginHorizontal: 20, marginTop: 20,
     borderRadius: 18, ...CARD_SHADOW,
    shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   avatarCircle: {

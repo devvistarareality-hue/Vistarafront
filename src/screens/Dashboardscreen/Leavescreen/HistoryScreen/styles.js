@@ -22,7 +22,7 @@ export default StyleSheet.create({
   avatar:        { width: width * 0.12, height: width * 0.12, borderRadius: width * 0.06 },
   avatarPlaceholder: {
     width: width * 0.12, height: width * 0.12, borderRadius: width * 0.06,
-    backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: COLORS.panel, justifyContent: 'center', alignItems: 'center',
   },
   avatarInitials: { fontSize: 14, fontWeight: '700', color: COLORS.powderBlue },
   nameText:       { fontSize: 11, color: MUTED, textAlign: 'center', marginTop: 4, fontWeight: '500' },

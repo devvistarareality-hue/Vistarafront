@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   infoText: { fontSize: FONT_SIZE.md, color: COLORS.textSecondary, marginBottom: SPACING.xs + 2 },
   infoValue: { fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary },
   infoBox: {
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.panel,
     padding: SPACING.xl,
     borderRadius: RADIUS.xl,
     alignItems: 'center',

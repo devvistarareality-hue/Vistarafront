@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -1045,7 +1045,7 @@ export default function BookingFormScreen({ navigation, route }) {
                     </View>
                   ))}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
-                    paddingHorizontal: 12, paddingVertical: 12, backgroundColor: COLORS.navy }}>
+                    paddingHorizontal: 12, paddingVertical: 12, backgroundColor: COLORS.panel }}>
                     <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff' }}>Total All Inclusive Amount</Text>
                     <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>{rupee(pratTotal)}</Text>
                   </View>
@@ -1279,7 +1279,7 @@ export default function BookingFormScreen({ navigation, route }) {
               <TouchableOpacity onPress={() => openLoi(draftId || savedDraftId)}><Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 12, textDecorationLine: 'underline' }}>View</Text></TouchableOpacity>
             </View>
           )}
-          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: COLORS.btnTint, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={[BookingFormScreenS.btn, (pratBookMissing) && BookingFormScreenS.btnDim]}>
             <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 14 }}><AppIcon name="file" size={14} /> Generate LOI (Download)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.btnTintSuccess, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
@@ -1396,3 +1396,9 @@ const Tot = ({ l, sub, sub2, val, valFmt, big, subtotal }) => (
     <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: (big || subtotal) ? COLORS.accentDeep : TEXT }}>{valFmt || rupee(val)}</Text>
   </View>
 );
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const BookingFormScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btnDim: { opacity: 0.4 },
+});

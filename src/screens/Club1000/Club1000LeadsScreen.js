@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -153,7 +153,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
 
       <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
-          style={{ backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          style={ClubLeadsScreenS.btn}>
           <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
         </TouchableOpacity>
       </View>
@@ -724,3 +724,8 @@ export default function Club1000LeadsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ClubLeadsScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+});

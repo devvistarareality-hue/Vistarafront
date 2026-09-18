@@ -172,6 +172,15 @@ export const COLORS = {
   strong2:     T.strong2,
   navy:        T.strong,
   navyDark:    T.strong2,
+  // Solid panels: header bars, hero blocks, big filled buttons. In dark this must
+  // NOT be the ember accent — a full-width block of #E8541C is the old,
+  // pre-redesign look — so dark gets a near-black panel and light the deep blue.
+  // (COLORS.navy stays the accent: it is also used for text and borders.)
+  panel:       IS_DARK ? '#151211' : T.strong,
+  panelDeep:   IS_DARK ? '#0E0C0B' : T.strong2,
+  panelBorder: IS_DARK ? 'rgba(255,255,255,0.09)' : 'transparent',
+  panelText:   IS_DARK ? '#F7F5F3' : '#FFFFFF',
+  panelTextDim: IS_DARK ? 'rgba(247,245,243,0.6)' : 'rgba(255,255,255,0.6)',
   navyMedium:  T.text3,
   navyLight:   T.border,
   gold:        T.warning2,

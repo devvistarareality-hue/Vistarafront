@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -332,7 +332,7 @@ export default function SalesCRMScreen({ navigation, route }) {
 
           {/* Apply button */}
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            style={SalesCRMScreenS.btn}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.btnText }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>
@@ -376,3 +376,8 @@ export default function SalesCRMScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesCRMScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+});

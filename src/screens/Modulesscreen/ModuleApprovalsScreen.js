@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar,
-         RefreshControl, TextInput, Modal, Alert } from 'react-native';
+         RefreshControl, TextInput, Modal, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -235,15 +235,14 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.navy} />
-      <View style={{ backgroundColor: COLORS.navy, paddingHorizontal: 16, paddingVertical: 14,
-        flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="chevron-back" size={22} color="#fff" />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons name="chevron-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View>
-          <Text style={{ color: '#fff', fontSize: 17, fontWeight: '800' }}>Approvals</Text>
-          <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11 }}>{name}</Text>
+          <Text style={s.headerTitle}>Approvals</Text>
+          <Text style={s.headerSub}>{name}</Text>
         </View>
       </View>
 
@@ -254,9 +253,8 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
           <View style={{ flexDirection: 'row', gap: 6 }}>
             {TABS.map(([k, label]) => (
               <TouchableOpacity key={k} onPress={() => { setTab(k); setOpen({}); setDetailsOpen({}); }}
-                style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8,
-                  backgroundColor: tab === k ? TEAL : COLORS.surfaceAlt }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: tab === k ? '#fff' : MUTED }}>{label}</Text>
+                style={[s.tab, tab === k && s.tabOn]}>
+                <Text style={[s.tabText, tab === k && s.tabTextOn]}>{label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -291,11 +289,11 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
             </Text>
           </View>
         ) : <>
-          <View style={{ marginBottom: 12, borderRadius: 18, padding: 16, backgroundColor: TEAL }}>
-            <Text style={{ color: COLORS.success2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <View style={s.totalCard}>
+            <Text style={s.totalLabel}>
               {`${narrowed ? 'Matching' : 'Total'} ${tabLabel} · ${grandCount} booking${grandCount === 1 ? '' : 's'}`}
             </Text>
-            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
+            <Text style={s.totalValue}>{rupee(grandTotal)}</Text>
           </View>
 
           {projectNames.map((pn) => (
@@ -381,8 +379,8 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                       {tab === 'pending' && b.can_accounts_approve ? (
                         <>
                           <TouchableOpacity disabled={busy === b.id} onPress={() => act(b.id, 'approve')}
-                            style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: TEAL }}>
-                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
+                            style={s.okBtn}>
+                            <Text style={s.okBtnText}>
                               {busy === b.id ? 'Working…' : <><AppIcon name="check" size={13} /> Approve</>}
                             </Text>
                           </TouchableOpacity>
@@ -427,3 +425,22 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+const s = StyleSheet.create({
+  header:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent' },
+  headerBtn:   { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '800' },
+  headerSub:   { color: COLORS.textSecondary, fontSize: 12 },
+
+  tab:         { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+  tabOn:       { backgroundColor: COLORS.btnTintSuccess, borderColor: COLORS.btnBorderSuccess },
+  tabText:     { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  tabTextOn:   { color: COLORS.btnTextSuccess },
+
+  totalCard:   { marginBottom: 12, borderRadius: 18, padding: 16, backgroundColor: COLORS.successBg, borderWidth: 1, borderColor: COLORS.success2 },
+  totalLabel:  { color: COLORS.success, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  totalValue:  { color: COLORS.textPrimary, fontSize: 22, fontWeight: '800', marginTop: 4 },
+
+  okBtn:       { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess },
+  okBtnText:   { color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 13 },
+});

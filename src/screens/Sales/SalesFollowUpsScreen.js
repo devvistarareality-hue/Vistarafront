@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -213,7 +213,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       </View>
 
       {/* Date range filter + status-wise counts */}
-      <View style={{ backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={SalesFollowUpsScreenS.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Date</Text>
           <TouchableOpacity onPress={() => setShowFrom(true)} style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }}>
@@ -426,3 +426,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesFollowUpsScreenS = StyleSheet.create({
+  header: { backgroundColor: 'transparent', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+});

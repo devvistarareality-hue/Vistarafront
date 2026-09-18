@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  ActivityIndicator, Alert, StatusBar, RefreshControl,
-} from 'react-native';
+  ActivityIndicator, Alert, StatusBar, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -587,7 +586,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   <Text style={{ fontSize: 13, color: MUTED, marginTop: 3 }}>Higher weight = more leads assigned</Text>
                 </View>
                 <TouchableOpacity onPress={saveWeights} disabled={savingWeights || !weightsChanged}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 8, opacity: (!weightsChanged || savingWeights) ? 0.4 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                  style={[SalesDistributionScreenS.btn, (!weightsChanged || savingWeights) && SalesDistributionScreenS.btnDim]}>
                   {savingWeights
                     ? <ActivityIndicator size="small" color={COLORS.btnText} />
                     : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
@@ -662,7 +661,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   )}
 
                   <TouchableOpacity onPress={() => triggerDist(type)} disabled={disabled}
-                    style={{ paddingVertical: 14, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center', opacity: disabled ? 0.45 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                    style={[SalesDistributionScreenS.btn2, (disabled) && SalesDistributionScreenS.btn2Dim]}>
                     {distributing === type
                       ? <ActivityIndicator color={COLORS.btnText} size="small" />
                       : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 15 }}>
@@ -719,3 +718,11 @@ export default function SalesDistributionScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesDistributionScreenS = StyleSheet.create({
+  btn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 8, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btnDim: { opacity: 0.4 },
+  btn2: { paddingVertical: 14, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btn2Dim: { opacity: 0.45 },
+});

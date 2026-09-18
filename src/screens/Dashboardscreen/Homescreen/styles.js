@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
 
   // ── Header ──
   header: {
-    backgroundColor: NAVY,
+    backgroundColor: COLORS.panel,
     alignItems: 'center',
     paddingTop: 40,
     paddingBottom: 52,
@@ -46,13 +46,13 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: COLORS.navyMedium,
+    backgroundColor: COLORS.panelMedium,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText:  { color: COLORS.white, fontSize: 38, fontWeight: '800' },
   userName:    { color: COLORS.white, fontSize: 20, fontWeight: '700', marginBottom: 4 },
-  userRole:    { color: COLORS.shadow, fontSize: 13, marginBottom: 12 },
+  userRole:    { color: COLORS.textSecondary, fontSize: 13, marginBottom: 12 },
   orgBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   calCellSelected: {
-    backgroundColor: NAVY,
+    backgroundColor: COLORS.panel,
     borderRadius: 14,
   },
   calDayNum: {
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   calDayNumSelected: { color: COLORS.white, fontWeight: '800' },
   calHours:         { fontSize: 9, fontWeight: '700', marginTop: 2 },
   calHoursPresent:  { color: COLORS.successAlt },
-  calHoursAbsent:   { color: COLORS.shadow },
+  calHoursAbsent:   { color: COLORS.error },
   calHoursSelected: { color: 'rgba(255,255,255,0.85)' },
 
   calLegend: {

@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, FlatList, TouchableOpacity, Modal, ScrollView, TextInput,
-  ActivityIndicator, Alert, StatusBar, RefreshControl, KeyboardAvoidingView, Platform, Linking,
-} from 'react-native';
+  ActivityIndicator, Alert, StatusBar, RefreshControl, KeyboardAvoidingView, Platform, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -454,7 +453,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <StatusBadge status={lead.status} outcome={lead.sv_outcome} />
             </View>
             <TouchableOpacity onPress={save} disabled={saving}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+              style={[SalesLeadsScreenS.btn, (saving) && SalesLeadsScreenS.btnDim]}>
               {saving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>{form.stm_status === 'closed' ? 'Record Closure →' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
@@ -678,7 +677,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                     </TouchableOpacity>
                   </View>
                   <Text style={[lblS, { color: COLORS.success, marginTop: 8 }]}>Visit Remarks</Text>
-                  <TextInput value={svRemarks} onChangeText={setSvRemarks} placeholder="Location, notes…" placeholderTextColor={COLORS.shadow} style={inpS} />
+                  <TextInput value={svRemarks} onChangeText={setSvRemarks} placeholder="Location, notes…" placeholderTextColor={COLORS.textTertiary} style={inpS} />
                   {!svAt && <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 6 }}>Set a date & time to create a site visit entry automatically on save.</Text>}
 
                   {/* iOS pickers */}
@@ -1201,13 +1200,13 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
 
   return (
     <FormSheet visible={visible} onClose={onClose}>
-          <View style={{ backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight }}>
+          <View style={SalesLeadsScreenS.header}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' }}>
                 <Ionicons name="close" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity onPress={create} disabled={saving}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                style={[SalesLeadsScreenS.btn2, (saving) && SalesLeadsScreenS.btn2Dim]}>
                 {saving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>Add Lead</Text>}
               </TouchableOpacity>
             </View>
@@ -1601,7 +1600,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
 
         <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
           <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
-            style={{ backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            style={SalesLeadsScreenS.btn3}>
             <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
@@ -1964,7 +1963,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
           </Text>
         </View>
         <TouchableOpacity onPress={() => setCreateModal(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.btnTint, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          style={SalesLeadsScreenS.btn4}>
           <Ionicons name="add" size={16} color={COLORS.btnText} />
           <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 12 }}>Add</Text>
         </TouchableOpacity>
@@ -2068,7 +2067,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
           style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'center', padding: 20 }}>
           <TouchableOpacity activeOpacity={1} onPress={() => {}}
             style={{ backgroundColor: COLORS.surface, borderRadius: 22, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
-            <View style={{ backgroundColor: NAVY, padding: 16 }}>
+            <View style={SalesLeadsScreenS.panel}>
               <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Transfer to another STM</Text>
               <Text style={{ color: COLORS.surfaceAlt, fontSize: 12, marginTop: 2 }}>
                 {xferLead?.name}{xferLead?.project_name ? ` \u00b7 ${xferLead.project_name}` : ''}
@@ -2100,3 +2099,15 @@ export default function SalesLeadsScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesLeadsScreenS = StyleSheet.create({
+  btn: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btnDim: { opacity: 0.6 },
+  header: { backgroundColor: 'transparent', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
+  btn2: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btn2Dim: { opacity: 0.6 },
+  btn3: { backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+  btn4: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.btnTint, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, borderWidth: 1, borderColor: COLORS.btnBorder },
+  panel: { backgroundColor: COLORS.panel, padding: 16 },
+});

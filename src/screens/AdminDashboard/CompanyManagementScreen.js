@@ -117,7 +117,7 @@ export default function CompanyManagementScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={s.headerTitle}>Company Management</Text>
         <TouchableOpacity
-          style={[s.iconBtn, { backgroundColor: COLORS.navy }]}
+          style={[s.iconBtn, CompanyManagementScreenS.panel]}
           onPress={() => navigation.navigate('EditCompany')}
         >
           <Ionicons name="add" size={20} color={COLORS.white} />
@@ -176,7 +176,7 @@ const s = StyleSheet.create({
   tabsWrapper: { height: 44, marginTop: 14 },
   tabsRow:     { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   tab:         { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 22, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
-  tabActive:   { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
+  tabActive:   { backgroundColor: COLORS.panel, borderColor: COLORS.navy },
   tabText:     { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
   tabTextActive: { color: COLORS.white, fontWeight: '700' },
 
@@ -210,7 +210,7 @@ const s = StyleSheet.create({
     width:           56,
     height:          56,
     borderRadius:    28,
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.panel,
     justifyContent:  'center',
     alignItems:      'center',
     elevation:       6,
@@ -219,4 +219,9 @@ const s = StyleSheet.create({
     shadowOpacity:   0.30,
     shadowRadius:    8,
   },
+});
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const CompanyManagementScreenS = StyleSheet.create({
+  panel: { backgroundColor: COLORS.panel },
 });

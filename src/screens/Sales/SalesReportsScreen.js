@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal, PanResponder } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal, PanResponder, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -526,7 +526,7 @@ export default function SalesReportsScreen({ navigation }) {
           </ScrollView>
 
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            style={SalesReportsScreenS.btn}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.btnText }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>
@@ -616,3 +616,8 @@ export default function SalesReportsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesReportsScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4, borderWidth: 1, borderColor: COLORS.btnBorder },
+});

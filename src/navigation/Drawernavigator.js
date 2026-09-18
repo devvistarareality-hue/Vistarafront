@@ -73,7 +73,7 @@ const DrawerNavigator = () => {
         headerStyle: { backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
         headerTintColor: COLORS.textPrimary,
         drawerStyle: {
-          backgroundColor: COLORS.navy,
+          backgroundColor: COLORS.panel,
           width: 280,
         },
       }}
@@ -109,7 +109,7 @@ const s = StyleSheet.create({
   drawerHeaderText: { color: COLORS.white, fontSize: 20, fontWeight: '800' },
   drawerHeaderSub: { color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '500', marginTop: 2 },
   menuSection: { paddingLeft: 8 },
-  label: { color: COLORS.shadow, fontSize: 15, fontWeight: '500' },
+  label: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '500' },
 });
 
 export default DrawerNavigator;

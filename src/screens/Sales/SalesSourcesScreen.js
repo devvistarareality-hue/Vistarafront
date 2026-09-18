@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
-  ActivityIndicator, Alert, StatusBar, RefreshControl, Clipboard, Modal,
-} from 'react-native';
+  ActivityIndicator, Alert, StatusBar, RefreshControl, Clipboard, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -81,7 +80,7 @@ function SetupGuideModal({ visible, onClose }) {
         <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {GUIDE_STEPS.map(step => (
             <View key={step.n} style={{ flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: COLORS.surface, borderRadius: 22, padding: 14, borderWidth: 1, borderColor: COLORS.surfaceAlt }}>
-              <View style={{ width: 28, height: 28, borderRadius: 18, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
+              <View style={[SalesSourcesScreenS.panel, (COLORS.isDark) && SalesSourcesScreenS.panelAlt]}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.white }}>{step.n}</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -386,7 +385,7 @@ function MetaTab() {
               />
               {!editing && (
                 <TouchableOpacity onPress={saveConfig} disabled={saving || !appSecret.trim()}
-                  style={{ marginTop: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, paddingVertical: 12, alignItems: 'center', opacity: appSecret.trim() ? 1 : 0.5 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                  style={[SalesSourcesScreenS.btn, (appSecret.trim()) && SalesSourcesScreenS.btnDim]}>
                   <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.btnText }}>Save App Secret</Text>
                 </TouchableOpacity>
               )}
@@ -545,7 +544,7 @@ function MetaTab() {
         )}
 
         <TouchableOpacity onPress={addMapping} disabled={mapSaving || !mapFormId.trim() || !mapProject}
-          style={{ backgroundColor: COLORS.btnTint, borderRadius: 14, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: (!mapFormId.trim() || !mapProject) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          style={[SalesSourcesScreenS.btn2, (!mapFormId.trim() || !mapProject) && SalesSourcesScreenS.btn2Dim]}>
           {mapSaving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Ionicons name="add-circle-outline" size={16} color={COLORS.btnText} />}
           <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.btnText }}>+ Add Mapping</Text>
         </TouchableOpacity>
@@ -623,7 +622,7 @@ function SourcesTab() {
             style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: BG }}
             onSubmitEditing={() => addSource(newName)} returnKeyType="done" />
           <TouchableOpacity onPress={() => addSource(newName)} disabled={adding || !newName.trim()}
-            style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, justifyContent: 'center', opacity: !newName.trim() ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            style={[SalesSourcesScreenS.btn3, (!newName.trim()) && SalesSourcesScreenS.btn3Dim]}>
             {adding ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Ionicons name="add" size={20} color={COLORS.btnText} />}
           </TouchableOpacity>
         </View>
@@ -674,14 +673,14 @@ export default function SalesSourcesScreen({ navigation }) {
 
       <SetupGuideModal visible={guideVisible} onClose={() => setGuideVisible(false)} />
 
-      <View style={{ backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 0, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={SalesSourcesScreenS.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
             <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Lead Setup</Text>
           <TouchableOpacity onPress={() => setGuideVisible(true)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: COLORS.btnTint , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            style={SalesSourcesScreenS.btn4}>
             <Ionicons name="help-circle-outline" size={16} color={COLORS.btnText} />
             <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.btnText }}>Guide</Text>
           </TouchableOpacity>
@@ -701,3 +700,17 @@ export default function SalesSourcesScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesSourcesScreenS = StyleSheet.create({
+  panel: { width: 28, height: 28, borderRadius: 18, backgroundColor: COLORS.panel, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, shadowColor: COLORS.glow, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3, shadowOpacity: 0.28 },
+  panelAlt: { shadowOpacity: 0.45 },
+  btn: { marginTop: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 0.5 },
+  btnDim: { opacity: 1 },
+  btn2: { backgroundColor: COLORS.btnTint, borderRadius: 14, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btn2Dim: { opacity: 0.5 },
+  btn3: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, justifyContent: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btn3Dim: { opacity: 0.5 },
+  header: { backgroundColor: 'transparent', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 0, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  btn4: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder },
+});

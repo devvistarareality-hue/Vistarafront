@@ -372,7 +372,7 @@ export default function KioskScreen({ navigation }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.accentSofter },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surface3 },
-  logo: { width: 42, height: 42, borderRadius: 16, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
+  logo: { width: 42, height: 42, borderRadius: 16, backgroundColor: COLORS.panel, alignItems: 'center', justifyContent: 'center' },
   brand: { fontSize: 17, fontWeight: '800', color: NAVY },
   brandSub: { fontSize: 11, color: MUTED },
   dot: { width: 24, height: 24, borderRadius: 16, backgroundColor: COLORS.surface3, alignItems: 'center', justifyContent: 'center' },

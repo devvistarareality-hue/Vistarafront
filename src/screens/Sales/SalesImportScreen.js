@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
@@ -173,7 +173,7 @@ export default function SalesImportScreen({ navigation }) {
 
         {/* Import button */}
         <TouchableOpacity onPress={doImport} disabled={importing || !file}
-          style={{ paddingVertical: 15, backgroundColor: COLORS.btnTint, borderRadius: 18, alignItems: 'center', marginBottom: 16, opacity: (!file) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          style={[SalesImportScreenS.btn, (!file) && SalesImportScreenS.btnDim]}>
           {importing ? <ActivityIndicator color={COLORS.btnText} /> : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="cloud-upload-outline" size={18} color={COLORS.btnText} />
@@ -224,3 +224,9 @@ export default function SalesImportScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesImportScreenS = StyleSheet.create({
+  btn: { paddingVertical: 15, backgroundColor: COLORS.btnTint, borderRadius: 18, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btnDim: { opacity: 0.5 },
+});

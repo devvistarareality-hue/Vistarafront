@@ -47,7 +47,7 @@ export default StyleSheet.create({
 
   /* Admin pills */
   adminPill:          { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 22, backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.divider },
-  adminPillActive:    { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
+  adminPillActive:    { backgroundColor: COLORS.panel, borderColor: COLORS.navy },
   adminPillText:      { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   adminPillTextActive:{ color: COLORS.white },
 

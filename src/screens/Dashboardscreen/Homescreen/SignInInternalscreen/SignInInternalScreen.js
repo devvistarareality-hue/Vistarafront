@@ -663,7 +663,7 @@ const s = StyleSheet.create({
   actionRow:     { flexDirection: 'row', gap: 12 },
   actionBtn:     { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 18, paddingVertical: 16, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
   breakBtn:      { backgroundColor: COLORS.warning, shadowColor: COLORS.warning },
-  signOutBtn:    { backgroundColor: COLORS.navy, shadowColor: COLORS.navy },
+  signOutBtn:    { backgroundColor: COLORS.panel, shadowColor: COLORS.navy },
   actionBtnText: { color: COLORS.white, fontSize: 14, fontWeight: '700', marginTop: 4 },
   actionBtnSub:  { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '500', marginTop: 2 },
 

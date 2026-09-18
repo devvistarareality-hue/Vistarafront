@@ -168,10 +168,10 @@ export default function SalesDataResetScreen({ navigation }) {
           <Text style={{ fontSize: 14, fontWeight: '800', color: RED, marginBottom: 6 }}><AppIcon name="alert" size={14} /> Danger zone — cannot be undone</Text>
           <Text style={{ fontSize: 13, color: COLORS.errorStrong, marginBottom: 12 }}>Take a database backup first. Then type DELETE and enter the reset key.</Text>
           <TextInput value={confirmText} onChangeText={setConfirmText} placeholder="Type DELETE" autoCapitalize="characters"
-            placeholderTextColor={COLORS.shadow}
+            placeholderTextColor={COLORS.textTertiary}
             style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
           <TextInput value={resetKey} onChangeText={setResetKey} placeholder="Reset key"
-            secureTextEntry autoCapitalize="none" placeholderTextColor={COLORS.shadow}
+            secureTextEntry autoCapitalize="none" placeholderTextColor={COLORS.textTertiary}
             style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
           <TouchableOpacity onPress={confirmReset} disabled={confirmText !== 'DELETE' || !resetKey.trim() || busy || nothingSelected}
             style={{ backgroundColor: (confirmText === 'DELETE' && !!resetKey.trim() && !busy && !nothingSelected) ? RED : COLORS.error2, borderRadius: 14, paddingVertical: 13, alignItems: 'center' }}>
