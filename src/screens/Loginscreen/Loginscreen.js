@@ -173,7 +173,7 @@ const LoginScreen = () => {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
-      <LinearGradient colors={[COLORS.black, COLORS.navyDark, COLORS.navyDark]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={COLORS.heroScene} style={StyleSheet.absoluteFill} />
       <View style={s.blobTopRight} />
       <View style={s.blobBottomLeft} />
 
@@ -250,21 +250,17 @@ const LoginScreen = () => {
                   disabled={!canSubmit}
                   style={{ borderRadius: 20, overflow: 'hidden', marginTop: 4 }}
                 >
-                  <LinearGradient
-                    colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={s.btn}
-                  >
+                  <View style={canSubmit ? s.btn : [s.btn, s.btnOff]}>
                     {loading
-                      ? <ActivityIndicator color={COLORS.white} />
+                      ? <ActivityIndicator color={COLORS.btnText} />
                       : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={s.btnText}>Verify OTP</Text>
-                          <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.white} />
+                          <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.btnText} />
                         </View>
                       )
                     }
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
 
                 {/* Resend */}
@@ -336,21 +332,17 @@ const LoginScreen = () => {
                   disabled={!canSubmit}
                   style={{ borderRadius: 20, overflow: 'hidden', marginTop: 4 }}
                 >
-                  <LinearGradient
-                    colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={s.btn}
-                  >
+                  <View style={canSubmit ? s.btn : [s.btn, s.btnOff]}>
                     {loading
-                      ? <ActivityIndicator color={COLORS.white} />
+                      ? <ActivityIndicator color={COLORS.btnText} />
                       : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={s.btnText}>Sign In</Text>
-                          <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+                          <Ionicons name="arrow-forward" size={18} color={COLORS.btnText} />
                         </View>
                       )
                     }
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -385,7 +377,7 @@ const s = StyleSheet.create({
   blobBottomLeft: {
     position: 'absolute', bottom: 200, left: -80,
     width: 200, height: 200, borderRadius: 100,
-    backgroundColor: 'rgba(47,109,181,0.06)',
+    backgroundColor: COLORS.accentSofter,
   },
 
   header: {
@@ -449,7 +441,7 @@ const s = StyleSheet.create({
     position: 'absolute', top: 0, left: 48, right: 48, height: 3,
     backgroundColor: ORANGE, borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
   },
-  cardTitle: { fontSize: 26, fontWeight: '800', color: COLORS.navyDark, marginBottom: 6, marginTop: 8 },
+  cardTitle: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 6, marginTop: 8 },
   cardSub:   { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500', marginBottom: 28 },
 
   fieldLabel: {
@@ -469,8 +461,11 @@ const s = StyleSheet.create({
   btn: {
     height: 56, borderRadius: 20,
     justifyContent: 'center', alignItems: 'center',
+    backgroundColor: COLORS.btnTint,
+    borderWidth: 1, borderColor: COLORS.btnBorder,
   },
-  btnText: { color: COLORS.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+  btnOff: { opacity: 0.45 },
+  btnText: { color: COLORS.btnText, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
 
   errorBox: {
     flexDirection: 'row', alignItems: 'center',

@@ -191,6 +191,8 @@ export const COLORS = {
   grey:        T.surface3,
   ink:         T.text,
   primaryButton: T.primary,
+  // Entry-screen backdrop (company / login / splash) — matches the website's scene
+  heroScene: IS_DARK ? ['#120C09', '#0A0706', '#050404'] : ['#0F2E57', '#14406F', '#1B5290'],
   // Tinted-glass button styling (same design as the website)
   btnTint:   IS_DARK ? 'rgba(255,122,61,0.18)' : 'rgba(31,84,144,0.12)',
   btnBorder: IS_DARK ? 'rgba(255,150,100,0.42)' : 'rgba(31,84,144,0.42)',

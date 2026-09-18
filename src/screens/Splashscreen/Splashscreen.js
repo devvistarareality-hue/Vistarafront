@@ -58,7 +58,7 @@ const SplashScreen = ({ onFinish }) => {
       <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
       <LinearGradient
-        colors={[COLORS.black, COLORS.navyDark, COLORS.navyDark]}
+        colors={COLORS.heroScene}
         style={StyleSheet.absoluteFill}
       />
 
