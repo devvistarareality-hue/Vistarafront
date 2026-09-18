@@ -55,12 +55,11 @@ export default function ModuleHomeScreen({ navigation, route }) {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {cards.map((c) => (
             <TouchableOpacity key={c.key} onPress={() => navigation.navigate(c.key, c.params)}
-              style={[CARD, { width: '47%', padding: 16 }]} activeOpacity={0.8}>
-              <View style={{ width: 46, height: 46, borderRadius: 13, backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+              style={[CARD, { width: '47%', paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8 }]} activeOpacity={0.8}>
+              <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 2 }}>
                 <Ionicons name={c.icon} size={22} color={c.color} />
               </View>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 6 }}>{c.label}</Text>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: c.color }}>Open →</Text>
+              <Text style={{ fontSize: 13.5, fontWeight: '700', color: TEXT, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{c.label}</Text>
             </TouchableOpacity>
           ))}
         </View>

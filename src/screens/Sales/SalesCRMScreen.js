@@ -401,12 +401,11 @@ export default function SalesCRMScreen({ navigation, route }) {
             {visibleMenu.map(m => (
               <TouchableOpacity key={m.key}
                 onPress={() => m.key === '__ADMIN__' ? navigation.push('SalesCRM', { adminView: true }) : navigation.navigate(m.key, m.navParams)}
-                style={[CARD, { width: '47%', padding: 16 }]} activeOpacity={0.8}>
-                <View style={{ width: 46, height: 46, borderRadius: 13, backgroundColor: m.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                style={[CARD, { width: '47%', paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8 }]} activeOpacity={0.8}>
+                <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: m.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 2 }}>
                   <Ionicons name={m.icon} size={22} color={m.color} />
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 6 }}>{m.label}</Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: m.color }}>Open →</Text>
+                <Text style={{ fontSize: 13.5, fontWeight: '700', color: TEXT, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{m.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
