@@ -9,7 +9,7 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.borderLight,
     paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8,
   },
   backBtn: {

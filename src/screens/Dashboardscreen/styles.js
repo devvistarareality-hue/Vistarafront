@@ -4,7 +4,7 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, LINE_HEIGHT, SHADOWS }
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.screenBg },
   header: {
-    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.borderLight,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

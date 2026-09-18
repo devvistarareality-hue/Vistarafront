@@ -36,7 +36,7 @@ function Bubble({ b, i, still }) {
   const translateY = v.interpolate({ inputRange: [0, 1], outputRange: [0, b.dy] });
   const scale = v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.08, 0.96] });
   return (
-    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: b.x, top: b.y, width: b.size, height: b.size, transform: [{ translateX }, { translateY }, { scale }] }}>
+    <Animated.View pointerEvents="none" renderToHardwareTextureAndroid shouldRasterizeIOS style={{ position: 'absolute', left: b.x, top: b.y, width: b.size, height: b.size, transform: [{ translateX }, { translateY }, { scale }] }}>
       <Svg width={b.size} height={b.size}>
         <Defs>
           <RadialGradient id={`bub${i}`} cx="0.5" cy="0.5" r="0.5">
@@ -61,10 +61,11 @@ function Bubbles() {
   );
 }
 
-export default function AppBackground() {
+function AppBackgroundImpl() {
   const s = SCENE;
   return (
     <>
+    <View style={StyleSheet.absoluteFill} pointerEvents="none" renderToHardwareTextureAndroid shouldRasterizeIOS>
     <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" pointerEvents="none">
       <Defs>
         <LinearGradient id="base" x1="0" y1="0" x2="0" y2="1">
@@ -90,7 +91,11 @@ export default function AppBackground() {
       <Rect x="0" y="0" width="100%" height="100%" fill="url(#haze)" />
       <Rect x="0" y="0" width="100%" height="100%" fill="url(#lift)" />
     </Svg>
+    </View>
     <Bubbles />
     </>
   );
 }
+
+const AppBackground = React.memo(AppBackgroundImpl);
+export default AppBackground;

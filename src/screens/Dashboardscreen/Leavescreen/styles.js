@@ -5,7 +5,7 @@ export default StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.screenBg },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.borderLight,
     paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn: {

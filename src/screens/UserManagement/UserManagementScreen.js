@@ -179,11 +179,11 @@ export default function UserManagementScreen({ navigation }) {
 const s = StyleSheet.create({
   screen:      { flex: 1, backgroundColor: 'transparent' },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt },
   iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
-  statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.screenBg },
+  statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.screenBg },
   statItem:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statDot:     { width: 7, height: 7, borderRadius: 4 },
   statText:    { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },

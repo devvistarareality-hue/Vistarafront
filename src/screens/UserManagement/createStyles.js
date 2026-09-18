@@ -5,7 +5,7 @@ export default StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.screenBg },
 
   /* Header */
-  header:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  header:       { flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt },
   headerBtn:    { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.surfaceAlt },
   headerTitle:  { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 

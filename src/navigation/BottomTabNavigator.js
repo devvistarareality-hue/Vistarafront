@@ -38,7 +38,7 @@ const ModulesStack = createNativeStackNavigator();
 
 function ModulesNavigator() {
   return (
-    <ModulesStack.Navigator initialRouteName="ModulesList" screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: 'transparent' } }}>
+    <ModulesStack.Navigator initialRouteName="ModulesList" screenOptions={{ headerShown: false, animation: 'slide_from_right', freezeOnBlur: true, contentStyle: { backgroundColor: 'transparent' } }}>
       <ModulesStack.Screen name="ModulesList"   component={ModulesScreen} />
       <ModulesStack.Screen name="SalesCRM"      component={SalesCRMScreen} />
       <ModulesStack.Screen name="SalesNotifications" component={NotificationsScreen} />
@@ -77,6 +77,8 @@ const BottomTabNavigator = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         sceneStyle: { backgroundColor: 'transparent' },
+        freezeOnBlur: true,
+        lazy: true,
         tabBarStyle: {
           backgroundColor: COLORS.cardBg,
           borderTopWidth: 0,

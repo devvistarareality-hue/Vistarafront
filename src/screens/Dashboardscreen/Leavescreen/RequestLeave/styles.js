@@ -10,8 +10,8 @@ export default StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.screenBg },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
-    paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent',
+    paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt,
   },
   backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   headerTitle:{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: TEXT },

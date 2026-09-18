@@ -12,8 +12,8 @@ export default StyleSheet.create({
   tableHeader: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.cardBg,
+    borderBottomWidth: 0, borderBottomColor: COLORS.border,
+    backgroundColor: 'transparent',
   },
   headerCell:  { fontSize: 12, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 },
 

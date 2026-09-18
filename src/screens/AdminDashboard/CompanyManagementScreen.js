@@ -142,7 +142,7 @@ export default function CompanyManagementScreen({ navigation }) {
         </ScrollView>
       </View>
 
-      <Text style={s.countLabel}>{filtered.length} company{filtered.length !== 1 ? 'ies' : 'y'}</Text>
+      <Text style={s.countLabel}>{filtered.length} {filtered.length === 1 ? 'company' : 'companies'}</Text>
 
       {/* List */}
       {loading ? (
@@ -166,7 +166,7 @@ export default function CompanyManagementScreen({ navigation }) {
 const s = StyleSheet.create({
   screen:      { flex: 1, backgroundColor: 'transparent' },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt },
   iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
