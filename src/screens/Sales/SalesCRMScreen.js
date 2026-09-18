@@ -281,12 +281,6 @@ export default function SalesCRMScreen({ navigation, route }) {
           <Text style={{ fontSize: 13, color: MUTED }}>{adminView ? 'Full company data' : screenSub}</Text>
         </View>
         <ThemeIconButton />
-        <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12 }}>
-          <Ionicons name="refresh-outline" size={20} color={NAVY} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={openFilter} style={{ padding: 6, backgroundColor: filterActive ? NAVY : COLORS.surface2, borderWidth: 1, borderColor: filterActive ? NAVY : COLORS.border, borderRadius: 12 }}>
-          <Ionicons name="filter-outline" size={20} color={filterActive ? COLORS.white : NAVY} />
-        </TouchableOpacity>
       </View>
 
       {/* Filter Bottom Sheet */}
@@ -355,42 +349,9 @@ export default function SalesCRMScreen({ navigation, route }) {
         )}
       </Modal>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadStats(true)} colors={[NAVY]} tintColor={NAVY} />}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36, paddingTop: 12 }}>
 
-        {/* Active filter label */}
-        {filterActive && (
-          <TouchableOpacity onPress={openFilter} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginTop: 10, marginBottom: 2 }}>
-            <Ionicons name="calendar-outline" size={13} color={BLUE} />
-            <Text style={{ fontSize: 12, color: BLUE, fontWeight: '600' }}>
-              {fmtLabel(dateFrom)} → {fmtLabel(dateTo)}
-            </Text>
-            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }} style={{ marginLeft: 2 }}>
-              <Ionicons name="close-circle" size={15} color={MUTED} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-
-        {/* Stats */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 4, marginBottom: 8 }}>
-          {loading ? (
-            <AppLoader size={0.7} style={{ marginVertical: 20 }} />
-          ) : STAT_SECTIONS.map(sec => (
-            <View key={sec.title} style={[CARD, { padding: 14, marginBottom: 12 }]}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>{sec.title}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
-                {sec.cards.map(s => (
-                  <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
-                    onPress={() => s.target && navigation.navigate(s.target, s.params)}
-                    style={[TILE, { flexBasis: tileBasis(sec.cards.length) }]}>
-                    <Text style={{ fontSize: 20, fontWeight: '800', color: s.color }}>{s.value}</Text>
-                    <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          ))}
-        </View>
+        {/* Pipeline / calling / follow-up / conversion numbers live in the Reports tab. */}
 
         {/* Menu */}
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>

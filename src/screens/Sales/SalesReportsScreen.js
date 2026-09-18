@@ -10,6 +10,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy;
 const BLUE = COLORS.link;
@@ -153,7 +154,11 @@ export default function SalesReportsScreen({ navigation }) {
   const user      = useSelector((s) => s.auth.user);
   const _des      = (user?.designation || '').toLowerCase();
   // STM & CP see their pipeline (not the telecaller call-queue metrics/charts).
-  const isStmView = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive') || _des.includes('cp executive') || _des.includes('channel partner');
+  const isTrueAdmin = user?.role === 'Admin' || user?.is_staff;
+  const isAdmin     = isTrueAdmin || (user?.admin_modules || []).includes('Sales');
+  const isManager   = isManagerRole(user);
+  // Same rule as the CRM home these tiles moved from: any CP-side designation counts.
+  const isStmView = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive') || _des.startsWith('cp') || _des.includes('channel partner');
 
   const fmtDate  = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
@@ -283,6 +288,9 @@ export default function SalesReportsScreen({ navigation }) {
 
   const _called  = stats?.called_count ?? 0;
   const _svDone  = stats?.sv_done      ?? 0;
+  // A completed follow-up is a call that was made, so it counts toward calling.
+  const _fuCalls = stats?.followup_call_count ?? 0;
+  const _totCall = stats?.total_called_count  ?? (_called + _fuCalls);
   // MQLs per completed site visit, e.g. "4.0 : 1" = four dispositioned leads for
   // every visit. Divides by SV, so it needs _svDone (not _called) to be non-zero.
   const _mqlToSv = _svDone > 0 ? (_called / _svDone).toFixed(1) + ' : 1' : '—';
@@ -318,6 +326,8 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'My Pipeline', label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'My Pipeline', label: 'To Call',      value: _toCall,                      color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'Calling Activity', label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
+    { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
+    { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
     { group: 'Conversions', label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm', ...dateFilter } } },
     { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { group: 'Conversions', label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesMyConversions' },
@@ -337,11 +347,21 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Site Visits & Closures', label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' } },
     { group: 'Conversion Rates', label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { group: 'Conversion Rates', label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
+    { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
+    { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending',  value: _fuPending,    color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue',  value: _fuOverdue,    color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { group: 'Conversion Rates', label: 'Avg Closure Time',    value: _avgCloseMo,   color: COLORS.error,  bg: COLORS.errorBg },
   ];
-  const STAT_CARDS = isStmView ? STM_CARDS : TELECALLER_CARDS;
+  // "Unassigned" only means anything to someone who sees the whole company's leads.
+  const UNASSIGNED_CARD = {
+    group: 'My Pipeline', label: 'Unassigned', value: stats?.unassigned_leads ?? '—',
+    color: COLORS.gold, bg: COLORS.goldBg, target: 'SalesLeads', params: { initialFilter: { unassigned: true } },
+  };
+  const STAT_CARDS = isStmView ? STM_CARDS
+    : (isAdmin || isManager)
+      ? [...TELECALLER_CARDS.slice(0, 2), UNASSIGNED_CARD, ...TELECALLER_CARDS.slice(2)]
+      : TELECALLER_CARDS;
   // Club the tiles under the question each block answers, so the row a number
   // sits in already says how to read it. Order is fixed; a group with no cards
   // for this role simply drops out.
