@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Linking, RefreshControl, TextInput, Modal, Alert } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Linking, RefreshControl, TextInput, Modal, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -160,6 +160,12 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // Pending lead transfers for the projects this user approves — same authority as a
   // booking on that project, so they belong on the same screen.
   const [xfers, setXfers] = useState([]);
+  // Lead transfers and booking approvals are two jobs: one section each,
+  // opening on transfers only while some are pending.
+  const [section, setSection] = useState('bookings');
+  const sectionPicked = useRef(false);
+  useEffect(() => { if (!sectionPicked.current && xfers.length > 0) setSection('transfers'); }, [xfers.length]);
+  const pickSection = (next) => { sectionPicked.current = true; setSection(next); };
   const [xferBusy, setXferBusy] = useState(null);
   const loadTransfers = useCallback(() => {
     // cp_only in the Channel Partner module: a lead transfer is a Sales activity, so
@@ -285,11 +291,26 @@ export default function BookingApprovalsScreen({ navigation, route }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Bookings & Approvals</Text>
+        <Text style={s.screenTitle}>Approvals</Text>
+      </View>
+
+      <View style={s.sectionTabs}>
+        <TouchableOpacity onPress={() => pickSection('transfers')} style={[s.sectionTab, section === 'transfers' && s.sectionTabOn]}>
+          <Text style={[s.sectionTabText, section === 'transfers' && s.sectionTabTextOn]} numberOfLines={1}>
+            {xfers.length > 0 ? `Lead Transfers · ${xfers.length}` : 'Lead Transfers'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => pickSection('bookings')} style={[s.sectionTab, section === 'bookings' && s.sectionTabOn]}>
+          <Text style={[s.sectionTabText, section === 'bookings' && s.sectionTabTextOn]} numberOfLines={1}>Booking Approvals</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
-        {xfers.length > 0 && (
+        {section === 'transfers' && xfers.length === 0 && (
+          <View style={[CARD, s.emptyCard]}><Text style={s.emptyText}>No lead transfers are waiting for your approval.</Text></View>
+        )}
+
+        {section === 'transfers' && xfers.length > 0 && (
           <View style={[CARD, { marginBottom: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: COLORS.warning }]}>
             <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.warning }}>
               ⇄ Lead Transfers awaiting your approval · {xfers.length}
@@ -320,6 +341,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           </View>
         )}
 
+        {section === 'bookings' && (<>
         {isAdmin && (
           <View style={[CARD, { marginBottom: 12 }]}>
             <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
@@ -582,6 +604,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
             ))}
           </View>
         ))}
+        </>)}
       </ScrollView>
 
       <CancelBookingModal b={toCancel} busy={!!toCancel && busy === toCancel.id}
@@ -629,3 +652,15 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
 }
 const btn = { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 };
 const btnT = { color: '#fff', fontWeight: '700', fontSize: 13 };
+
+const s = StyleSheet.create({
+  screenTitle:      { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
+  sectionTabs:      { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 6 },
+  sectionTab:       { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center',
+                      backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+  sectionTabOn:     { backgroundColor: COLORS.btnTint, borderColor: COLORS.btnBorder },
+  sectionTabText:   { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  sectionTabTextOn: { color: COLORS.btnText },
+  emptyCard:        { marginBottom: 12, paddingVertical: 26, alignItems: 'center' },
+  emptyText:        { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center' },
+});
