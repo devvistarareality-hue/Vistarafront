@@ -9,9 +9,11 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { MyBookingsList } from './MyBookingsScreen';
 
+import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Read-only project picker for the Record Closure flow (mobile mirror of web
 // /sales/closure). No add/edit/manage — STM only picks a project to drill in.
@@ -45,12 +47,12 @@ export default function ClosureProjectsScreen({ navigation, route }) {
   const visible = projects.filter(p => p.is_active);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Select Project</Text>
@@ -70,7 +72,7 @@ export default function ClosureProjectsScreen({ navigation, route }) {
       </View>
 
       {view === 'mybookings' ? <MyBookingsList navigation={navigation} cpOnly={cpOnly} /> : loading ? (
-        <ActivityIndicator size="large" color={BLUE} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
@@ -102,16 +104,16 @@ export default function ClosureProjectsScreen({ navigation, route }) {
                 </View>
                 <View style={{ padding: 14 }}>
                   <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>{p.name}</Text>
-                  {!!p.location && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>📍 {p.location}</Text>}
+                  {!!p.location && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}><AppIcon name="pin" size={12} /> {p.location}</Text>}
                   {total > 0 && (
                     <View style={{ flexDirection: 'row', gap: 14, marginTop: 8 }}>
-                      <Text style={{ fontSize: 12, color: COLORS.success, fontWeight: '700' }}>✓ {pc.available || 0} available</Text>
+                      <Text style={{ fontSize: 12, color: COLORS.success, fontWeight: '700' }}><AppIcon name="check" size={12} /> {pc.available || 0} available</Text>
                       <Text style={{ fontSize: 12, color: COLORS.warning, fontWeight: '700' }}>⏸ {pc.hold || 0}</Text>
-                      <Text style={{ fontSize: 12, color: COLORS.error, fontWeight: '700' }}>✕ {pc.sold || 0}</Text>
+                      <Text style={{ fontSize: 12, color: COLORS.error, fontWeight: '700' }}><AppIcon name="x" size={12} /> {pc.sold || 0}</Text>
                     </View>
                   )}
-                  <View style={{ marginTop: 12, backgroundColor: (!p.block_industrial && noPlots) ? '#FFF4ED' : COLORS.linkBg, borderRadius: 10, paddingVertical: 9, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: (!p.block_industrial && noPlots) ? '#E4571A' : BLUE }}>{(!p.block_industrial && noPlots) ? 'Create EOI →' : 'View units →'}</Text>
+                  <View style={{ marginTop: 12, backgroundColor: (!p.block_industrial && noPlots) ? COLORS.warningBg : COLORS.linkBg, borderRadius: 14, paddingVertical: 9, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: (!p.block_industrial && noPlots) ? COLORS.warningAlt : BLUE }}>{(!p.block_industrial && noPlots) ? 'Create EOI →' : 'View units →'}</Text>
                   </View>
                 </View>
               </TouchableOpacity>

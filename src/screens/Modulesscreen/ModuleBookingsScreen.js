@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -12,10 +12,12 @@ import FilterSelect from '../../components/FilterSelect';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 
+import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const TEAL = '#0D9488';
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
+const TEAL = COLORS.success;
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const isEoi = (b) => String(b.plot_numbers || '').toUpperCase().startsWith('EOI');
 // Due dates are stored yyyy-mm-dd; show them as dd-mm-yyyy. This moved out with
@@ -50,6 +52,15 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
     ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
   ];
+  // `range` stays the source of truth; the dropdown just picks one of the presets.
+  const datePreset = (DATE_PRESETS.find(([, make]) => {
+    const r = make(); return r.from === range.from && r.to === range.to;
+  }) || ['All'])[0];
+  const pickDatePreset = (label) => {
+    const item = DATE_PRESETS.find(([l]) => l === (label || 'All')) || DATE_PRESETS[0];
+    setRange(item[1]()); setOpen({});
+  };
+
   const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
   // Revision history, fetched per booking on demand: only a handful of deals are ever
   // revised, so loading every chain up front would be work for nothing.
@@ -131,11 +142,11 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const grandCount = projectNames.reduce((s, pn) => s + groups[pn].length, 0);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Bookings</Text>
@@ -145,7 +156,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
-        {loading ? <ActivityIndicator color={TEAL} style={{ marginTop: 30 }} />
+        {loading ? <AppLoader style={{ marginTop: 24 }} />
         : err ? <View style={[CARD, { alignItems: 'center' }]}><Text style={{ color: COLORS.error }}>{err}</Text></View>
         : <>
           {(approvedRows.length > 0 || cancelledRows.length > 0) && (
@@ -163,21 +174,12 @@ export default function ModuleBookingsScreen({ navigation, route }) {
           )}
           {approved.length > 0 && (
             <>
-              {/* Booking-date range */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 10, alignItems: 'center' }}>
-                <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>BOOKED</Text>
-                {DATE_PRESETS.map(([label, make]) => {
-                  const r = make();
-                  const on = range.from === r.from && range.to === r.to;
-                  return (
-                    <TouchableOpacity key={label} onPress={() => { setRange(r); setOpen({}); }}
-                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
-                        borderColor: on ? TEAL : COLORS.border, backgroundColor: on ? '#CCFBF1' : COLORS.white }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: on ? TEAL : MUTED }}>{label}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+              {/* Booking-date range — a dropdown, like the project / STM filters */}
+              <View style={s.filterBar}>
+                <FilterSelect label="Any booking date" value={datePreset === 'All' ? '' : datePreset} style={s.filterSel}
+                  onChange={pickDatePreset}
+                  options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any booking date' : l }))} />
+              </View>
               {(projOptions.length > 1 || stmOptions.length > 1) && (
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
                   {projOptions.length > 1 && (
@@ -197,21 +199,21 @@ export default function ModuleBookingsScreen({ navigation, route }) {
             <Text style={{ color: MUTED, textAlign: 'center' }}>{narrowed ? `No ${tab} bookings match these filters.` : (tab === 'cancelled' ? 'No cancelled bookings.' : 'No bookings yet.')}</Text>
           </View>
         ) : <>
-          <View style={{ marginBottom: 12, borderRadius: 14, padding: 16, backgroundColor: tab === 'cancelled' ? '#475569' : TEAL }}>
-            <Text style={{ color: tab === 'cancelled' ? '#E2E8F0' : '#CCFBF1', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <View style={{ marginBottom: 12, borderRadius: 18, padding: 16, backgroundColor: tab === 'cancelled' ? COLORS.strong2 : TEAL }}>
+            <Text style={{ color: tab === 'cancelled' ? COLORS.border : COLORS.success2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
               {`${narrowed ? 'Matching' : 'Total'} ${tab === 'cancelled' ? 'Cancelled' : 'Approved'} · ${grandCount} booking${grandCount === 1 ? '' : 's'} · ${projectNames.length} project${projectNames.length === 1 ? '' : 's'}`}
             </Text>
-            {(!!proj || !!stm) && <Text style={{ color: '#CCFBF1', fontSize: 11, marginTop: 2 }} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
+            {(!!proj || !!stm) && <Text style={{ color: COLORS.success2, fontSize: 11, marginTop: 2 }} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
             <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
           </View>
           {projectNames.map((pn) => (
           <View key={pn} style={{ marginBottom: 12 }}>
             <TouchableOpacity onPress={() => toggle(pn)} activeOpacity={0.7}
-              style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: open[pn] ? '#99F6E4' : 'transparent' }]}>
+              style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: open[pn] ? COLORS.success2 : 'transparent' }]}>
               <Text style={{ flex: 1, fontSize: 12, fontWeight: '800', color: TEAL, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                🏢 {pn} · {groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}
+                <AppIcon name="building" size={12} /> {pn} · {groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}
               </Text>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1', marginRight: 10 }}>{rupee(projectTotal(pn))}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.accentDeep, marginRight: 10 }}>{rupee(projectTotal(pn))}</Text>
               <Text style={{ fontSize: 16, fontWeight: '800', color: MUTED }}>{open[pn] ? '⌄' : '›'}</Text>
             </TouchableOpacity>
             {open[pn] && <View style={{ marginTop: 10 }}>
@@ -220,16 +222,16 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>
-                        {isEoi(b) ? <Text style={{ color: '#E4571A' }}>{b.plot_numbers}</Text> : (unitLabel(b).isUnit ? `Plot ${unitLabel(b).text}` : unitLabel(b).text)}
+                        {isEoi(b) ? <Text style={{ color: COLORS.warningAlt }}>{b.plot_numbers}</Text> : (unitLabel(b).isUnit ? `Plot ${unitLabel(b).text}` : unitLabel(b).text)}
                         <Text style={{ color: MUTED, fontWeight: '600' }}>  {b.client_name || '—'}</Text>
                         <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL }}>  {isEoi(b) ? 'EOI' : 'LOI'}</Text>
-                        {b.revision_no > 0 ? <Text style={{ fontSize: 10, color: '#B45309' }}>  R{b.revision_no}</Text> : null}
+                        {b.revision_no > 0 ? <Text style={{ fontSize: 10, color: COLORS.warning }}>  R{b.revision_no}</Text> : null}
                       </Text>
                       <Text style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>{b.phone} · Booked {fmtDate(b.booking_date)} · STM {b.stm_name || '—'}</Text>
                       {/* The Sales/CP decision — who put the deal on the books, or
                           took it off them. The Accounts stage has its own line. */}
                       {b.cancelled_by_name ? (
-                        <Text style={{ fontSize: 11, color: '#475569', marginTop: 2, fontWeight: '600' }}>
+                        <Text style={{ fontSize: 11, color: COLORS.text2, marginTop: 2, fontWeight: '600' }}>
                           {`Cancelled by ${b.cancelled_by_name}`}
                         </Text>
                       ) : b.rejected_by_name ? (
@@ -243,7 +245,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                       ) : null}
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
+                      <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.accentDeep }}>{rupee(b.final_amount)}</Text>
                       <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, marginTop: 4 }}>{(b.approval_status || b.status || '').toUpperCase()}</Text>
                     </View>
                   </View>
@@ -253,13 +255,13 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                         copy is the same figures twice. It also shares an id with that
                         row, which rendered the block twice at once. */}
                     {!b.revision_no ? (
-                      <TouchableOpacity onPress={() => toggleDetails(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
-                        <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>{detailsOpen[b.id] ? '▲ Hide Details' : '▾ Details'}</Text>
+                      <TouchableOpacity onPress={() => toggleDetails(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.borderStrong, backgroundColor: COLORS.surface }}>
+                        <Text style={{ color: COLORS.textPrimary, fontWeight: '700', fontSize: 12 }}>{detailsOpen[b.id] ? '▲ Hide Details' : '▾ Details'}</Text>
                       </TouchableOpacity>
                     ) : null}
                     {b.loi_document ? (
-                      <TouchableOpacity onPress={() => openLoi(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#99F6E4', backgroundColor: COLORS.white }}>
-                        <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>📄 View / Download {isEoi(b) ? 'EOI' : 'LOI'}</Text>
+                      <TouchableOpacity onPress={() => openLoi(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.success2, backgroundColor: COLORS.surface }}>
+                        <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}><AppIcon name="file" size={12} /> View / Download {isEoi(b) ? 'EOI' : 'LOI'}</Text>
                       </TouchableOpacity>
                     ) : null}
                     {/* Only the latest version is listed here, at its current terms.
@@ -267,8 +269,8 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                         team reconciling payments against documents is the whole
                         question when a deal carries an R1. */}
                     {b.revision_no > 0 ? (
-                      <TouchableOpacity onPress={() => toggleRevisions(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
-                        <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>
+                      <TouchableOpacity onPress={() => toggleRevisions(b.id)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.borderStrong, backgroundColor: COLORS.surface }}>
+                        <Text style={{ color: COLORS.textPrimary, fontWeight: '700', fontSize: 12 }}>
                           {`\u27F2 Revisions ${revOpen[b.id] ? '\u25B2' : '\u25BE'}`}
                         </Text>
                       </TouchableOpacity>
@@ -276,14 +278,14 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                   </View>
                   {!b.revision_no && detailsOpen[b.id] ? <BookingDetails b={b} /> : null}
                   {revOpen[b.id] ? (
-                    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', paddingTop: 10 }}>
+                    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: COLORS.borderStrong, paddingTop: 10 }}>
                       <Text style={{ fontSize: 10, fontWeight: '800', color: TEAL, letterSpacing: 0.6, marginBottom: 8 }}>
                         REVISION HISTORY
                       </Text>
                       {!revs[b.id] ? <Text style={{ fontSize: 12, color: MUTED }}>Loading…</Text>
                        : revs[b.id].length === 0 ? <Text style={{ fontSize: 12, color: MUTED }}>Couldn&apos;t load the history.</Text>
                        : revs[b.id].map((v) => (
-                        <View key={v.id} style={{ paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+                        <View key={v.id} style={{ paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: COLORS.surface2 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <Text style={{ fontSize: 11, fontWeight: '800', color: v.id === b.id ? TEAL : MUTED }}>
                               {`R${v.revision_no || 0}`}
@@ -301,12 +303,12 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                           </Text>
                           <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                             {v.loi_document ? (
-                              <TouchableOpacity onPress={() => openLoi(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#99F6E4', backgroundColor: COLORS.white }}>
-                                <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>{`📄 View / Download ${isEoi(v) ? 'EOI' : 'LOI'}`}</Text>
+                              <TouchableOpacity onPress={() => openLoi(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.success2, backgroundColor: COLORS.surface }}>
+                                <Text style={{ color: TEAL, fontWeight: '700', fontSize: 12 }}>{`View / Download ${isEoi(v) ? 'EOI' : 'LOI'}`}</Text>
                               </TouchableOpacity>
                             ) : <Text style={{ fontSize: 11, color: MUTED }}>no document on file</Text>}
-                            <TouchableOpacity onPress={() => toggleRevDetails(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', backgroundColor: COLORS.white }}>
-                              <Text style={{ color: '#334155', fontWeight: '700', fontSize: 12 }}>
+                            <TouchableOpacity onPress={() => toggleRevDetails(v.id)} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.borderStrong, backgroundColor: COLORS.surface }}>
+                              <Text style={{ color: COLORS.textPrimary, fontWeight: '700', fontSize: 12 }}>
                                 {revDetails[v.id] ? '\u25B2 Details' : '\u25BE Details'}
                               </Text>
                             </TouchableOpacity>
@@ -327,3 +329,8 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+const s = StyleSheet.create({
+  filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  filterSel: { flexGrow: 1, flexBasis: 160, justifyContent: 'space-between' },
+});

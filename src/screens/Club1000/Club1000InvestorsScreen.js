@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Linking, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -18,9 +18,11 @@ import FormSheet from '../../components/FormSheet';
 import { TextField, inputStyle } from '../../components/Field';
 import { buildInvestorLOIHtml } from '../../lib/investorLOIHtml';
 
-const NAVY = COLORS.navy; const TEAL = '#00838F'; const BG = COLORS.screenBg;
+import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const STATUS_COLOR = {
   active: { bg: COLORS.successBg, fg: COLORS.success },
@@ -365,7 +367,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
     <FormSheet visible={visible} onClose={onClose}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: TEXT }}>Add Investor</Text>
-        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
       </View>
@@ -380,10 +382,10 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
             <Ionicons name={schemeOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
           </TouchableOpacity>
           {schemeOpen && (
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
               {schemes.map((s, i) => (
                 <TouchableOpacity key={s.id} onPress={() => selectScheme(s)}
-                  style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt, backgroundColor: String(form.scheme) === String(s.id) ? COLORS.linkBg : COLORS.white }}>
+                  style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt, backgroundColor: String(form.scheme) === String(s.id) ? COLORS.linkBg : COLORS.surface }}>
                   <Text style={{ fontSize: 14, color: TEXT, fontWeight: String(form.scheme) === String(s.id) ? '700' : '400' }}>{s.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -400,10 +402,10 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, marginBottom: 16 }}>
             <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Interest Payout</Text>
-            <View style={{ flexDirection: 'row', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
+            <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
               {payoutOptions.map((v) => (
                 <TouchableOpacity key={v} onPress={() => selectInterestPayout(v)}
-                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.white }}>
+                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.surface }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: form.interest_payout === v ? COLORS.white : MUTED }}>{INTEREST_PAYOUT_LABELS[v] || v}</Text>
                 </TouchableOpacity>
               ))}
@@ -415,9 +417,9 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         </View>
 
         {Number(form.amount_invested) > 0 && Number(form.total_return_pct) > 0 && (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F0FBFA', borderWidth: 1, borderColor: '#CDEEEC', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
-            <Text style={{ color: '#0D6E64', fontWeight: '600', fontSize: 13 }}>Maturity Value</Text>
-            <Text style={{ color: '#0D6E64', fontWeight: '800', fontSize: 13 }}>{fmtMoney(maturityValuePreview)}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.success2, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
+            <Text style={{ color: COLORS.success, fontWeight: '600', fontSize: 13 }}>Maturity Value</Text>
+            <Text style={{ color: COLORS.success, fontWeight: '800', fontSize: 13 }}>{fmtMoney(maturityValuePreview)}</Text>
           </View>
         )}
 
@@ -428,7 +430,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Payout Schedule (confirm or edit)</Text>
               <TouchableOpacity onPress={resetSchedule}><Text style={{ fontSize: 12, fontWeight: '700', color: TEAL }}>Reset</Text></TouchableOpacity>
             </View>
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' }}>
               {schedule.map((row, idx) => (
                 <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderTopWidth: idx > 0 ? 1 : 0, borderTopColor: COLORS.surfaceAlt }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: row.payout_type === 'maturity' ? COLORS.purple : TEAL, width: 56 }}>
@@ -461,10 +463,10 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         {/* Source (mirrors the Lead form) */}
         <View style={{ marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Source</Text>
-          <View style={{ flexDirection: 'row', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
+          <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
             {Object.entries(SOURCE_LABELS).map(([v, label]) => (
               <TouchableOpacity key={v} onPress={() => set('source', v)}
-                style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.source === v ? TEAL : COLORS.white }}>
+                style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.source === v ? TEAL : COLORS.surface }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: form.source === v ? COLORS.white : MUTED }}>{label}</Text>
               </TouchableOpacity>
             ))}
@@ -481,10 +483,10 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
                 onChangeText={(v) => { set('reference_name', v); setRefOpen(true); }}
                 onFocus={() => setRefOpen(true)}
                 style={inputStyle}
-                placeholderTextColor="#666666"
+                placeholderTextColor={COLORS.text3}
               />
               {refOpen && filteredRefSuggestions.length > 0 && (
-                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
                   {filteredRefSuggestions.map((r, i) => (
                     <TouchableOpacity key={`${r.reference_phone}-${i}`} onPress={() => selectReferenceSuggestion(r)}
                       style={{ padding: 10, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
@@ -534,7 +536,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
 
         <View style={{ marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Scan Document (KYC / ID proof)</Text>
-          <TouchableOpacity onPress={pickDocument} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12 }}>
+          <TouchableOpacity onPress={pickDocument} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12 }}>
             <Ionicons name="attach-outline" size={18} color={TEAL} />
             <Text style={{ fontSize: 13, color: documentFile ? TEXT : MUTED, flex: 1 }} numberOfLines={1}>
               {documentFile ? documentFile.name : 'Attach a photo or PDF'}
@@ -545,15 +547,15 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         <TextField label="Security (for LOI — optional)" value={form.security} onChangeText={(v) => set('security', v)} placeholder="NA" />
         <TextField label="Notes" value={form.notes} onChangeText={(v) => set('notes', v)} />
 
-        <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 12, marginTop: 4, marginBottom: 16 }}>
+        <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 12, marginTop: 4, marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 8 }}>Investment Proposal Form (LOI)</Text>
           <TouchableOpacity onPress={doDownloadLoi} disabled={loiDownloading}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: TEAL, borderRadius: 10, height: 44, opacity: loiDownloading ? 0.7 : 1 }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: TEAL, borderRadius: 14, height: 44, opacity: loiDownloading ? 0.7 : 1 }}>
             {loiDownloading ? <ActivityIndicator color={TEAL} /> : <Ionicons name="download-outline" size={17} color={TEAL} />}
             <Text style={{ color: TEAL, fontSize: 13, fontWeight: '700' }}>{loiDownloading ? 'Generating…' : 'Download LOI PDF (Print → Sign → Upload)'}</Text>
           </TouchableOpacity>
           {loiDone && <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 6 }}>LOI downloaded — get it signed and upload below.</Text>}
-          <TouchableOpacity onPress={pickSignedLoi} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, marginTop: 10 }}>
+          <TouchableOpacity onPress={pickSignedLoi} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, marginTop: 10 }}>
             <Ionicons name="attach-outline" size={18} color={TEAL} />
             <Text style={{ fontSize: 13, color: loiFile ? TEXT : MUTED, flex: 1 }} numberOfLines={1}>
               {loiFile ? loiFile.name : 'Attach the signed LOI (image / PDF) *'}
@@ -562,7 +564,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         </View>
 
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
-          style={{ backgroundColor: TEAL, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
+          style={{ backgroundColor: TEAL, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
           {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
           <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Submit for Approval</Text>
         </TouchableOpacity>
@@ -710,12 +712,12 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
           <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Revise LOI · R{nextRevisionNo}</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{form.name || investor.name} · {form.phone || investor.phone} · {scheme?.name}</Text>
         </View>
-        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
       </View>
       <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <Text style={{ fontSize: 11, color: MUTED, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 10, marginBottom: 16 }}>
+        <Text style={{ fontSize: 11, color: MUTED, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 16 }}>
           Scheme and investment date stay fixed across a revision — name, mobile number and the terms below can change. Matures {maturityDate ? formatDMY(toISODate(maturityDate)) : '—'}.
         </Text>
 
@@ -727,10 +729,10 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, marginBottom: 16 }}>
             <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Interest Payout</Text>
-            <View style={{ flexDirection: 'row', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
+            <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
               {(scheme?.interest_payout_options?.length ? scheme.interest_payout_options : ['maturity']).map((v) => (
                 <TouchableOpacity key={v} onPress={() => selectInterestPayout(v)}
-                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.white }}>
+                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.surface }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: form.interest_payout === v ? COLORS.white : MUTED }}>{INTEREST_PAYOUT_LABELS[v] || v}</Text>
                 </TouchableOpacity>
               ))}
@@ -747,7 +749,7 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Payout Schedule (confirm or edit)</Text>
               <TouchableOpacity onPress={resetSchedule}><Text style={{ fontSize: 12, fontWeight: '700', color: TEAL }}>Reset</Text></TouchableOpacity>
             </View>
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' }}>
               {schedule.map((row, idx) => (
                 <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderTopWidth: idx > 0 ? 1 : 0, borderTopColor: COLORS.surfaceAlt }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: row.payout_type === 'maturity' ? COLORS.purple : TEAL, width: 56 }}>
@@ -765,15 +767,15 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         <TextField label="Security (for LOI — optional)" value={form.security} onChangeText={(v) => set('security', v)} placeholder="NA" />
         <TextField label="Notes" value={form.notes} onChangeText={(v) => set('notes', v)} />
 
-        <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 12, marginTop: 4, marginBottom: 16 }}>
+        <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 12, marginTop: 4, marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 8 }}>Revised Investment Proposal Form (LOI)</Text>
           <TouchableOpacity onPress={doDownloadLoi} disabled={loiDownloading}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: COLORS.purple, borderRadius: 10, height: 44, opacity: loiDownloading ? 0.7 : 1 }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: COLORS.purple, borderRadius: 14, height: 44, opacity: loiDownloading ? 0.7 : 1 }}>
             {loiDownloading ? <ActivityIndicator color={COLORS.purple} /> : <Ionicons name="download-outline" size={17} color={COLORS.purple} />}
             <Text style={{ color: COLORS.purple, fontSize: 13, fontWeight: '700' }}>{loiDownloading ? 'Generating…' : `Download Revised LOI (R${nextRevisionNo})`}</Text>
           </TouchableOpacity>
           {loiDone && <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 6 }}>Revised LOI downloaded — get it signed and upload below.</Text>}
-          <TouchableOpacity onPress={pickSignedLoi} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, marginTop: 10 }}>
+          <TouchableOpacity onPress={pickSignedLoi} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, marginTop: 10 }}>
             <Ionicons name="attach-outline" size={18} color={COLORS.purple} />
             <Text style={{ fontSize: 13, color: loiFile ? TEXT : MUTED, flex: 1 }} numberOfLines={1}>
               {loiFile ? loiFile.name : 'Attach the signed revised LOI (image / PDF) *'}
@@ -782,7 +784,7 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         </View>
 
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
-          style={{ backgroundColor: COLORS.purple, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
+          style={{ backgroundColor: COLORS.purple, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
           {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
           <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Submit Revision for Approval</Text>
         </TouchableOpacity>
@@ -933,12 +935,12 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
           <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Renew Investment · R{nextRevisionNo}</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{investor.name} · {investor.phone} · {scheme?.name}</Text>
         </View>
-        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
       </View>
       <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <Text style={{ fontSize: 11, color: MUTED, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 10, marginBottom: 16 }}>
+        <Text style={{ fontSize: 11, color: MUTED, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 16 }}>
           This investment matured on {formatDMY(investor.maturity_date)}. Set the renewal terms below — amount can go up or down.
         </Text>
 
@@ -966,10 +968,10 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, marginBottom: 16 }}>
             <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Interest Payout</Text>
-            <View style={{ flexDirection: 'row', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
+            <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
               {(scheme?.interest_payout_options?.length ? scheme.interest_payout_options : ['maturity']).map((v) => (
                 <TouchableOpacity key={v} onPress={() => selectInterestPayout(v)}
-                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.white }}>
+                  style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.interest_payout === v ? TEAL : COLORS.surface }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: form.interest_payout === v ? COLORS.white : MUTED }}>{INTEREST_PAYOUT_LABELS[v] || v}</Text>
                 </TouchableOpacity>
               ))}
@@ -986,7 +988,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Payout Schedule (confirm or edit)</Text>
               <TouchableOpacity onPress={resetSchedule}><Text style={{ fontSize: 12, fontWeight: '700', color: TEAL }}>Reset</Text></TouchableOpacity>
             </View>
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' }}>
               {schedule.map((row, idx) => (
                 <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderTopWidth: idx > 0 ? 1 : 0, borderTopColor: COLORS.surfaceAlt }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: row.payout_type === 'maturity' ? AMBER : TEAL, width: 56 }}>
@@ -1004,15 +1006,15 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         <TextField label="Security (for LOI — optional)" value={form.security} onChangeText={(v) => set('security', v)} placeholder="NA" />
         <TextField label="Notes" value={form.notes} onChangeText={(v) => set('notes', v)} />
 
-        <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 12, marginTop: 4, marginBottom: 16 }}>
+        <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 12, marginTop: 4, marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 8 }}>Renewed Investment Proposal Form (LOI)</Text>
           <TouchableOpacity onPress={doDownloadLoi} disabled={loiDownloading}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: AMBER, borderRadius: 10, height: 44, opacity: loiDownloading ? 0.7 : 1 }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: AMBER, borderRadius: 14, height: 44, opacity: loiDownloading ? 0.7 : 1 }}>
             {loiDownloading ? <ActivityIndicator color={AMBER} /> : <Ionicons name="download-outline" size={17} color={AMBER} />}
             <Text style={{ color: AMBER, fontSize: 13, fontWeight: '700' }}>{loiDownloading ? 'Generating…' : `Download Renewed LOI (R${nextRevisionNo})`}</Text>
           </TouchableOpacity>
           {loiDone && <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 6 }}>Renewed LOI downloaded — get it signed and upload below.</Text>}
-          <TouchableOpacity onPress={pickSignedLoi} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, marginTop: 10 }}>
+          <TouchableOpacity onPress={pickSignedLoi} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, marginTop: 10 }}>
             <Ionicons name="attach-outline" size={18} color={AMBER} />
             <Text style={{ fontSize: 13, color: loiFile ? TEXT : MUTED, flex: 1 }} numberOfLines={1}>
               {loiFile ? loiFile.name : 'Attach the signed renewed LOI (image / PDF) *'}
@@ -1021,7 +1023,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         </View>
 
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
-          style={{ backgroundColor: AMBER, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
+          style={{ backgroundColor: AMBER, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
           {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
           <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Submit Renewal for Approval</Text>
         </TouchableOpacity>
@@ -1079,8 +1081,8 @@ function LedgerModal({ investorId, onClose }) {
 
   return (
     <Modal visible={!!investorId} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Ledger{inv ? ` — ${inv.name}` : ''}</Text>
@@ -1090,7 +1092,7 @@ function LedgerModal({ investorId, onClose }) {
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 30 }}>
             {loading ? (
-              <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} />
+              <AppLoader style={{ marginTop: 24 }} />
             ) : err ? (
               <Text style={{ textAlign: 'center', color: COLORS.error, marginTop: 30 }}>{err}</Text>
             ) : (
@@ -1102,7 +1104,7 @@ function LedgerModal({ investorId, onClose }) {
                     ['Paid Out', s.total_paid, COLORS.success],
                     ['Pending', s.total_pending, AMBER],
                   ].map(([label, val, color]) => (
-                    <View key={label} style={{ flexBasis: '47%', flexGrow: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 10 }}>
+                    <View key={label} style={{ flexBasis: '47%', flexGrow: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10 }}>
                       <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>{label}</Text>
                       <Text style={{ fontSize: 15, fontWeight: '800', color, marginTop: 2 }}>{fmtMoney(val)}</Text>
                     </View>
@@ -1220,8 +1222,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <AddInvestorSheet visible={showAdd} onClose={() => { setShowAdd(false); setPrefillLead(null); }} onSaved={() => load()} schemes={schemes} prefillLead={prefillLead} />
       <ReviseInvestorSheet visible={!!revising} investor={revising}
         scheme={schemes.find((s) => String(s.id) === String(revising?.scheme))}
@@ -1231,16 +1233,16 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         onClose={() => setRenewing(null)} onSaved={() => load()} />
       <LedgerModal investorId={ledgerFor} onClose={() => setLedgerFor(null)} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Investors</Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{manager ? 'All investors' : 'Investors you\'ve added'}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowAdd(true)} disabled={!schemes.length}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, opacity: schemes.length ? 1 : 0.5 }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, opacity: schemes.length ? 1 : 0.5 }}>
           <Ionicons name="add" size={16} color={COLORS.white} />
           <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>Add</Text>
         </TouchableOpacity>
@@ -1252,9 +1254,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       )}
 
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, height: 40 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceAlt, borderRadius: 14, paddingHorizontal: 12, height: 40 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
-          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email, investor no.…" placeholderTextColor="#666666"
+          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email, investor no.…" placeholderTextColor={COLORS.text3}
             style={{ flex: 1, marginLeft: 8, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {searchText ? <TouchableOpacity onPress={() => setSearchText('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
@@ -1263,7 +1265,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, gap: 8, alignItems: 'center' }}>
         {[{ key: '', label: 'All' }, { key: 'active', label: 'Active' }, { key: 'matured', label: 'Matured' }, { key: 'redeemed', label: 'Redeemed' }, { key: 'premature_redeemed', label: 'Premature' }].map((f) => (
           <TouchableOpacity key={f.key} onPress={() => setStatusFilter(f.key)}
-            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: statusFilter === f.key ? NAVY : COLORS.white, borderWidth: 1, borderColor: statusFilter === f.key ? NAVY : COLORS.border }}>
+            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: statusFilter === f.key ? NAVY : COLORS.surface, borderWidth: 1, borderColor: statusFilter === f.key ? NAVY : COLORS.border }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: statusFilter === f.key ? COLORS.white : MUTED }}>{f.label}</Text>
           </TouchableOpacity>
         ))}
@@ -1271,7 +1273,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : investors.length === 0 ? (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : investors.length === 0 ? (
           <Text style={{ textAlign: 'center', color: MUTED, marginTop: 30 }}>{search ? 'No investors match your search.' : 'No investors yet.'}</Text>
         ) : investors.map((inv) => {
           const sc = STATUS_COLOR[inv.status] || { bg: COLORS.surfaceAlt, fg: MUTED };
@@ -1314,8 +1316,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                     <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.link }}>View LOI</Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: '#E0F2F1' }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}>📒 Ledger</Text>
+                <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}><AppIcon name="book" size={11} /> Ledger</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setRevising(inv)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.purpleBg }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.purple }}>↻ Revise LOI</Text>

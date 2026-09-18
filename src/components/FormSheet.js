@@ -65,13 +65,13 @@ export default function FormSheet({ visible, onClose, children, maxHeight = '92%
 
 const styles = StyleSheet.create({
   // Scrim on the root so the content behind the sheet is clearly dimmed (not messy).
-  root: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,23,42,0.62)' },
+  root: { flex: 1, justifyContent: 'flex-end', backgroundColor: `rgba(${COLORS.inkRgb},0.4)` },
   backdrop: { ...StyleSheet.absoluteFillObject },  // transparent — tap target to close
   kav: { width: '100%' },
   sheet: {
-    backgroundColor: COLORS.screenBg,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     overflow: 'hidden',
     // Allow the sheet to shrink to the kav's maxHeight so a tall inner ScrollView
     // (flexShrink:1) gets a bounded height and can actually scroll.
@@ -79,8 +79,8 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: 'center',
-    width: 44, height: 5, borderRadius: 3,
-    backgroundColor: COLORS.textTertiary,
+    width: 40, height: 5, borderRadius: 3,
+    backgroundColor: COLORS.divider,
     marginTop: 10, marginBottom: 6,
   },
 });

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, Platform, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -11,10 +11,13 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import FormSheet from '../../components/FormSheet';
 import { TextField, Field, inputStyle } from '../../components/Field';
+import AppIcon from '../../components/AppIcon';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
-const NAVY = COLORS.navy; const TEAL = '#00838F'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const STATUS_COLOR = {
   new: { bg: COLORS.linkBg, fg: COLORS.link },
@@ -54,15 +57,15 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)}
-        style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }, triggerStyle]}>
+        style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }, triggerStyle]}>
         <Text style={{ fontSize: 14, color: selected ? TEXT : MUTED, fontWeight: selected ? '600' : '400' }}>
           {selected ? selected.label : placeholder}
         </Text>
         <Ionicons name="chevron-down" size={16} color={MUTED} />
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' }} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{placeholder}</Text>
               <TouchableOpacity onPress={() => setOpen(false)}><Ionicons name="close" size={20} color={MUTED} /></TouchableOpacity>
@@ -95,7 +98,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
 
   return (
     <FormSheet visible={visible} onClose={onClose}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt, backgroundColor: 'transparent' }}>
         <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Filters</Text>
         <TouchableOpacity onPress={() => { setLocal(EMPTY_FILTERS); setFilters(EMPTY_FILTERS); onClose(); }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.error }}>Clear All</Text>
@@ -109,7 +112,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
               const active = local.date_from === from && local.date_to === to;
               return (
                 <TouchableOpacity key={label} onPress={() => { set('date_from', active ? '' : from); set('date_to', active ? '' : to); }}
-                  style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: active ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: active ? NAVY : COLORS.border }}>
+                  style={{ flex: 1, paddingVertical: 9, borderRadius: 14, alignItems: 'center', backgroundColor: active ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: active ? NAVY : COLORS.border }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: active ? COLORS.white : MUTED }}>{label}</Text>
                 </TouchableOpacity>
               );
@@ -150,8 +153,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
 
       <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
-          style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}>
-          <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
+          style={ClubLeadsScreenS.btn}>
+          <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
         </TouchableOpacity>
       </View>
     </FormSheet>
@@ -197,7 +200,7 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
     <FormSheet visible={visible} onClose={onClose}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: TEXT }}>Add Lead</Text>
-        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
       </View>
@@ -217,7 +220,7 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
                 <Ionicons name={sourceOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
               </TouchableOpacity>
               {sourceOpen && (
-                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
                   {Object.entries(SOURCE_LABELS).map(([v, label], i) => (
                     <TouchableOpacity key={v} onPress={() => { set('source', v); setSourceOpen(false); }}
                       style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
@@ -254,7 +257,7 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
             <Ionicons name={schemeOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
           </TouchableOpacity>
           {schemeOpen && (
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
               <TouchableOpacity onPress={() => { set('scheme_interest', ''); setSchemeOpen(false); }} style={{ padding: 12 }}>
                 <Text style={{ fontSize: 14, color: TEXT }}>None</Text>
               </TouchableOpacity>
@@ -279,7 +282,7 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
               <Ionicons name={assigneeOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
             </TouchableOpacity>
             {assigneeOpen && (
-              <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+              <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
                 <TouchableOpacity onPress={() => { set('assigned_to', ''); setAssigneeOpen(false); }} style={{ padding: 12 }}>
                   <Text style={{ fontSize: 14, color: TEXT }}>Myself</Text>
                 </TouchableOpacity>
@@ -297,7 +300,7 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
         <TextField label="Remarks" value={form.remarks} onChangeText={(v) => set('remarks', v)} />
 
         <TouchableOpacity onPress={submit} disabled={saving}
-          style={{ backgroundColor: TEAL, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: saving ? 0.7 : 1, marginTop: 8 }}>
+          style={{ backgroundColor: TEAL, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: saving ? 0.7 : 1, marginTop: 8 }}>
           {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
           <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Add Lead</Text>
         </TouchableOpacity>
@@ -345,7 +348,7 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
           <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>{lead.name}</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{lead.phone}{lead.email ? ` · ${lead.email}` : ''}</Text>
         </View>
-        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
       </View>
@@ -390,7 +393,7 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
             )}
           </View>
           {manager && assigneeOpen && (
-            <View style={{ width: '100%', borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden', marginTop: -8 }}>
+            <View style={{ width: '100%', borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden', marginTop: -8 }}>
               {assignees.map((u, i) => (
                 <TouchableOpacity key={u.id} onPress={() => { onAssigneeChange(lead.id, u.id); setAssigneeOpen(false); }}
                   style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
@@ -419,7 +422,7 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
             <Ionicons name={statusOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
           </TouchableOpacity>
           {statusOpen && (
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, overflow: 'hidden' }}>
+            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
               {STATUS_OPTIONS.map((s, i) => (
                 <TouchableOpacity key={s} onPress={() => { onStatusChange(lead.id, s); setStatusOpen(false); }}
                   style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
@@ -433,7 +436,7 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
         {/* Next follow-up — hidden once the lead is in a terminal status (nothing
             left to follow up on), matching the backend's auto-clear behaviour. */}
         {!isTerminal && (
-          <View style={{ marginBottom: 16, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 12 }}>
+          <View style={{ marginBottom: 16, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 12 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View>
                 <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED }}>Next Follow-up</Text>
@@ -477,7 +480,7 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
                 )}
                 <TextField label="Remarks" value={schedRemarks} onChangeText={setSchedRemarks} placeholder="Optional" />
                 <TouchableOpacity onPress={submitSchedule} disabled={schedBusy}
-                  style={{ backgroundColor: TEAL, borderRadius: 10, height: 42, alignItems: 'center', justifyContent: 'center', opacity: schedBusy ? 0.7 : 1 }}>
+                  style={{ backgroundColor: TEAL, borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', opacity: schedBusy ? 0.7 : 1 }}>
                   {schedBusy ? <ActivityIndicator color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontSize: 14, fontWeight: '700' }}>Save Follow-up</Text>}
                 </TouchableOpacity>
               </View>
@@ -487,7 +490,7 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
 
         {lead.status !== 'converted' && (
           <TouchableOpacity onPress={() => onConvert(lead)}
-            style={{ backgroundColor: TEAL, borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8 }}>
+            style={{ backgroundColor: TEAL, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8 }}>
             <Ionicons name="swap-horizontal-outline" size={17} color={COLORS.white} />
             <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Convert to Investor</Text>
           </TouchableOpacity>
@@ -502,14 +505,14 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
           {(detail?.history || []).map((h, idx, arr) => {
             const isLast = idx === arr.length - 1;
             const color = HISTORY_COLOR[h.field_changed] || MUTED;
-            const icon = h.field_changed === 'created' ? '📥' : h.field_changed === 'assigned_to' ? '👤' : '🔄';
+            const icon = h.field_changed === 'created' ? 'download' : h.field_changed === 'assigned_to' ? 'user' : 'refresh';
             const singleValue = h.field_changed === 'created' || !h.old_value;
             const byLabel = h.changed_by_name || (h.field_changed === 'created' ? 'System (auto)' : null);
             return (
               <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                 <View style={{ alignItems: 'center' }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 16 }}>{icon}</Text>
+                  <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: withAlpha(color, '18'), alignItems: 'center', justifyContent: 'center' }}>
+                    <AppIcon name={icon} size={16} color={color} />
                   </View>
                   {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}
                 </View>
@@ -636,40 +639,40 @@ export default function Club1000LeadsScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <AddLeadSheet visible={showAdd} onClose={() => setShowAdd(false)} onSaved={() => load()} schemes={schemes} assignees={assignees} manager={manager} />
       <LeadDetailSheet lead={selected} assignees={assignees} manager={manager} onClose={() => setSelected(null)} onStatusChange={changeStatus} onConvert={convert} onScheduleFollowUp={scheduleFollowUp} onAssigneeChange={changeAssignee} />
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters} schemes={schemes} assignees={assignees} showAssignees={manager} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Leads</Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{manager ? 'All Club 1000 leads' : 'Assigned to you and your team'}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowAdd(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 }}>
           <Ionicons name="add" size={16} color={COLORS.white} />
           <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>Add</Text>
         </TouchableOpacity>
       </View>
 
       {/* Search + Filter button */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', gap: 10 }}>
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
+      <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
-          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" placeholderTextColor="#666666" style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
+          <TextInput value={searchText} onChangeText={setSearchText} placeholder="Search name, phone, email…" placeholderTextColor={COLORS.text3} style={{ flex: 1, fontSize: 14, color: TEXT }} returnKeyType="search" />
           {searchText ? <TouchableOpacity onPress={() => { setSearchText(''); setSearch(''); }}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
         </View>
         <TouchableOpacity onPress={() => setFilterSheet(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: activeFilterCount > 0 ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: activeFilterCount > 0 ? NAVY : COLORS.border }}>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: activeFilterCount > 0 ? NAVY : COLORS.surfaceAlt, borderWidth: 1.5, borderColor: activeFilterCount > 0 ? NAVY : COLORS.border }}>
           <Ionicons name="options-outline" size={16} color={activeFilterCount > 0 ? COLORS.white : MUTED} />
           {activeFilterCount > 0 && (
-            <View style={{ backgroundColor: COLORS.error, borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+            <View style={{ backgroundColor: COLORS.error, borderRadius: 14, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
               <Text style={{ color: COLORS.white, fontSize: 10, fontWeight: '800' }}>{activeFilterCount}</Text>
             </View>
           )}
@@ -678,7 +681,7 @@ export default function Club1000LeadsScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : loadError ? (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : loadError ? (
           <View style={{ alignItems: 'center', marginTop: 60 }}>
             <Ionicons name="cloud-offline-outline" size={48} color={COLORS.divider} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: MUTED, marginTop: 12 }}>Couldn't load leads</Text>
@@ -721,3 +724,8 @@ export default function Club1000LeadsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ClubLeadsScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+});

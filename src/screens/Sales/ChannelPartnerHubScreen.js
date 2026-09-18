@@ -8,7 +8,7 @@ import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // The Channel Partner module — the same eight destinations the web nav lists, each
 // one an existing Sales screen asked for the partner-sourced slice (cpOnly), plus the
@@ -35,13 +35,13 @@ export default function ChannelPartnerHubScreen({ navigation }) {
   const tiles = TILES.filter((t) => !t.managerOnly || isManager);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14,
-                     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+                     backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()}
           style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Channel Partner</Text>
@@ -53,13 +53,12 @@ export default function ChannelPartnerHubScreen({ navigation }) {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {tiles.map((t) => (
             <TouchableOpacity key={t.key} onPress={() => navigation.navigate(t.key, t.params)}
-              style={[CARD, { width: '47%', padding: 16 }]} activeOpacity={0.8}>
-              <View style={{ width: 46, height: 46, borderRadius: 13, backgroundColor: t.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+              style={[CARD, { width: '47%', paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8 }]} activeOpacity={0.8}>
+              <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: t.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 2 }}>
                 <Ionicons name={t.icon} size={22} color={t.color} />
               </View>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 2 }}>{t.label}</Text>
-              <Text style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>{t.desc}</Text>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: t.color }}>Open →</Text>
+              <Text style={{ fontSize: 13.5, fontWeight: '700', color: TEXT, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{t.label}</Text>
+              <Text style={{ fontSize: 11, color: MUTED, textAlign: 'center' }} numberOfLines={2}>{t.desc}</Text>
             </TouchableOpacity>
           ))}
         </View>

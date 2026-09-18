@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseUrl } from '../../constants/api';
 import { LOGIN_SUCCESS } from '../../redux/types/authTypes';
+import images from '../../constants/images';
 
 // react-native-onesignal is a native module absent in Expo Go; load it lazily
 let OneSignal = null;
@@ -172,7 +173,7 @@ const LoginScreen = () => {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
-      <LinearGradient colors={[COLORS.black, COLORS.navyDark, COLORS.navyDark]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={COLORS.heroScene} style={StyleSheet.absoluteFill} />
       <View style={s.blobTopRight} />
       <View style={s.blobBottomLeft} />
 
@@ -190,7 +191,7 @@ const LoginScreen = () => {
                 <View style={s.ring1}>
                   <View style={s.logoCircle}>
                     <Image
-                      source={require('../../assets/images/nexora-mark.png')}
+                      source={images.logo}
                       style={s.logoImg}
                       resizeMode="contain"
                     />
@@ -217,7 +218,7 @@ const LoginScreen = () => {
               <>
                 <Text style={s.cardTitle}>Verify OTP</Text>
                 <Text style={s.cardSub}>
-                  Code sent to{otpEmail ? <Text style={{ fontWeight: '700', color: COLORS.navyDark }}> {otpEmail}</Text> : null}
+                  Code sent to{otpEmail ? <Text style={s.otpTarget}> {otpEmail}</Text> : null}
                 </Text>
 
                 <Text style={s.fieldLabel}>ENTER OTP</Text>
@@ -238,7 +239,7 @@ const LoginScreen = () => {
 
                 {!!error && (
                   <View style={s.errorBox}>
-                    <Ionicons name="alert-circle-outline" size={15} color="#DC2626" style={{ marginRight: 6 }} />
+                    <Ionicons name="alert-circle-outline" size={15} color={COLORS.error} style={{ marginRight: 6 }} />
                     <Text style={s.errorText}>{error}</Text>
                   </View>
                 )}
@@ -247,23 +248,19 @@ const LoginScreen = () => {
                   onPress={handleVerifyOtp}
                   activeOpacity={0.85}
                   disabled={!canSubmit}
-                  style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
+                  style={{ borderRadius: 20, overflow: 'hidden', marginTop: 4 }}
                 >
-                  <LinearGradient
-                    colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={s.btn}
-                  >
+                  <View style={canSubmit ? s.btn : [s.btn, s.btnOff]}>
                     {loading
-                      ? <ActivityIndicator color={COLORS.white} />
+                      ? <ActivityIndicator color={COLORS.btnText} />
                       : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={s.btnText}>Verify OTP</Text>
-                          <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.white} />
+                          <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.btnText} />
                         </View>
                       )
                     }
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
 
                 {/* Resend */}
@@ -290,7 +287,7 @@ const LoginScreen = () => {
 
                 {!!error && (
                   <View style={s.errorBox}>
-                    <Ionicons name="alert-circle-outline" size={15} color="#DC2626" style={{ marginRight: 6 }} />
+                    <Ionicons name="alert-circle-outline" size={15} color={COLORS.error} style={{ marginRight: 6 }} />
                     <Text style={s.errorText}>{error}</Text>
                   </View>
                 )}
@@ -333,23 +330,19 @@ const LoginScreen = () => {
                   onPress={handleLogin}
                   activeOpacity={0.85}
                   disabled={!canSubmit}
-                  style={{ borderRadius: 16, overflow: 'hidden', marginTop: 4 }}
+                  style={{ borderRadius: 20, overflow: 'hidden', marginTop: 4 }}
                 >
-                  <LinearGradient
-                    colors={canSubmit ? [COLORS.navy, COLORS.navyDark] : [COLORS.textTertiary, COLORS.textSecondary]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={s.btn}
-                  >
+                  <View style={canSubmit ? s.btn : [s.btn, s.btnOff]}>
                     {loading
-                      ? <ActivityIndicator color={COLORS.white} />
+                      ? <ActivityIndicator color={COLORS.btnText} />
                       : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={s.btnText}>Sign In</Text>
-                          <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+                          <Ionicons name="arrow-forward" size={18} color={COLORS.btnText} />
                         </View>
                       )
                     }
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -379,12 +372,12 @@ const s = StyleSheet.create({
   blobTopRight: {
     position: 'absolute', top: -60, right: -60,
     width: 220, height: 220, borderRadius: 110,
-    backgroundColor: 'rgba(255,107,43,0.06)',
+    backgroundColor: 'rgba(162,210,255,0.06)',
   },
   blobBottomLeft: {
     position: 'absolute', bottom: 200, left: -80,
     width: 200, height: 200, borderRadius: 100,
-    backgroundColor: 'rgba(41,98,255,0.06)',
+    backgroundColor: COLORS.accentSofter,
   },
 
   header: {
@@ -396,37 +389,37 @@ const s = StyleSheet.create({
 
   ring3: {
     width: 148, height: 148, borderRadius: 74,
-    backgroundColor: 'rgba(255,107,43,0.06)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.15)',
+    backgroundColor: 'rgba(162,210,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.15)',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 28,
   },
   ring2: {
     width: 118, height: 118, borderRadius: 59,
-    backgroundColor: 'rgba(255,107,43,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.28)',
+    backgroundColor: 'rgba(162,210,255,0.08)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.28)',
     justifyContent: 'center', alignItems: 'center',
   },
   ring1: {
     width: 92, height: 92, borderRadius: 46,
-    backgroundColor: 'rgba(255,107,43,0.10)',
-    borderWidth: 1.5, borderColor: 'rgba(255,107,43,0.55)',
+    backgroundColor: 'rgba(162,210,255,0.10)',
+    borderWidth: 1.5, borderColor: 'rgba(162,210,255,0.55)',
     justifyContent: 'center', alignItems: 'center',
   },
   logoCircle: {
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center', alignItems: 'center',
     shadowColor: ORANGE, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45, shadowRadius: 12, elevation: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   logoImg: { width: 52, height: 52 },
 
   dividerRow: {
     flexDirection: 'row', alignItems: 'center',
     marginBottom: 16, width: 160,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,107,43,0.35)' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(162,210,255,0.35)' },
   dividerDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: ORANGE, marginHorizontal: 8 },
 
   brandName: { fontSize: 34, fontWeight: '800', color: COLORS.white, letterSpacing: 1, marginBottom: 6 },
@@ -448,7 +441,8 @@ const s = StyleSheet.create({
     position: 'absolute', top: 0, left: 48, right: 48, height: 3,
     backgroundColor: ORANGE, borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
   },
-  cardTitle: { fontSize: 26, fontWeight: '800', color: COLORS.navyDark, marginBottom: 6, marginTop: 8 },
+  cardTitle: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 6, marginTop: 8 },
+  otpTarget: { fontWeight: '700', color: COLORS.textPrimary },
   cardSub:   { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500', marginBottom: 28 },
 
   fieldLabel: {
@@ -457,26 +451,29 @@ const s = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 16,
+    backgroundColor: COLORS.surface, borderRadius: 22,
     paddingHorizontal: 16, height: 56, marginBottom: 22,
     borderWidth: 1.5, borderColor: COLORS.border,
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12, shadowRadius: 10, elevation: 3,
   },
-  input: { flex: 1, fontSize: 15, color: COLORS.navyDark, fontWeight: '600' },
+  input: { flex: 1, fontSize: 15, color: COLORS.textPrimary, fontWeight: '600' },
 
   btn: {
-    height: 56, borderRadius: 16,
+    height: 56, borderRadius: 20,
     justifyContent: 'center', alignItems: 'center',
+    backgroundColor: COLORS.btnTint,
+    borderWidth: 1, borderColor: COLORS.btnBorder,
   },
-  btnText: { color: COLORS.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+  btnOff: { opacity: 0.45 },
+  btnText: { color: COLORS.btnText, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
 
   errorBox: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA',
-    borderRadius: 12, padding: 12, marginBottom: 16,
+    backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error2,
+    borderRadius: 16, padding: 12, marginBottom: 16,
   },
-  errorText: { fontSize: 13, color: '#DC2626', flex: 1 },
+  errorText: { fontSize: 13, color: COLORS.error, flex: 1 },
 
   resendTimer: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
   resendLink:  { fontSize: 13, color: COLORS.navy, fontWeight: '700', textDecorationLine: 'underline' },

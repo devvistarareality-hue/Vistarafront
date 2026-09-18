@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
 
   // ── Header ──
   header: {
-    backgroundColor: NAVY,
+    backgroundColor: COLORS.panel,
     alignItems: 'center',
     paddingTop: 40,
     paddingBottom: 52,
@@ -46,13 +46,13 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: COLORS.navyMedium,
+    backgroundColor: COLORS.panelMedium,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText:  { color: COLORS.white, fontSize: 38, fontWeight: '800' },
   userName:    { color: COLORS.white, fontSize: 20, fontWeight: '700', marginBottom: 4 },
-  userRole:    { color: COLORS.shadow, fontSize: 13, marginBottom: 12 },
+  userRole:    { color: COLORS.textSecondary, fontSize: 13, marginBottom: 12 },
   orgBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -75,19 +75,19 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: (width - 44) / 2,
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
     padding: 16,
     elevation: 4,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   statIconBox: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 18,
     paddingVertical: 14,
     alignItems: 'center',
     elevation: 4,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   tabRow: {
     flexDirection: 'row',
     backgroundColor: COLORS.border,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 4,
     marginBottom: 14,
   },
@@ -133,10 +133,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 14,
   },
   tabActive: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     elevation: 2,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 1 },
@@ -148,15 +148,15 @@ const styles = StyleSheet.create({
 
   // ── Today View ──
   todayCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
     padding: 20,
     elevation: 4,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   todayDate: {
     fontSize: 14,
     fontWeight: '700',
@@ -183,8 +183,8 @@ const styles = StyleSheet.create({
 
   // ── Week View Day Cards ──
   dayCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
     padding: 12,
     marginRight: 10,
     width: 90,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 6,
     alignItems: 'center',
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   dayName:  { fontSize: 12, fontWeight: '800', color: NAVY, letterSpacing: 0.5 },
   dayDate:  { fontSize: 11, color: COLORS.textSecondary, marginBottom: 8, marginTop: 2 },
   dayDivider: { height: 1, backgroundColor: COLORS.surfaceAlt, width: '100%', marginBottom: 8 },
@@ -212,15 +212,15 @@ const styles = StyleSheet.create({
 
   // ── Month / Calendar View ──
   calendarCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
     padding: 16,
     elevation: 4,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   calNav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   calNavBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 14,
     backgroundColor: COLORS.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
@@ -263,11 +263,11 @@ const styles = StyleSheet.create({
   },
   calCellToday: {
     backgroundColor: COLORS.linkBg,
-    borderRadius: 10,
+    borderRadius: 14,
   },
   calCellSelected: {
-    backgroundColor: NAVY,
-    borderRadius: 10,
+    backgroundColor: COLORS.panel,
+    borderRadius: 14,
   },
   calDayNum: {
     fontSize: 13,
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   calDayNumSelected: { color: COLORS.white, fontWeight: '800' },
   calHours:         { fontSize: 9, fontWeight: '700', marginTop: 2 },
   calHoursPresent:  { color: COLORS.successAlt },
-  calHoursAbsent:   { color: COLORS.shadow },
+  calHoursAbsent:   { color: COLORS.error },
   calHoursSelected: { color: 'rgba(255,255,255,0.85)' },
 
   calLegend: {
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   calDetail: {
     marginTop: 14,
     backgroundColor: COLORS.screenBg,
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -323,15 +323,15 @@ const styles = StyleSheet.create({
 
   // ── User Details Card ──
   detailCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
     paddingVertical: 4,
     elevation: 4,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',

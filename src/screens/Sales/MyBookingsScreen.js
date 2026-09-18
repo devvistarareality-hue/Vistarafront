@@ -10,8 +10,10 @@ import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 import ExportBookings from '../../components/ExportBookings';
 
+import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 // Same tabs as Bookings & Approvals, minus Drafts: this list is what you submitted,
@@ -53,7 +55,7 @@ function subtreeIds(rootId, childrenOf) {
 // deal on the books should name the person who put it there, and a cancellation
 // should name whoever took a live sale off them.
 function decidedBy(b) {
-  if (b.cancelled_by_name) return { label: 'Cancelled by', who: b.cancelled_by_name, at: b.cancelled_at, tone: '#475569' };
+  if (b.cancelled_by_name) return { label: 'Cancelled by', who: b.cancelled_by_name, at: b.cancelled_at, tone: COLORS.text2 };
   if (b.rejected_by_name)  return { label: 'Rejected by',  who: b.rejected_by_name,  at: b.rejected_at,  tone: COLORS.error };
   if (b.approved_by_name)  return { label: 'Approved by',  who: b.approved_by_name,  at: b.approved_at,  tone: COLORS.success };
   return null;
@@ -84,7 +86,7 @@ function DecidedBy({ b }) {
         </Text>
       ) : null}
       {showAccounts && acc === 'approved' ? (
-        <Text style={{ fontSize: 11, color: '#0D9488', fontWeight: '600' }}>
+        <Text style={{ fontSize: 11, color: COLORS.success, fontWeight: '600' }}>
           {`Accounts approved${b.accounts_approved_by_name ? ` by ${b.accounts_approved_by_name}` : ''}${decidedWhen(b.accounts_approved_at)}`}
         </Text>
       ) : null}
@@ -332,16 +334,16 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
       <TextInput value={q} onChangeText={(t) => { setQ(t); setOpen({}); }}
         placeholder="Search name, phone or LOI / unit no…" placeholderTextColor={MUTED}
         style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5,
-          borderColor: COLORS.border, backgroundColor: COLORS.white, fontSize: 13,
+          borderColor: COLORS.border, backgroundColor: COLORS.surface, fontSize: 13,
           color: TEXT, marginBottom: 10 }} />
       {projOptions.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', gap: 6 }}>
             {['', ...projOptions].map((p) => (
               <TouchableOpacity key={p || 'all'} onPress={() => { setProj(p); setOpen({}); }}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1.5,
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5,
                   borderColor: proj === p ? BLUE : COLORS.border,
-                  backgroundColor: proj === p ? COLORS.linkBg : COLORS.white }}>
+                  backgroundColor: proj === p ? COLORS.linkBg : COLORS.surface }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: proj === p ? BLUE : MUTED }}>{p || 'All Projects'}</Text>
               </TouchableOpacity>
             ))}
@@ -355,9 +357,9 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
               <React.Fragment key={p.id || 'all'}>
               {p.crossCut && <View style={{ width: 1, backgroundColor: COLORS.border, marginHorizontal: 4, marginVertical: 4 }} />}
               <TouchableOpacity onPress={() => { setWho(p.id); setOpen({}); }}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1.5,
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5,
                   borderColor: who === p.id ? BLUE : COLORS.border,
-                  backgroundColor: who === p.id ? COLORS.linkBg : COLORS.white }}>
+                  backgroundColor: who === p.id ? COLORS.linkBg : COLORS.surface }}>
                 {/* The chips run in org-chart order; '└' marks someone nested under the
                     chip before them, since a horizontal strip cannot indent. */}
                 <Text style={{ fontSize: 12, fontWeight: '700', color: who === p.id ? BLUE : MUTED }}>
@@ -369,7 +371,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
           </View>
         </ScrollView>
       )}
-      {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : projectNames.length === 0 ? (
+      {loading ? <AppLoader style={{ marginTop: 24 }} /> : projectNames.length === 0 ? (
         <View style={[CARD, { alignItems: 'center', padding: 30 }]}>
           {/* "Nothing matched" is not "nothing exists" — saying someone has never
               booked a unit while a filter hides 121 of them is worse than silence. */}
@@ -380,9 +382,9 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
       ) : projectNames.map((pn) => (
         <View key={pn} style={{ marginBottom: 12 }}>
           <TouchableOpacity onPress={() => toggle(pn)} activeOpacity={0.7}
-            style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderWidth: 1.5, borderColor: open[pn] ? '#C7D2FE' : 'transparent' }]}>
+            style={[CARD, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderWidth: 1.5, borderColor: open[pn] ? COLORS.blue2 : 'transparent' }]}>
             <Text style={{ fontSize: 12, fontWeight: '800', color: BLUE, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-              🏢 {pn} · {groups[pn].length} unit{groups[pn].length === 1 ? '' : 's'}
+              <AppIcon name="building" size={12} /> {pn} · {groups[pn].length} unit{groups[pn].length === 1 ? '' : 's'}
             </Text>
             <Text style={{ fontSize: 16, fontWeight: '800', color: MUTED }}>{open[pn] ? '⌄' : '›'}</Text>
           </TouchableOpacity>
@@ -397,18 +399,18 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                       the viewer, since this list is their own submissions — but a kiosk
                       booking records the assisting salesperson in manual_stm_name, which
                       stm_name prefers, so it is not always. */}
-                  <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>
+                  <Text style={{ fontSize: 11, color: COLORS.text3, marginTop: 3 }}>
                     Booked {b.booking_date || '—'}{b.stm_name ? ` · STM: ${b.stm_name}` : ''}
                   </Text>
                   {b.is_resale && b.resale_of_client ? (
-                    <Text style={{ fontSize: 11, color: '#0369A1', marginTop: 3, fontWeight: '600' }}>
+                    <Text style={{ fontSize: 11, color: COLORS.accentDeep, marginTop: 3, fontWeight: '600' }}>
                       {`Resold from ${b.resale_of_client}${b.stm_name ? ` · resold by ${b.stm_name}` : ''}`}
                     </Text>
                   ) : null}
                   <DecidedBy b={b} />
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.accentDeep }}>{rupee(b.final_amount)}</Text>
                   {/* Approved by Sales/CP is not a finished sale — the unit is on
                       hold until Accounts signs off, so the label says so. */}
                   <Text style={{ fontSize: 10, fontWeight: '800', marginTop: 4,
@@ -421,14 +423,14 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
+                {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> LOI</Text></TouchableOpacity>}
                 {b.status === 'draft' && (
                   <>
                     <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { draft: b.id })} style={[btn, { backgroundColor: COLORS.link }]}><Text style={btnT}>▸ Resume</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => discardDraft(b.id)} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA' }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Discard</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => discardDraft(b.id)} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: COLORS.error2 }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Discard</Text></TouchableOpacity>
                   </>
                 )}
-                {b.status === 'sold' && String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('ClosureViewer', { projectId: b.project, convertEoi: b.id })} style={[btn, { backgroundColor: '#E4571A' }]}><Text style={btnT}>→ Convert to LOI</Text></TouchableOpacity>}
+                {b.status === 'sold' && String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('ClosureViewer', { projectId: b.project, convertEoi: b.id })} style={[btn, { backgroundColor: COLORS.warningSolid }]}><Text style={btnT}>→ Convert to LOI</Text></TouchableOpacity>}
                 {b.status === 'sold' && String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id, eoi: '1' })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise EOI</Text></TouchableOpacity>}
                 {b.status === 'sold' && !String(b.plot_numbers || '').toUpperCase().startsWith('EOI') && <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { revise: b.id })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ Revise LOI</Text></TouchableOpacity>}
                 {b.status === 'pending' && <Text style={{ fontSize: 12, color: COLORS.warning }}>Awaiting approval</Text>}
@@ -486,7 +488,7 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
                         {v.loi_document
                           ? <TouchableOpacity onPress={() => openLoi(v.id)}
                               style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: COLORS.linkBg }}>
-                              <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}>📄 LOI</Text>
+                              <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}><AppIcon name="file" size={12} /> LOI</Text>
                             </TouchableOpacity>
                           : <Text style={{ fontSize: 11, color: MUTED }}>no LOI on file</Text>}
                         {/* Details live here and only here. Per version, so two can

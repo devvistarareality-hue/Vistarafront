@@ -16,6 +16,7 @@ import { triggerBalanceRefresh } from '../../../../redux/actions/leaveBalanceAct
 import Toast from '../../../../components/Toast';
 import styles from './styles';
 import LeaveDetailModal from './LeaveDetailModal';
+import AppLoader from '../../../../components/AppLoader';
 
 const getStatusStyle = (status) => {
   switch (status) {
@@ -157,7 +158,7 @@ const HistoryScreen = () => {
   if (historyLoading && historyData.length === 0) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.navyMedium} />
+        <AppLoader />
       </View>
     );
   }

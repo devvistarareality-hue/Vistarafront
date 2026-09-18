@@ -13,6 +13,7 @@ import {
 } from '../../redux/actions/userManagementActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
+import AppLoader from '../../components/AppLoader';
 
 const ROLE_AVATAR_COLOR = {
   Admin:       COLORS.navy,
@@ -78,7 +79,7 @@ export default function UserManagementScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -93,7 +94,7 @@ export default function UserManagementScreen({ navigation }) {
           <Ionicons name="git-network-outline" size={20} color={COLORS.link} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[s.iconBtn, { backgroundColor: COLORS.navy }]}
+          style={[s.iconBtn, UserManagementScreenS.panel]}
           onPress={() => navigation.navigate('CreateUser')}
         >
           <Ionicons name="add" size={20} color={COLORS.white} />
@@ -129,7 +130,7 @@ export default function UserManagementScreen({ navigation }) {
 
       {/* List */}
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.navy} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filtered}
@@ -176,36 +177,41 @@ export default function UserManagementScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: COLORS.screenBg },
+  screen:      { flex: 1, backgroundColor: 'transparent' },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt },
   iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
-  statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.screenBg },
+  statsStrip:  { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.screenBg },
   statItem:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statDot:     { width: 7, height: 7, borderRadius: 4 },
   statText:    { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
   filterRow:    { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 14 },
 
-  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginTop: 10, ...CARD_SHADOW },
+  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, marginTop: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   avatar:      { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText:  { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardBody:    { flex: 1 },
   userName:    { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 2 },
   userMeta:    { fontSize: 12, color: COLORS.textSecondary, marginBottom: 6 },
   badgeRow:    { flexDirection: 'row', gap: 6 },
-  badge:       { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badge:       { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14 },
   badgeText:   { fontSize: 10, fontWeight: '700' },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14 },
   statusText:  { fontSize: 10, fontWeight: '700' },
 
   actions:     { flexDirection: 'column', gap: 6, marginLeft: 8 },
   editBtn:     { padding: 6, borderRadius: 8, backgroundColor: COLORS.linkBg },
   toggleBtn:   { padding: 2 },
   deleteBtn:   { padding: 6, borderRadius: 8, backgroundColor: COLORS.screenBg },
+});
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const UserManagementScreenS = StyleSheet.create({
+  panel: { backgroundColor: COLORS.panel },
 });

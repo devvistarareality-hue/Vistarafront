@@ -10,10 +10,12 @@ import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FormSheet from '../../components/FormSheet';
 import { TextField, inputStyle } from '../../components/Field';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
-const NAVY = COLORS.navy; const TEAL = '#00838F'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const STATUS_COLOR = { pending: COLORS.warning, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
 const STATUS_OPTIONS = ['new', 'contacted', 'interested', 'not_interested', 'converted', 'lost'];
@@ -91,7 +93,7 @@ function CompleteFollowUpSheet({ followUp, onClose, onDone }) {
           <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Complete Follow-up</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{followUp.lead_name} · {fmtDateTime(followUp.scheduled_at)}</Text>
         </View>
-        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
       </View>
@@ -102,7 +104,7 @@ function CompleteFollowUpSheet({ followUp, onClose, onDone }) {
           <Ionicons name={statusOpen ? 'chevron-up' : 'chevron-down'} size={16} color={MUTED} />
         </TouchableOpacity>
         {statusOpen && (
-          <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 6, marginBottom: 16, overflow: 'hidden' }}>
+          <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, marginBottom: 16, overflow: 'hidden' }}>
             {STATUS_OPTIONS.map((s, i) => (
               <TouchableOpacity key={s} onPress={() => { setLeadStatus(s); setStatusOpen(false); }}
                 style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
@@ -117,7 +119,7 @@ function CompleteFollowUpSheet({ followUp, onClose, onDone }) {
         {!isTerminal && (
           <View style={{ marginTop: 4 }}>
             <TouchableOpacity onPress={() => setSchedNext((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: schedNext ? 12 : 0 }}>
-              <View style={{ width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: schedNext ? TEAL : COLORS.border, backgroundColor: schedNext ? TEAL : '#fff', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: schedNext ? TEAL : COLORS.border, backgroundColor: schedNext ? TEAL : COLORS.surface, alignItems: 'center', justifyContent: 'center' }}>
                 {schedNext && <Ionicons name="checkmark" size={14} color="#fff" />}
               </View>
               <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>Schedule next follow-up</Text>
@@ -163,9 +165,9 @@ function CompleteFollowUpSheet({ followUp, onClose, onDone }) {
         )}
 
         <TouchableOpacity onPress={submit} disabled={submitting}
-          style={{ backgroundColor: '#2E7D32', borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: submitting ? 0.7 : 1, marginTop: 16 }}>
-          {submitting ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="checkmark-done-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>{submitting ? 'Saving…' : 'Mark Done'}</Text>
+          style={{ backgroundColor: COLORS.btnTintSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: submitting ? 0.7 : 1, marginTop: 16 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+          {submitting ? <ActivityIndicator color={COLORS.btnText} /> : <Ionicons name="checkmark-done-outline" size={17} color={COLORS.btnTextSuccess} />}
+          <Text style={{ color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' }}>{submitting ? 'Saving…' : 'Mark Done'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -210,14 +212,14 @@ export default function Club1000FollowUpsScreen({ navigation }) {
   });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
       <CompleteFollowUpSheet followUp={completing} onClose={() => setCompleting(null)} onDone={onFollowUpDone} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         {navigation.canGoBack() && (
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="arrow-back" size={20} color={NAVY} />
+            <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }}>
@@ -229,7 +231,7 @@ export default function Club1000FollowUpsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flexDirection: 'row', backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         {TABS.map((t) => {
           const active = filter === t.key;
           return (
@@ -242,7 +244,7 @@ export default function Club1000FollowUpsScreen({ navigation }) {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={NAVY} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 24 }} />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
@@ -260,7 +262,7 @@ export default function Club1000FollowUpsScreen({ navigation }) {
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                       <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{fu.lead_name || 'Lead'}</Text>
-                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: (STATUS_COLOR[fu.status] || MUTED) + '22' }}>
+                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: withAlpha(STATUS_COLOR[fu.status] || MUTED, '22') }}>
                         <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLOR[fu.status] || MUTED }}>{fu.status}</Text>
                       </View>
                     </View>

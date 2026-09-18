@@ -9,10 +9,11 @@ import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { formatDMY } from '../../utils/dateFormat';
+import AppLoader from '../../components/AppLoader';
 
-const NAVY = COLORS.navy; const TEAL = '#00838F'; const BG = COLORS.screenBg;
+const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const TYPE_LABELS = { interest: 'Interest', maturity: 'Maturity', premature_redemption: 'Premature Redemption' };
 
@@ -74,12 +75,12 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
   if (!manager) return null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={BG} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Payouts</Text>
       </View>
@@ -87,7 +88,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
       <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 }}>
         {[{ key: 'pending', label: 'Pending' }, { key: 'paid', label: 'Paid' }, { key: '', label: 'All' }].map((f) => (
           <TouchableOpacity key={f.key} onPress={() => setFilter(f.key)}
-            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: filter === f.key ? NAVY : COLORS.white, borderWidth: 1, borderColor: filter === f.key ? NAVY : COLORS.border }}>
+            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: filter === f.key ? NAVY : COLORS.surface, borderWidth: 1, borderColor: filter === f.key ? NAVY : COLORS.border }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: filter === f.key ? COLORS.white : MUTED }}>{f.label}</Text>
           </TouchableOpacity>
         ))}
@@ -95,7 +96,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <ActivityIndicator color={NAVY} style={{ marginTop: 30 }} /> : payouts.length === 0 ? (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : payouts.length === 0 ? (
           <Text style={{ textAlign: 'center', color: MUTED, marginTop: 30 }}>No payouts.</Text>
         ) : payouts.map((p) => (
           <View key={p.id} style={[CARD, { padding: 14, marginBottom: 10 }]}>
@@ -132,8 +133,8 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
       </ScrollView>
 
       <Modal visible={!!payingFor} transparent animationType="slide" onRequestClose={() => setPayingFor(null)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 24 }}>
+        <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 24 }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Mark Payout Paid</Text>
               {!!payingFor && (
@@ -145,19 +146,19 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
             <View style={{ padding: 16 }}>
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Amount Paid (₹)</Text>
               <TextInput value={payForm.amount} onChangeText={(v) => setPayForm((f) => ({ ...f, amount: v }))} keyboardType="decimal-pad"
-                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT }} />
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT }} />
               {!!payingFor && <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Scheduled: {fmtMoney(payingFor.amount_due)}</Text>}
 
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginTop: 14, marginBottom: 6 }}>Remarks</Text>
               <TextInput value={payForm.notes} onChangeText={(v) => setPayForm((f) => ({ ...f, notes: v }))}
                 placeholder="e.g. paid via NEFT, rounded to nearest ₹10…" placeholderTextColor={MUTED} multiline
-                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, minHeight: 70, textAlignVertical: 'top' }} />
+                style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, minHeight: 70, textAlignVertical: 'top' }} />
 
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 18 }}>
-                <TouchableOpacity onPress={() => setPayingFor(null)} style={{ flex: 1, height: 46, borderRadius: 12, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => setPayingFor(null)} style={{ flex: 1, height: 46, borderRadius: 16, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: MUTED }}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={submitMarkPaid} disabled={saving} style={{ flex: 1, height: 46, borderRadius: 12, backgroundColor: TEAL, alignItems: 'center', justifyContent: 'center', opacity: saving ? 0.6 : 1 }}>
+                <TouchableOpacity onPress={submitMarkPaid} disabled={saving} style={{ flex: 1, height: 46, borderRadius: 16, backgroundColor: TEAL, alignItems: 'center', justifyContent: 'center', opacity: saving ? 0.6 : 1 }}>
                   {saving ? <ActivityIndicator color={COLORS.white} /> : <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.white }}>Mark Paid</Text>}
                 </TouchableOpacity>
               </View>

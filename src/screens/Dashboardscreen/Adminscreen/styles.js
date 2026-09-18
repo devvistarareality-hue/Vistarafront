@@ -9,7 +9,7 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.borderLight,
     paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8,
   },
   backBtn: {
@@ -22,12 +22,12 @@ const styles = StyleSheet.create({
 
   sectionCard: {
     backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
+    borderRadius: 22,
     marginHorizontal: 20,
     marginBottom: 16,
     overflow: 'hidden',
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   sectionHeader: { paddingHorizontal: 18, paddingVertical: 14 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionTitle: {
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
 
   buttonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   button: {
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 9,
     paddingHorizontal: 10,
     minWidth: (width - 40 - 28 - 8) / 3,

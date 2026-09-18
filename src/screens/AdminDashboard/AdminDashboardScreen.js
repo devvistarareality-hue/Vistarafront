@@ -11,6 +11,7 @@ import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import FilterSelect from '../../components/FilterSelect';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const ADMIN_MODULES = [
   { name: 'User Management',    icon: 'account-cog-outline',  color: COLORS.navy, iconBg: COLORS.linkBg, screen: 'UserManagement',     params: undefined },
@@ -22,7 +23,7 @@ const ADMIN_MODULES = [
   { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Execution', name: 'Execution' } },
   { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'ModuleHome',  params: { module: 'Purchase', name: 'Purchase' } },
   { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'ModuleHome',  params: { module: 'Land', name: 'Land' } },
-  { name: 'Club 1000',          icon: 'trending-up',          color: '#00838F', iconBg: '#80DEEA', screen: 'Club1000Hub', params: undefined },
+  { name: 'Club 1000',          icon: 'trending-up',          color: COLORS.success, iconBg: COLORS.green, screen: 'Club1000Hub', params: undefined },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
@@ -43,7 +44,7 @@ export default function AdminDashboardScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -56,9 +57,12 @@ export default function AdminDashboardScreen({ navigation }) {
             <Ionicons name="shield-checkmark" size={11} color={COLORS.warningAlt} />
             <Text style={s.adminBadgeText}>Administrator</Text>
           </View>
-          <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color={COLORS.textPrimary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <ThemeToggle compact />
+            <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={20} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -86,10 +90,9 @@ export default function AdminDashboardScreen({ navigation }) {
               activeOpacity={0.8}
             >
               <View style={[s.iconBg, { backgroundColor: mod.iconBg }]}>
-                <MaterialCommunityIcons name={mod.icon} size={26} color={mod.color} />
+                <MaterialCommunityIcons name={mod.icon} size={24} color={mod.color} />
               </View>
               <Text style={s.cardName} numberOfLines={2}>{mod.name}</Text>
-              <Text style={[s.cardArrow, { color: mod.color }]}>Open →</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -99,7 +102,7 @@ export default function AdminDashboardScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.screenBg },
+  container: { flex: 1, backgroundColor: 'transparent' },
 
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20 },
   headerLeft:   { flex: 1, marginRight: 12 },
@@ -107,16 +110,16 @@ const s = StyleSheet.create({
   userName:     { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginTop: 3 },
   headerRight:  { alignItems: 'flex-end', gap: 10 },
 
-  adminBadge:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(249,168,37,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(249,168,37,0.35)' },
+  adminBadge:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(217,138,31,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(217,138,31,0.35)' },
   adminBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.warningAlt },
-  logoutBtn:      { padding: 8, borderRadius: 10, backgroundColor: COLORS.surfaceAlt },
+  logoutBtn:      { padding: 8, borderRadius: 14, backgroundColor: COLORS.surfaceAlt },
 
   scrollContent: { padding: 20, paddingBottom: 40 },
   sectionTitle:  { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8, marginBottom: 16 },
 
   grid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  card:      { width: '47%', backgroundColor: COLORS.cardBg, borderRadius: 16, padding: 16, ...CARD_SHADOW },
-  iconBg:    { width: 50, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  cardName:  { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 10, lineHeight: 20 },
+  card:      { width: '47%', backgroundColor: COLORS.cardBg, borderRadius: 22, paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
+  iconBg:    { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginBottom: 2 },
+  cardName:  { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', lineHeight: 18 },
   cardArrow: { fontSize: 12, fontWeight: '700' },
 });

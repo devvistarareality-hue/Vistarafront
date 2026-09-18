@@ -21,7 +21,7 @@ export const updateLeaveStatus = (id, leaveStatus) => async (dispatch) => {
     });
     const data = await response.json();
     if (response.ok) {
-      console.log(`✅ Leave ${leaveStatus} successfully`);
+      console.log(`Leave ${leaveStatus} successfully`);
       dispatch({ type: LEAVE_ACTION_SUCCESS, payload: { id, status: leaveStatus } });
     } else {
       dispatch({ type: LEAVE_ACTION_FAILURE, payload: data.detail || JSON.stringify(data) });

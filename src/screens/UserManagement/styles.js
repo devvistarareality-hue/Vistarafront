@@ -5,20 +5,20 @@ export default StyleSheet.create({
   container:  { flex: 1, backgroundColor: COLORS.screenBg },
 
   /* Header */
-  header:      { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt },
   headerBtn:   { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.surfaceAlt },
   addBtn:      { backgroundColor: COLORS.secondary },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
   /* Search */
-  searchWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 14, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 2 },
+  searchWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 14, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 2 , borderWidth: 1, borderColor: COLORS.cardBorder },
   searchIcon:  { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
   /* Tabs */
   tabsScroll:   { marginTop: 14 },
   tabsContent:  { paddingHorizontal: 16, gap: 8 },
-  tab:          { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.divider },
+  tab:          { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 22, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.divider },
   tabActive:    { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
   tabText:      { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
   tabTextActive:{ color: COLORS.white },
@@ -30,7 +30,7 @@ export default StyleSheet.create({
   listContent: { paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 },
 
   /* Card */
-  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 },
+  card:        { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, marginBottom: 10, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 , borderWidth: 1, borderColor: COLORS.cardBorder },
   avatar:      { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText:  { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardInfo:    { flex: 1 },

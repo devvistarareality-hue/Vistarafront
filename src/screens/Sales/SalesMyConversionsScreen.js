@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,19 +8,22 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 const HISTORY_LABEL = {
   created: 'Lead Created', status: 'Overall Status', telecaller_status: 'TC Status',
   stm_status: 'STM Status', telecaller: 'Telecaller Assigned', stm: 'STM Assigned',
   warm_transfer: 'Transferred to STM', site_visit: 'Site Visit', closure: 'Closure',
 };
 const HISTORY_COLOR = {
-  created: '#64748B', status: COLORS.link, telecaller_status: '#0097A7', stm_status: COLORS.warning,
-  telecaller: COLORS.purple, stm: COLORS.success, warm_transfer: COLORS.error, site_visit: '#F9A825', closure: '#15803D',
+  created: COLORS.text3, status: COLORS.link, telecaller_status: COLORS.success, stm_status: COLORS.warning,
+  telecaller: COLORS.purple, stm: COLORS.success, warm_transfer: COLORS.error, site_visit: COLORS.warningAlt, closure: COLORS.success,
 };
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const SV_COLOR = {
   scheduled: { bg: COLORS.warningBg, text: COLORS.warning },
@@ -79,10 +82,10 @@ function LeadHistoryModal({ lead, onClose }) {
 
   return (
     <Modal visible={!!lead} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%', overflow: 'hidden' }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%', overflow: 'hidden' }}>
           {/* Header */}
-          <View style={{ backgroundColor: NAVY, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <View style={SalesMyConversionsScreenS.panel}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: COLORS.white }}>{lead?.name || '—'}</Text>
               <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{d.phone || lead?.phone || ''}</Text>
@@ -108,8 +111,8 @@ function LeadHistoryModal({ lead, onClose }) {
             {/* Lead received */}
             <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
               <View style={{ alignItems: 'center' }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.link + '18', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 16 }}>📥</Text>
+                <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: withAlpha(COLORS.link, '18'), alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 16 }}><AppIcon name="download" size={16} /></Text>
                 </View>
                 <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />
               </View>
@@ -127,19 +130,19 @@ function LeadHistoryModal({ lead, onClose }) {
             {events.map((h, idx, arr) => {
               const isLast = idx === arr.length - 1;
               const color  = HISTORY_COLOR[h.field_changed] || MUTED;
-              const icon   = h.field_changed === 'warm_transfer' ? '🔥'
-                           : h.field_changed === 'telecaller'    ? '👤'
-                           : h.field_changed === 'stm'           ? '🏢'
-                           : h.field_changed === 'site_visit'    ? '🏠'
-                           : h.field_changed === 'closure'       ? '✅'
-                           : h.field_changed.includes('status')  ? '🔄' : '✏️';
+              const icon   = h.field_changed === 'warm_transfer' ? 'flame'
+                           : h.field_changed === 'telecaller'    ? 'user'
+                           : h.field_changed === 'stm'           ? 'building'
+                           : h.field_changed === 'site_visit'    ? 'home'
+                           : h.field_changed === 'closure'       ? 'check-circle'
+                           : h.field_changed.includes('status')  ? 'refresh' : 'pencil';
               const singleValue = ['created', 'warm_transfer', 'closure'].includes(h.field_changed) || !h.old_value;
               const byLabel = h.changed_by_name || (['created', 'telecaller', 'stm'].includes(h.field_changed) ? 'System (auto)' : null);
               return (
                 <View key={h.id} style={{ flexDirection: 'row', gap: 12, marginBottom: isLast ? 0 : 16 }}>
                   <View style={{ alignItems: 'center' }}>
-                    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 16 }}>{icon}</Text>
+                    <View style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: withAlpha(color, '18'), alignItems: 'center', justifyContent: 'center' }}>
+                      <AppIcon name={icon} size={16} color={color} />
                     </View>
                     {!isLast && <View style={{ width: 2, flex: 1, backgroundColor: COLORS.surfaceAlt, marginTop: 4 }} />}
                   </View>
@@ -232,13 +235,13 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   const svScheduled = visits.filter(v => v.status === 'scheduled');
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>My Conversions</Text>
@@ -250,7 +253,7 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={NAVY} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 24 }} />
       ) : (
         <ScrollView showsVerticalScrollIndicator persistentScrollbar contentContainerStyle={{ paddingBottom: 36 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
@@ -383,3 +386,8 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesMyConversionsScreenS = StyleSheet.create({
+  panel: { backgroundColor: COLORS.panel, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+});

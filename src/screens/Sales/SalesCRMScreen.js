@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,17 +10,19 @@ import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
+import { ThemeIconButton } from '../../components/ThemeToggle';
+import AppLoader from '../../components/AppLoader';
 
 const NAVY  = COLORS.navy;
 const BLUE  = COLORS.link;
 const BG    = COLORS.screenBg;
 const TEXT  = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
 const TILE  = { flexGrow: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
-                backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt };
+                backgroundColor: COLORS.screenBg, borderRadius: 16, borderWidth: 1, borderColor: COLORS.surfaceAlt };
 
 // How wide each tile is, given how many the group holds. Two and three share the
 // row; four splits 2+2 rather than 3+1, so no tile is ever left alone on a row
@@ -264,32 +266,27 @@ export default function SalesCRMScreen({ navigation, route }) {
     .filter((s) => s.cards.length);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         {navigation.canGoBack() && (
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="arrow-back" size={20} color={NAVY} />
+            <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{adminView ? 'Admin' : screenTitle}</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{adminView ? 'Full company data' : screenSub}</Text>
         </View>
-        <TouchableOpacity onPress={() => loadStats(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
-          <Ionicons name="refresh-outline" size={20} color={NAVY} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={openFilter} style={{ padding: 6, backgroundColor: filterActive ? NAVY : BG, borderWidth: 1, borderColor: filterActive ? NAVY : COLORS.border, borderRadius: 8 }}>
-          <Ionicons name="filter-outline" size={20} color={filterActive ? COLORS.white : NAVY} />
-        </TouchableOpacity>
+        <ThemeIconButton />
       </View>
 
       {/* Filter Bottom Sheet */}
       <Modal visible={showFilter} transparent animationType="slide" onRequestClose={() => setShowFilter(false)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={() => setShowFilter(false)} />
-        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={() => setShowFilter(false)} />
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Filter by Date</Text>
             <TouchableOpacity onPress={() => setShowFilter(false)}>
@@ -323,20 +320,20 @@ export default function SalesCRMScreen({ navigation, route }) {
           <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Custom Range</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
             <TouchableOpacity onPress={() => setShowFromPick(true)}
-              style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
             </TouchableOpacity>
             <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
             <TouchableOpacity onPress={() => setShowToPick(true)}
-              style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+              style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Apply button */}
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: NAVY, borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
+            style={SalesCRMScreenS.btn}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.btnText }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>
 
@@ -352,42 +349,9 @@ export default function SalesCRMScreen({ navigation, route }) {
         )}
       </Modal>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadStats(true)} colors={[NAVY]} tintColor={NAVY} />}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36, paddingTop: 12 }}>
 
-        {/* Active filter label */}
-        {filterActive && (
-          <TouchableOpacity onPress={openFilter} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginTop: 10, marginBottom: 2 }}>
-            <Ionicons name="calendar-outline" size={13} color={BLUE} />
-            <Text style={{ fontSize: 12, color: BLUE, fontWeight: '600' }}>
-              {fmtLabel(dateFrom)} → {fmtLabel(dateTo)}
-            </Text>
-            <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }} style={{ marginLeft: 2 }}>
-              <Ionicons name="close-circle" size={15} color={MUTED} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-
-        {/* Stats */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 4, marginBottom: 8 }}>
-          {loading ? (
-            <ActivityIndicator color={NAVY} style={{ marginVertical: 20 }} />
-          ) : STAT_SECTIONS.map(sec => (
-            <View key={sec.title} style={[CARD, { padding: 14, marginBottom: 12 }]}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>{sec.title}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
-                {sec.cards.map(s => (
-                  <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
-                    onPress={() => s.target && navigation.navigate(s.target, s.params)}
-                    style={[TILE, { flexBasis: tileBasis(sec.cards.length) }]}>
-                    <Text style={{ fontSize: 20, fontWeight: '800', color: s.color }}>{s.value}</Text>
-                    <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          ))}
-        </View>
+        {/* Pipeline / calling / follow-up / conversion numbers live in the Reports tab. */}
 
         {/* Menu */}
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
@@ -398,12 +362,11 @@ export default function SalesCRMScreen({ navigation, route }) {
             {visibleMenu.map(m => (
               <TouchableOpacity key={m.key}
                 onPress={() => m.key === '__ADMIN__' ? navigation.push('SalesCRM', { adminView: true }) : navigation.navigate(m.key, m.navParams)}
-                style={[CARD, { width: '47%', padding: 16 }]} activeOpacity={0.8}>
-                <View style={{ width: 46, height: 46, borderRadius: 13, backgroundColor: m.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                style={[CARD, { width: '47%', paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8 }]} activeOpacity={0.8}>
+                <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: m.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 2 }}>
                   <Ionicons name={m.icon} size={22} color={m.color} />
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 6 }}>{m.label}</Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: m.color }}>Open →</Text>
+                <Text style={{ fontSize: 13.5, fontWeight: '700', color: TEXT, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{m.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -413,3 +376,8 @@ export default function SalesCRMScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesCRMScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+});

@@ -9,6 +9,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchLeaveBalance } from '../../../../redux/actions/leaveBalanceActions';
 import styles from './styles';
+import AppLoader from '../../../../components/AppLoader';
 
 const TableHeader = () => (
   <View style={styles.tableHeader}>
@@ -70,7 +71,7 @@ const BalanceScreen = () => {
   if (balanceLoading && balanceData.length === 0) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.navyMedium} />
+        <AppLoader />
       </View>
     );
   }

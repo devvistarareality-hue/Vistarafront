@@ -54,8 +54,8 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
         <Ionicons name="chevron-down" size={16} color={COLORS.textSecondary} />
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>{label}</Text>
             {options.map(o => (
@@ -228,7 +228,7 @@ export default function CreateUserScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -565,8 +565,8 @@ export default function CreateUserScreen({ navigation, route }) {
         transparent
         onRequestClose={() => setShowManagerPicker(false)}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '75%' }}>
+        <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '75%' }}>
             {/* Modal header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
               <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: COLORS.textPrimary }}>Select Reporting Manager</Text>
@@ -576,7 +576,7 @@ export default function CreateUserScreen({ navigation, route }) {
             </View>
 
             {/* Search */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', margin: 12, backgroundColor: COLORS.screenBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', margin: 12, backgroundColor: COLORS.screenBg, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 }}>
               <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} style={{ marginRight: 8 }} />
               <TextInput
                 style={{ flex: 1, fontSize: 14, color: COLORS.textPrimary }}
@@ -615,7 +615,7 @@ export default function CreateUserScreen({ navigation, route }) {
                 const selected = reportingManager?.id === item.id;
                 return (
                   <TouchableOpacity
-                    style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: selected ? COLORS.warningBg : COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: selected ? COLORS.warningBg : COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}
                     onPress={() => { setReportingManager(item); setShowManagerPicker(false); }}
                     activeOpacity={0.7}
                   >

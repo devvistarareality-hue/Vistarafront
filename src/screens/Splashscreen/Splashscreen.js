@@ -5,8 +5,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch } from 'react-redux';
 import { discoverServer } from '../../utils/serverDiscovery';
 import { setBaseUrl, API_PROXY_URL } from '../../constants/api';
-import { loadUser } from '../../redux/actions/authActions';
+import { loadUser, restoreUser } from '../../redux/actions/authActions';
 import { restoreAdminFilter } from '../../redux/reducers/adminFilterReducer';
+import images from '../../constants/images';
 
 const ORANGE = COLORS.error;
 
@@ -29,7 +30,13 @@ const SplashScreen = ({ onFinish }) => {
       .then((url) => { if (url) setBaseUrl(url); })
       .catch(() => {});
 
-    Promise.all([discovery, minDelay]).then(() => {
+    // The cached user must be in the store *before* the navigator mounts,
+    // otherwise its first frame is the login stack and the app visibly jumps to
+    // the home screen a moment later. Reading it is local, so it is awaited;
+    // the /auth/me/ refresh below is not.
+    const restore = dispatch(restoreUser()).catch(() => {});
+
+    Promise.all([discovery, minDelay, restore]).then(() => {
       if (cancelled) return;
       // Refresh the cached user (picks up is_approver, role changes, etc.)
       dispatch(restoreAdminFilter());
@@ -50,11 +57,14 @@ const SplashScreen = ({ onFinish }) => {
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
+    // The root carries the gradient's first colour itself: <LinearGradient> is a
+    // native view and paints a frame or two after the JS tree mounts, so without
+    // this the first frame was the rings and text floating on a white window.
+    <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
       <LinearGradient
-        colors={[COLORS.black, COLORS.navyDark, COLORS.navyDark]}
+        colors={COLORS.heroScene}
         style={StyleSheet.absoluteFill}
       />
 
@@ -71,7 +81,7 @@ const SplashScreen = ({ onFinish }) => {
               <View style={s.ring1}>
                 <View style={s.logoCircle}>
                   <Image
-                    source={require('../../assets/images/nexora-mark.png')}
+                    source={images.logo}
                     style={s.logoImg}
                     resizeMode="contain"
                   />
@@ -97,52 +107,54 @@ const SplashScreen = ({ onFinish }) => {
 };
 
 const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: COLORS.black },
+
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   blobTop: {
     position: 'absolute', top: -80, right: -60,
     width: 260, height: 260, borderRadius: 130,
-    backgroundColor: 'rgba(255,107,43,0.06)',
+    backgroundColor: 'rgba(162,210,255,0.06)',
   },
   blobBottom: {
     position: 'absolute', bottom: -60, left: -80,
     width: 240, height: 240, borderRadius: 120,
-    backgroundColor: 'rgba(41,98,255,0.07)',
+    backgroundColor: 'rgba(47,109,181,0.07)',
   },
 
   ring3: {
     width: 168, height: 168, borderRadius: 84,
-    backgroundColor: 'rgba(255,107,43,0.06)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.15)',
+    backgroundColor: 'rgba(162,210,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.15)',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 32,
   },
   ring2: {
     width: 134, height: 134, borderRadius: 67,
-    backgroundColor: 'rgba(255,107,43,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,107,43,0.28)',
+    backgroundColor: 'rgba(162,210,255,0.08)',
+    borderWidth: 1, borderColor: 'rgba(162,210,255,0.28)',
     justifyContent: 'center', alignItems: 'center',
   },
   ring1: {
     width: 104, height: 104, borderRadius: 52,
-    backgroundColor: 'rgba(255,107,43,0.10)',
-    borderWidth: 1.5, borderColor: 'rgba(255,107,43,0.55)',
+    backgroundColor: 'rgba(162,210,255,0.10)',
+    borderWidth: 1.5, borderColor: 'rgba(162,210,255,0.55)',
     justifyContent: 'center', alignItems: 'center',
   },
   logoCircle: {
     width: 78, height: 78, borderRadius: 39,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center', alignItems: 'center',
     shadowColor: ORANGE, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 14, elevation: 10,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   logoImg: { width: 60, height: 60 },
 
   dividerRow: {
     flexDirection: 'row', alignItems: 'center',
     marginBottom: 18, width: 160,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,107,43,0.35)' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(162,210,255,0.35)' },
   dividerDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: ORANGE, marginHorizontal: 8 },
 
   brandName: {

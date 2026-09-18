@@ -22,6 +22,7 @@ import { COLORS } from '../../../../constants/theme';
 import { requestLeave, resetRequestLeave } from '../../../../redux/actions/requestLeaveActions';
 import styles from './styles';
 
+import AppIcon from '../../../../components/AppIcon';
 const { height } = Dimensions.get('window');
 
 const LEAVE_OPTIONS = ['Paid Leave', 'Sick Leave', 'Casual Leave', 'LOP'];
@@ -150,7 +151,7 @@ const RequestLeaveScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor={COLORS.screenBg} barStyle="dark-content" />
+      <StatusBar backgroundColor={COLORS.screenBg} barStyle={COLORS.statusBar} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -221,7 +222,7 @@ const RequestLeaveScreen = () => {
 
         {/* Start Date */}
         <TouchableOpacity style={styles.dateCard} onPress={() => setShowStartPicker(true)}>
-          <Text style={styles.calendarIcon}>📅</Text>
+          <Text style={styles.calendarIcon}><AppIcon name="calendar" size={15} /></Text>
           <Text style={styles.dateTextFilled}>{formatDate(startDate)}</Text>
         </TouchableOpacity>
 

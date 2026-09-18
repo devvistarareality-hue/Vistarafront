@@ -68,7 +68,7 @@ export default function EditCompanyScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -218,7 +218,7 @@ const warnStyle = {
     flexDirection:   'row',
     alignItems:      'flex-start',
     backgroundColor: COLORS.warningBg,
-    borderRadius:    10,
+    borderRadius: 14,
     padding:         12,
     marginTop:       20,
     marginBottom:    4,

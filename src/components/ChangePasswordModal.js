@@ -35,13 +35,13 @@ export default function ChangePasswordModal({ visible, onClose, onSuccess }) {
     setBusy(false);
   };
 
-  const inp = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 10, color: COLORS.textPrimary };
+  const inp = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 10, color: COLORS.textPrimary };
   const disabled = busy || !cur || !nw || !conf;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', paddingHorizontal: 24 }}>
-        <View style={{ backgroundColor: COLORS.white, borderRadius: 16, padding: 20 }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', paddingHorizontal: 24 }}>
+        <View style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 20 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: COLORS.textPrimary }}>Change Password</Text>
           <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 2, marginBottom: 14 }}>Enter your current password and choose a new one.</Text>
           <TextInput placeholder="Current password" secureTextEntry value={cur} onChangeText={setCur} style={inp} placeholderTextColor={COLORS.textTertiary} />
@@ -49,11 +49,11 @@ export default function ChangePasswordModal({ visible, onClose, onSuccess }) {
           <TextInput placeholder="Confirm new password" secureTextEntry value={conf} onChangeText={setConf} style={inp} placeholderTextColor={COLORS.textTertiary} />
           {msg ? <Text style={{ fontSize: 12, fontWeight: '600', color: msg.t === 'ok' ? COLORS.success : COLORS.error, marginBottom: 8 }}>{msg.m}</Text> : null}
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-            <TouchableOpacity onPress={close} style={{ flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center' }}>
+            <TouchableOpacity onPress={close} style={{ flex: 1, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center' }}>
               <Text style={{ color: COLORS.textSecondary, fontWeight: '700', fontSize: 13 }}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={submit} disabled={disabled} style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.navy, alignItems: 'center', opacity: disabled ? 0.6 : 1 }}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{busy ? 'Saving…' : 'Change Password'}</Text>
+            <TouchableOpacity onPress={submit} disabled={disabled} style={{ flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.btnTint, alignItems: 'center', opacity: disabled ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+              <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>{busy ? 'Saving…' : 'Change Password'}</Text>
             </TouchableOpacity>
           </View>
         </View>

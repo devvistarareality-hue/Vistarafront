@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StatusBar, RefreshControl, Modal, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StatusBar, RefreshControl, Modal, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
@@ -8,8 +8,10 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
 
+import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Designations that can be assigned projects (mirrors the web Team Users page).
 // Frontline designations always take project assignments; Manager does too, since
@@ -69,20 +71,20 @@ function AssignProjectsModal({ member, projects, onClose }) {
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={() => onClose(null)}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '82%' }}>
-          <View style={{ backgroundColor: NAVY, paddingHorizontal: 20, paddingVertical: 18, borderTopLeftRadius: 22, borderTopRightRadius: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '82%' }}>
+          <View style={SalesTeamScreenS.panel}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Assign Projects</Text>
               <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>{member.name} · {member.designation}</Text>
             </View>
             <TouchableOpacity onPress={() => onClose(null)} style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#fff', fontSize: 15 }}>✕</Text>
+              <Text style={{ color: '#fff', fontSize: 15 }}><AppIcon name="x" size={15} /></Text>
             </TouchableOpacity>
           </View>
 
           {loading ? (
-            <ActivityIndicator color={NAVY} style={{ margin: 36 }} />
+            <AppLoader size={0.7} style={{ margin: 36 }} />
           ) : (
             <ScrollView contentContainerStyle={{ padding: 16 }}>
               {projects.length === 0 ? (
@@ -91,9 +93,9 @@ function AssignProjectsModal({ member, projects, onClose }) {
                 const checked = selected.includes(p.id);
                 return (
                   <TouchableOpacity key={p.id} onPress={() => toggle(p.id)} activeOpacity={0.7}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1.5, borderColor: checked ? BLUE : COLORS.border, backgroundColor: checked ? '#F0F3FF' : '#FAFAFA' }}>
-                    <View style={{ width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: checked ? BLUE : '#C8D0E0', backgroundColor: checked ? BLUE : '#fff', alignItems: 'center', justifyContent: 'center' }}>
-                      {checked && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>✓</Text>}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, marginBottom: 8, borderWidth: 1.5, borderColor: checked ? BLUE : COLORS.border, backgroundColor: checked ? COLORS.accentSofter : COLORS.surface2 }}>
+                    <View style={{ width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: checked ? BLUE : COLORS.borderStrong, backgroundColor: checked ? BLUE : COLORS.surface, alignItems: 'center', justifyContent: 'center' }}>
+                      {checked && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}><AppIcon name="check" size={12} /></Text>}
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{p.name}</Text>
@@ -106,8 +108,8 @@ function AssignProjectsModal({ member, projects, onClose }) {
           )}
 
           <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
-            <TouchableOpacity onPress={save} disabled={saving} style={{ backgroundColor: NAVY, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
-              {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Save ({selected.length} project{selected.length === 1 ? '' : 's'})</Text>}
+            <TouchableOpacity onPress={save} disabled={saving} style={[SalesTeamScreenS.btn, (saving) && SalesTeamScreenS.btnDim]}>
+              {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Save ({selected.length} project{selected.length === 1 ? '' : 's'})</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -191,11 +193,11 @@ export default function SalesTeamScreen({ navigation }) {
   const isAssignable = (m) => canAssign && canHoldProjects(m);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={NAVY} /></TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} /></TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Sales Team</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{filtered.length} of {members.length} members</Text>
@@ -206,8 +208,8 @@ export default function SalesTeamScreen({ navigation }) {
       </View>
 
       {/* Search */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 10, backgroundColor: COLORS.white }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 10, backgroundColor: COLORS.surface }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
           <Ionicons name="search-outline" size={16} color={MUTED} />
           <TextInput value={search} onChangeText={setSearch} placeholder="Search by name, user code, designation…" style={{ flex: 1, fontSize: 14, color: TEXT }} />
           {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
@@ -216,14 +218,14 @@ export default function SalesTeamScreen({ navigation }) {
 
       {/* Filters: role + designation */}
       {!loading && (
-        <View style={{ backgroundColor: COLORS.white, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <View style={SalesTeamScreenS.header}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' }}>
-            <Text style={{ fontSize: 10, fontWeight: '800', color: '#9CA3AF', marginRight: 8 }}>ROLE</Text>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: COLORS.textTertiary, marginRight: 8 }}>ROLE</Text>
             <Chip label="All" active={!roleFilter} onPress={() => setRoleFilter(null)} />
             {roles.map(r => <Chip key={r} label={r} active={roleFilter === r} onPress={() => setRoleFilter(roleFilter === r ? null : r)} />)}
           </ScrollView>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, alignItems: 'center' }}>
-            <Text style={{ fontSize: 10, fontWeight: '800', color: '#9CA3AF', marginRight: 8 }}>DESIG</Text>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: COLORS.textTertiary, marginRight: 8 }}>DESIG</Text>
             <Chip label="All" active={!desigFilter} onPress={() => setDesigFilter(null)} />
             {desigs.map(d => <Chip key={d} label={`${d} (${members.filter(m => (m.designation || '').toUpperCase() === d).length})`} active={desigFilter === d} onPress={() => setDesigFilter(desigFilter === d ? null : d)} />)}
           </ScrollView>
@@ -231,7 +233,7 @@ export default function SalesTeamScreen({ navigation }) {
       )}
 
       {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color={NAVY} /></View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><AppLoader /></View>
       ) : (
         <FlatList
           data={filtered}
@@ -242,7 +244,7 @@ export default function SalesTeamScreen({ navigation }) {
           renderItem={({ item: m }) => (
             <View style={[CARD, { padding: 14, marginBottom: 10 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                <View style={[SalesTeamScreenS.panel2, (COLORS.isDark) && SalesTeamScreenS.panel2Alt]}>
                   <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{initials(m.name)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
@@ -280,3 +282,13 @@ export default function SalesTeamScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesTeamScreenS = StyleSheet.create({
+  panel: { backgroundColor: COLORS.panel, paddingHorizontal: 20, paddingVertical: 18, borderTopLeftRadius: 22, borderTopRightRadius: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btnDim: { opacity: 0.6 },
+  header: { backgroundColor: 'transparent', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  panel2: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.panel, justifyContent: 'center', alignItems: 'center', marginRight: 12, shadowColor: COLORS.glow, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3, shadowOpacity: 0.28 },
+  panel2Alt: { shadowOpacity: 0.45 },
+});

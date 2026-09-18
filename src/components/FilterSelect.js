@@ -53,9 +53,9 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border,
-    borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 22, paddingHorizontal: 14, paddingVertical: 8,
   },
-  chipActive: { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
+  chipActive: { backgroundColor: COLORS.panel, borderColor: COLORS.navy },
   chipText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, maxWidth: 150 },
   chipTextActive: { color: COLORS.white, fontWeight: '700' },
 

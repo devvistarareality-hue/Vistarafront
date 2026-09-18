@@ -10,10 +10,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardBg,
     margin: 20,
     marginBottom: 0,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   locLoadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
 
   statusRow: {
     flexDirection: 'row',
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.panel,
     marginHorizontal: 20,
     borderRadius: 18,
     overflow: 'hidden',
@@ -75,10 +75,10 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.cardBg,
     margin: 20,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
 
   timeRow: {
     flexDirection: 'row',
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   timeBox: {
     flex: 1,
     backgroundColor: COLORS.surfaceAlt,
-    borderRadius: 14,
+    borderRadius: 18,
     paddingVertical: 14,
     alignItems: 'center',
   },
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceAlt,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 10,
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   bottomBtn: {
     flex: 1,
     paddingVertical: 16,
-    borderRadius: 14,
+    borderRadius: 18,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     ...CARD_SHADOW,
   },
   signOutBtn: {
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.panel,
   },
   checkInBtn: {
     backgroundColor: COLORS.success,

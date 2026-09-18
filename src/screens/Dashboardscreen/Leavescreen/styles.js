@@ -5,7 +5,7 @@ export default StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.screenBg },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.borderLight,
     paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn: {
@@ -18,11 +18,11 @@ export default StyleSheet.create({
 
   tabBar: {
     flexDirection: 'row', backgroundColor: COLORS.cardBg,
-    marginHorizontal: 20, borderRadius: 12, padding: 4, marginBottom: 8, marginTop: 12,
+    marginHorizontal: 20, borderRadius: 22, padding: 4, marginBottom: 8, marginTop: 12,
     ...CARD_SHADOW,
-  },
-  tabItem:       { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 10 },
-  tabItemActive: { backgroundColor: COLORS.navy },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
+  tabItem:       { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 14 },
+  tabItemActive: { backgroundColor: COLORS.panel },
   tabLabel:      { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   tabLabelActive:{ color: COLORS.white, fontWeight: '800' },
 
@@ -31,7 +31,7 @@ export default StyleSheet.create({
   fab: {
     position: 'absolute', bottom: 24, right: 20,
     width: 52, height: 52, borderRadius: 26,
-    backgroundColor: COLORS.navy, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: COLORS.panel, justifyContent: 'center', alignItems: 'center',
     shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.30, shadowRadius: 10, elevation: 6,
   },

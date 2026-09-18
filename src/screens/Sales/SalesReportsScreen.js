@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal, PanResponder } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Platform, Modal, PanResponder, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -8,17 +8,20 @@ import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
+import { isManagerRole } from '../../lib/roles';
 
 const NAVY = COLORS.navy;
 const BLUE = COLORS.link;
 const BG   = COLORS.screenBg;
 const TEXT = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 16, ...CARD_SHADOW };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
 const TILE  = { flexGrow: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
-                backgroundColor: COLORS.screenBg, borderRadius: 12, borderWidth: 1, borderColor: COLORS.surfaceAlt };
+                backgroundColor: COLORS.screenBg, borderRadius: 16, borderWidth: 1, borderColor: COLORS.surfaceAlt };
 
 // How wide each tile is, given how many the group holds. Two and three share the
 // row; four splits 2+2 rather than 3+1, so no tile is ever left alone on a row
@@ -100,7 +103,7 @@ function MiniAreaChart({ data = [], color, gradId, width, showAmount }) {
             <Stop offset="100%" stopColor={color} stopOpacity={0} />
           </LinearGradient>
         </Defs>
-        <Line x1={padL} y1={H - padB} x2={padL + W} y2={H - padB} stroke="#F0F3FA" strokeWidth={1} />
+        <Line x1={padL} y1={H - padB} x2={padL + W} y2={H - padB} stroke={COLORS.surface2} strokeWidth={1} />
         <Path d={fillPts} fill={`url(#${gradId})`} />
         <Path d={linePts} stroke={color} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
         {labelIdxs.map(i => (
@@ -112,11 +115,11 @@ function MiniAreaChart({ data = [], color, gradId, width, showAmount }) {
           <>
             <Line x1={activePx} y1={padT} x2={activePx} y2={H - padB} stroke={color} strokeWidth={1} strokeDasharray="3 3" />
             <Circle cx={activePx} cy={activePy} r={5} fill={color} stroke="#fff" strokeWidth={2} />
-            <Rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={6} fill="#1A1A2E" />
-            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 13} fontSize={9} fill="#B0BAD0" textAnchor="middle">{shortDate(active.date)}</SvgText>
-            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 27} fontSize={13} fontWeight="700" fill="#fff" textAnchor="middle">{active.count}</SvgText>
+            <Rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={6} fill={COLORS.strong} />
+            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 13} fontSize={9} fill={COLORS.blue} textAnchor="middle">{shortDate(active.date)}</SvgText>
+            <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 27} fontSize={13} fontWeight="700" fill={COLORS.surface} textAnchor="middle">{active.count}</SvgText>
             {showAmt && (
-              <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 42} fontSize={10} fontWeight="700" fill="#E4B77C" textAnchor="middle">{fmtAmount(active.amount)}</SvgText>
+              <SvgText x={tooltipX + tooltipW / 2} y={tooltipY + 42} fontSize={10} fontWeight="700" fill={COLORS.peach2} textAnchor="middle">{fmtAmount(active.amount)}</SvgText>
             )}
           </>
         )}
@@ -134,7 +137,7 @@ function TrendCard({ title, badge, total, data, color, gradId, showAmount }) {
           <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>{title}</Text>
           <Text style={{ fontSize: 26, fontWeight: '800', color: TEXT }}>{total}</Text>
         </View>
-        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, backgroundColor: color + '22' }}>
+        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, backgroundColor: withAlpha(color, '22') }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color }}>{badge}</Text>
         </View>
       </View>
@@ -151,7 +154,11 @@ export default function SalesReportsScreen({ navigation }) {
   const user      = useSelector((s) => s.auth.user);
   const _des      = (user?.designation || '').toLowerCase();
   // STM & CP see their pipeline (not the telecaller call-queue metrics/charts).
-  const isStmView = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive') || _des.includes('cp executive') || _des.includes('channel partner');
+  const isTrueAdmin = user?.role === 'Admin' || user?.is_staff;
+  const isAdmin     = isTrueAdmin || (user?.admin_modules || []).includes('Sales');
+  const isManager   = isManagerRole(user);
+  // Same rule as the CRM home these tiles moved from: any CP-side designation counts.
+  const isStmView = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive') || _des.startsWith('cp') || _des.includes('channel partner');
 
   const fmtDate  = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
@@ -281,6 +288,9 @@ export default function SalesReportsScreen({ navigation }) {
 
   const _called  = stats?.called_count ?? 0;
   const _svDone  = stats?.sv_done      ?? 0;
+  // A completed follow-up is a call that was made, so it counts toward calling.
+  const _fuCalls = stats?.followup_call_count ?? 0;
+  const _totCall = stats?.total_called_count  ?? (_called + _fuCalls);
   // MQLs per completed site visit, e.g. "4.0 : 1" = four dispositioned leads for
   // every visit. Divides by SV, so it needs _svDone (not _called) to be non-zero.
   const _mqlToSv = _svDone > 0 ? (_called / _svDone).toFixed(1) + ' : 1' : '—';
@@ -316,6 +326,8 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'My Pipeline', label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'My Pipeline', label: 'To Call',      value: _toCall,                      color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'Calling Activity', label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
+    { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
+    { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
     { group: 'Conversions', label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm', ...dateFilter } } },
     { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
     { group: 'Conversions', label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesMyConversions' },
@@ -335,11 +347,21 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Site Visits & Closures', label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' } },
     { group: 'Conversion Rates', label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { group: 'Conversion Rates', label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
+    { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
+    { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending',  value: _fuPending,    color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue',  value: _fuOverdue,    color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { group: 'Conversion Rates', label: 'Avg Closure Time',    value: _avgCloseMo,   color: COLORS.error,  bg: COLORS.errorBg },
   ];
-  const STAT_CARDS = isStmView ? STM_CARDS : TELECALLER_CARDS;
+  // "Unassigned" only means anything to someone who sees the whole company's leads.
+  const UNASSIGNED_CARD = {
+    group: 'My Pipeline', label: 'Unassigned', value: stats?.unassigned_leads ?? '—',
+    color: COLORS.gold, bg: COLORS.goldBg, target: 'SalesLeads', params: { initialFilter: { unassigned: true } },
+  };
+  const STAT_CARDS = isStmView ? STM_CARDS
+    : (isAdmin || isManager)
+      ? [...TELECALLER_CARDS.slice(0, 2), UNASSIGNED_CARD, ...TELECALLER_CARDS.slice(2)]
+      : TELECALLER_CARDS;
   // Club the tiles under the question each block answers, so the row a number
   // sits in already says how to read it. Order is fixed; a group with no cards
   // for this role simply drops out.
@@ -351,13 +373,13 @@ export default function SalesReportsScreen({ navigation }) {
     .filter((s) => s.cards.length);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: TEXT }}>Reports</Text>
         <TouchableOpacity onPress={() => reload(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
@@ -370,8 +392,8 @@ export default function SalesReportsScreen({ navigation }) {
 
       {/* Filter Bottom Sheet */}
       <Modal visible={showFilter} transparent animationType="slide" onRequestClose={closeFilter}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={closeFilter} />
-        <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 36, maxHeight: '80%' }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={closeFilter} />
+        <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 36, maxHeight: '80%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT }}>Filter</Text>
             <TouchableOpacity onPress={closeFilter}>
@@ -425,9 +447,9 @@ export default function SalesReportsScreen({ navigation }) {
                 return (
                   <TouchableOpacity key={key}
                     onPress={() => { setPendingQuarter(prev => sel ? prev.filter(k => k !== key) : [...prev, key]); setPendingFrom(null); setPendingTo(null); setPendingMonths([]); }}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 1.5, borderColor: sel ? NAVY : COLORS.border, backgroundColor: sel ? NAVY : COLORS.screenBg, alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: sel ? COLORS.white : TEXT }}>{label}</Text>
-                    <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? COLORS.white + 'CC' : MUTED, marginTop: 2 }}>{sub}</Text>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: sel ? withAlpha(COLORS.white, 'CC') : MUTED, marginTop: 2 }}>{sub}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -461,12 +483,12 @@ export default function SalesReportsScreen({ navigation }) {
                   style={{ height: 160 }} />
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                   <TouchableOpacity onPress={() => setShowFromPick(false)}
-                    style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => { setShowFromPick(false); if (iosPickerDate) { setPendingFrom(iosPickerDate); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }}
-                    style={{ flex: 1, height: 40, borderRadius: 10, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>Done</Text>
+                    style={{ flex: 1, height: 40, borderRadius: 14, backgroundColor: COLORS.btnTint, justifyContent: 'center', alignItems: 'center' , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.btnText }}>Done</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -479,24 +501,24 @@ export default function SalesReportsScreen({ navigation }) {
                   style={{ height: 160 }} />
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                   <TouchableOpacity onPress={() => setShowToPick(false)}
-                    style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
+                    style={{ flex: 1, height: 40, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => { setShowToPick(false); if (iosPickerDate) { setPendingTo(iosPickerDate); setPendingMonths([]); setPendingQuarter([]); setPendingFyYear(null); } }}
-                    style={{ flex: 1, height: 40, borderRadius: 10, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>Done</Text>
+                    style={{ flex: 1, height: 40, borderRadius: 14, backgroundColor: COLORS.btnTint, justifyContent: 'center', alignItems: 'center' , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.btnText }}>Done</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 }}>
                 <TouchableOpacity onPress={() => { setIosPickerDate(pendingFrom || new Date()); setShowFromPick(true); }}
-                  style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: pendingFrom ? TEXT : MUTED }}>{pendingFrom ? fmtLabel(pendingFrom) : 'From date'}</Text>
                 </TouchableOpacity>
                 <Text style={{ fontSize: 14, color: MUTED }}>→</Text>
                 <TouchableOpacity onPress={() => { setIosPickerDate(pendingTo || new Date()); setShowToPick(true); }}
-                  style={{ flex: 1, height: 42, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+                  style={{ flex: 1, height: 42, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: pendingTo ? TEXT : MUTED }}>{pendingTo ? fmtLabel(pendingTo) : 'To date'}</Text>
                 </TouchableOpacity>
               </View>
@@ -504,8 +526,8 @@ export default function SalesReportsScreen({ navigation }) {
           </ScrollView>
 
           <TouchableOpacity onPress={applyFilter}
-            style={{ backgroundColor: NAVY, borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white }}>Apply Filter</Text>
+            style={SalesReportsScreenS.btn}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.btnText }}>Apply Filter</Text>
           </TouchableOpacity>
         </View>
 
@@ -527,7 +549,7 @@ export default function SalesReportsScreen({ navigation }) {
 
 
         {loading ? (
-          <ActivityIndicator color={NAVY} style={{ marginVertical: 40 }} />
+          <AppLoader size={0.7} style={{ marginVertical: 40 }} />
         ) : (
           <>
             {STAT_SECTIONS.map(sec => (
@@ -594,3 +616,8 @@ export default function SalesReportsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesReportsScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4, borderWidth: 1, borderColor: COLORS.btnBorder },
+});

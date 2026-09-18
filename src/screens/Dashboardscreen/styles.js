@@ -4,7 +4,7 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, LINE_HEIGHT, SHADOWS }
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.screenBg },
   header: {
-    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.borderLight,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   infoText: { fontSize: FONT_SIZE.md, color: COLORS.textSecondary, marginBottom: SPACING.xs + 2 },
   infoValue: { fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary },
   infoBox: {
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.panel,
     padding: SPACING.xl,
     borderRadius: RADIUS.xl,
     alignItems: 'center',

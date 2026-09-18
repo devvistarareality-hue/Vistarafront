@@ -8,7 +8,7 @@
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#050D1A"
+      "backgroundColor": "#000000"
     },
     "userInterfaceStyle": "light",
     "plugins": [
@@ -45,7 +45,8 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "./plugins/withLaunchBackground"
     ],
     "ios": {
       "supportsTablet": true,
@@ -57,9 +58,10 @@
     "android": {
       "allowBackup": false,
       "adaptiveIcon": {
-        "backgroundColor": "#0F1838",
+        "backgroundColor": "#050505",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundImage": "./assets/android-icon-background.png"
       },
       "package": "com.vistararealty.app",
       "googleServicesFile": "./android/app/google-services.json",

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Platform, Alert, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,11 +20,13 @@ import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 import { computeShop, impliedUnitPct } from '../../lib/pratishthaShop';
 import { computeFlat } from '../../lib/pratishthaFlat';
 
+import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 12, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, marginBottom: 12, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const safeDate = (s) => { const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s || '')); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; };
 
 export default function BookingFormScreen({ navigation, route }) {
@@ -813,7 +815,7 @@ export default function BookingFormScreen({ navigation, route }) {
         // resetting saving here left a window where a stray tap could still
         // re-fire submit before the screen navigates away, producing an
         // identical duplicate booking (confirmed in production).
-        Alert.alert('Booking submitted ✅', 'Your booking has been submitted and sent for approval.', [
+        Alert.alert('Booking submitted', 'Your booking has been submitted and sent for approval.', [
           { text: 'OK', onPress: () => navigation.navigate(kioskCtx ? 'Kiosk' : 'ClosureProjects') },
         ]);
         return;
@@ -848,29 +850,29 @@ export default function BookingFormScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
 
       <Modal visible={saving} transparent animationType="fade" onRequestClose={() => {}}>
         <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
-          <ActivityIndicator size="large" color={COLORS.navy} />
+          <AppLoader />
           <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Submitting booking…</Text>
         </View>
       </Modal>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? (eoiMode ? 'Revise EOI' : 'Revise Booking') : eoiMode ? 'Create EOI' : (plotIds.length > 1 ? 'Book Units' : prat ? (prat.kind === 'shop' ? 'Book Shop' : 'Book Flat') : 'Book Unit')} <Text style={eoiMode ? { color: '#E4571A' } : null}>{eoiMode ? (eoiNo || '…') : plotNo}</Text></Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>{reviseId ? (eoiMode ? 'Revise EOI' : 'Revise Booking') : eoiMode ? 'Create EOI' : (plotIds.length > 1 ? 'Book Units' : prat ? (prat.kind === 'shop' ? 'Book Shop' : 'Book Flat') : 'Book Unit')} <Text style={eoiMode ? { color: COLORS.warningAlt } : null}>{eoiMode ? (eoiNo || '…') : plotNo}</Text></Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{project?.name || '…'} · {formulaSet.toUpperCase()}{eoiMode ? ' · EOI · no plot' : ''}</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         {reviseError && (
-          <View style={{ marginBottom: 14, padding: 12, borderRadius: 8, backgroundColor: '#FEE2E2' }}>
-            <Text style={{ color: '#B91C1C', fontSize: 13, fontWeight: '600' }}>
+          <View style={{ marginBottom: 14, padding: 12, borderRadius: 8, backgroundColor: COLORS.errorBg }}>
+            <Text style={{ color: COLORS.error, fontSize: 13, fontWeight: '600' }}>
               This booking could not be opened for revision. Ask an admin to check your access to it.
             </Text>
           </View>
@@ -906,13 +908,13 @@ export default function BookingFormScreen({ navigation, route }) {
                 {pb.kind !== 'shop' ? (() => {
                   const e = flatEdit(pb);
                   const dp = isDownPayment(pb);
-                  const lock = { backgroundColor: '#EEF1F7', color: MUTED };
+                  const lock = { backgroundColor: COLORS.surface3, color: MUTED };
                   return (
-                    <View style={{ borderWidth: 1.5, borderColor: '#C7D2FE', backgroundColor: '#F5F7FF', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                    <View style={{ borderWidth: 1.5, borderColor: COLORS.blue2, backgroundColor: COLORS.accentSofter, borderRadius: 14, padding: 12, marginBottom: 10 }}>
                       <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
                         EDITABLE · EVERYTHING BELOW RECALCULATES
                       </Text>
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Plan</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Plan</Text>
                       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                         {['Regular', 'Down Payment'].map((pl) => {
                           const on = (e.plan || 'Regular') === pl;
@@ -923,36 +925,36 @@ export default function BookingFormScreen({ navigation, route }) {
                             <TouchableOpacity key={pl} onPress={() => setFlatEdit(pb, pl === 'Down Payment'
                               ? { plan: pl, flatPrice: '0' } : { plan: pl })}
                               style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, alignItems: 'center',
-                                borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                                borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.surface }}>
                               <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{pl}</Text>
                             </TouchableOpacity>
                           );
                         })}
                       </View>
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Rate (Rs./sq.yd)</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Rate (Rs./sq.yd)</Text>
                       <TextInput keyboardType="numeric" value={String(e.rate ?? '')}
                         onChangeText={(t) => setFlatEdit(pb, { rate: t })}
                         style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
-                          fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.white }} />
+                          fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.surface }} />
                       {Number(pb.terrace_area) > 0 && (<>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Terrace Rate (Rs./sq.yd)</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Terrace Rate (Rs./sq.yd)</Text>
                         <TextInput keyboardType="numeric" value={String(e.terraceRate ?? '')}
                           placeholder={String(Math.round((Number(e.rate) || 0) / 2))}
                           onChangeText={(t) => setFlatEdit(pb, { terraceRate: t })}
                           style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
-                            fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.white }} />
+                            fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.surface }} />
                       </>)}
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Flat Price (Rs.)</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Flat Price (Rs.)</Text>
                       <TextInput editable={dp} keyboardType="numeric"
                         value={dp ? String(e.flatPrice ?? '') : String(pb.flat_price)}
                         onChangeText={(t) => setFlatEdit(pb, { flatPrice: t })}
                         style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
-                          fontSize: 14, marginBottom: 10, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.white : lock.backgroundColor }} />
+                          fontSize: 14, marginBottom: 10, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.surface : lock.backgroundColor }} />
                       {/* No token on a Down Payment plan — there is no loan, and the section
                           that used to quote it is gone. */}
                       {!dp ? (
                         <>
-                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Token</Text>
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Token</Text>
                           <TextInput editable={false} keyboardType="numeric" value={String(pb.token)}
                             style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
                               fontSize: 14, color: MUTED, backgroundColor: lock.backgroundColor }} />
@@ -969,19 +971,19 @@ export default function BookingFormScreen({ navigation, route }) {
                 {pb.kind === 'shop' ? (() => {
                   const e = shopEdit(pb);
                   return (
-                    <View style={{ borderWidth: 1.5, borderColor: '#C7D2FE', backgroundColor: '#F5F7FF', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                    <View style={{ borderWidth: 1.5, borderColor: COLORS.blue2, backgroundColor: COLORS.accentSofter, borderRadius: 14, padding: 12, marginBottom: 10 }}>
                       <Text style={{ fontSize: 11, fontWeight: '800', color: BLUE, letterSpacing: 0.5, marginBottom: 8 }}>
                         EDITABLE · EVERYTHING BELOW RECALCULATES
                       </Text>
                       <Fld l="Rate (Rs./sq.ft)" val={String(e.rate ?? '')} on={(t) => setShopEdit(pb, { rate: t })} kb="numeric" />
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Total Unit Price</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Total Unit Price</Text>
                       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                         {[['pct', '%'], ['amount', 'Rs.']].map(([m, lbl]) => {
                           const on = e.mode === m;
                           return (
                             <TouchableOpacity key={m} onPress={() => setShopEdit(pb, { mode: m })}
                               style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5,
-                                borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                                borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.surface }}>
                               <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : MUTED }}>{lbl}</Text>
                             </TouchableOpacity>
                           );
@@ -990,8 +992,8 @@ export default function BookingFormScreen({ navigation, route }) {
                           <TextInput keyboardType="numeric"
                             value={String((e.mode === 'amount' ? e.unitAmount : e.unitPct) ?? '')}
                             onChangeText={(t) => setShopEdit(pb, e.mode === 'amount' ? { unitAmount: t } : { unitPct: t })}
-                            placeholderTextColor="#9CA3AF"
-                            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.white }} />
+                            placeholderTextColor={COLORS.textTertiary}
+                            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface }} />
                         </View>
                       </View>
                       <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
@@ -1002,26 +1004,26 @@ export default function BookingFormScreen({ navigation, route }) {
                     </View>
                   );
                 })() : null}
-                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' }}>
                   {pratRowsFor(pb).map((row, i) => (
                     Array.isArray(row) ? (
                       <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
                         paddingHorizontal: 12, paddingVertical: 9,
-                        backgroundColor: row[2] === 'sub' ? '#EEF2FF' : (i % 2 ? '#FAFBFE' : COLORS.white),
-                        borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                        backgroundColor: row[2] === 'sub' ? COLORS.accentSofter : (i % 2 ? COLORS.surface2 : COLORS.surface),
+                        borderBottomWidth: 1, borderBottomColor: COLORS.surface2 }}>
                         <Text style={{ fontSize: 12, color: row[2] === 'sub' ? TEXT : MUTED, fontWeight: row[2] === 'sub' ? '700' : '400', flexShrink: 1 }}>{row[0]}</Text>
                         <Text style={{ fontSize: 12, fontWeight: row[2] === 'sub' ? '800' : '700', color: TEXT }}>{row[1]}</Text>
                       </View>
                     ) : (
-                      <View key={i} style={{ paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#F5F7FF',
-                        borderBottomWidth: 1, borderBottomColor: '#E5EAF5' }}>
+                      <View key={i} style={{ paddingHorizontal: 12, paddingVertical: 9, backgroundColor: COLORS.accentSofter,
+                        borderBottomWidth: 1, borderBottomColor: COLORS.surface3 }}>
                         <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: BLUE }}>{row.h.toUpperCase()}</Text>
                       </View>
                     )
                   ))}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
                     paddingHorizontal: 12, paddingVertical: 12,
-                    backgroundColor: pratBooks.length > 1 ? '#4B5563' : COLORS.navy }}>
+                    backgroundColor: pratBooks.length > 1 ? COLORS.strong2 : COLORS.navy }}>
                     <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff', flexShrink: 1 }}>
                       {pb.kind === 'shop' ? 'Grand Total' : 'Total'}
                     </Text>
@@ -1033,17 +1035,17 @@ export default function BookingFormScreen({ navigation, route }) {
             {/* Only meaningful with more than one unit — a single unit's total is above. */}
             {pratBooks.length > 1 ? (
               <Sec title={`Combined Total · ${pratBooks.length} units`}>
-                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' }}>
+                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' }}>
                   {pratBooks.map((pb, i) => (
                     <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
                       paddingHorizontal: 12, paddingVertical: 9,
-                      backgroundColor: i % 2 ? '#FAFBFE' : COLORS.white, borderBottomWidth: 1, borderBottomColor: '#F0F3FA' }}>
+                      backgroundColor: i % 2 ? COLORS.surface2 : COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surface2 }}>
                       <Text style={{ fontSize: 12, color: MUTED }}>{unitTitle(pb)}</Text>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT }}>{rupee(pbTotal(pb))}</Text>
                     </View>
                   ))}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10,
-                    paddingHorizontal: 12, paddingVertical: 12, backgroundColor: COLORS.navy }}>
+                    paddingHorizontal: 12, paddingVertical: 12, backgroundColor: COLORS.panel }}>
                     <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff' }}>Total All Inclusive Amount</Text>
                     <Text style={{ fontSize: 14, fontWeight: '800', color: '#fff' }}>{rupee(pratTotal)}</Text>
                   </View>
@@ -1053,9 +1055,9 @@ export default function BookingFormScreen({ navigation, route }) {
           </>
         ) : pratBookMissing ? (
           <Sec title="Pricing">
-            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 10, padding: 14 }}>
+            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 14, padding: 14 }}>
               <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.errorStrong, marginBottom: 6 }}>
-                ⚠️ This unit has no price book
+                <AppIcon name="alert" size={13} /> This unit has no price book
               </Text>
               <Text style={{ fontSize: 12, color: COLORS.errorStrong }}>{pratMissingMsg}</Text>
               <Text style={{ fontSize: 12, color: COLORS.errorStrong, marginTop: 8 }}>
@@ -1067,13 +1069,13 @@ export default function BookingFormScreen({ navigation, route }) {
         ) : (<>
         <Sec title="Plot & Type">
           <View style={{ marginBottom: 10 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Area Unit</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Area Unit</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {['sq.yd', 'sq.ft', 'sq.m'].map((u) => {
                 const on2 = unit === u;
                 return (
                   <TouchableOpacity key={u} onPress={() => set('area_unit', u)}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', borderColor: on2 ? BLUE : COLORS.border, backgroundColor: on2 ? BLUE : COLORS.white }}>
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', borderColor: on2 ? BLUE : COLORS.border, backgroundColor: on2 ? BLUE : COLORS.surface }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: on2 ? '#fff' : MUTED }}>{u}</Text>
                   </TouchableOpacity>
                 );
@@ -1108,12 +1110,12 @@ export default function BookingFormScreen({ navigation, route }) {
             <>
               {/* Kalrav: Unit Price = Land Sale Deed + Construction Agreement; % derived — both read-only. */}
               <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Sale Deed %</Text>
-                <TextInput value={v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '0'} editable={false} style={[inpS, { backgroundColor: '#F3F4F6', color: MUTED }]} />
+                <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Sale Deed %</Text>
+                <TextInput value={v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '0'} editable={false} style={[inpS, { backgroundColor: COLORS.surface2, color: MUTED }]} />
               </View>
               <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Unit Price (₹)</Text>
-                <TextInput value={String(Math.round(v.saleDeed) || 0)} editable={false} style={[inpS, { backgroundColor: '#F3F4F6', color: MUTED }]} />
+                <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Unit Price (₹)</Text>
+                <TextInput value={String(Math.round(v.saleDeed) || 0)} editable={false} style={[inpS, { backgroundColor: COLORS.surface2, color: MUTED }]} />
               </View>
             </>
           )}
@@ -1121,7 +1123,7 @@ export default function BookingFormScreen({ navigation, route }) {
             <>
               <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => setF((s) => ({ ...s, sale_deed_pct: t, sale_deed_amount: '' }))} kb="numeric" />
               <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Unit Price (₹)</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Unit Price (₹)</Text>
                 <TextInput
                   value={deedAmtStr}
                   keyboardType="numeric"
@@ -1158,7 +1160,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Fld l="Legal Documentation charge (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
         </Sec>
 
-        <View style={[CARD, { backgroundColor: '#EAF2FF' }]}>
+        <View style={[CARD, { backgroundColor: COLORS.accentSoft }]}>
           <Tot l="Plot Basic Amount" sub="Plot Area × Land Rate" sub2={`${inr(v.area)} × ${inr(v.landRate)}`} val={v.plotBasic} />
           {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${formulaSet === 'ankhol' ? 'Construction' : 'Plot'} Area × Dev Rate`} sub2={`${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)}`} val={v.plotDev} />}
           {flags.hasConstructionFields && <Tot l="Construction Amount" sub="Construction Area × Construction Rate" sub2={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
@@ -1190,7 +1192,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {/* Extra Work Amount Installments — shown ABOVE the sale-deed installments */}
           {(hasSaleDeedSplit || pratShop) && nsdBase > 0 && (
             <View style={{ marginBottom: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#065F46', marginBottom: 2 }}>Extra Work Amount Installments</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.successDeep, marginBottom: 2 }}>Extra Work Amount Installments</Text>
               <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{rupee(nsdBase)}</Text>
               <Fld l="No. of Installments (Extra Work Amount)" val={nsdInsts.length ? String(nsdInsts.length) : ''} on={buildNsdInsts} kb="numeric" />
               {nsdInsts.map((r, i) => (
@@ -1206,7 +1208,7 @@ export default function BookingFormScreen({ navigation, route }) {
           )}
           {hasSaleDeedSplit && (
             <View style={{ marginBottom: 4 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E3A5F' }}>{pratShop ? 'Final Unit Price Installments' : 'Unit Price Installments'}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.textPrimary }}>{pratShop ? 'Final Unit Price Installments' : 'Unit Price Installments'}</Text>
               <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{rupee(base)}</Text>
             </View>
           )}
@@ -1222,15 +1224,15 @@ export default function BookingFormScreen({ navigation, route }) {
           {/* Pratishtha's three charge lines all fall due on the sale deed or possession,
               so they carry that wording instead of a date picker. */}
           {pratSched ? pratExtras().map((x) => (
-            <View key={x.label} style={{ marginTop: 6, backgroundColor: '#FFF8E1', borderRadius: 8, padding: 8 }}>
-              <Text style={{ color: '#92400E', fontWeight: '700', fontSize: 12 }}>{x.label} {rupee(x.amt)}</Text>
+            <View key={x.label} style={{ marginTop: 6, backgroundColor: COLORS.warningBg, borderRadius: 8, padding: 8 }}>
+              <Text style={{ color: COLORS.warning, fontWeight: '700', fontSize: 12 }}>{x.label} {rupee(x.amt)}</Text>
               <Text style={{ color: MUTED, fontSize: 10, fontStyle: 'italic', marginTop: 2 }}>Date of Sale Deed or Possession (whichever is earlier)</Text>
             </View>
           )) : v.totalExtra > 0 && (
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center', backgroundColor: '#FFF8E1', borderRadius: 8, padding: 6 }}>
-              <Text style={{ width: 16, color: '#92400E', fontWeight: '700', fontSize: 11 }}>Ex</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center', backgroundColor: COLORS.warningBg, borderRadius: 8, padding: 6 }}>
+              <Text style={{ width: 16, color: COLORS.warning, fontWeight: '700', fontSize: 11 }}>Ex</Text>
               <DateField value={extraDate} onChange={setExtraDate} placeholder="Extra charges date" style={{ flex: 2 }} />
-              <Text style={{ flex: 2.4, color: '#92400E', fontWeight: '700', fontSize: 12, textAlign: 'right' }}>Legal & Other Charges {rupee(v.totalExtra)}</Text>
+              <Text style={{ flex: 2.4, color: COLORS.warning, fontWeight: '700', fontSize: 12, textAlign: 'right' }}>Legal & Other Charges {rupee(v.totalExtra)}</Text>
             </View>
           )}
           {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}%</Text>}
@@ -1254,52 +1256,52 @@ export default function BookingFormScreen({ navigation, route }) {
           </Sec>
         )}
 
-        <Sec title="📝 Extra Terms & Conditions (optional — added below the default terms)">
+        <Sec title="Extra Terms & Conditions (optional — added below the default terms)">
           {extraTerms.map((t, i) => (
-            <View key={i} style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 10, marginBottom: 10, backgroundColor: COLORS.surfaceAlt }}>
+            <View key={i} style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 10, marginBottom: 10, backgroundColor: COLORS.surfaceAlt }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED }}>Term {i + 1}</Text>
-                <TouchableOpacity onPress={() => removeTerm(i)}><Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.error }}>✕ Remove</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => removeTerm(i)}><Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.error }}><AppIcon name="x" size={12} /> Remove</Text></TouchableOpacity>
               </View>
               <TextInput value={t.title} onChangeText={(x) => setTerm(i, 'title', x)} placeholder="Title (e.g. Possession)" style={[inpS, { marginBottom: 8 }]} />
               <TextInput value={t.desc} onChangeText={(x) => setTerm(i, 'desc', x)} placeholder="Description / clause text" multiline style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
             </View>
           ))}
-          <TouchableOpacity onPress={addTerm} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 10, padding: 14, alignItems: 'center' }}>
+          <TouchableOpacity onPress={addTerm} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center' }}>
             <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}>+ Add Extra Term</Text>
           </TouchableOpacity>
         </Sec>
 
         <Sec title="LOI Document">
           {!!savedLoiPath && !loiFile && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.successBg, borderWidth: 1, borderColor: '#86EFAC', borderRadius: 8, padding: 10, marginBottom: 10, gap: 8 }}>
-              <Text style={{ color: COLORS.success, fontSize: 12, flex: 1 }}>📎 Signed LOI already attached from your last save.</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.successBg, borderWidth: 1, borderColor: COLORS.green, borderRadius: 8, padding: 10, marginBottom: 10, gap: 8 }}>
+              <Text style={{ color: COLORS.success, fontSize: 12, flex: 1 }}><AppIcon name="clip" size={12} /> Signed LOI already attached from your last save.</Text>
               <TouchableOpacity onPress={() => openLoi(draftId || savedDraftId)}><Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 12, textDecorationLine: 'underline' }}>View</Text></TouchableOpacity>
             </View>
           )}
-          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: '#7b2ff7', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📄 Generate LOI (Download)</Text>
+          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={[BookingFormScreenS.btn, (pratBookMissing) && BookingFormScreenS.btnDim]}>
+            <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 14 }}><AppIcon name="file" size={14} /> Generate LOI (Download)</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.success, borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>📷 Capture signed LOI (multi-page → PDF)</Text>
+          <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.btnTintSuccess, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+            <Text style={{ color: COLORS.btnTextSuccess, fontWeight: '800', fontSize: 14 }}><AppIcon name="camera" size={14} /> Capture signed LOI (multi-page → PDF)</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={pickLoi} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 10, padding: 14, alignItems: 'center' }}>
-            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}>📎 {loiFile ? loiFile.name : (savedLoiPath ? 'Attach a different signed LOI (replace)' : 'Attach signed LOI (image / PDF)')}</Text>
+          <TouchableOpacity onPress={pickLoi} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center' }}>
+            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}><AppIcon name="clip" size={14} /> {loiFile ? loiFile.name : (savedLoiPath ? 'Attach a different signed LOI (replace)' : 'Attach signed LOI (image / PDF)')}</Text>
           </TouchableOpacity>
           <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Generate → print/sign → capture pages or attach the signed copy → Submit.</Text>
         </Sec>
 
         {!!msg && (() => { const ok = msg.startsWith('✅') || msg.startsWith('📎'); return (
         <View style={{ padding: 12, borderRadius: 8, backgroundColor: ok ? COLORS.successBg : COLORS.errorBg, marginBottom: 12 }}>
-          <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}>{msg}</Text>
+          <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}><AppIcon name={msg.startsWith('📎') ? 'clip' : ok ? 'check-circle' : 'alert'} size={14} /> {msg.replace(/^[^A-Za-z0-9]+/, '')}</Text>
         </View>); })()}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity onPress={saveDraft} disabled={saving || !projectId || pratBookMissing}
-            style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
-            {saving ? <ActivityIndicator color={COLORS.link} /> : <Text style={{ color: COLORS.link, fontWeight: '800', fontSize: 15 }}>💾 Save Draft</Text>}
+            style={{ flex: 1, backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 22, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
+            {saving ? <ActivityIndicator color={COLORS.link} /> : <Text style={{ color: COLORS.link, fontWeight: '800', fontSize: 15 }}><AppIcon name="save" size={15} /> Save Draft</Text>}
           </TouchableOpacity>
-          <TouchableOpacity onPress={submit} disabled={saving || pratBookMissing} style={{ flex: 1, backgroundColor: COLORS.navy, borderRadius: 12, paddingVertical: 15, alignItems: 'center', opacity: (saving || pratBookMissing) ? 0.6 : 1 }}>
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}
+          <TouchableOpacity onPress={submit} disabled={saving || pratBookMissing} style={{ flex: 1, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: (saving || pratBookMissing) ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -1307,7 +1309,7 @@ export default function BookingFormScreen({ navigation, route }) {
   );
 }
 
-const inpS = { backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: TEXT };
+const inpS = { backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: TEXT };
 const Sec = ({ title, children }) => (
   <View style={CARD}>
     <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: BLUE, marginBottom: 10, textTransform: 'uppercase' }}>{title}</Text>
@@ -1316,9 +1318,9 @@ const Sec = ({ title, children }) => (
 );
 const Fld = ({ l, val, on, kb, ph, invalid }) => (
   <View style={{ marginBottom: 10 }}>
-    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
+    <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>{l}</Text>
     <TextInput value={val} onChangeText={on} keyboardType={kb || 'default'} placeholder={ph}
-      style={[inpS, invalid ? { borderColor: COLORS.error, backgroundColor: '#FEF2F2' } : null]} />
+      style={[inpS, invalid ? { borderColor: COLORS.error, backgroundColor: COLORS.errorBg } : null]} />
   </View>
 );
 
@@ -1334,7 +1336,7 @@ function DateField({ value, onChange, placeholder = 'DD-MM-YYYY', style }) {
   return (
     <>
       <TouchableOpacity onPress={() => setShow(true)} style={[inpS, { justifyContent: 'center' }, style]}>
-        <Text style={{ fontSize: 13, color: display ? TEXT : '#9CA3AF' }}>{display || placeholder}</Text>
+        <Text style={{ fontSize: 13, color: display ? TEXT : COLORS.textTertiary }}>{display || placeholder}</Text>
       </TouchableOpacity>
       {show && (
         <DateTimePicker
@@ -1351,27 +1353,27 @@ function DateField({ value, onChange, placeholder = 'DD-MM-YYYY', style }) {
 // Labelled date field (used for Booking Date).
 const DateFld = ({ l, val, on }) => (
   <View style={{ marginBottom: 10 }}>
-    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
+    <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>{l}</Text>
     <DateField value={val} onChange={on} />
   </View>
 );
 const Calc = ({ l, sub, val }) => (
   <View style={{ marginBottom: 10 }}>
-    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 2 }}>{l}</Text>
-    {!!sub && <Text style={{ fontSize: 10, color: '#9CA3AF', fontStyle: 'italic', marginBottom: 4 }}>{sub}</Text>}
-    <View style={{ backgroundColor: '#F0F4FF', borderWidth: 1.5, borderColor: '#C5D8FB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9 }}>
-      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1a73e8' }}>{rupee(val)}</Text>
+    <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 2 }}>{l}</Text>
+    {!!sub && <Text style={{ fontSize: 10, color: COLORS.textTertiary, fontStyle: 'italic', marginBottom: 4 }}>{sub}</Text>}
+    <View style={{ backgroundColor: COLORS.accentSofter, borderWidth: 1.5, borderColor: COLORS.blue2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9 }}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.link }}>{rupee(val)}</Text>
     </View>
   </View>
 );
 const Pick = ({ l, val, on, opts }) => (
   <View style={{ marginBottom: 10 }}>
-    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 }}>{l}</Text>
+    <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>{l}</Text>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
       {opts.map((o) => {
         const on2 = val === o;
         return (
-          <TouchableOpacity key={o} onPress={() => on(on2 ? '' : o)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on2 ? BLUE : COLORS.border, backgroundColor: on2 ? BLUE : COLORS.white }}>
+          <TouchableOpacity key={o} onPress={() => on(on2 ? '' : o)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on2 ? BLUE : COLORS.border, backgroundColor: on2 ? BLUE : COLORS.surface }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: on2 ? '#fff' : MUTED }}>{o}</Text>
           </TouchableOpacity>
         );
@@ -1383,14 +1385,20 @@ const Tot = ({ l, sub, sub2, val, valFmt, big, subtotal }) => (
   <View style={{
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: big ? 8 : subtotal ? 7 : 4, paddingHorizontal: subtotal ? 8 : 0,
-    borderTopWidth: big ? 2 : 0, borderTopColor: '#B3CDF9', marginTop: big ? 6 : 0,
-    ...(subtotal ? { backgroundColor: '#DBEAFE', borderRadius: 6, marginVertical: 4 } : {}),
+    borderTopWidth: big ? 2 : 0, borderTopColor: COLORS.blue, marginTop: big ? 6 : 0,
+    ...(subtotal ? { backgroundColor: COLORS.accentSoft, borderRadius: 6, marginVertical: 4 } : {}),
   }}>
     <View style={{ flex: 1, paddingRight: 8 }}>
-      <Text style={{ fontSize: big ? 15 : 13, fontWeight: (big || subtotal) ? '800' : '500', color: (big || subtotal) ? '#0D47A1' : '#4B5563' }}>{l}</Text>
-      {!!sub && <Text style={{ fontSize: 10, color: '#9CA3AF' }}>{sub}</Text>}
-      {!!sub2 && <Text style={{ fontSize: 10, color: '#9CA3AF' }}>{sub2}</Text>}
+      <Text style={{ fontSize: big ? 15 : 13, fontWeight: (big || subtotal) ? '800' : '500', color: (big || subtotal) ? COLORS.accentDeep : COLORS.text2 }}>{l}</Text>
+      {!!sub && <Text style={{ fontSize: 10, color: COLORS.textTertiary }}>{sub}</Text>}
+      {!!sub2 && <Text style={{ fontSize: 10, color: COLORS.textTertiary }}>{sub2}</Text>}
     </View>
-    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: (big || subtotal) ? '#0D47A1' : TEXT }}>{valFmt || rupee(val)}</Text>
+    <Text style={{ fontSize: big ? 15 : 13, fontWeight: big ? '800' : '700', color: (big || subtotal) ? COLORS.accentDeep : TEXT }}>{valFmt || rupee(val)}</Text>
   </View>
 );
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const BookingFormScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btnDim: { opacity: 0.4 },
+});

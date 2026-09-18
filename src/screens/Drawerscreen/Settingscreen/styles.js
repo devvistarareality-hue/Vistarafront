@@ -7,7 +7,7 @@ export default StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.borderLight,
     paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn: {
@@ -20,9 +20,9 @@ export default StyleSheet.create({
 
   profileCard: {
     alignItems: 'center', paddingVertical: 28,
-    backgroundColor: COLORS.navy, marginHorizontal: 20, marginTop: 20,
+    backgroundColor: COLORS.panel, marginHorizontal: 20, marginTop: 20,
     borderRadius: 18, ...CARD_SHADOW,
-  },
+   shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   avatarCircle: {
     width: 72, height: 72, borderRadius: 36,
     backgroundColor: 'rgba(255,255,255,0.15)',
@@ -34,16 +34,16 @@ export default StyleSheet.create({
 
   menuCard: {
     marginHorizontal: 20, marginTop: 20,
-    backgroundColor: COLORS.cardBg, borderRadius: 18, overflow: 'hidden',
+    backgroundColor: COLORS.cardBg, borderRadius: 22, overflow: 'hidden',
     ...CARD_SHADOW,
-  },
+   borderWidth: 1, borderColor: COLORS.cardBorder },
   menuItem: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 16,
     borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt,
   },
   menuIcon: {
-    width: 44, height: 44, borderRadius: 14,
+    width: 44, height: 44, borderRadius: 18,
     justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
   menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
@@ -51,7 +51,7 @@ export default StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     marginHorizontal: 20, marginTop: 20,
     backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.errorBg,
-    borderRadius: 14, paddingVertical: 14,
+    borderRadius: 18, paddingVertical: 14,
   },
   logoutText: { fontSize: 14, fontWeight: '700', color: COLORS.error },
 });

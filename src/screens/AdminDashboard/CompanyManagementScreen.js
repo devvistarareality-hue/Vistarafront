@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchCompanies, updateCompany, resetUpdateCompany, deleteCompany } from '../../redux/actions/companiesActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 
 const STATUS_FILTERS = ['All', 'Active', 'Inactive'];
 
@@ -107,7 +108,7 @@ export default function CompanyManagementScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
       <View style={s.header}>
@@ -116,7 +117,7 @@ export default function CompanyManagementScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={s.headerTitle}>Company Management</Text>
         <TouchableOpacity
-          style={[s.iconBtn, { backgroundColor: COLORS.navy }]}
+          style={[s.iconBtn, CompanyManagementScreenS.panel]}
           onPress={() => navigation.navigate('EditCompany')}
         >
           <Ionicons name="add" size={20} color={COLORS.white} />
@@ -141,11 +142,11 @@ export default function CompanyManagementScreen({ navigation }) {
         </ScrollView>
       </View>
 
-      <Text style={s.countLabel}>{filtered.length} company{filtered.length !== 1 ? 'ies' : 'y'}</Text>
+      <Text style={s.countLabel}>{filtered.length} {filtered.length === 1 ? 'company' : 'companies'}</Text>
 
       {/* List */}
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.navy} style={{ marginTop: 40 }} />
+        <AppLoader style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filtered}
@@ -163,25 +164,25 @@ export default function CompanyManagementScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: COLORS.screenBg },
+  screen:      { flex: 1, backgroundColor: 'transparent' },
 
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt },
   iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
-  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
   tabsWrapper: { height: 44, marginTop: 14 },
   tabsRow:     { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  tab:         { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
-  tabActive:   { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
+  tab:         { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 22, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
+  tabActive:   { backgroundColor: COLORS.panel, borderColor: COLORS.navy },
   tabText:     { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
   tabTextActive: { color: COLORS.white, fontWeight: '700' },
 
   countLabel: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, marginBottom: 10, ...CARD_SHADOW },
+  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, marginBottom: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   avatar:     { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText: { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardBody:   { flex: 1 },
@@ -209,7 +210,7 @@ const s = StyleSheet.create({
     width:           56,
     height:          56,
     borderRadius:    28,
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.panel,
     justifyContent:  'center',
     alignItems:      'center',
     elevation:       6,
@@ -218,4 +219,9 @@ const s = StyleSheet.create({
     shadowOpacity:   0.30,
     shadowRadius:    8,
   },
+});
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const CompanyManagementScreenS = StyleSheet.create({
+  panel: { backgroundColor: COLORS.panel },
 });

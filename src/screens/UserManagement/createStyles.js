@@ -5,14 +5,14 @@ export default StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.screenBg },
 
   /* Header */
-  header:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  header:       { flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt },
   headerBtn:    { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.surfaceAlt },
   headerTitle:  { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
   scrollContent: { padding: 16, paddingBottom: 40 },
 
   /* Preview card */
-  previewCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 16, marginBottom: 20, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 },
+  previewCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 16, marginBottom: 20, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 , borderWidth: 1, borderColor: COLORS.cardBorder },
   previewAvatar:     { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' },
   previewAvatarText: { fontSize: 22, fontWeight: '700', color: COLORS.white },
   previewName:       { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
@@ -20,7 +20,7 @@ export default StyleSheet.create({
 
   /* Form */
   label:      { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8, marginBottom: 8, marginTop: 16 },
-  inputWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 1 },
+  inputWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 12, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 1 , borderWidth: 1, borderColor: COLORS.cardBorder },
   inputIcon:  { marginRight: 10 },
   input:      { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
@@ -47,7 +47,7 @@ export default StyleSheet.create({
 
   /* Admin pills */
   adminPill:          { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 22, backgroundColor: COLORS.screenBg, borderWidth: 1.5, borderColor: COLORS.divider },
-  adminPillActive:    { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
+  adminPillActive:    { backgroundColor: COLORS.panel, borderColor: COLORS.navy },
   adminPillText:      { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   adminPillTextActive:{ color: COLORS.white },
 
@@ -62,6 +62,6 @@ export default StyleSheet.create({
   errorMsg:        { fontSize: 12, color: COLORS.error, fontWeight: '500', flex: 1 },
 
   /* Submit */
-  submitBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.secondary, borderRadius: 14, paddingVertical: 16, marginTop: 28 },
+  submitBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.secondary, borderRadius: 18, paddingVertical: 16, marginTop: 28 },
   submitBtnText: { fontSize: 16, fontWeight: '700', color: COLORS.white },
 });

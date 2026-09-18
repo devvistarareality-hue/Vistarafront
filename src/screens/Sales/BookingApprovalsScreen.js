@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Linking, RefreshControl, TextInput, Modal, Alert } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Linking, RefreshControl, TextInput, Modal, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -14,8 +14,10 @@ import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 import ExportBookings from '../../components/ExportBookings';
 
+import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Cancelled sits beside Rejected rather than inside it: both are stored at
 // status='rejected', but one was refused before it counted and the other was a live
@@ -28,7 +30,7 @@ const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN')
 // deal on the books should name the person who put it there, and a cancellation
 // should name whoever took a live sale off them.
 function decidedBy(b) {
-  if (b.cancelled_by_name) return { label: 'Cancelled by', who: b.cancelled_by_name, at: b.cancelled_at, tone: '#475569' };
+  if (b.cancelled_by_name) return { label: 'Cancelled by', who: b.cancelled_by_name, at: b.cancelled_at, tone: COLORS.text2 };
   if (b.rejected_by_name)  return { label: 'Rejected by',  who: b.rejected_by_name,  at: b.rejected_at,  tone: COLORS.error };
   if (b.approved_by_name)  return { label: 'Approved by',  who: b.approved_by_name,  at: b.approved_at,  tone: COLORS.success };
   return null;
@@ -59,7 +61,7 @@ function DecidedBy({ b }) {
         </Text>
       ) : null}
       {showAccounts && acc === 'approved' ? (
-        <Text style={{ fontSize: 11, color: '#0D9488', fontWeight: '600' }}>
+        <Text style={{ fontSize: 11, color: COLORS.success, fontWeight: '600' }}>
           {`Accounts approved${b.accounts_approved_by_name ? ` by ${b.accounts_approved_by_name}` : ''}${decidedWhen(b.accounts_approved_at)}`}
         </Text>
       ) : null}
@@ -137,6 +139,14 @@ export default function BookingApprovalsScreen({ navigation, route }) {
     ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
     ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
   ];
+  // `range` stays the source of truth; the dropdown just picks one of the presets.
+  const datePreset = (DATE_PRESETS.find(([, make]) => {
+    const r = make(); return r.from === range.from && r.to === range.to;
+  }) || ['All'])[0];
+  const pickDatePreset = (label) => {
+    const item = DATE_PRESETS.find(([l]) => l === (label || 'All')) || DATE_PRESETS[0];
+    setRange(item[1]()); setOpenGroup({});
+  };
   const [toCancel, setToCancel] = useState(null);      // booking awaiting cancel confirmation
 
   const load = useCallback(async () => {
@@ -158,13 +168,22 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // Pending lead transfers for the projects this user approves — same authority as a
   // booking on that project, so they belong on the same screen.
   const [xfers, setXfers] = useState([]);
+  // Lead transfers and booking approvals are two jobs: one section each,
+  // opening on transfers only while some are pending.
+  const [section, setSection] = useState('bookings');
+  const sectionPicked = useRef(false);
+  useEffect(() => { if (!sectionPicked.current && xfers.length > 0) setSection('transfers'); }, [xfers.length]);
+  const pickSection = (next) => { sectionPicked.current = true; setSection(next); };
   const [xferBusy, setXferBusy] = useState(null);
   const loadTransfers = useCallback(() => {
-    apiFetch(`${SALES_ENDPOINTS.leadTransfers}?status=pending${companyId ? `&company_id=${companyId}` : ''}`)
+    // cp_only in the Channel Partner module: a lead transfer is a Sales activity, so
+    // without it the CP approver was shown transfers for leads that never came through
+    // a partner.
+    apiFetch(`${SALES_ENDPOINTS.leadTransfers}?status=pending${companyId ? `&company_id=${companyId}` : ''}${cpOnly ? '&cp_only=true' : ''}`)
       .then(r => (r.ok ? r.json() : []))
       .then(d => setXfers(Array.isArray(d) ? d : []))
       .catch(() => setXfers([]));
-  }, [companyId]);
+  }, [companyId, cpOnly]);
   useFocusEffect(useCallback(() => { loadTransfers(); }, [loadTransfers]));
 
   async function actOnTransfer(id, action) {
@@ -274,17 +293,32 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Bookings & Approvals</Text>
+        <Text style={s.screenTitle}>Approvals</Text>
+      </View>
+
+      <View style={s.sectionTabs}>
+        <TouchableOpacity onPress={() => pickSection('transfers')} style={[s.sectionTab, section === 'transfers' && s.sectionTabOn]}>
+          <Text style={[s.sectionTabText, section === 'transfers' && s.sectionTabTextOn]} numberOfLines={1}>
+            {xfers.length > 0 ? `Lead Transfers · ${xfers.length}` : 'Lead Transfers'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => pickSection('bookings')} style={[s.sectionTab, section === 'bookings' && s.sectionTabOn]}>
+          <Text style={[s.sectionTabText, section === 'bookings' && s.sectionTabTextOn]} numberOfLines={1}>Booking Approvals</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
-        {xfers.length > 0 && (
+        {section === 'transfers' && xfers.length === 0 && (
+          <View style={[CARD, s.emptyCard]}><Text style={s.emptyText}>No lead transfers are waiting for your approval.</Text></View>
+        )}
+
+        {section === 'transfers' && xfers.length > 0 && (
           <View style={[CARD, { marginBottom: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: COLORS.warning }]}>
             <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.warning }}>
               ⇄ Lead Transfers awaiting your approval · {xfers.length}
@@ -293,7 +327,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
               The lead stays with the current STM until you approve.
             </Text>
             {xfers.map((x) => (
-              <View key={x.id} style={{ borderWidth: 1, borderColor: COLORS.surfaceAlt, borderRadius: 10, padding: 10, marginBottom: 8, backgroundColor: COLORS.warningBg }}>
+              <View key={x.id} style={{ borderWidth: 1, borderColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 8, backgroundColor: COLORS.warningBg }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>
                   {x.lead_name || 'Lead'}{x.project_name ? ` · ${x.project_name}` : ''}
                 </Text>
@@ -302,12 +336,12 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
                   <TouchableOpacity onPress={() => actOnTransfer(x.id, 'reject')} disabled={xferBusy === x.id}
-                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.errorBg, alignItems: 'center', backgroundColor: COLORS.white }}>
+                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.errorBg, alignItems: 'center', backgroundColor: COLORS.surface }}>
                     <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 12.5 }}>Reject</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => actOnTransfer(x.id, 'approve')} disabled={xferBusy === x.id}
-                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', backgroundColor: COLORS.success }}>
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.5 }}>{xferBusy === x.id ? '…' : 'Approve'}</Text>
+                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', backgroundColor: COLORS.btnTintSuccess , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+                    <Text style={{ color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 12.5 }}>{xferBusy === x.id ? '…' : 'Approve'}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -315,10 +349,11 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           </View>
         )}
 
+        {section === 'bookings' && (<>
         {isAdmin && (
           <View style={[CARD, { marginBottom: 12 }]}>
             <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: BLUE }}>{`⚙ ${cpMode ? 'CP ' : ''}Booking Approvers — by project ${cfgOpen ? '▴' : '▾'}`}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: BLUE }}>{`${cpMode ? 'CP ' : ''}Booking Approvers — by project ${cfgOpen ? '▴' : '▾'}`}</Text>
             </TouchableOpacity>
             {cfgOpen && projects.map((p) => {
               const exp = openProj === p.id; const sel = p[approverField] || [];
@@ -328,7 +363,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                   <TouchableOpacity onPress={() => setOpenProj(exp ? null : p.id)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>{p.name}</Text>
-                      <Text style={{ fontSize: 11, color: names ? MUTED : '#9CA3AF' }} numberOfLines={1}>{names || 'No approvers'}</Text>
+                      <Text style={{ fontSize: 11, color: names ? MUTED : COLORS.textTertiary }} numberOfLines={1}>{names || 'No approvers'}</Text>
                     </View>
                     <Ionicons name={exp ? 'chevron-up' : 'chevron-down'} size={18} color={MUTED} />
                   </TouchableOpacity>
@@ -337,8 +372,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                       {managers.map((m) => {
                         const on = sel.includes(m.id);
                         return (
-                          <TouchableOpacity key={m.id} onPress={() => toggleApprover(p.id, m.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? '✓ ' : ''}{m.name}</Text>
+                          <TouchableOpacity key={m.id} onPress={() => toggleApprover(p.id, m.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.surface }}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{on ? <AppIcon name="check" size={12} /> : ''}{m.name}</Text>
                           </TouchableOpacity>
                         );
                       })}
@@ -362,11 +397,11 @@ export default function BookingApprovalsScreen({ navigation, route }) {
 
         {/* Collapse state is keyed by project, so drop it as the query changes —
             otherwise a group the user collapsed earlier would hide its own hits. */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border,
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border,
           borderRadius: 9, paddingHorizontal: 12, marginBottom: 14 }}>
           <Ionicons name="search" size={16} color={MUTED} />
           <TextInput value={q} onChangeText={(t) => { setQ(t); setOpenGroup({}); }}
-            placeholder="Search name, phone or LOI / unit no…" placeholderTextColor="#9CA3AF" autoCapitalize="none"
+            placeholder="Search name, phone or LOI / unit no…" placeholderTextColor={COLORS.textTertiary} autoCapitalize="none"
             style={{ flex: 1, height: 42, fontSize: 13, color: TEXT, padding: 0 }} />
           {!!q && (
             <TouchableOpacity onPress={() => { setQ(''); setOpenGroup({}); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -375,21 +410,12 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           )}
         </View>
 
-        {/* Booking-date range */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 14, alignItems: 'center' }}>
-          <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginRight: 2 }}>BOOKED</Text>
-          {DATE_PRESETS.map(([label, make]) => {
-            const r = make();
-            const on = range.from === r.from && range.to === r.to;
-            return (
-              <TouchableOpacity key={label} onPress={() => { setRange(r); setOpenGroup({}); }}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5,
-                  borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? '#EEF1FF' : COLORS.white }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: on ? BLUE : MUTED }}>{label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        {/* Booking-date range — a dropdown, like every other filter here */}
+        <View style={s.filterBar}>
+          <FilterSelect label="Any booking date" value={datePreset === 'All' ? '' : datePreset} style={s.filterSel}
+            onChange={pickDatePreset}
+            options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any booking date' : l }))} />
+        </View>
 
         {/* Which project and whose bookings — sheets rather than chips, since there are
             a dozen STMs and the names are too long to scan in a row. */}
@@ -408,9 +434,9 @@ export default function BookingApprovalsScreen({ navigation, route }) {
             {resaleCount > 0 ? (
               <TouchableOpacity onPress={() => { setResale((v) => !v); setOpenGroup({}); }}
                 style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5,
-                  borderColor: resale ? '#0369A1' : COLORS.border,
-                  backgroundColor: resale ? '#E0F2FE' : COLORS.white }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: resale ? '#0369A1' : MUTED }}>
+                  borderColor: resale ? COLORS.accentDeep : COLORS.border,
+                  backgroundColor: resale ? COLORS.accentSoft : COLORS.surface }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: resale ? COLORS.accentDeep : MUTED }}>
                   {`Resale (${resaleCount})`}
                 </Text>
               </TouchableOpacity>
@@ -419,16 +445,16 @@ export default function BookingApprovalsScreen({ navigation, route }) {
         )}
 
         {!loading && visible.length > 0 && (
-          <View style={{ backgroundColor: BLUE, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}>
-            <Text style={{ color: '#DBEAFE', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+          <View style={{ backgroundColor: BLUE, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}>
+            <Text style={{ color: COLORS.accentSoft, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
               {(narrowed ? 'MATCHING ' : 'TOTAL ') + String(tabLabel).toUpperCase()} · {visible.length} BOOKING{visible.length === 1 ? '' : 'S'} · {projectNames.length} PROJECT{projectNames.length === 1 ? '' : 'S'}
             </Text>
-            {(!!stm || !!proj) && <Text style={{ color: '#DBEAFE', fontSize: 11, marginTop: 2 }} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
+            {(!!stm || !!proj) && <Text style={{ color: COLORS.accentSoft, fontSize: 11, marginTop: 2 }} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
             <Text style={{ color: '#fff', fontSize: 21, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
           </View>
         )}
 
-        {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : visible.length === 0 ? (
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : visible.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}>
             <Text style={{ color: MUTED, textAlign: 'center' }}>{ql ? `No bookings match “${q.trim()}”.` : (stm || proj) ? `No bookings for ${[stm, proj].filter(Boolean).join(' · ')}${dated ? ' in this date range' : ''}.` : dated ? 'No bookings were booked in this date range.' : 'No bookings here.'}</Text>
           </View>
@@ -436,14 +462,14 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           <View key={pn} style={{ marginBottom: 12 }}>
             <TouchableOpacity onPress={() => setOpenGroup((o) => ({ ...o, [pn]: !isOpen(pn) }))}
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, backgroundColor: COLORS.cardBg,
-                borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, borderWidth: 1.5, borderColor: isOpen(pn) ? '#C7D2FE' : 'transparent', ...CARD_SHADOW }}>
+                borderRadius: 22, paddingHorizontal: 14, paddingVertical: 13, borderWidth: 1.5, borderColor: isOpen(pn) ? COLORS.blue2 : 'transparent', ...CARD_SHADOW }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '800', color: BLUE, letterSpacing: 0.4 }} numberOfLines={1}>
-                  🏢 {String(pn).toUpperCase()}
+                  <AppIcon name="building" size={12} /> {String(pn).toUpperCase()}
                 </Text>
                 <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{groups[pn].length} booking{groups[pn].length === 1 ? '' : 's'}</Text>
               </View>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: '#0D47A1' }}>{rupee(projectTotal(pn))}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.accentDeep }}>{rupee(projectTotal(pn))}</Text>
               <Ionicons name={isOpen(pn) ? 'chevron-down' : 'chevron-forward'} size={16} color={MUTED} />
             </TouchableOpacity>
 
@@ -454,16 +480,16 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                 <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{b.client_name || '—'}{b.revision_no > 0 ? `  R${b.revision_no}` : ''}</Text>
                 {/* Project lives in the group header now — don't repeat it on every card. */}
                 <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{b.phone} · {unitLabel(b).isUnit ? `Unit ${unitLabel(b).text}` : unitLabel(b).text}</Text>
-                <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>STM: {b.stm_name || '—'} · {b.booking_date || '—'}</Text>
+                <Text style={{ fontSize: 11, color: COLORS.text3, marginTop: 3 }}>STM: {b.stm_name || '—'} · {b.booking_date || '—'}</Text>
                 {b.is_resale && b.resale_of_client ? (
-                  <Text style={{ fontSize: 11, color: '#0369A1', marginTop: 3, fontWeight: '600' }}>
+                  <Text style={{ fontSize: 11, color: COLORS.accentDeep, marginTop: 3, fontWeight: '600' }}>
                     {`Resold from ${b.resale_of_client}${b.stm_name ? ` · resold by ${b.stm_name}` : ''}`}
                   </Text>
                 ) : null}
                 <DecidedBy b={b} />
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: '#0D47A1' }}>{rupee(b.final_amount)}</Text>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.accentDeep }}>{rupee(b.final_amount)}</Text>
                 {/* Approved by Sales/CP is not a finished sale — the unit is on hold
                     until Accounts signs off, so the label says so. */}
                 <Text style={{ fontSize: 10, fontWeight: '800', marginTop: 4,
@@ -476,7 +502,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-              {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}>📄 LOI</Text></TouchableOpacity>}
+              {b.loi_document && <TouchableOpacity onPress={() => openLoi(b.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: BLUE, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> LOI</Text></TouchableOpacity>}
               {/* A revised deal gets its Details per version inside the history
                   instead — the current version is one of them, so a card-level copy
                   would be the same figures twice. */}
@@ -499,7 +525,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
               {b.status === 'draft' && (
                 <>
                   <TouchableOpacity onPress={() => navigation.navigate('BookingForm', { draft: b.id })} style={[btn, { backgroundColor: COLORS.link }]}><Text style={btnT}>▸ Resume</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={() => discardDraft(b.id)} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: '#FECACA' }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Discard</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => discardDraft(b.id)} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: COLORS.error2 }]}><Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Discard</Text></TouchableOpacity>
                 </>
               )}
               {/* The server decides per booking, not per person: a CP-sourced deal
@@ -508,22 +534,22 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                   themselves. Offering the buttons anyway made the tap fail silently. */}
               {b.status === 'pending' && isApprover && b.can_approve && (
                 <>
-                  <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}>✓ Approve</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}>✕ Reject</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
                 </>
               )}
               {b.status === 'sold' && (() => {
                 const isEoi = String(b.plot_numbers || '').toUpperCase().startsWith('EOI');
                 return (
                   <>
-                    {isEoi && <TouchableOpacity onPress={() => navigation.navigate('ClosureViewer', { projectId: b.project, convertEoi: b.id })} style={[btn, { backgroundColor: '#E4571A' }]}><Text style={btnT}>→ Convert to LOI</Text></TouchableOpacity>}
+                    {isEoi && <TouchableOpacity onPress={() => navigation.navigate('ClosureViewer', { projectId: b.project, convertEoi: b.id })} style={[btn, { backgroundColor: COLORS.warningSolid }]}><Text style={btnT}>→ Convert to LOI</Text></TouchableOpacity>}
                     <TouchableOpacity onPress={() => navigation.navigate('BookingForm', isEoi ? { revise: b.id, eoi: '1' } : { revise: b.id })} style={[btn, { backgroundColor: COLORS.purple }]}><Text style={btnT}>↻ {isEoi ? 'Revise EOI' : 'Revise'}</Text></TouchableOpacity>
                     {/* Only an approver can cancel, and only once the booking has a
                         closure to cancel through. */}
                     {isApprover && !!b.closure && (
                       <TouchableOpacity onPress={() => setToCancel(b)} disabled={busy === b.id}
-                        style={[btn, { backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA' }]}>
-                        <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}>✕ Cancel Booking</Text>
+                        style={[btn, { backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: COLORS.error2 }]}>
+                        <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Cancel Booking</Text>
                       </TouchableOpacity>
                     )}
                   </>
@@ -557,7 +583,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                       {v.loi_document
                         ? <TouchableOpacity onPress={() => openLoi(v.id)}
                             style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: COLORS.linkBg }}>
-                            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}>📄 LOI</Text>
+                            <Text style={{ color: BLUE, fontWeight: '700', fontSize: 12 }}><AppIcon name="file" size={12} /> LOI</Text>
                           </TouchableOpacity>
                         : <Text style={{ fontSize: 11, color: MUTED }}>no LOI on file</Text>}
                       <TouchableOpacity onPress={() => setRevDetails((o) => ({ ...o, [v.id]: !o[v.id] }))}
@@ -577,6 +603,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
             ))}
           </View>
         ))}
+        </>)}
       </ScrollView>
 
       <CancelBookingModal b={toCancel} busy={!!toCancel && busy === toCancel.id}
@@ -592,14 +619,14 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
   const doc = String(b?.plot_numbers || '').toUpperCase().startsWith('EOI') ? 'EOI' : 'LOI';
   return (
     <Modal visible={!!b} transparent animationType="fade" onRequestClose={busy ? undefined : onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'center', padding: 22 }}>
-        <View style={{ backgroundColor: COLORS.white, borderRadius: 16, padding: 20 }}>
+      <View style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'center', padding: 22 }}>
+        <View style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 20 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: COLORS.error, marginBottom: 6 }}>Cancel this booking?</Text>
           <Text style={{ fontSize: 13, color: MUTED, lineHeight: 20, marginBottom: 14 }}>
             This frees the unit back to available, permanently deletes the signed {doc} from
             storage, and removes it from conversions. This cannot be undone.
           </Text>
-          <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 10, padding: 12, marginBottom: 18 }}>
+          <View style={{ backgroundColor: COLORS.screenBg, borderRadius: 14, padding: 12, marginBottom: 18 }}>
             {[['Client', b?.client_name || '—'], ['Project', b?.project_name || '—'], ['Unit', unit], ['Amount', rupee(b?.final_amount)]].map(([k, v]) => (
               <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 3 }}>
                 <Text style={{ fontSize: 12, color: MUTED, fontWeight: '600' }}>{k}</Text>
@@ -609,11 +636,11 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
           </View>
           <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'flex-end' }}>
             <TouchableOpacity onPress={onClose} disabled={busy}
-              style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.white }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#334155' }}>Keep Booking</Text>
+              style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.textPrimary }}>Keep Booking</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onConfirm} disabled={busy}
-              style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: 9, backgroundColor: busy ? '#F3B4B4' : COLORS.error }}>
+              style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: 9, backgroundColor: busy ? COLORS.error2 : COLORS.error }}>
               <Text style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>{busy ? 'Cancelling…' : 'Yes, Cancel Booking'}</Text>
             </TouchableOpacity>
           </View>
@@ -624,3 +651,17 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
 }
 const btn = { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 };
 const btnT = { color: '#fff', fontWeight: '700', fontSize: 13 };
+
+const s = StyleSheet.create({
+  filterBar:        { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  filterSel:        { flexGrow: 1, flexBasis: 160, justifyContent: 'space-between' },
+  screenTitle:      { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
+  sectionTabs:      { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 6 },
+  sectionTab:       { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center',
+                      backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+  sectionTabOn:     { backgroundColor: COLORS.btnTint, borderColor: COLORS.btnBorder },
+  sectionTabText:   { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  sectionTabTextOn: { color: COLORS.btnText },
+  emptyCard:        { marginBottom: 12, paddingVertical: 26, alignItems: 'center' },
+  emptyText:        { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center' },
+});

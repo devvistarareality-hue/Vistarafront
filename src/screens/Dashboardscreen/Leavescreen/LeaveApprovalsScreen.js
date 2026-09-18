@@ -12,7 +12,7 @@ const LeaveApprovalsScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar backgroundColor={COLORS.screenBg} barStyle="dark-content" />
+      <StatusBar backgroundColor={COLORS.screenBg} barStyle={COLORS.statusBar} />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

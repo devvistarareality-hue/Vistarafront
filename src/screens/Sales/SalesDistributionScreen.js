@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  ActivityIndicator, Alert, StatusBar, RefreshControl,
-} from 'react-native';
+  ActivityIndicator, Alert, StatusBar, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
+import { withAlpha } from '../../constants/theme';
+import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 14, ...CARD_SHADOW, marginBottom: 16 };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW, marginBottom: 16 , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -27,7 +31,7 @@ function currentIST() {
 
 function WeightBar({ pct, color }) {
   return (
-    <View style={{ width: 52, height: 6, backgroundColor: color + '30', borderRadius: 4, overflow: 'hidden' }}>
+    <View style={{ width: 52, height: 6, backgroundColor: withAlpha(color, '30'), borderRadius: 4, overflow: 'hidden' }}>
       <View style={{ width: `${pct}%`, height: '100%', backgroundColor: color, borderRadius: 4 }} />
     </View>
   );
@@ -77,7 +81,7 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
   });
   const projectNames = Object.keys(byProject).sort();
   return (
-    <View style={{ marginHorizontal: 16, marginBottom: 12, borderWidth: 1.5, borderColor: border, borderRadius: 12, padding: 14, backgroundColor: COLORS.screenBg }}>
+    <View style={{ marginHorizontal: 16, marginBottom: 12, borderWidth: 1.5, borderColor: border, borderRadius: 16, padding: 14, backgroundColor: COLORS.screenBg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: dotColor }} />
         <SectionLabel color={headColor}>{title}</SectionLabel>
@@ -102,7 +106,7 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
                     const w   = weights[m.user_id] ?? 1;
                     const pct = total > 0 ? Math.round((w / total) * 100) : 0;
                     return (
-                      <View key={m.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.white, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: border, marginBottom: 7 }}>
+                      <View key={m.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.surface, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 10, borderWidth: 1, borderColor: border, marginBottom: 7 }}>
                         <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: TEXT }} numberOfLines={1}>{m.name}</Text>
                         <WeightBar pct={pct} color={barColor} />
                         <Text style={{ fontSize: 13, fontWeight: '700', color: headColor, width: 36, textAlign: 'right' }}>{pct}%</Text>
@@ -128,9 +132,9 @@ function ProjectRatioPanel({ title, dotColor, headColor, border, bg, barColor, s
             })
       }
       {noProject.length > 0 && (
-        <View style={{ marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: '#FEF3F2', borderWidth: 1, borderColor: '#FECDCA' }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#B42318', marginBottom: 3 }}>Not assigned to any project — won&apos;t receive leads:</Text>
-          <Text style={{ fontSize: 13, color: '#912018' }}>{noProject.map(m => m.name).join(', ')}</Text>
+        <View style={{ marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error2 }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.error, marginBottom: 3 }}>Not assigned to any project — won&apos;t receive leads:</Text>
+          <Text style={{ fontSize: 13, color: COLORS.errorStrong }}>{noProject.map(m => m.name).join(', ')}</Text>
         </View>
       )}
       </ScrollView>
@@ -148,6 +152,32 @@ export default function SalesDistributionScreen({ navigation }) {
   const [history, setHistory]     = useState([]);
   const [histLoading, setHistLoading] = useState(false);
   const [histDays, setHistDays]   = useState(7);         // trailing window
+  const [histDl,   setHistDl]     = useState(false);
+
+  // Download the sign-in history the card is showing, over the same trailing window.
+  // Saved and handed to the share sheet, the same route the lead import template takes.
+  async function downloadHistory() {
+    setHistDl(true);
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const from = isoDaysAgo(histDays - 1);
+      const target = `${FileSystem.cacheDirectory}Sign-in-History-${from}.xlsx`;
+      const { uri, status } = await FileSystem.downloadAsync(
+        `${SALES_ENDPOINTS.availabilityHistoryExport}?date_from=${from}`, target,
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (status === 403) { Alert.alert('No access', 'You do not have access to download this.'); return; }
+      if (status !== 200) { Alert.alert('Download failed', 'Could not build the sheet. Try again.'); return; }
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          dialogTitle: 'Sign-in history', UTI: 'org.openxmlformats.spreadsheetml.sheet' });
+      } else {
+        Alert.alert('Saved', 'Sheet saved to:\n' + uri);
+      }
+    } catch (e) {
+      Alert.alert('Download failed', e.message);
+    } finally { setHistDl(false); }
+  }
   const [allUsers,       setAllUsers]       = useState([]);
   const [weights,        setWeights]        = useState({});
   const [savedWeights,   setSavedWeights]   = useState({});
@@ -295,13 +325,13 @@ export default function SalesDistributionScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="arrow-back" size={22} color={NAVY} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 21, fontWeight: '800', color: TEXT }}>Lead Distribution</Text>
         <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
@@ -311,7 +341,7 @@ export default function SalesDistributionScreen({ navigation }) {
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={NAVY} />
+          <AppLoader />
         </View>
       ) : (
         <ScrollView
@@ -322,9 +352,9 @@ export default function SalesDistributionScreen({ navigation }) {
 
           {/* ═══ Stuck leads — the skip _distribute never surfaces on auto-runs ═══ */}
           {blocked.length > 0 && (
-            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+            <View style={{ borderWidth: 1.5, borderColor: COLORS.errorStrong, backgroundColor: COLORS.errorBg, borderRadius: 16, padding: 14, marginBottom: 14 }}>
               <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.errorStrong, marginBottom: 6 }}>
-                ⚠️ {blocked.reduce((n, b) => n + b.count, 0)} lead{blocked.reduce((n, b) => n + b.count, 0) === 1 ? '' : 's'} can never be distributed
+                <AppIcon name="alert" size={14} /> {blocked.reduce((n, b) => n + b.count, 0)} lead{blocked.reduce((n, b) => n + b.count, 0) === 1 ? '' : 's'} can never be distributed
               </Text>
               <Text style={{ fontSize: 12, color: COLORS.errorStrong, marginBottom: 10 }}>
                 Distribution skips a lead when nobody of the required role is assigned to its
@@ -346,7 +376,7 @@ export default function SalesDistributionScreen({ navigation }) {
           {/* ═══ 1. Distribution Settings ═══ */}
           <View style={CARD}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 12 }}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>⚙ Distribution Settings</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}><AppIcon name="settings" size={17} /> Distribution Settings</Text>
               {settingsForm === null && (
                 <TouchableOpacity onPress={() => setSettingsForm({ ...settings })}
                   style={{ paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8 }}>
@@ -366,7 +396,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
                     <Text style={{ fontSize: 15, fontWeight: '600', color: TEXT }}>{f.label}</Text>
                     <TextInput
-                      value={settingsForm[f.key] || ''} placeholder="HH:MM" placeholderTextColor="#666666"
+                      value={settingsForm[f.key] || ''} placeholder="HH:MM" placeholderTextColor={COLORS.text3}
                       onChangeText={v => setSettingsForm(s => ({ ...s, [f.key]: v }))}
                       style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, fontSize: 15, width: 100, textAlign: 'center', color: TEXT }}
                     />
@@ -374,10 +404,10 @@ export default function SalesDistributionScreen({ navigation }) {
                 ))}
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
                   <TouchableOpacity onPress={saveSettings} disabled={savingSettings}
-                    style={{ flex: 1, paddingVertical: 12, backgroundColor: NAVY, borderRadius: 9, alignItems: 'center', opacity: savingSettings ? 0.6 : 1 }}>
+                    style={{ flex: 1, paddingVertical: 12, backgroundColor: COLORS.btnTint, borderRadius: 9, alignItems: 'center', opacity: savingSettings ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
                     {savingSettings
-                      ? <ActivityIndicator color={COLORS.white} size="small" />
-                      : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>Save Settings</Text>}
+                      ? <ActivityIndicator color={COLORS.btnText} size="small" />
+                      : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 15 }}>Save Settings</Text>}
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => setSettingsForm(null)}
                     style={{ flex: 1, paddingVertical: 12, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, alignItems: 'center' }}>
@@ -391,7 +421,7 @@ export default function SalesDistributionScreen({ navigation }) {
                   { role: 'TELECALLER', signin: settings.tc_signin_time, signout: settings.tc_signout_time },
                   { role: 'STM',        signin: settings.stm_signin_time, signout: settings.stm_signout_time },
                 ].map(({ role, signin, signout }) => (
-                  <View key={role} style={{ flex: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 13 }}>
+                  <View key={role} style={{ flex: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 13 }}>
                     <SectionLabel>{role}</SectionLabel>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 9, marginBottom: 6 }}>
                       <Text style={{ fontSize: 13, color: MUTED }}>Sign-in</Text>
@@ -410,13 +440,13 @@ export default function SalesDistributionScreen({ navigation }) {
           {/* ═══ 2. Today's Availability ═══ */}
           <View style={CARD}>
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 12, gap: 8 }}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, flex: 1 }}>👥 Availability</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT, flex: 1 }}><AppIcon name="users" size={17} /> Availability</Text>
               {[['today', 'Today'], ['history', 'History']].map(([k, lbl]) => {
                 const on = availTab === k;
                 return (
                   <TouchableOpacity key={k} onPress={() => setAvailTab(k)}
                     style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5,
-                      borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.white }}>
+                      borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? BLUE : COLORS.surface }}>
                     <Text style={{ fontSize: 12, fontWeight: '700', color: on ? '#fff' : MUTED }}>{lbl}</Text>
                   </TouchableOpacity>
                 );
@@ -431,11 +461,21 @@ export default function SalesDistributionScreen({ navigation }) {
                     return (
                       <TouchableOpacity key={n} onPress={() => setHistDays(n)}
                         style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5,
-                          borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? COLORS.linkBg : COLORS.white }}>
+                          borderColor: on ? BLUE : COLORS.border, backgroundColor: on ? COLORS.linkBg : COLORS.surface }}>
                         <Text style={{ fontSize: 12, fontWeight: '700', color: on ? BLUE : MUTED }}>{n} days</Text>
                       </TouchableOpacity>
                     );
                   })}
+                  {/* The same records this card is showing, over the same window — a
+                      sheet is the form you sort and pivot them in. */}
+                  <TouchableOpacity onPress={downloadHistory} disabled={histDl}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginLeft: 'auto',
+                             paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+                             backgroundColor: COLORS.btnTintSuccess, opacity: histDl ? 0.7 : 1 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+                    {histDl ? <ActivityIndicator size="small" color="#fff" />
+                            : <Ionicons name="download-outline" size={14} color="#fff" />}
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.btnTextSuccess }}>{histDl ? 'Preparing…' : 'Excel'}</Text>
+                  </TouchableOpacity>
                 </View>
                 {/* Fixed height with its own scroll, matching web. nestedScrollEnabled so
                     it works inside the screen's ScrollView on Android. */}
@@ -487,7 +527,7 @@ export default function SalesDistributionScreen({ navigation }) {
                       <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
                         style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 }}>
                         <Text style={{ fontSize: 18, color: a.is_available ? COLORS.successAlt : COLORS.divider, fontWeight: '800', width: 20 }}>
-                          {a.is_available ? '✓' : '✗'}
+                          {a.is_available ? <AppIcon name="check" size={18} /> : <AppIcon name="x" size={18} />}
                         </Text>
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -516,7 +556,7 @@ export default function SalesDistributionScreen({ navigation }) {
                       <TouchableOpacity key={a.user_id} onPress={() => toggleAvailability(a.user_id, a.is_available)}
                         style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 }}>
                         <Text style={{ fontSize: 18, color: a.is_available ? COLORS.successAlt : COLORS.divider, fontWeight: '800', width: 20 }}>
-                          {a.is_available ? '✓' : '✗'}
+                          {a.is_available ? <AppIcon name="check" size={18} /> : <AppIcon name="x" size={18} />}
                         </Text>
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -542,14 +582,14 @@ export default function SalesDistributionScreen({ navigation }) {
             <View style={CARD}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', padding: 16, paddingBottom: 12 }}>
                 <View>
-                  <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>📊 Lead Distribution Ratio</Text>
+                  <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}><AppIcon name="chart" size={17} /> Lead Distribution Ratio</Text>
                   <Text style={{ fontSize: 13, color: MUTED, marginTop: 3 }}>Higher weight = more leads assigned</Text>
                 </View>
                 <TouchableOpacity onPress={saveWeights} disabled={savingWeights || !weightsChanged}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 8, opacity: (!weightsChanged || savingWeights) ? 0.4 : 1 }}>
+                  style={[SalesDistributionScreenS.btn, (!weightsChanged || savingWeights) && SalesDistributionScreenS.btnDim]}>
                   {savingWeights
-                    ? <ActivityIndicator size="small" color={COLORS.white} />
-                    : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
+                    ? <ActivityIndicator size="small" color={COLORS.btnText} />
+                    : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
                 </TouchableOpacity>
               </View>
 
@@ -621,11 +661,11 @@ export default function SalesDistributionScreen({ navigation }) {
                   )}
 
                   <TouchableOpacity onPress={() => triggerDist(type)} disabled={disabled}
-                    style={{ paddingVertical: 14, backgroundColor: NAVY, borderRadius: 10, alignItems: 'center', opacity: disabled ? 0.45 : 1 }}>
+                    style={[SalesDistributionScreenS.btn2, (disabled) && SalesDistributionScreenS.btn2Dim]}>
                     {distributing === type
-                      ? <ActivityIndicator color={COLORS.white} size="small" />
-                      : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>
-                          ⚡ Distribute to {type === 'telecaller' ? 'Telecallers' : 'STMs'}
+                      ? <ActivityIndicator color={COLORS.btnText} size="small" />
+                      : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 15 }}>
+                          <AppIcon name="zap" size={15} /> Distribute to {type === 'telecaller' ? 'Telecallers' : 'STMs'}
                         </Text>}
                   </TouchableOpacity>
 
@@ -641,8 +681,8 @@ export default function SalesDistributionScreen({ navigation }) {
 
           {/* ═══ 6. Distribution History ═══ */}
           <View style={CARD}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.white, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}>🕐 Recent Distribution History</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, backgroundColor: COLORS.surface, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: TEXT }}><AppIcon name="clock" size={17} /> Recent Distribution History</Text>
               {distLog.length > 0 && (
                 <TouchableOpacity onPress={clearLog}>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.error }}>Clear</Text>
@@ -678,3 +718,11 @@ export default function SalesDistributionScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const SalesDistributionScreenS = StyleSheet.create({
+  btn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 8, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btnDim: { opacity: 0.4 },
+  btn2: { paddingVertical: 14, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
+  btn2Dim: { opacity: 0.45 },
+});

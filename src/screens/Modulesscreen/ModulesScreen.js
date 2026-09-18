@@ -1,10 +1,13 @@
 import React, { useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW, MODULE_ACCENT } from '../../constants/theme';
+import ThemeToggle from '../../components/ThemeToggle';
+import AppLoader from '../../components/AppLoader';
+import { FadeInUp } from '../../components/ui';
 
 const MODULE_CONFIG = {
   Sales: {
@@ -81,15 +84,15 @@ const ModulesScreen = () => {
   // Never render blank: show a brief loader while the redirect above runs.
   if (userModules.length === 1) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={COLORS.link} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
+        <AppLoader size={0.7} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.screenBg} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }}>
 
         {/* ── Top Bar ── */}
@@ -102,20 +105,21 @@ const ModulesScreen = () => {
             <Text style={{ fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' }}>Welcome back</Text>
             <Text style={{ fontSize: 20, fontWeight: '800', color: COLORS.textPrimary }}>{user?.name || '—'}</Text>
           </View>
+          <ThemeToggle compact />
         </View>
 
         {/* ── Module Manager Banner ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
           <View style={{
-            backgroundColor: COLORS.navy, borderRadius: 18, padding: 18,
+            backgroundColor: COLORS.panel, borderRadius: 28, padding: 18,
             flexDirection: 'row', alignItems: 'center',
-          }}>
+           shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
             <View style={{
-              width: 48, height: 48, borderRadius: 14,
-              backgroundColor: 'rgba(175,210,250,0.18)',
+              width: 48, height: 48, borderRadius: 18,
+              backgroundColor: 'rgba(162,210,255,0.18)',
               justifyContent: 'center', alignItems: 'center', marginRight: 14,
             }}>
-              <Ionicons name="grid" size={24} color={COLORS.white} />
+              <Ionicons name="grid" size={24} color={COLORS.blue} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.white, marginBottom: 3 }}>
@@ -126,11 +130,11 @@ const ModulesScreen = () => {
               </Text>
             </View>
             <View style={{
-              backgroundColor: COLORS.gold, borderRadius: 8,
+              backgroundColor: COLORS.peach, borderRadius: 999,
               paddingHorizontal: 10, paddingVertical: 5,
             }}>
               <Text style={{
-                color: COLORS.white, fontSize: 10, fontWeight: '800',
+                color: COLORS.ink, fontSize: 10, fontWeight: '800',
                 textTransform: 'uppercase', letterSpacing: 0.8,
               }}>SOON</Text>
             </View>
@@ -158,38 +162,19 @@ const ModulesScreen = () => {
           </View>
         ) : (
           <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {userModules.map((mod) => {
+            {userModules.map((mod, idx) => {
               const accent = mod.accent || { bg: COLORS.linkBg, icon: COLORS.link };
               return (
-                <TouchableOpacity
-                  key={mod.key}
-                  style={{
-                    width: '47%',
-                    backgroundColor: COLORS.cardBg,
-                    borderRadius: 18,
-                    padding: 16,
-                    ...CARD_SHADOW,
-                  }}
-                  activeOpacity={0.85}
-                  onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}
-                >
-                  <View style={{
-                    width: 48, height: 48, borderRadius: 14,
-                    backgroundColor: accent.bg,
-                    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
-                  }}>
-                    <Ionicons name={mod.icon} size={24} color={accent.icon} />
-                  </View>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 3 }}>
-                    {mod.label}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginBottom: 10 }}>
-                    {mod.sub}
-                  </Text>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: accent.icon }}>
-                    Open →
-                  </Text>
-                </TouchableOpacity>
+                <FadeInUp key={mod.key} index={idx} style={{ width: '47%' }}>
+                  <TouchableOpacity activeOpacity={0.85} style={s.tile}
+                    onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}>
+                    <View style={[s.tileBadge, { backgroundColor: accent.bg }]}>
+                      <Ionicons name={mod.icon} size={22} color={accent.icon} />
+                    </View>
+                    <Text style={s.tileLabel} numberOfLines={2}>{mod.label}</Text>
+                    <Text style={s.tileSub} numberOfLines={2}>{mod.sub}</Text>
+                  </TouchableOpacity>
+                </FadeInUp>
               );
             })}
           </View>
@@ -201,3 +186,14 @@ const ModulesScreen = () => {
 };
 
 export default ModulesScreen;
+
+const s = StyleSheet.create({
+  tile: {
+    width: '100%', backgroundColor: COLORS.surface, borderRadius: 22,
+    paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8,
+    borderWidth: 1, borderColor: COLORS.cardBorder, ...CARD_SHADOW,
+  },
+  tileBadge: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+  tileLabel: { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center' },
+  tileSub: { fontSize: 11, color: COLORS.textSecondary, textAlign: 'center' },
+});

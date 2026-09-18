@@ -8,26 +8,28 @@ import { NOTIFICATION_ENDPOINTS } from '../../constants/api';
 import { routeForNotifType } from '../../navigation/notifRouting';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
+import AppIcon from '../../components/AppIcon';
+import AppLoader from '../../components/AppLoader';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const NAVY = COLORS.navy; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 12, padding: 14, ...CARD_SHADOW };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const TYPE_STYLE = {
-  new_lead:         { icon: 'person-add',       color: '#2E7D32', bg: '#E7F6EC' },
-  followup:         { icon: 'call',             color: '#3D5AFE', bg: '#EAEEFF' },
-  sv:               { icon: 'location',         color: '#0D9488', bg: '#DCF4F1' },
-  sv_done:          { icon: 'checkmark-done',   color: '#2E7D32', bg: '#E7F6EC' },
-  booking_approval: { icon: 'document-text',    color: '#B45309', bg: '#FEF3C7' },
-  booking_approved: { icon: 'trophy',           color: '#15803D', bg: '#DCFCE7' },
-  booking_rejected: { icon: 'close-circle',     color: '#DC2626', bg: '#FEE2E2' },
-  closure:          { icon: 'ribbon',           color: '#7C3AED', bg: '#F1E8FF' },
-  overdue:          { icon: 'alarm',            color: '#DC2626', bg: '#FEE2E2' },
-  followup_overdue: { icon: 'alarm',            color: '#DC2626', bg: '#FEE2E2' },
-  sv_overdue:       { icon: 'alarm',            color: '#DC2626', bg: '#FEE2E2' },
-  mark_available:   { icon: 'radio-button-on',  color: '#15803D', bg: '#DCFCE7' },
-  availability_reminder: { icon: 'radio-button-on', color: '#15803D', bg: '#DCFCE7' },
-  test:             { icon: 'notifications',    color: '#3D5AFE', bg: '#EAEEFF' },
+  new_lead:         { icon: 'person-add',       color: COLORS.success, bg: COLORS.successBg },
+  followup:         { icon: 'call',             color: COLORS.link, bg: COLORS.accentSoft },
+  sv:               { icon: 'location',         color: COLORS.success, bg: COLORS.successBg },
+  sv_done:          { icon: 'checkmark-done',   color: COLORS.success, bg: COLORS.successBg },
+  booking_approval: { icon: 'document-text',    color: COLORS.warning, bg: COLORS.warningBg },
+  booking_approved: { icon: 'trophy',           color: COLORS.success, bg: COLORS.successBg },
+  booking_rejected: { icon: 'close-circle',     color: COLORS.error, bg: COLORS.errorBg },
+  closure:          { icon: 'ribbon',           color: COLORS.link, bg: COLORS.accentSoft },
+  overdue:          { icon: 'alarm',            color: COLORS.error, bg: COLORS.errorBg },
+  followup_overdue: { icon: 'alarm',            color: COLORS.error, bg: COLORS.errorBg },
+  sv_overdue:       { icon: 'alarm',            color: COLORS.error, bg: COLORS.errorBg },
+  mark_available:   { icon: 'radio-button-on',  color: COLORS.success, bg: COLORS.successBg },
+  availability_reminder: { icon: 'radio-button-on', color: COLORS.success, bg: COLORS.successBg },
+  test:             { icon: 'notifications',    color: COLORS.link, bg: COLORS.accentSoft },
 };
-const styleFor = (t) => TYPE_STYLE[t] || { icon: 'notifications', color: '#3D5AFE', bg: '#EAEEFF' };
+const styleFor = (t) => TYPE_STYLE[t] || { icon: 'notifications', color: COLORS.link, bg: COLORS.accentSoft };
 
 function ago(iso) {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
@@ -54,19 +56,19 @@ export default function NotificationsScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.screenBg, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="arrow-back" size={20} color={NAVY} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.screenBg, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Notifications</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
-        {loading ? <ActivityIndicator color={BLUE} style={{ marginTop: 30 }} /> : rows.length === 0 ? (
-          <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up 🎉</Text></View>
+        {loading ? <AppLoader style={{ marginTop: 24 }} /> : rows.length === 0 ? (
+          <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up <AppIcon name="party" size={15} /></Text></View>
         ) : rows.map((n) => {
           const target = routeForNotifType(n.type);
           const st = styleFor(n.type);
@@ -74,17 +76,17 @@ export default function NotificationsScreen({ navigation }) {
           <TouchableOpacity key={n.id} activeOpacity={target ? 0.7 : 1} onPress={() => target && navigation.navigate(target.screen, target.params)}
             style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14,
               borderLeftWidth: n.is_read ? 0 : 3, borderLeftColor: st.color,
-              backgroundColor: n.is_read ? COLORS.cardBg : '#FBFCFF' }]}>
+              backgroundColor: n.is_read ? COLORS.cardBg : COLORS.accentSofter }]}>
             <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: st.bg, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name={st.icon} size={20} color={st.color} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT }}>{n.title}</Text>
               {!!n.body && <Text style={{ fontSize: 12.5, color: MUTED, marginTop: 2, lineHeight: 17 }}>{n.body}</Text>}
-              <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{ago(n.created_at)}</Text>
+              <Text style={{ fontSize: 11, color: COLORS.textTertiary, marginTop: 4 }}>{ago(n.created_at)}</Text>
             </View>
             {!n.is_read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: st.color }} />}
-            {!!target && <Ionicons name="chevron-forward" size={16} color="#C4CDDA" />}
+            {!!target && <Ionicons name="chevron-forward" size={16} color={COLORS.borderStrong} />}
           </TouchableOpacity>
           );
         })}

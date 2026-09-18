@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { COLORS } from '../constants/theme';
 import { Animated, Text, StyleSheet, View } from 'react-native';
+import { COLORS, SHADOWS } from '../constants/theme';
+import AppIcon from './AppIcon';
 
-const BG = {
-  success: COLORS.success,
-  error:   COLORS.errorStrong,
-  info:    COLORS.linkPressed,
+// White card with a tinted icon badge — same toast design as the website.
+const KIND = {
+  success: { icon: 'check-circle', color: COLORS.success,  bg: COLORS.successBg },
+  error:   { icon: 'alert',        color: COLORS.error,    bg: COLORS.errorBg },
+  info:    { icon: 'info',         color: COLORS.link,     bg: COLORS.linkBg },
 };
 
 const Toast = ({ visible, message, type = 'success', duration = 2500, onHide }) => {
@@ -31,9 +33,13 @@ const Toast = ({ visible, message, type = 'success', duration = 2500, onHide }) 
   }, [visible]);
 
   if (!visible) return null;
+  const kind = KIND[type] ?? KIND.info;
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor: BG[type] ?? BG.info, transform: [{ translateY }], opacity }]}>
+    <Animated.View style={[styles.container, { transform: [{ translateY }], opacity }]}>
+      <View style={[styles.badge, { backgroundColor: kind.bg }]}>
+        <AppIcon name={kind.icon} size={18} color={kind.color} />
+      </View>
       <Text style={styles.message}>{message}</Text>
     </Animated.View>
   );
@@ -45,21 +51,25 @@ const styles = StyleSheet.create({
     top:          12,
     left:         16,
     right:        16,
-    borderRadius: 10,
-    paddingVertical:   12,
-    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems:   'center',
+    gap:          12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
+    paddingVertical:   10,
+    paddingHorizontal: 12,
     zIndex:       999,
-    elevation:    8,
-    shadowColor:  COLORS.black,
-    shadowOpacity: 0.2,
-    shadowOffset:  { width: 0, height: 2 },
-    shadowRadius:  4,
+    ...SHADOWS.lg,
+  },
+  badge: {
+    width: 34, height: 34, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
   },
   message: {
-    color:      COLORS.white,
+    flex:       1,
+    color:      COLORS.textPrimary,
     fontSize:   14,
     fontWeight: '600',
-    textAlign:  'center',
   },
 });
 
