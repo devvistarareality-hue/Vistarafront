@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch } from 'react-redux';
 import { discoverServer } from '../../utils/serverDiscovery';
 import { setBaseUrl, API_PROXY_URL } from '../../constants/api';
-import { loadUser } from '../../redux/actions/authActions';
+import { loadUser, restoreUser } from '../../redux/actions/authActions';
 import { restoreAdminFilter } from '../../redux/reducers/adminFilterReducer';
 import images from '../../constants/images';
 
@@ -30,7 +30,13 @@ const SplashScreen = ({ onFinish }) => {
       .then((url) => { if (url) setBaseUrl(url); })
       .catch(() => {});
 
-    Promise.all([discovery, minDelay]).then(() => {
+    // The cached user must be in the store *before* the navigator mounts,
+    // otherwise its first frame is the login stack and the app visibly jumps to
+    // the home screen a moment later. Reading it is local, so it is awaited;
+    // the /auth/me/ refresh below is not.
+    const restore = dispatch(restoreUser()).catch(() => {});
+
+    Promise.all([discovery, minDelay, restore]).then(() => {
       if (cancelled) return;
       // Refresh the cached user (picks up is_approver, role changes, etc.)
       dispatch(restoreAdminFilter());

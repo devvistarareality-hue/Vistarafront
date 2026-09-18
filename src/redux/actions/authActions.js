@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseUrl } from '../../constants/api';
+import { readCachedUser, clearCachedUser } from '../../utils/authCache';
 
 // react-native-onesignal is a native module absent in Expo Go; load it lazily
 // so auth still works there. Push identity (login/logout) only runs in real builds.
@@ -19,10 +20,21 @@ import {
   LOGOUT,
 } from '../types/authTypes';
 
+// Put the last signed-in user back in the store from local storage. This is a
+// storage read only, so the splash can await it and the navigator's first frame
+// is already the right stack — no login screen flash on relaunch. loadUser()
+// then refreshes the profile from the server in the background.
+export const restoreUser = () => async (dispatch) => {
+  const user = await readCachedUser();
+  if (!user) return false;
+  dispatch({ type: LOGIN_SUCCESS, payload: user });
+  return true;
+};
+
 export const loadUser = () => async (dispatch) => {
   try {
     const token = await AsyncStorage.getItem('access_token');
-    if (!token) return;
+    if (!token) { await clearCachedUser(); dispatch({ type: LOGOUT }); return; }
     const res = await fetch(`${getBaseUrl()}/api/auth/me/`, {
       headers: { Authorization: `Bearer ${token}` },
     });
