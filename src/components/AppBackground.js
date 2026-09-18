@@ -1,6 +1,6 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import Svg, { Defs, LinearGradient, RadialGradient, Stop, Rect } from 'react-native-svg';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Animated, Easing, View, AccessibilityInfo } from 'react-native';
+import Svg, { Defs, LinearGradient, RadialGradient, Stop, Rect, Circle } from 'react-native-svg';
 import { COLORS } from '../constants/theme';
 
 // App-wide backdrop matching the website: a warm (dark) / blue (light) glow from
@@ -10,9 +10,61 @@ const SCENE = COLORS.isDark
   ? { top: '#0B0908', bottom: '#030303', glow: '#FF6020', glowO: 0.30, haze: '#BEC8D7', hazeO: 0.10, lift: '#FF6E2D', liftO: 0.06 }
   : { top: '#F8FBFF', bottom: '#E6EEF8', glow: '#3777C4', glowO: 0.22, haze: '#96B4DC', hazeO: 0.30, lift: '#3777C4', liftO: 0.08 };
 
+// Blurred gradient bubbles drifting slowly (same idea as the website's backdrop).
+const BUBBLES = COLORS.isDark
+  ? [{ c: '#FF6020', o: 0.22, size: 360, x: '48%', y: -120, dx: 50, dy: 40, t: 17000 },
+     { c: '#FFA05A', o: 0.12, size: 300, x: '62%', y: 280, dx: -40, dy: 60, t: 21000 },
+     { c: '#AAB9D7', o: 0.08, size: 320, x: '-20%', y: 520, dx: 60, dy: -40, t: 19000 },
+     { c: '#C83C14', o: 0.14, size: 220, x: '10%', y: 180, dx: 40, dy: 50, t: 23000 }]
+  : [{ c: '#3777C4', o: 0.20, size: 360, x: '48%', y: -120, dx: 50, dy: 40, t: 17000 },
+     { c: '#78B4F0', o: 0.24, size: 300, x: '62%', y: 280, dx: -40, dy: 60, t: 21000 },
+     { c: '#6EC8BE', o: 0.14, size: 320, x: '-20%', y: 520, dx: 60, dy: -40, t: 19000 },
+     { c: '#1F5490', o: 0.12, size: 220, x: '10%', y: 180, dx: 40, dy: 50, t: 23000 }];
+
+function Bubble({ b, i, still }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (still) return undefined;
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(v, { toValue: 1, duration: b.t, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      Animated.timing(v, { toValue: 0, duration: b.t, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [still]);
+  const translateX = v.interpolate({ inputRange: [0, 1], outputRange: [0, b.dx] });
+  const translateY = v.interpolate({ inputRange: [0, 1], outputRange: [0, b.dy] });
+  const scale = v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.08, 0.96] });
+  return (
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: b.x, top: b.y, width: b.size, height: b.size, transform: [{ translateX }, { translateY }, { scale }] }}>
+      <Svg width={b.size} height={b.size}>
+        <Defs>
+          <RadialGradient id={`bub${i}`} cx="0.5" cy="0.5" r="0.5">
+            <Stop offset="0" stopColor={b.c} stopOpacity={b.o} />
+            <Stop offset="0.55" stopColor={b.c} stopOpacity={b.o * 0.45} />
+            <Stop offset="1" stopColor={b.c} stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={b.size / 2} cy={b.size / 2} r={b.size / 2} fill={`url(#bub${i})`} />
+      </Svg>
+    </Animated.View>
+  );
+}
+
+function Bubbles() {
+  const [still, setStill] = React.useState(false);
+  useEffect(() => { AccessibilityInfo.isReduceMotionEnabled?.().then((r) => setStill(!!r)).catch(() => {}); }, []);
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {BUBBLES.map((b, i) => <Bubble key={i} b={b} i={i} still={still} />)}
+    </View>
+  );
+}
+
 export default function AppBackground() {
   const s = SCENE;
   return (
+    <>
     <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" pointerEvents="none">
       <Defs>
         <LinearGradient id="base" x1="0" y1="0" x2="0" y2="1">
@@ -38,5 +90,7 @@ export default function AppBackground() {
       <Rect x="0" y="0" width="100%" height="100%" fill="url(#haze)" />
       <Rect x="0" y="0" width="100%" height="100%" fill="url(#lift)" />
     </Svg>
+    <Bubbles />
+    </>
   );
 }
