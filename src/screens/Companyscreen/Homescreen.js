@@ -256,7 +256,7 @@ const s = StyleSheet.create({
     shadowOpacity: 0.12, shadowRadius: 10, elevation: 3,
   },
   input: {
-    flex: 1, fontSize: 15, color: COLORS.navyDark, fontWeight: '600',
+    flex: 1, fontSize: 15, color: COLORS.textPrimary, fontWeight: '600',
     letterSpacing: 1,
   },
 

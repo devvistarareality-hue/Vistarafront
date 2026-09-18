@@ -218,7 +218,7 @@ const LoginScreen = () => {
               <>
                 <Text style={s.cardTitle}>Verify OTP</Text>
                 <Text style={s.cardSub}>
-                  Code sent to{otpEmail ? <Text style={{ fontWeight: '700', color: COLORS.navyDark }}> {otpEmail}</Text> : null}
+                  Code sent to{otpEmail ? <Text style={s.otpTarget}> {otpEmail}</Text> : null}
                 </Text>
 
                 <Text style={s.fieldLabel}>ENTER OTP</Text>
@@ -442,6 +442,7 @@ const s = StyleSheet.create({
     backgroundColor: ORANGE, borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
   },
   cardTitle: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 6, marginTop: 8 },
+  otpTarget: { fontWeight: '700', color: COLORS.textPrimary },
   cardSub:   { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500', marginBottom: 28 },
 
   fieldLabel: {
@@ -456,7 +457,7 @@ const s = StyleSheet.create({
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12, shadowRadius: 10, elevation: 3,
   },
-  input: { flex: 1, fontSize: 15, color: COLORS.navyDark, fontWeight: '600' },
+  input: { flex: 1, fontSize: 15, color: COLORS.textPrimary, fontWeight: '600' },
 
   btn: {
     height: 56, borderRadius: 20,
