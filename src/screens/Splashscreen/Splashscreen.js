@@ -51,7 +51,10 @@ const SplashScreen = ({ onFinish }) => {
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
+    // The root carries the gradient's first colour itself: <LinearGradient> is a
+    // native view and paints a frame or two after the JS tree mounts, so without
+    // this the first frame was the rings and text floating on a white window.
+    <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.black} />
 
       <LinearGradient
@@ -98,6 +101,8 @@ const SplashScreen = ({ onFinish }) => {
 };
 
 const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: COLORS.black },
+
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   blobTop: {
