@@ -26,7 +26,7 @@ const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginBottom: 12, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, marginBottom: 12, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const safeDate = (s) => { const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s || '')); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; };
 
 export default function BookingFormScreen({ navigation, route }) {
@@ -1297,7 +1297,7 @@ export default function BookingFormScreen({ navigation, route }) {
         </View>); })()}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity onPress={saveDraft} disabled={saving || !projectId || pratBookMissing}
-            style={{ flex: 1, backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
+            style={{ flex: 1, backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 22, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
             {saving ? <ActivityIndicator color={COLORS.link} /> : <Text style={{ color: COLORS.link, fontWeight: '800', fontSize: 15 }}><AppIcon name="save" size={15} /> Save Draft</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={submit} disabled={saving || pratBookMissing} style={{ flex: 1, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: (saving || pratBookMissing) ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>

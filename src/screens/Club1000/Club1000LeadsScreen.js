@@ -17,7 +17,7 @@ import AppLoader from '../../components/AppLoader';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const STATUS_COLOR = {
   new: { bg: COLORS.linkBg, fg: COLORS.link },
@@ -57,7 +57,7 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)}
-        style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }, triggerStyle]}>
+        style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 }, triggerStyle]}>
         <Text style={{ fontSize: 14, color: selected ? TEXT : MUTED, fontWeight: selected ? '600' : '400' }}>
           {selected ? selected.label : placeholder}
         </Text>

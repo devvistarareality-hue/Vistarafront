@@ -15,7 +15,7 @@ export default StyleSheet.create({
 
   card: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg,
-    borderRadius: 18, padding: 14, marginBottom: 10, ...CARD_SHADOW,
+    borderRadius: 22, padding: 14, marginBottom: 10, ...CARD_SHADOW,
    borderWidth: 1, borderColor: COLORS.cardBorder },
 
   avatarSection: { alignItems: 'center', width: width * 0.16, marginRight: 12 },

@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardBg,
     margin: 20,
     marginBottom: 0,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     ...CARD_SHADOW,
    borderWidth: 1, borderColor: COLORS.cardBorder },
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.cardBg,
     margin: 20,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     ...CARD_SHADOW,
    borderWidth: 1, borderColor: COLORS.cardBorder },

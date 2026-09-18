@@ -13,7 +13,7 @@ import ExportBookings from '../../components/ExportBookings';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 // Same tabs as Bookings & Approvals, minus Drafts: this list is what you submitted,

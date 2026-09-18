@@ -17,7 +17,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW, marginBottom: 16 , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW, marginBottom: 16 , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');

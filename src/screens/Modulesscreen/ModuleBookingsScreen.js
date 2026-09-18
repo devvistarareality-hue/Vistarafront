@@ -17,7 +17,7 @@ import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const TEAL = COLORS.success;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const isEoi = (b) => String(b.plot_numbers || '').toUpperCase().startsWith('EOI');
 // Due dates are stored yyyy-mm-dd; show them as dd-mm-yyyy. This moved out with

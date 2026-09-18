@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     alignItems:   'center',
     gap:          12,
     backgroundColor: COLORS.surface,
-    borderRadius: 20,
+    borderRadius: 22,
     paddingVertical:   10,
     paddingHorizontal: 12,
     zIndex:       999,

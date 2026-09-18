@@ -15,7 +15,7 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const SV_COLOR = { scheduled: COLORS.warning, completed: COLORS.success, no_show: COLORS.error, cancelled: COLORS.textSecondary };
 const OUTCOME_COLOR = { hot: COLORS.error, warm: COLORS.warning, cold: COLORS.link, not_interested: COLORS.textSecondary };
@@ -40,8 +40,8 @@ const endOfToday   = () => { const d = new Date(); d.setHours(23, 59, 59, 999); 
 const defaultDate  = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d; };
 
 const lblS = { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.5, marginBottom: 6, marginTop: 4 };
-const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
-const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.surface };
+const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
+const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.surface };
 
 export default function SalesSiteVisitsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);

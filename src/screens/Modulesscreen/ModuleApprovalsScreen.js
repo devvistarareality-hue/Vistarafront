@@ -17,7 +17,7 @@ import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 const TEAL = COLORS.success;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const isEoi = (b) => String(b.plot_numbers || '').toUpperCase().startsWith('EOI');
 
@@ -52,7 +52,7 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
   return (
     <Modal visible transparent animationType="fade" onRequestClose={busy ? undefined : onClose}>
       <View style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'center', padding: 20 }}>
-        <View style={{ backgroundColor: COLORS.surface, borderRadius: 20, padding: 20 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+        <View style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 20 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
           <Text style={{ fontSize: 16, fontWeight: '800', color: COLORS.error, marginBottom: 6 }}>Cancel this booking?</Text>
           <Text style={{ fontSize: 13, color: MUTED, lineHeight: 20, marginBottom: 14 }}>
             {`This frees the unit back to available, permanently deletes the signed ${isEoi(b) ? 'EOI' : 'LOI'} from storage, and removes it from conversions. It will then show under Cancelled in Bookings. This cannot be undone.`}

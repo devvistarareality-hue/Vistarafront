@@ -11,7 +11,7 @@ import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const RED = COLORS.error; const BLUE = COLORS.link || COLORS.primary || COLORS.link;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const ITEMS = [
   ['leads', 'Leads'],
@@ -169,10 +169,10 @@ export default function SalesDataResetScreen({ navigation }) {
           <Text style={{ fontSize: 13, color: COLORS.errorStrong, marginBottom: 12 }}>Take a database backup first. Then type DELETE and enter the reset key.</Text>
           <TextInput value={confirmText} onChangeText={setConfirmText} placeholder="Type DELETE" autoCapitalize="characters"
             placeholderTextColor={COLORS.shadow}
-            style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
+            style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
           <TextInput value={resetKey} onChangeText={setResetKey} placeholder="Reset key"
             secureTextEntry autoCapitalize="none" placeholderTextColor={COLORS.shadow}
-            style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
+            style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
           <TouchableOpacity onPress={confirmReset} disabled={confirmText !== 'DELETE' || !resetKey.trim() || busy || nothingSelected}
             style={{ backgroundColor: (confirmText === 'DELETE' && !!resetKey.trim() && !busy && !nothingSelected) ? RED : COLORS.error2, borderRadius: 14, paddingVertical: 13, alignItems: 'center' }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>{nothingSelected ? 'Select at least one item' : !resetKey.trim() ? 'Enter the reset key' : `Permanently delete ${total} records`}</Text>}

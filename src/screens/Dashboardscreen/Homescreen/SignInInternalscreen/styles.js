@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.screenBg },
 
   mapCard: {
-    margin: 16, borderRadius: 18, overflow: 'hidden', ...CARD_SHADOW,
+    margin: 16, borderRadius: 22, overflow: 'hidden', ...CARD_SHADOW,
     backgroundColor: COLORS.surface,
    borderWidth: 1, borderColor: COLORS.cardBorder },
   map: { width: '100%', height: 220 },
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: COLORS.surface, marginHorizontal: 16,
-    marginBottom: 16, borderRadius: 18, padding: 16, ...CARD_SHADOW,
+    marginBottom: 16, borderRadius: 22, padding: 16, ...CARD_SHADOW,
    borderWidth: 1, borderColor: COLORS.cardBorder },
   timeRow: { flexDirection: 'row', marginBottom: 16, gap: 10 },
   timeBox: {

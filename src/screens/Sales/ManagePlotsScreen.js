@@ -22,7 +22,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const STATUS_CFG = {
   available: { label: 'Available', color: COLORS.success, bg: COLORS.successBg, border: COLORS.success, zone: COLORS.successAlt },
@@ -132,7 +132,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
     finally { setSaving(false); }
   }
 
-  const inpS = { borderWidth: 1.5, borderColor: COLORS.shadow, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
+  const inpS = { borderWidth: 1.5, borderColor: COLORS.shadow, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
   const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 5 };
 
   return (
@@ -234,7 +234,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
       <Modal visible={typeOpen} transparent animationType="fade" onRequestClose={() => setTypeOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', paddingHorizontal: 40 }}
           activeOpacity={1} onPress={() => setTypeOpen(false)}>
-          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+          <View style={{ backgroundColor: COLORS.surface, borderRadius: 22, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
             {['', ...clusterTypes].map((t, i) => (
               <TouchableOpacity key={i} onPress={() => { setEditType(t); setTypeOpen(false); }}
                 style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: editType === t ? COLORS.surfaceAlt : COLORS.surface,
@@ -671,7 +671,7 @@ function PlotTypePlansEditor({ project, plots, onProjectUpdate }) {
                 placeholder="Floor label (e.g. Ground Floor, 1st Floor…)"
                 style={{ borderWidth: 1.5, borderColor: COLORS.divider, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 9, fontSize: 13, color: TEXT, backgroundColor: COLORS.surface, marginBottom: 10 }} />
               <TouchableOpacity onPress={addFloor} disabled={uploading}
-                style={{ borderWidth: 1.5, borderColor: COLORS.shadow, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.surface }}>
+                style={{ borderWidth: 1.5, borderColor: COLORS.shadow, borderStyle: 'dashed', borderRadius: 22, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.surface }}>
                 {uploading ? <ActivityIndicator color={COLORS.purple} /> : <>
                   <Ionicons name="image-outline" size={26} color={COLORS.shadow} />
                   <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 6 }}>Upload floor plan image</Text>
@@ -847,7 +847,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate, zonesOverride, onZones
         {/* No image — upload button */}
         {!siteMapImage && (
           <TouchableOpacity onPress={uploadSiteMapImage} disabled={uploading}
-            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 28, alignItems: 'center', backgroundColor: COLORS.surface }}>
+            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 22, paddingVertical: 28, alignItems: 'center', backgroundColor: COLORS.surface }}>
             {uploading ? <ActivityIndicator color={BLUE} /> : <>
               <Ionicons name="map-outline" size={32} color={COLORS.shadow} />
               <Text style={{ fontSize: 13, color: MUTED, marginTop: 8 }}>
@@ -1069,7 +1069,7 @@ function MasterPlanSection({ project, onProjectUpdate }) {
           )
         ) : (
           <TouchableOpacity onPress={upload} disabled={uploading}
-            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 24, alignItems: 'center', backgroundColor: COLORS.surface }}>
+            style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 22, paddingVertical: 24, alignItems: 'center', backgroundColor: COLORS.surface }}>
             {uploading ? <ActivityIndicator color={BLUE} /> : <>
               <Ionicons name="map-outline" size={28} color={COLORS.shadow} />
               <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Upload master plan</Text>

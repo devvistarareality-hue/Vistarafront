@@ -41,7 +41,7 @@ export default function ChangePasswordModal({ visible, onClose, onSuccess }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
       <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', paddingHorizontal: 24 }}>
-        <View style={{ backgroundColor: COLORS.surface, borderRadius: 20, padding: 20 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+        <View style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 20 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: COLORS.textPrimary }}>Change Password</Text>
           <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 2, marginBottom: 14 }}>Enter your current password and choose a new one.</Text>
           <TextInput placeholder="Current password" secureTextEntry value={cur} onChangeText={setCur} style={inp} placeholderTextColor={COLORS.textTertiary} />

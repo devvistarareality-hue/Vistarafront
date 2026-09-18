@@ -103,3 +103,85 @@ export function FadeInUp({ children, index = 0, delay = 45, style }) {
     </Animated.View>
   );
 }
+
+// ── CarePulse-style building blocks ────────────────────────────────
+// Metric tile: round tinted icon badge above a centred label.
+export function MetricTile({ icon, label, sub, tone = 'info', onPress, style, width = '47%' }) {
+  const [bg, fg] = BADGE[tone] || BADGE.info;
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [st2.tile, { width }, pressed && { transform: [{ scale: 0.98 }] }, style]}>
+      <View style={[st2.tileBadge, { backgroundColor: bg }]}>
+        <AppIcon name={icon} size={22} color={fg} />
+      </View>
+      <Text style={st2.tileLabel} numberOfLines={2}>{label}</Text>
+      {sub ? <Text style={st2.tileSub} numberOfLines={2}>{sub}</Text> : null}
+    </Pressable>
+  );
+}
+
+// List row: icon, title, and a quiet right-hand meta value.
+export function ListRow({ icon, title, meta, tone = 'neutral', onPress, right, style }) {
+  const [bg, fg] = BADGE[tone] || BADGE.neutral;
+  return (
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [st2.row, pressed && onPress && { opacity: 0.85 }, style]}>
+      {icon ? <View style={[st2.rowIcon, { backgroundColor: bg }]}><AppIcon name={icon} size={16} color={fg} /></View> : null}
+      <Text style={st2.rowTitle} numberOfLines={1}>{title}</Text>
+      {right || (meta ? <Text style={st2.rowMeta} numberOfLines={1}>{meta}</Text> : null)}
+    </Pressable>
+  );
+}
+
+// Segmented control: pill track with a tinted active segment.
+export function Segmented({ options, value, onChange, style }) {
+  return (
+    <View style={[st2.seg, style]}>
+      {options.map((o) => {
+        const val = typeof o === 'string' ? o : o.value;
+        const label = typeof o === 'string' ? o : o.label;
+        const on = val === value;
+        return (
+          <Pressable key={val} onPress={() => onChange(val)} style={[st2.segItem, on && st2.segItemOn]}>
+            <Text style={[st2.segText, on && st2.segTextOn]} numberOfLines={1}>{label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Highlight stat: gradient card with a big value (like the Blood Pressure card).
+export function StatCard({ label, value, unit, note, onPress, style }) {
+  return (
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [{ borderRadius: 22, overflow: 'hidden' }, pressed && onPress && { opacity: 0.92 }, style]}>
+      <LinearGradient colors={[COLORS.primaryTop, COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st2.stat}>
+        <View style={st2.statTop}>
+          <Text style={st2.statLabel}>{label}</Text>
+          {note ? <Text style={st2.statNote}>{note}</Text> : null}
+        </View>
+        <Text style={st2.statValue}>{value}{unit ? <Text style={st2.statUnit}> {unit}</Text> : null}</Text>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+const st2 = StyleSheet.create({
+  tile: { backgroundColor: COLORS.surface, borderRadius: 22, paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: COLORS.cardBorder, ...SHADOWS.md },
+  tileBadge: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  tileLabel: { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center' },
+  tileSub: { fontSize: 11, color: COLORS.textSecondary, textAlign: 'center', marginTop: -4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.surface, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 14, marginBottom: 8, borderWidth: 1, borderColor: COLORS.cardBorder, ...SHADOWS.sm },
+  rowIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { flex: 1, fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  rowMeta: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
+  seg: { flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: 999, padding: 4, borderWidth: 1, borderColor: COLORS.cardBorder, ...SHADOWS.sm },
+  segItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 999 },
+  segItemOn: { backgroundColor: COLORS.accentSoft },
+  segText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  segTextOn: { color: COLORS.link },
+  stat: { padding: 16, minHeight: 92, justifyContent: 'space-between' },
+  statTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  statLabel: { color: '#fff', fontSize: 13.5, fontWeight: '700', opacity: 0.92 },
+  statNote: { color: '#fff', fontSize: 12, fontWeight: '600', opacity: 0.8 },
+  statValue: { color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  statUnit: { fontSize: 13, fontWeight: '600', opacity: 0.85 },
+});

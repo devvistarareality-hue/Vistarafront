@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   statCard: {
     width: (width - 44) / 2,
     backgroundColor: COLORS.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     elevation: 4,
     shadowColor: COLORS.black,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   // ── Today View ──
   todayCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 20,
     elevation: 4,
     shadowColor: COLORS.black,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   // ── Week View Day Cards ──
   dayCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 12,
     marginRight: 10,
     width: 90,
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   // ── Month / Calendar View ──
   calendarCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     elevation: 4,
     shadowColor: COLORS.black,
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   // ── User Details Card ──
   detailCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     paddingVertical: 4,
     elevation: 4,
     shadowColor: COLORS.black,

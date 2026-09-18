@@ -90,10 +90,9 @@ export default function AdminDashboardScreen({ navigation }) {
               activeOpacity={0.8}
             >
               <View style={[s.iconBg, { backgroundColor: mod.iconBg }]}>
-                <MaterialCommunityIcons name={mod.icon} size={26} color={mod.color} />
+                <MaterialCommunityIcons name={mod.icon} size={24} color={mod.color} />
               </View>
               <Text style={s.cardName} numberOfLines={2}>{mod.name}</Text>
-              <Text style={[s.cardArrow, { color: mod.color }]}>Open →</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -119,8 +118,8 @@ const s = StyleSheet.create({
   sectionTitle:  { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8, marginBottom: 16 },
 
   grid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  card:      { width: '47%', backgroundColor: COLORS.cardBg, borderRadius: 20, padding: 16, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
-  iconBg:    { width: 50, height: 50, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  cardName:  { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 10, lineHeight: 20 },
+  card:      { width: '47%', backgroundColor: COLORS.cardBg, borderRadius: 22, paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
+  iconBg:    { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginBottom: 2 },
+  cardName:  { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', lineHeight: 18 },
   cardArrow: { fontSize: 12, fontWeight: '700' },
 });

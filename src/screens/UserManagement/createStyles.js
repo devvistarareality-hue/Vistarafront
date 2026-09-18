@@ -12,7 +12,7 @@ export default StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 40 },
 
   /* Preview card */
-  previewCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 16, marginBottom: 20, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 , borderWidth: 1, borderColor: COLORS.cardBorder },
+  previewCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 16, marginBottom: 20, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 , borderWidth: 1, borderColor: COLORS.cardBorder },
   previewAvatar:     { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' },
   previewAvatarText: { fontSize: 22, fontWeight: '700', color: COLORS.white },
   previewName:       { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
@@ -20,7 +20,7 @@ export default StyleSheet.create({
 
   /* Form */
   label:      { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.8, marginBottom: 8, marginTop: 16 },
-  inputWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 1 , borderWidth: 1, borderColor: COLORS.cardBorder },
+  inputWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 12, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 1 , borderWidth: 1, borderColor: COLORS.cardBorder },
   inputIcon:  { marginRight: 10 },
   input:      { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 

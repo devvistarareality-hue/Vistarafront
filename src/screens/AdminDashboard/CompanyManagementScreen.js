@@ -170,19 +170,19 @@ const s = StyleSheet.create({
   iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
 
-  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 12, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
 
   tabsWrapper: { height: 44, marginTop: 14 },
   tabsRow:     { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  tab:         { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
+  tab:         { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 22, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
   tabActive:   { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
   tabText:     { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
   tabTextActive: { color: COLORS.white, fontWeight: '700' },
 
   countLabel: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 
-  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, marginBottom: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
+  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, marginBottom: 10, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   avatar:     { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   avatarText: { fontSize: 18, fontWeight: '700', color: COLORS.white },
   cardBody:   { flex: 1 },

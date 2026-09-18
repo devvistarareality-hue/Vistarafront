@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -166,34 +166,14 @@ const ModulesScreen = () => {
               const accent = mod.accent || { bg: COLORS.linkBg, icon: COLORS.link };
               return (
                 <FadeInUp key={mod.key} index={idx} style={{ width: '47%' }}>
-                <TouchableOpacity
-                  style={{
-                    width: '100%',
-                    backgroundColor: COLORS.cardBg,
-                    borderRadius: 24,
-                    padding: 16,
-                    ...CARD_SHADOW,
-                   borderWidth: 1, borderColor: COLORS.cardBorder }}
-                  activeOpacity={0.85}
-                  onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}
-                >
-                  <View style={{
-                    width: 48, height: 48, borderRadius: 18,
-                    backgroundColor: accent.bg,
-                    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
-                  }}>
-                    <Ionicons name={mod.icon} size={24} color={accent.icon} />
-                  </View>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 3 }}>
-                    {mod.label}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginBottom: 10 }}>
-                    {mod.sub}
-                  </Text>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: accent.icon }}>
-                    Open →
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity activeOpacity={0.85} style={s.tile}
+                    onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}>
+                    <View style={[s.tileBadge, { backgroundColor: accent.bg }]}>
+                      <Ionicons name={mod.icon} size={22} color={accent.icon} />
+                    </View>
+                    <Text style={s.tileLabel} numberOfLines={2}>{mod.label}</Text>
+                    <Text style={s.tileSub} numberOfLines={2}>{mod.sub}</Text>
+                  </TouchableOpacity>
                 </FadeInUp>
               );
             })}
@@ -206,3 +186,14 @@ const ModulesScreen = () => {
 };
 
 export default ModulesScreen;
+
+const s = StyleSheet.create({
+  tile: {
+    width: '100%', backgroundColor: COLORS.surface, borderRadius: 22,
+    paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8,
+    borderWidth: 1, borderColor: COLORS.cardBorder, ...CARD_SHADOW,
+  },
+  tileBadge: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+  tileLabel: { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center' },
+  tileSub: { fontSize: 11, color: COLORS.textSecondary, textAlign: 'center' },
+});

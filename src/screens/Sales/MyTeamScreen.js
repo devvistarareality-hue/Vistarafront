@@ -102,7 +102,7 @@ function ChartNode({ node }) {
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // `cp` is the Channel Partner chart: scoped by CP designation rather than by
 // module, since CP staff sit in Sales and there is no module to assign them to.
@@ -234,7 +234,7 @@ export default function MyTeamScreen({ navigation, route }) {
         <ScrollView contentContainerStyle={{ padding: 16, gap: 10 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
           <TextInput value={q} onChangeText={setQ} placeholder="Search name, code or designation…"
-            style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 6 }} />
+            style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 6 }} />
 
           {visible.map((m) => (
             <View key={m.id} style={[CARD, { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }]}>

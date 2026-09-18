@@ -33,8 +33,8 @@ export const IS_DARK = THEME_MODE === 'dark';
 const LIGHT = {
   // Daylight Azure — same design as the dark theme, in blue on near-white (matches web)
   inkRgb: '12,24,43',
-  screenBg: '#EEF3FA', surface: '#FFFFFF', surface2: '#F6F9FE', surface3: '#ECF2FA',
-  border: 'rgba(12,24,43,0.09)', borderStrong: 'rgba(12,24,43,0.18)', cardBorder: 'rgba(12,24,43,0.09)', inputBg: '#F7FAFE',
+  screenBg: '#E8F1F9', surface: '#FFFFFF', surface2: '#F4F9FD', surface3: '#E7F0F8',
+  border: 'rgba(12,24,43,0.08)', borderStrong: 'rgba(12,24,43,0.16)', cardBorder: 'rgba(12,24,43,0.04)', inputBg: '#F2F7FC',
   text: '#0B1524', text2: '#1E2C42', text3: '#3D4C63', muted: '#5B6A81', faint: '#8794A8',
   strong: '#1F5490', strong2: '#163F6E',
   primary: '#1F5490', primaryTop: '#2F6DB5', primaryDeep: '#163F6E', accent: '#17497F', accentDeep: '#0F3862',
@@ -270,9 +270,9 @@ export const SPACING = {
  *  4. RADIUS                                                     *
  * ============================================================== */
 export const RADIUS = {
-  sm:   8,
-  md:   14,
-  lg:   20,
+  sm:   10,
+  md:   16,
+  lg:   22,
   xl:   28,
   pill: 999,
   full: 9999,
@@ -331,9 +331,9 @@ export const SHADOWS = {
   },
   md: {
     shadowColor: T.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: IS_DARK ? 0.4 : 0.08,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: IS_DARK ? 0.45 : 0.10,
+    shadowRadius: 22,
     elevation: 4,
   },
   lg: {

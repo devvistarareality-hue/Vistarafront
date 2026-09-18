@@ -253,7 +253,7 @@ const s = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.surface, borderRadius: 20,
+    backgroundColor: COLORS.surface, borderRadius: 22,
     paddingHorizontal: 16, height: 56, marginBottom: 24,
     borderWidth: 1.5, borderColor: COLORS.border,
     shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },

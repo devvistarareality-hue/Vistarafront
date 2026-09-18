@@ -19,7 +19,7 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
 // Booking web app (own login + form → records booking, auto-LOI, Google Sheet).
 const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypnmUmBmBIrL5rC6xqSEbLFDvSw1XvES6D-JyL1beY8-AeEREnfvVM_TbbbV1t1i883g/exec';
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
 const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
@@ -597,7 +597,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
 
       {/* Multi-select action bar — books all selected plots in one booking. */}
       {selPlots.length > 0 && (
-        <View style={{ position: 'absolute', left: 12, right: 12, bottom: 16, backgroundColor: COLORS.surface, borderRadius: 18, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, ...CARD_SHADOW }}>
+        <View style={{ position: 'absolute', left: 12, right: 12, bottom: 16, backgroundColor: COLORS.surface, borderRadius: 22, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border, ...CARD_SHADOW }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, fontWeight: '800', color: TEXT }}>
               {selPlots.length} plot{selPlots.length > 1 ? 's' : ''} selected{selArea > 0 ? ` · ${+selArea.toFixed(2)} area` : ''}
@@ -642,7 +642,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
             <TouchableOpacity activeOpacity={1} onPress={() => setDraftPanelPlot(null)}
               style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.5)`, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
-                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+                style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Drafted</Text>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4, marginBottom: 18 }}>
                   {p.held_by_name ? `Drafted by ${p.held_by_name}` : 'Drafted'}
@@ -690,7 +690,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
             <TouchableOpacity activeOpacity={1} onPress={() => !cancelBusy && setHoldPanelPlot(null)}
               style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.5)`, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
-                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+                style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · In Progress</Text>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4 }}>
                   {mine ? 'Selected by you' : (p.held_by_name ? `Selected by ${p.held_by_name}` : 'Selected')}
@@ -723,7 +723,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
             <TouchableOpacity activeOpacity={1} onPress={() => !resaleBusy && setSoldPanelPlot(null)}
               style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.5)`, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
-                style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+                style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Sold</Text>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4, marginBottom: 18 }}>
                   {p.agent_name ? `Sold by ${p.agent_name}` : 'Sold'}
@@ -782,7 +782,7 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
                   <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.link }}>{plot.cluster_type}</Text>
                 </View>
               )}
-              <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: COLORS.surface , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+              <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 22, backgroundColor: COLORS.surface , borderWidth: 1, borderColor: COLORS.cardBorder }}>
                 <Text style={{ fontSize: 11, fontWeight: '800', color: cfg.dot }}>
                   {cfg.label}{plot.held_by_name && plot.status === 'hold' ? ` · ${plot.held_by_name}` : ''}
                 </Text>
@@ -951,5 +951,5 @@ function InfoBox({ label, value }) {
 
 const zBtn = { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' };
 const lblS = { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.5, marginBottom: 6, marginTop: 8 };
-const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
-const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.surface };
+const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
+const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.surface };

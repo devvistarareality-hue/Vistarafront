@@ -21,7 +21,7 @@ export default StyleSheet.create({
   comingSoonCard: {
     flex: 1, justifyContent: 'center', alignItems: 'center',
     marginHorizontal: 20, marginTop: 40,
-    backgroundColor: COLORS.cardBg, borderRadius: 18,
+    backgroundColor: COLORS.cardBg, borderRadius: 22,
     padding: 40, ...CARD_SHADOW,
    borderWidth: 1, borderColor: COLORS.cardBorder },
   iconCircle: {

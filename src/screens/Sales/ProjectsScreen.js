@@ -151,7 +151,7 @@ const Field = ({ label, children }) => (
     {children}
   </View>
 );
-const inp = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
+const inp = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface };
 
 function TypeDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -165,7 +165,7 @@ function TypeDropdown({ value, onChange }) {
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', paddingHorizontal: 40 }}
           activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+          <View style={{ backgroundColor: COLORS.surface, borderRadius: 22, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
             {PROJECT_TYPES.map((t, i) => (
               <TouchableOpacity key={t} onPress={() => { onChange(t); setOpen(false); }}
                 style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: value === t ? COLORS.surfaceAlt : COLORS.surface,
@@ -200,7 +200,7 @@ function FormulaDropdown({ value, onChange }) {
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', paddingHorizontal: 40 }}
           activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+          <View style={{ backgroundColor: COLORS.surface, borderRadius: 22, overflow: 'hidden' , borderWidth: 1, borderColor: COLORS.cardBorder }}>
             {FORMULA_OPTIONS.map((o, i) => (
               <TouchableOpacity key={o.value} onPress={() => { onChange(o.value); setOpen(false); }}
                 style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: value === o.value ? COLORS.surfaceAlt : COLORS.surface,
@@ -596,7 +596,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 </View>
               ) : (
                 <TouchableOpacity onPress={async () => { const url = await pickAndUpload('erp/projects/covers', setUploadingCover); if (url) set('cover_image_url', url); }} disabled={uploadingCover}
-                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 24, alignItems: 'center', backgroundColor: COLORS.surface }}>
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 22, paddingVertical: 24, alignItems: 'center', backgroundColor: COLORS.surface }}>
                   {uploadingCover ? <ActivityIndicator color={BLUE} /> : <>
                     <Ionicons name="image-outline" size={28} color={COLORS.shadow} />
                     <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Tap to upload cover image</Text>
@@ -617,7 +617,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 </View>
               ) : (
                 <TouchableOpacity onPress={async () => { const url = await pickAndUpload('erp/projects/logos', setUploadingLogo); if (url) set('logo_url', url); }} disabled={uploadingLogo}
-                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.surface }}>
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 22, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.surface }}>
                   {uploadingLogo ? <ActivityIndicator color={BLUE} /> : <>
                     <Ionicons name="image-outline" size={28} color={COLORS.shadow} />
                     <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Tap to upload project logo</Text>
@@ -640,7 +640,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 </View>
               ) : (
                 <TouchableOpacity onPress={async () => { const url = await pickAndUpload('erp/projects/masterplans', setUploadingPlan); if (url) set('master_plan_url', url); }} disabled={uploadingPlan}
-                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.surface }}>
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 22, paddingVertical: 20, alignItems: 'center', backgroundColor: COLORS.surface }}>
                   {uploadingPlan ? <ActivityIndicator color={BLUE} /> : <>
                     <Ionicons name="map-outline" size={28} color={COLORS.shadow} />
                     <Text style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>Upload master plan image</Text>
@@ -651,7 +651,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             )}
 
             {/* Active toggle */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderRadius: 22, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 14 }}>
               <View>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Active</Text>
                 <Text style={{ fontSize: 11, color: MUTED }}>Visible to sales team</Text>
@@ -660,7 +660,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             </View>
 
             {/* Kiosk self-booking toggle */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderRadius: 22, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 14 }}>
               <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>Enable Kiosk self-booking</Text>
                 <Text style={{ fontSize: 11, color: MUTED }}>Client can self-book this project at a Kiosk</Text>
@@ -877,6 +877,6 @@ export default function ProjectsScreen() {
   );
 }
 
-const cardStyle = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const cardStyle = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const metaChip  = { backgroundColor: COLORS.surfaceAlt, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 };
 const metaChipTxt = { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary };

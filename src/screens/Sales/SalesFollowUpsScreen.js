@@ -14,7 +14,7 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const STATUS_COLOR = { pending: COLORS.warning, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
 
@@ -355,13 +355,13 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
               <View style={{ backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.success2, borderRadius: 16, padding: 12, marginTop: 10 }}>
                 <Text style={{ fontSize: 12, fontWeight: '800', color: COLORS.success, letterSpacing: 0.4, marginBottom: 8 }}><AppIcon name="pin" size={12} /> SCHEDULE SITE VISIT</Text>
                 <TouchableOpacity onPress={() => setSvPickerOpen(true)}
-                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 10, backgroundColor: COLORS.surface }}>
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, padding: 10, backgroundColor: COLORS.surface }}>
                   <Text style={{ fontSize: 13, color: svAt instanceof Date ? TEXT : MUTED }}>
                     {svAt instanceof Date ? fmtDateTime(svAt.toISOString()) : 'Pick date & time'}
                   </Text>
                 </TouchableOpacity>
                 <TextInput value={svRemarks} onChangeText={setSvRemarks} placeholder="Location, notes…" placeholderTextColor={COLORS.textTertiary}
-                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 10, fontSize: 13, marginTop: 8, color: TEXT, backgroundColor: COLORS.surface }} />
+                  style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, padding: 10, fontSize: 13, marginTop: 8, color: TEXT, backgroundColor: COLORS.surface }} />
                 {!(svAt instanceof Date) ? (
                   <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 8 }}>Set a date &amp; time to create the site visit automatically.</Text>
                 ) : null}

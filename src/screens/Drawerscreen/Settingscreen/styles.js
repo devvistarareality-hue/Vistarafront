@@ -34,7 +34,7 @@ export default StyleSheet.create({
 
   menuCard: {
     marginHorizontal: 20, marginTop: 20,
-    backgroundColor: COLORS.cardBg, borderRadius: 18, overflow: 'hidden',
+    backgroundColor: COLORS.cardBg, borderRadius: 22, overflow: 'hidden',
     ...CARD_SHADOW,
    borderWidth: 1, borderColor: COLORS.cardBorder },
   menuItem: {

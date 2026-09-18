@@ -37,7 +37,7 @@ const LINK  = COLORS.link;
 
 const CARD = {
   backgroundColor: COLORS.cardBg,
-  borderRadius: 18,
+  borderRadius: 22,
   ...THEME_SHADOW,
  borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -306,7 +306,7 @@ const HomeScreen = () => {
             <TouchableOpacity
               onPress={() => { setUnread(0); navigation.navigate('Modules', { screen: 'SalesNotifications', initial: false }); }}
               style={{
-                width: 40, height: 40, borderRadius: 20,
+                width: 40, height: 40, borderRadius: 22,
                 backgroundColor: COLORS.surface,
                 justifyContent: 'center', alignItems: 'center',
                 shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
@@ -355,7 +355,7 @@ const HomeScreen = () => {
         {/* ── Quick Actions ── */}
         <View style={{
           marginHorizontal: 20, marginBottom: 28, padding: 16,
-          backgroundColor: COLORS.surface, borderRadius: 20,
+          backgroundColor: COLORS.surface, borderRadius: 22,
           shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
          borderWidth: 1, borderColor: COLORS.cardBorder }}>
@@ -397,7 +397,7 @@ const HomeScreen = () => {
         {isTcOrStm && (
           <View style={{
             marginHorizontal: 20, marginBottom: 28, padding: 16,
-            backgroundColor: COLORS.surface, borderRadius: 20,
+            backgroundColor: COLORS.surface, borderRadius: 22,
             shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.12, shadowRadius: 12, elevation: 3,
            borderWidth: 1, borderColor: COLORS.cardBorder }}>
@@ -770,7 +770,7 @@ const HomeScreen = () => {
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                 backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border,
-                borderRadius: 18, paddingVertical: 14, marginBottom: 10,
+                borderRadius: 22, paddingVertical: 14, marginBottom: 10,
               }}
             >
               <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />

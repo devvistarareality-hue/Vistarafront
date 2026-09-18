@@ -13,7 +13,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 async function authHeaders() {
   const token = await AsyncStorage.getItem('access_token');
@@ -103,7 +103,7 @@ export default function SalesImportScreen({ navigation }) {
           <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 4 }}>Full Pipeline template</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>{isStm ? 'Lead → STM → site visit → closure, with dropdowns. Fill it, then upload below.' : 'Lead → telecaller → STM → site visit → closure, with dropdowns. Fill it, then upload below.'}</Text>
           <TouchableOpacity onPress={downloadTemplate} disabled={dlTpl}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 16, borderWidth: 1.5, borderColor: BLUE, backgroundColor: COLORS.surface }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 22, borderWidth: 1.5, borderColor: BLUE, backgroundColor: COLORS.surface }}>
             {dlTpl ? <ActivityIndicator color={BLUE} /> : (
               <>
                 <Ionicons name="download-outline" size={18} color={BLUE} />

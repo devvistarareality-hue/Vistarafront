@@ -16,7 +16,7 @@ const TEAL  = COLORS.success;
 const BG    = COLORS.screenBg;
 const TEXT  = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const MENU = [
   { key: 'Club1000Leads',      label: 'Leads',        icon: 'person-add-outline',    color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },

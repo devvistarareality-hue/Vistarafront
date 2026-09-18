@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
 
   sectionCard: {
     backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
+    borderRadius: 22,
     marginHorizontal: 20,
     marginBottom: 16,
     overflow: 'hidden',

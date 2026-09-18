@@ -47,7 +47,7 @@ function SectionLabel({ children }) {
 
 function Card({ children, style }) {
   return (
-    <View style={{ backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, marginBottom: 14, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, ...style , borderWidth: 1, borderColor: COLORS.cardBorder }}>
+    <View style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 16, marginBottom: 14, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3, ...style , borderWidth: 1, borderColor: COLORS.cardBorder }}>
       {children}
     </View>
   );
@@ -80,7 +80,7 @@ function SetupGuideModal({ visible, onClose }) {
 
         <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {GUIDE_STEPS.map(step => (
-            <View key={step.n} style={{ flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: COLORS.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: COLORS.surfaceAlt }}>
+            <View key={step.n} style={{ flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: COLORS.surface, borderRadius: 22, padding: 14, borderWidth: 1, borderColor: COLORS.surfaceAlt }}>
               <View style={{ width: 28, height: 28, borderRadius: 18, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.white }}>{step.n}</Text>
               </View>

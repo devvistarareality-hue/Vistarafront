@@ -18,7 +18,7 @@ export default StyleSheet.create({
 
   tabBar: {
     flexDirection: 'row', backgroundColor: COLORS.cardBg,
-    marginHorizontal: 20, borderRadius: 16, padding: 4, marginBottom: 8, marginTop: 12,
+    marginHorizontal: 20, borderRadius: 22, padding: 4, marginBottom: 8, marginTop: 12,
     ...CARD_SHADOW,
    borderWidth: 1, borderColor: COLORS.cardBorder },
   tabItem:       { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 14 },

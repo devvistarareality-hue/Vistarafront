@@ -248,7 +248,7 @@ const s = StyleSheet.create({
   iconBtn:     { width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 
-  card:        { backgroundColor: COLORS.cardBg, margin: 16, borderRadius: 20, padding: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
+  card:        { backgroundColor: COLORS.cardBg, margin: 16, borderRadius: 22, padding: 18, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder },
   cardTitle:   { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 14 },
   sectionLabel:{ fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 10 },
   pillRow:     { gap: 8, paddingBottom: 4 },
@@ -260,7 +260,7 @@ const s = StyleSheet.create({
   addBtnText:  { color: COLORS.btnText, fontWeight: '700', fontSize: 14 },
 
   groupsWrap:  { paddingHorizontal: 16, gap: 12 },
-  groupCard:   { backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, elevation: 1, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6 , borderWidth: 1, borderColor: COLORS.cardBorder },
+  groupCard:   { backgroundColor: COLORS.surface, borderRadius: 22, padding: 16, elevation: 1, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6 , borderWidth: 1, borderColor: COLORS.cardBorder },
   groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   groupDot:    { width: 7, height: 7, borderRadius: 4 },
   groupName:   { flex: 1, fontSize: 13, fontWeight: '700' },

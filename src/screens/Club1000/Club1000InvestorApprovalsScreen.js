@@ -17,7 +17,7 @@ function fmtMoney(n) {
   const num = Number(n || 0);
   return `₹${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 }
-const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 18, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const TABS = [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']];
 const APPROVAL_BADGE_COLOR = {
   pending: { bg: COLORS.warningBg, fg: COLORS.warning },

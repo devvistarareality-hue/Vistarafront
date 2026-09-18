@@ -16,7 +16,7 @@ const BLUE = COLORS.link;
 const BG   = COLORS.screenBg;
 const TEXT = COLORS.textPrimary;
 const MUTED = COLORS.textSecondary;
-const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 20, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
+const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 // Tiles sit inside a section panel, so they lose the white card + shadow the
 // panel already provides and go flat on the subtle surface colour instead.
 const TILE  = { flexGrow: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 8, alignItems: 'center',
