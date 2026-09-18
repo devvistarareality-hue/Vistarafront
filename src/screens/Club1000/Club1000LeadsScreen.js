@@ -300,9 +300,9 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
         <TextField label="Remarks" value={form.remarks} onChangeText={(v) => set('remarks', v)} />
 
         <TouchableOpacity onPress={submit} disabled={saving}
-          style={{ backgroundColor: TEAL, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: saving ? 0.7 : 1, marginTop: 8 }}>
-          {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Add Lead</Text>
+          style={[ClubLeadsScreenS.btn2, (saving) && ClubLeadsScreenS.btn2Dim]}>
+          {saving ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Ionicons name="save-outline" size={17} color={COLORS.btnTextSuccess} />}
+          <Text style={ClubLeadsScreenS.box}>Add Lead</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -480,8 +480,8 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
                 )}
                 <TextField label="Remarks" value={schedRemarks} onChangeText={setSchedRemarks} placeholder="Optional" />
                 <TouchableOpacity onPress={submitSchedule} disabled={schedBusy}
-                  style={{ backgroundColor: TEAL, borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', opacity: schedBusy ? 0.7 : 1 }}>
-                  {schedBusy ? <ActivityIndicator color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontSize: 14, fontWeight: '700' }}>Save Follow-up</Text>}
+                  style={[ClubLeadsScreenS.btn3, (schedBusy) && ClubLeadsScreenS.btn3Dim]}>
+                  {schedBusy ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Text style={ClubLeadsScreenS.box2}>Save Follow-up</Text>}
                 </TouchableOpacity>
               </View>
             )}
@@ -490,9 +490,9 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
 
         {lead.status !== 'converted' && (
           <TouchableOpacity onPress={() => onConvert(lead)}
-            style={{ backgroundColor: TEAL, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8 }}>
-            <Ionicons name="swap-horizontal-outline" size={17} color={COLORS.white} />
-            <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Convert to Investor</Text>
+            style={ClubLeadsScreenS.btn4}>
+            <Ionicons name="swap-horizontal-outline" size={17} color={COLORS.btnTextSuccess} />
+            <Text style={ClubLeadsScreenS.box3}>Convert to Investor</Text>
           </TouchableOpacity>
         )}
         </>}
@@ -655,9 +655,9 @@ export default function Club1000LeadsScreen({ navigation }) {
           <Text style={{ fontSize: 12, color: MUTED }}>{manager ? 'All Club 1000 leads' : 'Assigned to you and your team'}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowAdd(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: TEAL, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 }}>
-          <Ionicons name="add" size={16} color={COLORS.white} />
-          <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>Add</Text>
+          style={ClubLeadsScreenS.btn5}>
+          <Ionicons name="add" size={16} color={COLORS.btnTextSuccess} />
+          <Text style={ClubLeadsScreenS.box4}>Add</Text>
         </TouchableOpacity>
       </View>
 
@@ -728,4 +728,14 @@ export default function Club1000LeadsScreen({ navigation }) {
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubLeadsScreenS = StyleSheet.create({
   btn: { backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+  btn2: { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
+  btn2Dim: { opacity: 0.7 },
+  box: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
+  btn3: { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', opacity: 1 },
+  btn3Dim: { opacity: 0.7 },
+  box2: { color: COLORS.btnTextSuccess, fontSize: 14, fontWeight: '700' },
+  btn4: { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8 },
+  box3: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
+  btn5: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 },
+  box4: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
 });

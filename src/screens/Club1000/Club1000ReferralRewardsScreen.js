@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StatusBar, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -126,8 +126,8 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
                     </Text>
                   </View>
                   {manager && r.status === 'pending' && (
-                    <TouchableOpacity onPress={() => markPaid(r.id)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: TEAL }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.white }}>Mark Paid</Text>
+                    <TouchableOpacity onPress={() => markPaid(r.id)} style={ClubReferralRewardsScreenS.btn}>
+                      <Text style={ClubReferralRewardsScreenS.box}>Mark Paid</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -139,3 +139,9 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ClubReferralRewardsScreenS = StyleSheet.create({
+  btn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess },
+  box: { fontSize: 12, fontWeight: '700', color: COLORS.btnTextSuccess },
+});

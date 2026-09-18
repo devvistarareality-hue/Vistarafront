@@ -534,8 +534,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                   themselves. Offering the buttons anyway made the tap fail silently. */}
               {b.status === 'pending' && isApprover && b.can_approve && (
                 <>
-                  <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.success }]}><Text style={btnT}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, { backgroundColor: COLORS.error }]}><Text style={btnT}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, btnOk]}><Text style={btnTOk}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, btnBad]}><Text style={btnTBad}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
                 </>
               )}
               {b.status === 'sold' && (() => {
@@ -650,7 +650,12 @@ function CancelBookingModal({ b, busy, onClose, onConfirm }) {
   );
 }
 const btn = { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 };
-const btnT = { color: '#fff', fontWeight: '700', fontSize: 13 };
+// Approve / Reject: tinted glass, like every other button in the app.
+const btnOk  = { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess };
+const btnBad = { backgroundColor: COLORS.btnTintDanger, borderWidth: 1, borderColor: COLORS.btnBorderDanger };
+const btnT   = { color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 13 };
+const btnTOk  = { ...btnT, color: COLORS.btnTextSuccess };
+const btnTBad = { ...btnT, color: COLORS.btnTextDanger };
 
 const s = StyleSheet.create({
   filterBar:        { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },

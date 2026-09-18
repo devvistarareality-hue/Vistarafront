@@ -163,9 +163,8 @@ export default function ModuleBookingsScreen({ navigation, route }) {
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
               {[['approved', 'Approved', approvedRows.length], ['cancelled', 'Cancelled', cancelledRows.length]].map(([k, label, n]) => (
                 <TouchableOpacity key={k} onPress={() => { setTab(k); setDetailsOpen({}); }}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8,
-                    backgroundColor: tab === k ? TEAL : COLORS.surfaceAlt }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: tab === k ? '#fff' : MUTED }}>
+                  style={[s.tab, tab === k && s.tabOn]}>
+                  <Text style={[s.tabText, tab === k && s.tabTextOn]}>
                     {`${label} (${n})`}
                   </Text>
                 </TouchableOpacity>
@@ -199,12 +198,12 @@ export default function ModuleBookingsScreen({ navigation, route }) {
             <Text style={{ color: MUTED, textAlign: 'center' }}>{narrowed ? `No ${tab} bookings match these filters.` : (tab === 'cancelled' ? 'No cancelled bookings.' : 'No bookings yet.')}</Text>
           </View>
         ) : <>
-          <View style={{ marginBottom: 12, borderRadius: 18, padding: 16, backgroundColor: tab === 'cancelled' ? COLORS.strong2 : TEAL }}>
-            <Text style={{ color: tab === 'cancelled' ? COLORS.border : COLORS.success2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <View style={[s.totalCard, tab === 'cancelled' && s.totalCardBad]}>
+            <Text style={[s.totalLabel, tab === 'cancelled' && s.totalLabelBad]}>
               {`${narrowed ? 'Matching' : 'Total'} ${tab === 'cancelled' ? 'Cancelled' : 'Approved'} · ${grandCount} booking${grandCount === 1 ? '' : 's'} · ${projectNames.length} project${projectNames.length === 1 ? '' : 's'}`}
             </Text>
-            {(!!proj || !!stm) && <Text style={{ color: COLORS.success2, fontSize: 11, marginTop: 2 }} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
-            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 4 }}>{rupee(grandTotal)}</Text>
+            {(!!proj || !!stm) && <Text style={s.totalMeta} numberOfLines={1}>{[proj, stm && `STM: ${stm}`].filter(Boolean).join(' · ')}</Text>}
+            <Text style={s.totalValue}>{rupee(grandTotal)}</Text>
           </View>
           {projectNames.map((pn) => (
           <View key={pn} style={{ marginBottom: 12 }}>
@@ -331,6 +330,18 @@ export default function ModuleBookingsScreen({ navigation, route }) {
 }
 
 const s = StyleSheet.create({
+  tab:           { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+  tabOn:         { backgroundColor: COLORS.btnTintSuccess, borderColor: COLORS.btnBorderSuccess },
+  tabText:       { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  tabTextOn:     { color: COLORS.btnTextSuccess },
+
+  totalCard:     { marginBottom: 12, borderRadius: 18, padding: 16, backgroundColor: COLORS.successBg, borderWidth: 1, borderColor: COLORS.success2 },
+  totalCardBad:  { backgroundColor: COLORS.errorBg, borderColor: COLORS.error2 },
+  totalLabel:    { color: COLORS.success, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  totalLabelBad: { color: COLORS.error },
+  totalMeta:     { color: COLORS.textSecondary, fontSize: 11, marginTop: 2 },
+  totalValue:    { color: COLORS.textPrimary, fontSize: 22, fontWeight: '800', marginTop: 4 },
+
   filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   filterSel: { flexGrow: 1, flexBasis: 160, justifyContent: 'space-between' },
 });

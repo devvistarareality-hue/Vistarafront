@@ -8,7 +8,9 @@ import { COLORS } from '../constants/theme';
 // behind the navigator; screens are transparent so it shows through.
 const SCENE = COLORS.isDark
   ? { top: '#0B0908', bottom: '#030303', glow: '#FF6020', glowO: 0.30, haze: '#BEC8D7', hazeO: 0.10, lift: '#FF6E2D', liftO: 0.06 }
-  : { top: '#F8FBFF', bottom: '#E6EEF8', glow: '#3777C4', glowO: 0.22, haze: '#96B4DC', hazeO: 0.30, lift: '#3777C4', liftO: 0.08 };
+  // Light has to carry as much blue as dark carries ember, so the glow is deeper
+  // and the sheet is tinted rather than near-white.
+  : { top: '#EAF2FC', bottom: '#D6E4F5', glow: '#2668BA', glowO: 0.42, haze: '#6096D6', hazeO: 0.30, lift: '#2F6DB5', liftO: 0.20 };
 
 // Blurred gradient bubbles drifting slowly (same idea as the website's backdrop).
 const BUBBLES = COLORS.isDark
@@ -16,10 +18,10 @@ const BUBBLES = COLORS.isDark
      { c: '#FFA05A', o: 0.12, size: 300, x: '62%', y: 280, dx: -40, dy: 60, t: 21000 },
      { c: '#AAB9D7', o: 0.08, size: 320, x: '-20%', y: 520, dx: 60, dy: -40, t: 19000 },
      { c: '#C83C14', o: 0.14, size: 220, x: '10%', y: 180, dx: 40, dy: 50, t: 23000 }]
-  : [{ c: '#3777C4', o: 0.20, size: 360, x: '48%', y: -120, dx: 50, dy: 40, t: 17000 },
-     { c: '#78B4F0', o: 0.24, size: 300, x: '62%', y: 280, dx: -40, dy: 60, t: 21000 },
-     { c: '#6EC8BE', o: 0.14, size: 320, x: '-20%', y: 520, dx: 60, dy: -40, t: 19000 },
-     { c: '#1F5490', o: 0.12, size: 220, x: '10%', y: 180, dx: 40, dy: 50, t: 23000 }];
+  : [{ c: '#2668BA', o: 0.34, size: 360, x: '48%', y: -120, dx: 50, dy: 40, t: 17000 },
+     { c: '#6096D6', o: 0.36, size: 300, x: '62%', y: 280, dx: -40, dy: 60, t: 21000 },
+     { c: '#4CAABE', o: 0.22, size: 320, x: '-20%', y: 520, dx: 60, dy: -40, t: 19000 },
+     { c: '#1F5490', o: 0.24, size: 220, x: '10%', y: 180, dx: 40, dy: 50, t: 23000 }];
 
 function Bubble({ b, i, still }) {
   const v = useRef(new Animated.Value(0)).current;
