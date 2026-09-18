@@ -45,7 +45,8 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "./plugins/withLaunchBackground"
     ],
     "ios": {
       "supportsTablet": true,
