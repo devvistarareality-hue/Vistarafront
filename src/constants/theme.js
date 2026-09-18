@@ -46,20 +46,20 @@ const LIGHT = {
   shadow: '#2F6DB5', glow: '#2F6DB5',
 };
 const DARK = {
-  // Midnight Aurora — blue-black base, indigo-tinted surfaces, blue→violet accent (matches web)
-  inkRgb: '226,232,255',
-  screenBg: '#070B18', surface: '#0F1629', surface2: '#131B33', surface3: '#1A2340',
-  border: 'rgba(150,175,240,0.12)', borderStrong: 'rgba(150,175,240,0.22)', cardBorder: 'rgba(160,190,255,0.16)', inputBg: '#0A1022',
-  text: '#EEF2FF', text2: '#D3DAEE', text3: '#A9B3CC', muted: '#8791AD', faint: '#5B6583',
-  strong: '#4F7FE8', strong2: '#3D68CF',
-  primary: '#6E6BFF', primaryTop: '#5AA2FF', primaryDeep: '#4A63E0', accent: '#A9C8FF', accentDeep: '#D6E4FF',
-  navActiveBg: 'rgba(110,140,255,0.18)', navActiveFg: '#DDE8FF',
-  blue: 'rgba(140,170,255,0.12)', blue2: 'rgba(140,170,255,0.22)', accentSoft: 'rgba(140,170,255,0.11)', accentSofter: 'rgba(140,170,255,0.05)',
-  success: '#6FE3A8', successSolid: '#22A06B', successDeep: '#B8F5D2', green: 'rgba(111,227,168,0.13)', success2: 'rgba(111,227,168,0.22)', successSoft: 'rgba(111,227,168,0.08)',
-  danger: '#FF8A9B', dangerSolid: '#E5485F', dangerDeep: '#FFB6C1', danger2: 'rgba(255,138,155,0.28)', dangerSoft: 'rgba(255,138,155,0.08)',
-  warning: '#FFCF86', warningSolid: '#C98A2E', warningDeep: '#FFE4B8', warning2: '#FFBE5E', peach: 'rgba(255,207,134,0.15)', peach2: '#F5B453', warningSoft: 'rgba(255,207,134,0.08)',
-  mutedSolid: '#262C3D', mutedSolid2: '#2E3548', faintSolid: '#3F475C',
-  shadow: '#000000', glow: '#6E6BFF',
+  // Obsidian — true-black panels, hairline edges, one blue accent glow (matches web)
+  inkRgb: '235,238,245',
+  screenBg: '#040405', surface: '#0A0A0C', surface2: '#0E0F12', surface3: '#15161A',
+  border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.15)', cardBorder: 'rgba(255,255,255,0.09)', inputBg: '#0B0B0E',
+  text: '#F5F7FA', text2: '#D8DCE4', text3: '#AFB5C0', muted: '#868D9A', faint: '#5A616D',
+  strong: '#2F6DB5', strong2: '#245A96',
+  primary: '#3E7BE0', primaryTop: '#5C9BF0', primaryDeep: '#2F6DB5', accent: '#A2C8FF', accentDeep: '#CFE2FF',
+  navActiveBg: 'rgba(120,170,255,0.13)', navActiveFg: '#EAF1FF',
+  blue: 'rgba(120,170,255,0.12)', blue2: 'rgba(120,170,255,0.20)', accentSoft: 'rgba(120,170,255,0.10)', accentSofter: 'rgba(120,170,255,0.045)',
+  success: '#6FDFA0', successSolid: '#1E9159', successDeep: '#AFF2CC', green: 'rgba(111,223,160,0.12)', success2: 'rgba(111,223,160,0.20)', successSoft: 'rgba(111,223,160,0.07)',
+  danger: '#FF8792', dangerSolid: '#D93A4B', dangerDeep: '#FFB3BA', danger2: 'rgba(255,135,146,0.26)', dangerSoft: 'rgba(255,135,146,0.07)',
+  warning: '#FFC97E', warningSolid: '#B8741E', warningDeep: '#FFE0B0', warning2: '#FFBB5C', peach: 'rgba(255,201,126,0.14)', peach2: '#F5B453', warningSoft: 'rgba(255,201,126,0.07)',
+  mutedSolid: '#1C1D22', mutedSolid2: '#24262C', faintSolid: '#33363E',
+  shadow: '#000000', glow: '#5C9BF0',
 };
 const T = IS_DARK ? DARK : LIGHT;
 
