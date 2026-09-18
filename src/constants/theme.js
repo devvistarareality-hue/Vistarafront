@@ -53,7 +53,7 @@ const DARK = {
   border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.15)', cardBorder: 'rgba(255,255,255,0.09)', inputBg: '#0C0B0B',
   text: '#F7F5F3', text2: '#E0DCD8', text3: '#B6AFA9', muted: '#8C8681', faint: '#5E5955',
   strong: '#E8541C', strong2: '#C4390C',
-  primary: '#F2561B', primaryTop: '#FF8A4D', primaryDeep: '#C4390C', accent: '#FF9264', accentDeep: '#FFC2A6',
+  primary: '#C4390C', primaryTop: '#E8541C', primaryDeep: '#9E2C08', accent: '#FF9264', accentDeep: '#FFC2A6',
   navActiveBg: 'rgba(255,110,45,0.14)', navActiveFg: '#FFD8C6',
   blue: 'rgba(255,122,61,0.12)', blue2: 'rgba(255,122,61,0.22)', accentSoft: 'rgba(255,122,61,0.10)', accentSofter: 'rgba(255,122,61,0.045)',
   success: '#6FDFA0', successSolid: '#1E9159', successDeep: '#AFF2CC', green: 'rgba(111,223,160,0.12)', success2: 'rgba(111,223,160,0.20)', successSoft: 'rgba(111,223,160,0.07)',
