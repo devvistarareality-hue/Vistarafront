@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,14 +52,15 @@ export default function ModuleHomeScreen({ navigation, route }) {
             <Text style={{ fontSize: 13, color: MUTED, textAlign: 'center' }}>No tools available in this module yet.</Text>
           </View>
         )}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        <View style={s.grid}>
           {cards.map((c) => (
             <TouchableOpacity key={c.key} onPress={() => navigation.navigate(c.key, c.params)}
-              style={[CARD, { width: '47%', paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 8 }]} activeOpacity={0.8}>
-              <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 2 }}>
+              style={[CARD, s.card]} activeOpacity={0.8}>
+              <View style={[s.cardIcon, { backgroundColor: c.bg }]}>{/* inline-ok: per-card accent tint */}
                 <Ionicons name={c.icon} size={22} color={c.color} />
               </View>
-              <Text style={{ fontSize: 13.5, fontWeight: '700', color: TEXT, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{c.label}</Text>
+              <Text style={s.cardLabel} numberOfLines={2}>{c.label}</Text>
+              <Text style={s.cardDesc} numberOfLines={2}>{c.desc}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -67,3 +68,13 @@ export default function ModuleHomeScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+// One card shape for every module tile: the row stretches its items, so two
+// cards side by side keep the same height whatever their label and description.
+const s = StyleSheet.create({
+  grid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'stretch' },
+  card:      { width: '47%', minHeight: 150, paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center', gap: 6 },
+  cardIcon:  { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginBottom: 2 },
+  cardLabel: { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', lineHeight: 18 },
+  cardDesc:  { fontSize: 11.5, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 16 },
+});
