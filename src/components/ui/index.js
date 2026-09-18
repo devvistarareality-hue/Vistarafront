@@ -42,15 +42,18 @@ export function Button({ title, onPress, variant = 'primary', size = 'md', icon,
 }
 
 const glow = (c) => ({ shadowColor: c, shadowOpacity: COLORS.isDark ? 0.5 : 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 5 });
+const tint = (c, a) => `rgba(${parseInt(c.slice(1,3),16)},${parseInt(c.slice(3,5),16)},${parseInt(c.slice(5,7),16)},${a})`;
+// Accent buttons are tinted glass with a glowing edge — same design as the web.
 const VARIANTS = {
-  primary:   { gradient: [COLORS.primaryTop, COLORS.primaryButton], fg: '#FFFFFF', shadow: glow(COLORS.glow) },
-  success:   { gradient: ['#34A65F', '#23874A'], fg: '#FFFFFF', shadow: glow('#23874A') },
-  danger:    { gradient: ['#E4575F', '#C9363F'], fg: '#FFFFFF', shadow: glow('#D9434B') },
+  primary:   { bg: tint(COLORS.primaryButton, 0.16), border: tint(COLORS.primaryButton, 0.42), fg: COLORS.link, shadow: glow(COLORS.glow) },
+  success:   { bg: tint(COLORS.successSolid, 0.16), border: tint(COLORS.successSolid, 0.42), fg: COLORS.success, shadow: glow(COLORS.successSolid) },
+  danger:    { bg: tint(COLORS.errorSolid, 0.16), border: tint(COLORS.errorSolid, 0.42), fg: COLORS.error, shadow: glow(COLORS.errorSolid) },
   secondary: { bg: COLORS.isDark ? 'rgba(255,255,255,0.04)' : COLORS.surface, border: COLORS.borderStrong, fg: COLORS.textPrimary },
   soft:      { bg: COLORS.accentSoft, border: COLORS.blue2, fg: COLORS.link },
   ghost:     { bg: 'transparent', fg: COLORS.textSecondary },
   dangerSoft: { bg: COLORS.errorBg, border: COLORS.error2, fg: COLORS.error },
 };
+
 
 export function Card({ children, style, onPress, padded = true }) {
   const body = <View style={[st.card, padded && { padding: 16 }, style]}>{children}</View>;
