@@ -36,15 +36,15 @@ const LIGHT = {
   screenBg: '#EEF3FA', surface: '#FFFFFF', surface2: '#F6F9FE', surface3: '#ECF2FA',
   border: 'rgba(12,24,43,0.09)', borderStrong: 'rgba(12,24,43,0.18)', cardBorder: 'rgba(12,24,43,0.09)', inputBg: '#F7FAFE',
   text: '#0B1524', text2: '#1E2C42', text3: '#3D4C63', muted: '#5B6A81', faint: '#8794A8',
-  strong: '#2F6DB5', strong2: '#245A96',
-  primary: '#2F6DB5', primaryTop: '#4E90E0', primaryDeep: '#245A96', accent: '#1F5FA8', accentDeep: '#17497F',
-  navActiveBg: 'rgba(47,109,181,0.13)', navActiveFg: '#0B3E76',
+  strong: '#1F5490', strong2: '#163F6E',
+  primary: '#1F5490', primaryTop: '#2F6DB5', primaryDeep: '#163F6E', accent: '#17497F', accentDeep: '#0F3862',
+  navActiveBg: 'rgba(31,84,144,0.13)', navActiveFg: '#0B3E76',
   blue: 'rgba(47,109,181,0.10)', blue2: 'rgba(47,109,181,0.18)', accentSoft: 'rgba(47,109,181,0.09)', accentSofter: 'rgba(47,109,181,0.045)',
   success: '#1B7A45', successSolid: '#23874A', successDeep: '#125730', green: 'rgba(27,122,69,0.12)', success2: 'rgba(27,122,69,0.20)', successSoft: 'rgba(27,122,69,0.07)',
   danger: '#C8323C', dangerSolid: '#D9434B', dangerDeep: '#9A242C', danger2: 'rgba(200,50,60,0.22)', dangerSoft: 'rgba(200,50,60,0.06)',
   warning: '#96601A', warningSolid: '#B8741E', warningDeep: '#6B420C', warning2: '#C07D1D', peach: 'rgba(192,125,29,0.14)', peach2: '#F5B453', warningSoft: 'rgba(192,125,29,0.07)',
   mutedSolid: '#5B6A81', mutedSolid2: '#3D4C63', faintSolid: '#8794A8',
-  shadow: '#2F6DB5', glow: '#2F6DB5',
+  shadow: '#1F5490', glow: '#1F5490',
 };
 const DARK = {
   // Obsidian Ember — true-black panels, warm ember accent, one top glow (matches web)
@@ -192,9 +192,9 @@ export const COLORS = {
   ink:         T.text,
   primaryButton: T.primary,
   // Tinted-glass button styling (same design as the website)
-  btnTint:   IS_DARK ? 'rgba(255,122,61,0.18)' : 'rgba(47,109,181,0.12)',
-  btnBorder: IS_DARK ? 'rgba(255,150,100,0.42)' : 'rgba(47,109,181,0.40)',
-  btnText:   IS_DARK ? '#FFD8C6' : '#1F5FA8',
+  btnTint:   IS_DARK ? 'rgba(255,122,61,0.18)' : 'rgba(31,84,144,0.12)',
+  btnBorder: IS_DARK ? 'rgba(255,150,100,0.42)' : 'rgba(31,84,144,0.42)',
+  btnText:   IS_DARK ? '#FFD8C6' : '#17497F',
   btnTintSuccess:   IS_DARK ? 'rgba(111,223,160,0.18)' : 'rgba(27,122,69,0.12)',
   btnBorderSuccess: IS_DARK ? 'rgba(111,223,160,0.40)' : 'rgba(27,122,69,0.38)',
   btnTextSuccess:   T.success,
