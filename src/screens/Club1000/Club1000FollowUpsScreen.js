@@ -165,9 +165,9 @@ function CompleteFollowUpSheet({ followUp, onClose, onDone }) {
         )}
 
         <TouchableOpacity onPress={submit} disabled={submitting}
-          style={{ backgroundColor: COLORS.successSolid, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: submitting ? 0.7 : 1, marginTop: 16 }}>
-          {submitting ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="checkmark-done-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>{submitting ? 'Saving…' : 'Mark Done'}</Text>
+          style={{ backgroundColor: COLORS.btnTintSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: submitting ? 0.7 : 1, marginTop: 16 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+          {submitting ? <ActivityIndicator color={COLORS.btnText} /> : <Ionicons name="checkmark-done-outline" size={17} color={COLORS.btnTextSuccess} />}
+          <Text style={{ color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' }}>{submitting ? 'Saving…' : 'Mark Done'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>

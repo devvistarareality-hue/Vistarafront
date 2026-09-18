@@ -612,8 +612,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
           <TouchableOpacity onPress={() => { const ids = [...selectedIds]; setSelectedIds([]); releasePlots(ids); }} style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: MUTED }}>Clear</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={bookSelected} style={{ backgroundColor: COLORS.success, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 11 }}>
-            <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 14 }}>{sv ? 'Record Closure' : 'Book'} →</Text>
+          <TouchableOpacity onPress={bookSelected} style={{ backgroundColor: COLORS.btnTintSuccess, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 11 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+            <Text style={{ color: COLORS.btnTextSuccess, fontWeight: '800', fontSize: 14 }}>{sv ? 'Record Closure' : 'Book'} →</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -654,8 +654,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       it, which is the wrong way round. */}
                   {canDiscard && (
                     <TouchableOpacity onPress={() => { setDraftPanelPlot(null); navigation.navigate('BookingForm', { draft: p.drafted_booking_id }); }}
-                      style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.link, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>▸ {mine ? 'Resume' : 'Open Draft'}</Text>
+                      style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.btnTint, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                      <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 14 }}>▸ {mine ? 'Resume' : 'Open Draft'}</Text>
                     </TouchableOpacity>
                   )}
                   {canDiscard && (
@@ -820,8 +820,8 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
 
             {/* Native ERP booking form. */}
             <TouchableOpacity onPress={onBook}
-              style={{ backgroundColor: COLORS.success, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
-              <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{booking ? `Book Unit ${plot.number}` : `Record Closure for Unit ${plot.number}`}</Text>
+              style={{ backgroundColor: COLORS.btnTintSuccess, borderRadius: 16, paddingVertical: 14, alignItems: 'center' , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+              <Text style={{ color: COLORS.btnTextSuccess, fontWeight: '800', fontSize: 15 }}>{booking ? `Book Unit ${plot.number}` : `Record Closure for Unit ${plot.number}`}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

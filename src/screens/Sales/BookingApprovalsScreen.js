@@ -311,8 +311,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                     <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 12.5 }}>Reject</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => actOnTransfer(x.id, 'approve')} disabled={xferBusy === x.id}
-                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', backgroundColor: COLORS.success }}>
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.5 }}>{xferBusy === x.id ? '…' : 'Approve'}</Text>
+                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', backgroundColor: COLORS.btnTintSuccess , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+                    <Text style={{ color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 12.5 }}>{xferBusy === x.id ? '…' : 'Approve'}</Text>
                   </TouchableOpacity>
                 </View>
               </View>

@@ -52,8 +52,8 @@ export default function ChangePasswordModal({ visible, onClose, onSuccess }) {
             <TouchableOpacity onPress={close} style={{ flex: 1, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center' }}>
               <Text style={{ color: COLORS.textSecondary, fontWeight: '700', fontSize: 13 }}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={submit} disabled={disabled} style={{ flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.navy, alignItems: 'center', opacity: disabled ? 0.6 : 1 }}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{busy ? 'Saving…' : 'Change Password'}</Text>
+            <TouchableOpacity onPress={submit} disabled={disabled} style={{ flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.btnTint, alignItems: 'center', opacity: disabled ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+              <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>{busy ? 'Saving…' : 'Change Password'}</Text>
             </TouchableOpacity>
           </View>
         </View>

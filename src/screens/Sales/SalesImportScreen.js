@@ -173,11 +173,11 @@ export default function SalesImportScreen({ navigation }) {
 
         {/* Import button */}
         <TouchableOpacity onPress={doImport} disabled={importing || !file}
-          style={{ paddingVertical: 15, backgroundColor: NAVY, borderRadius: 18, alignItems: 'center', marginBottom: 16, opacity: (!file) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-          {importing ? <ActivityIndicator color={COLORS.white} /> : (
+          style={{ paddingVertical: 15, backgroundColor: COLORS.btnTint, borderRadius: 18, alignItems: 'center', marginBottom: 16, opacity: (!file) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          {importing ? <ActivityIndicator color={COLORS.btnText} /> : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Ionicons name="cloud-upload-outline" size={18} color={COLORS.white} />
-              <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>Import Leads</Text>
+              <Ionicons name="cloud-upload-outline" size={18} color={COLORS.btnText} />
+              <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 15 }}>Import Leads</Text>
             </View>
           )}
         </TouchableOpacity>

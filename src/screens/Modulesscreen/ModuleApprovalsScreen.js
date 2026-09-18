@@ -387,8 +387,8 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                             </Text>
                           </TouchableOpacity>
                           <TouchableOpacity disabled={busy === b.id} onPress={() => setToReject(b)}
-                            style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: COLORS.error }}>
-                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Reject</Text>
+                            style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: COLORS.btnTintDanger , borderWidth: 1, borderColor: COLORS.btnBorderDanger }}>
+                            <Text style={{ color: COLORS.btnTextDanger, fontWeight: '700', fontSize: 13 }}><AppIcon name="x" size={13} /> Reject</Text>
                           </TouchableOpacity>
                         </>
                       ) : null}

@@ -405,10 +405,10 @@ export default function SalesDistributionScreen({ navigation }) {
                 ))}
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
                   <TouchableOpacity onPress={saveSettings} disabled={savingSettings}
-                    style={{ flex: 1, paddingVertical: 12, backgroundColor: NAVY, borderRadius: 9, alignItems: 'center', opacity: savingSettings ? 0.6 : 1 }}>
+                    style={{ flex: 1, paddingVertical: 12, backgroundColor: COLORS.btnTint, borderRadius: 9, alignItems: 'center', opacity: savingSettings ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
                     {savingSettings
-                      ? <ActivityIndicator color={COLORS.white} size="small" />
-                      : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>Save Settings</Text>}
+                      ? <ActivityIndicator color={COLORS.btnText} size="small" />
+                      : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 15 }}>Save Settings</Text>}
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => setSettingsForm(null)}
                     style={{ flex: 1, paddingVertical: 12, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, alignItems: 'center' }}>
@@ -472,10 +472,10 @@ export default function SalesDistributionScreen({ navigation }) {
                   <TouchableOpacity onPress={downloadHistory} disabled={histDl}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginLeft: 'auto',
                              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
-                             backgroundColor: COLORS.success, opacity: histDl ? 0.7 : 1 }}>
+                             backgroundColor: COLORS.btnTintSuccess, opacity: histDl ? 0.7 : 1 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
                     {histDl ? <ActivityIndicator size="small" color="#fff" />
                             : <Ionicons name="download-outline" size={14} color="#fff" />}
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>{histDl ? 'Preparing…' : 'Excel'}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.btnTextSuccess }}>{histDl ? 'Preparing…' : 'Excel'}</Text>
                   </TouchableOpacity>
                 </View>
                 {/* Fixed height with its own scroll, matching web. nestedScrollEnabled so
@@ -587,10 +587,10 @@ export default function SalesDistributionScreen({ navigation }) {
                   <Text style={{ fontSize: 13, color: MUTED, marginTop: 3 }}>Higher weight = more leads assigned</Text>
                 </View>
                 <TouchableOpacity onPress={saveWeights} disabled={savingWeights || !weightsChanged}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 8, opacity: (!weightsChanged || savingWeights) ? 0.4 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
+                  style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 8, opacity: (!weightsChanged || savingWeights) ? 0.4 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
                   {savingWeights
-                    ? <ActivityIndicator size="small" color={COLORS.white} />
-                    : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
+                    ? <ActivityIndicator size="small" color={COLORS.btnText} />
+                    : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 14 }}>Save Weights</Text>}
                 </TouchableOpacity>
               </View>
 
@@ -662,10 +662,10 @@ export default function SalesDistributionScreen({ navigation }) {
                   )}
 
                   <TouchableOpacity onPress={() => triggerDist(type)} disabled={disabled}
-                    style={{ paddingVertical: 14, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center', opacity: disabled ? 0.45 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
+                    style={{ paddingVertical: 14, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center', opacity: disabled ? 0.45 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
                     {distributing === type
-                      ? <ActivityIndicator color={COLORS.white} size="small" />
-                      : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 15 }}>
+                      ? <ActivityIndicator color={COLORS.btnText} size="small" />
+                      : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 15 }}>
                           <AppIcon name="zap" size={15} /> Distribute to {type === 'telecaller' ? 'Telecallers' : 'STMs'}
                         </Text>}
                   </TouchableOpacity>

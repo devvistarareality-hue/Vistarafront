@@ -78,10 +78,10 @@ export function ExportBookings({ projects: given, companyId }) {
         style={{ flex: 1 }} />
       <TouchableOpacity onPress={download} disabled={busy}
         style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9,
-                 borderRadius: 8, backgroundColor: COLORS.success, opacity: busy ? 0.7 : 1 }}>
+                 borderRadius: 8, backgroundColor: COLORS.btnTintSuccess, opacity: busy ? 0.7 : 1 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
         {busy ? <ActivityIndicator size="small" color="#fff" />
               : <Ionicons name="download-outline" size={15} color="#fff" />}
-        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{busy ? 'Preparing…' : 'Excel'}</Text>
+        <Text style={{ color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' }}>{busy ? 'Preparing…' : 'Excel'}</Text>
       </TouchableOpacity>
     </View>
     </View>

@@ -327,8 +327,8 @@ const HomeScreen = () => {
               onPress={openProfile}
               style={{
                 width: 40, height: 40, borderRadius: 20,
-                backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center',
-               shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}
+                backgroundColor: COLORS.btnTint, justifyContent: 'center', alignItems: 'center',
+               shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}
             >
               <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.powderBlue }}>{initials}</Text>
             </TouchableOpacity>
@@ -458,11 +458,11 @@ const HomeScreen = () => {
                   style={{
                     alignSelf: 'flex-start',
                     flexDirection: 'row', alignItems: 'center', gap: 6,
-                    backgroundColor: COLORS.success, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 16,
-                  }}
+                    backgroundColor: COLORS.btnTintSuccess, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 16,
+                   borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}
                 >
-                  <Ionicons name="checkmark-circle" size={16} color={COLORS.white} />
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>{availBusy ? 'Saving…' : 'Mark Available Today'}</Text>
+                  <Ionicons name="checkmark-circle" size={16} color={COLORS.btnTextSuccess} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.btnTextSuccess }}>{availBusy ? 'Saving…' : 'Mark Available Today'}</Text>
                 </TouchableOpacity>
               </>
             )}

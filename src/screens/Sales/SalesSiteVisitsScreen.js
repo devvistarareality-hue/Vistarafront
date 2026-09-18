@@ -284,9 +284,9 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Site Visits</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{visible.length} visit{visible.length === 1 ? '' : 's'} · {user?.name || ''}</Text>
         </View>
-        <TouchableOpacity onPress={openSchedule} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 14 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-          <Ionicons name="add" size={16} color={COLORS.white} />
-          <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>Schedule</Text>
+        <TouchableOpacity onPress={openSchedule} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.btnTint, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 14 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          <Ionicons name="add" size={16} color={COLORS.btnText} />
+          <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 12 }}>Schedule</Text>
         </TouchableOpacity>
       </View>
 
@@ -389,8 +389,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               )}
               {sv.status === 'completed' && (
                 <TouchableOpacity onPress={() => navigation.navigate('ClosureProjects', { sv })}
-                  style={{ marginTop: 12, backgroundColor: NAVY, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9, alignSelf: 'flex-start' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.white }}>Record Closure</Text>
+                  style={{ marginTop: 12, backgroundColor: COLORS.btnTint, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9, alignSelf: 'flex-start' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.btnText }}>Record Closure</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -435,8 +435,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               <TextInput value={sForm.remarks} onChangeText={(v) => setSForm((f) => ({ ...f, remarks: v }))} placeholder="Location, notes…" placeholderTextColor={MUTED} style={inpS} />
 
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
-              <TouchableOpacity onPress={scheduleVisit} disabled={saving} style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 16, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Schedule Visit'}</Text>
+              <TouchableOpacity onPress={scheduleVisit} disabled={saving} style={{ marginTop: 16, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Schedule Visit'}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -479,9 +479,9 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
               <TouchableOpacity onPress={submitDone} disabled={saving || !doneForm.outcome || !doneForm.remarks.trim()}
-                style={{ marginTop: 16, backgroundColor: NAVY, borderRadius: 16, paddingVertical: 13, alignItems: 'center',
-                  opacity: (saving || !doneForm.outcome || !doneForm.remarks.trim()) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Save'}</Text>
+                style={{ marginTop: 16, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 13, alignItems: 'center',
+                  opacity: (saving || !doneForm.outcome || !doneForm.remarks.trim()) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -527,8 +527,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               <TextInput value={cForm.remarks} onChangeText={(v) => setCForm((f) => ({ ...f, remarks: v }))} placeholder="Notes…" placeholderTextColor={MUTED} multiline style={[inpS, { minHeight: 60, textAlignVertical: 'top' }]} />
 
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
-              <TouchableOpacity onPress={recordClosure} disabled={saving} style={{ marginTop: 16, backgroundColor: COLORS.success, borderRadius: 16, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
-                <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Record Closure'}</Text>
+              <TouchableOpacity onPress={recordClosure} disabled={saving} style={{ marginTop: 16, backgroundColor: COLORS.btnTintSuccess, borderRadius: 16, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+                <Text style={{ color: COLORS.btnTextSuccess, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Record Closure'}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

@@ -337,9 +337,9 @@ function MetaTab() {
                   style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, padding: 12, fontSize: 12, color: TEXT, backgroundColor: BG, minHeight: 70, textAlignVertical: 'top' }}
                 />
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                  <TouchableOpacity onPress={saveConfig} disabled={saving} style={{ flex: 1, backgroundColor: NAVY, borderRadius: 14, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: saving ? 0.7 : 1 }}>
-                    {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="save-outline" size={16} color={COLORS.white} />}
-                    <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.white }}>Save Configuration</Text>
+                  <TouchableOpacity onPress={saveConfig} disabled={saving} style={{ flex: 1, backgroundColor: COLORS.btnTint, borderRadius: 14, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: saving ? 0.7 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                    {saving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Ionicons name="save-outline" size={16} color={COLORS.btnText} />}
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.btnText }}>Save Configuration</Text>
                   </TouchableOpacity>
                   {hasToken && (
                     <TouchableOpacity onPress={() => { setPat(cfg?.page_access_token || ''); setEditingToken(false); setMsg(''); }}
@@ -386,8 +386,8 @@ function MetaTab() {
               />
               {!editing && (
                 <TouchableOpacity onPress={saveConfig} disabled={saving || !appSecret.trim()}
-                  style={{ marginTop: 10, backgroundColor: NAVY, borderRadius: 14, paddingVertical: 12, alignItems: 'center', opacity: appSecret.trim() ? 1 : 0.5 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.white }}>Save App Secret</Text>
+                  style={{ marginTop: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, paddingVertical: 12, alignItems: 'center', opacity: appSecret.trim() ? 1 : 0.5 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.btnText }}>Save App Secret</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -545,9 +545,9 @@ function MetaTab() {
         )}
 
         <TouchableOpacity onPress={addMapping} disabled={mapSaving || !mapFormId.trim() || !mapProject}
-          style={{ backgroundColor: NAVY, borderRadius: 14, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: (!mapFormId.trim() || !mapProject) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-          {mapSaving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="add-circle-outline" size={16} color={COLORS.white} />}
-          <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.white }}>+ Add Mapping</Text>
+          style={{ backgroundColor: COLORS.btnTint, borderRadius: 14, paddingVertical: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: (!mapFormId.trim() || !mapProject) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          {mapSaving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Ionicons name="add-circle-outline" size={16} color={COLORS.btnText} />}
+          <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.btnText }}>+ Add Mapping</Text>
         </TouchableOpacity>
 
         <View style={{ marginTop: 12, padding: 12, borderRadius: 14, backgroundColor: COLORS.screenBg, borderWidth: 1, borderColor: COLORS.powderBlue }}>
@@ -623,8 +623,8 @@ function SourcesTab() {
             style={{ flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: BG }}
             onSubmitEditing={() => addSource(newName)} returnKeyType="done" />
           <TouchableOpacity onPress={() => addSource(newName)} disabled={adding || !newName.trim()}
-            style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: NAVY, borderRadius: 14, justifyContent: 'center', opacity: !newName.trim() ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-            {adding ? <ActivityIndicator size="small" color={COLORS.white} /> : <Ionicons name="add" size={20} color={COLORS.white} />}
+            style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, justifyContent: 'center', opacity: !newName.trim() ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            {adding ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Ionicons name="add" size={20} color={COLORS.btnText} />}
           </TouchableOpacity>
         </View>
       </Card>
@@ -681,9 +681,9 @@ export default function SalesSourcesScreen({ navigation }) {
           </TouchableOpacity>
           <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Lead Setup</Text>
           <TouchableOpacity onPress={() => setGuideVisible(true)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: NAVY , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-            <Ionicons name="help-circle-outline" size={16} color={COLORS.white} />
-            <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.white }}>Guide</Text>
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: COLORS.btnTint , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            <Ionicons name="help-circle-outline" size={16} color={COLORS.btnText} />
+            <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.btnText }}>Guide</Text>
           </TouchableOpacity>
         </View>
 

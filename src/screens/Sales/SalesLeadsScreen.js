@@ -454,8 +454,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
               <StatusBadge status={lead.status} outcome={lead.sv_outcome} />
             </View>
             <TouchableOpacity onPress={save} disabled={saving}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-              {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>{form.stm_status === 'closed' ? 'Record Closure →' : 'Save'}</Text>}
+              style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+              {saving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>{form.stm_status === 'closed' ? 'Record Closure →' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
 
@@ -1207,8 +1207,8 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 <Ionicons name="close" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity onPress={create} disabled={saving}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Add Lead</Text>}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                {saving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>Add Lead</Text>}
               </TouchableOpacity>
             </View>
             <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Add Lead</Text>
@@ -1601,8 +1601,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
 
         <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
           <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
-            style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 16, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-            <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
+            style={{ backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
     </FormSheet>
@@ -1964,9 +1964,9 @@ export default function SalesLeadsScreen({ navigation, route }) {
           </Text>
         </View>
         <TouchableOpacity onPress={() => setCreateModal(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: NAVY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-          <Ionicons name="add" size={16} color={COLORS.white} />
-          <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}>Add</Text>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.btnTint, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          <Ionicons name="add" size={16} color={COLORS.btnText} />
+          <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 12 }}>Add</Text>
         </TouchableOpacity>
       </View>
 
@@ -1989,12 +1989,12 @@ export default function SalesLeadsScreen({ navigation, route }) {
       {newLeadCount > 0 && (
         <TouchableOpacity
           onPress={() => loadData(true)}
-          style={{ backgroundColor: COLORS.navy, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+          style={{ backgroundColor: COLORS.btnTint, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' , borderWidth: 1, borderColor: COLORS.btnBorder }}
           activeOpacity={0.85}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ionicons name="notifications" size={16} color={COLORS.warningAlt} />
-            <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>
+            <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>
               {newLeadCount} new lead{newLeadCount > 1 ? 's' : ''} arrived
             </Text>
           </View>

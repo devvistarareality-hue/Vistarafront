@@ -153,8 +153,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
 
       <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => { setFilters(local); onClose(); }}
-          style={{ backgroundColor: NAVY, paddingVertical: 14, borderRadius: 16, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-          <Text style={{ color: COLORS.white, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
+          style={{ backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Apply Filters</Text>
         </TouchableOpacity>
       </View>
     </FormSheet>

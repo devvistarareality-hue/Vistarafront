@@ -20,7 +20,7 @@ export default function PostSignOutScreen({ navigation }) {
         <Text style={s.detail}>Your attendance has been recorded successfully.</Text>
 
         <TouchableOpacity style={s.btn} onPress={() => navigation.navigate('Dashboard')}>
-          <Ionicons name="home-outline" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
+          <Ionicons name="home-outline" size={18} color={COLORS.btnText} style={{ marginRight: 8 }} />
           <Text style={s.btnText}>Back to Dashboard</Text>
         </TouchableOpacity>
       </View>
@@ -35,6 +35,6 @@ const s = StyleSheet.create({
   title:         { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
   greeting:      { fontSize: 16, fontWeight: '600', color: COLORS.success, marginBottom: 10 },
   detail:        { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 44 },
-  btn:           { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.navy, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 18 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
-  btnText:       { fontSize: 15, fontWeight: '700', color: COLORS.white },
+  btn:           { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.btnTint, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 18 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder },
+  btnText:       { fontSize: 15, fontWeight: '700', color: COLORS.btnText },
 });

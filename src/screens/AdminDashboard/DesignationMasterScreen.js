@@ -256,8 +256,8 @@ const s = StyleSheet.create({
   modPillText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   inputRow:    { flexDirection: 'row', gap: 10 },
   input:       { flex: 1, backgroundColor: COLORS.inputBg, borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textPrimary },
-  addBtn:      { backgroundColor: COLORS.navy, paddingHorizontal: 20, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  addBtnText:  { color: COLORS.white, fontWeight: '700', fontSize: 14 },
+  addBtn:      { backgroundColor: COLORS.btnTint, paddingHorizontal: 20, borderRadius: 14, justifyContent: 'center', alignItems: 'center' , borderWidth: 1, borderColor: COLORS.btnBorder },
+  addBtnText:  { color: COLORS.btnText, fontWeight: '700', fontSize: 14 },
 
   groupsWrap:  { paddingHorizontal: 16, gap: 12 },
   groupCard:   { backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, elevation: 1, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6 , borderWidth: 1, borderColor: COLORS.cardBorder },

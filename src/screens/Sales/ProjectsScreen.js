@@ -133,8 +133,8 @@ function ProjectCard({ project, onEdit, onManage }) {
         ) : null}
 
         <TouchableOpacity onPress={() => onManage(project)}
-          style={{ marginTop: 12, paddingVertical: 10, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-          <Text style={{ color: COLORS.white, fontSize: 13, fontWeight: '700' }}>Manage Plots →</Text>
+          style={{ marginTop: 12, paddingVertical: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center' , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          <Text style={{ color: COLORS.btnText, fontSize: 13, fontWeight: '700' }}>Manage Plots →</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -492,8 +492,8 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
                 <Ionicons name="close" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity onPress={save} disabled={saving}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: NAVY, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                {saving ? <ActivityIndicator size="small" color={COLORS.white} /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Save</Text>}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, opacity: saving ? 0.6 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                {saving ? <ActivityIndicator size="small" color={COLORS.btnText} /> : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>Save</Text>}
               </TouchableOpacity>
             </View>
             <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{editing ? 'Edit Project' : 'New Project'}</Text>
@@ -849,9 +849,9 @@ export default function ProjectsScreen() {
           <Text style={{ fontSize: 12, color: MUTED }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</Text>
         </View>
         <TouchableOpacity onPress={openAdd}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: NAVY, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-          <Ionicons name="add" size={18} color={COLORS.white} />
-          <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 13 }}>Add Project</Text>
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTint, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+          <Ionicons name="add" size={18} color={COLORS.btnText} />
+          <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 13 }}>Add Project</Text>
         </TouchableOpacity>
       </View>
 

@@ -509,7 +509,7 @@ export default function SignInInternalScreen({ navigation }) {
                 onPress={handleBreakIn}
                 activeOpacity={0.85}
               >
-                <Ionicons name="play-circle-outline" size={20} color={COLORS.white} />
+                <Ionicons name="play-circle-outline" size={20} color={COLORS.btnTextSuccess} />
                 <Text style={s.resumeBtnText}>Check In</Text>
               </TouchableOpacity>
             </View>
@@ -674,8 +674,8 @@ const s = StyleSheet.create({
   breakBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   breakBannerTitle:{ fontSize: 15, fontWeight: '700', color: COLORS.warning },
   breakBannerSub:  { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-  resumeBtn:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.success, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 },
-  resumeBtnText:   { color: COLORS.white, fontSize: 13, fontWeight: '700' },
+  resumeBtn:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTintSuccess, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess },
+  resumeBtnText:   { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
 
   // Day complete banner
   completedBanner: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.successBg, borderRadius: 18, padding: 18, borderWidth: 1.5, borderColor: COLORS.textTertiary },
@@ -692,6 +692,6 @@ const s = StyleSheet.create({
   modFieldLabel:   { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 6, marginTop: 14 },
   modFieldRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.screenBg, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 },
   modFieldValue:   { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
-  saveBtn:         { marginTop: 24, backgroundColor: COLORS.navy, borderRadius: 18, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 },
-  saveBtnText:     { color: COLORS.white, fontSize: 15, fontWeight: '700' },
+  saveBtn:         { marginTop: 24, backgroundColor: COLORS.btnTint, borderRadius: 18, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 , borderWidth: 1, borderColor: COLORS.btnBorder },
+  saveBtnText:     { color: COLORS.btnText, fontSize: 15, fontWeight: '700' },
 });

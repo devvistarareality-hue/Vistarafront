@@ -1279,11 +1279,11 @@ export default function BookingFormScreen({ navigation, route }) {
               <TouchableOpacity onPress={() => openLoi(draftId || savedDraftId)}><Text style={{ color: COLORS.success, fontWeight: '700', fontSize: 12, textDecorationLine: 'underline' }}>View</Text></TouchableOpacity>
             </View>
           )}
-          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: COLORS.primaryButton, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}><AppIcon name="file" size={14} /> Generate LOI (Download)</Text>
+          <TouchableOpacity onPress={genLoi} disabled={pratBookMissing} style={{ backgroundColor: COLORS.btnTint, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, opacity: pratBookMissing ? 0.4 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 14 }}><AppIcon name="file" size={14} /> Generate LOI (Download)</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.success, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}><AppIcon name="camera" size={14} /> Capture signed LOI (multi-page → PDF)</Text>
+          <TouchableOpacity onPress={captureLoi} style={{ backgroundColor: COLORS.btnTintSuccess, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+            <Text style={{ color: COLORS.btnTextSuccess, fontWeight: '800', fontSize: 14 }}><AppIcon name="camera" size={14} /> Capture signed LOI (multi-page → PDF)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={pickLoi} style={{ borderWidth: 1.5, borderColor: BLUE, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center' }}>
             <Text style={{ color: BLUE, fontWeight: '700', fontSize: 14 }}><AppIcon name="clip" size={14} /> {loiFile ? loiFile.name : (savedLoiPath ? 'Attach a different signed LOI (replace)' : 'Attach signed LOI (image / PDF)')}</Text>
@@ -1300,8 +1300,8 @@ export default function BookingFormScreen({ navigation, route }) {
             style={{ flex: 1, backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
             {saving ? <ActivityIndicator color={COLORS.link} /> : <Text style={{ color: COLORS.link, fontWeight: '800', fontSize: 15 }}><AppIcon name="save" size={15} /> Save Draft</Text>}
           </TouchableOpacity>
-          <TouchableOpacity onPress={submit} disabled={saving || pratBookMissing} style={{ flex: 1, backgroundColor: COLORS.navy, borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: (saving || pratBookMissing) ? 0.6 : 1 }}>
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}
+          <TouchableOpacity onPress={submit} disabled={saving || pratBookMissing} style={{ flex: 1, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: (saving || pratBookMissing) ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>Submit Booking</Text>}
           </TouchableOpacity>
         </View>
       </ScrollView>

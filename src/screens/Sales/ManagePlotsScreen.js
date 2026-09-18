@@ -219,8 +219,8 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity onPress={save} disabled={saving}
-              style={{ flex: 1, paddingVertical: 13, backgroundColor: NAVY, borderRadius: 16, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
-              {saving ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14 }}>Save</Text>}
+              style={{ flex: 1, paddingVertical: 13, backgroundColor: COLORS.btnTint, borderRadius: 16, alignItems: 'center', opacity: saving ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+              {saving ? <ActivityIndicator color={COLORS.btnText} size="small" /> : <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 14 }}>Save</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={onClose}
               style={{ paddingHorizontal: 20, paddingVertical: 13, backgroundColor: COLORS.surfaceAlt, borderRadius: 16 }}>
@@ -890,8 +890,8 @@ function SiteMapEditor({ project, plots, onProjectUpdate, zonesOverride, onZones
             {drawMode === 'polygon' && polyPoints.length >= 3 && !pendingZone && (
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                 <TouchableOpacity onPress={finishPolygon}
-                  style={{ flex: 1, paddingVertical: 9, backgroundColor: NAVY, borderRadius: 14, alignItems: 'center' }}>
-                  <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 12 }}><AppIcon name="check" size={12} /> Done ({polyPoints.length} pts)</Text>
+                  style={{ flex: 1, paddingVertical: 9, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center' , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                  <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 12 }}><AppIcon name="check" size={12} /> Done ({polyPoints.length} pts)</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={cancelDraw}
                   style={{ paddingHorizontal: 16, paddingVertical: 9, backgroundColor: COLORS.surfaceAlt, borderRadius: 14 }}>

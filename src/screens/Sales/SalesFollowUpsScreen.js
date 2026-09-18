@@ -416,8 +416,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                 <Text style={{ fontSize: 14, fontWeight: '700', color: MUTED }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={completeFollowUp} disabled={submitting || (schedNext && !(nextAt instanceof Date))}
-                style={{ flex: 1, backgroundColor: COLORS.success, borderRadius: 14, padding: 13, alignItems: 'center', opacity: (submitting || (schedNext && !(nextAt instanceof Date))) ? 0.6 : 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{submitting ? 'Saving…' : newStatus === 'closed' ? 'Record Closure →' : 'Mark Done'}</Text>
+                style={{ flex: 1, backgroundColor: COLORS.btnTintSuccess, borderRadius: 14, padding: 13, alignItems: 'center', opacity: (submitting || (schedNext && !(nextAt instanceof Date))) ? 0.6 : 1 , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.btnTextSuccess }}>{submitting ? 'Saving…' : newStatus === 'closed' ? 'Record Closure →' : 'Mark Done'}</Text>
               </TouchableOpacity>
             </View>
           </View>
