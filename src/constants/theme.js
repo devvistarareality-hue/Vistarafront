@@ -46,20 +46,20 @@ const LIGHT = {
   shadow: '#2F6DB5', glow: '#2F6DB5',
 };
 const DARK = {
-  // Obsidian — true-black panels, hairline edges, one blue accent glow (matches web)
-  inkRgb: '235,238,245',
-  screenBg: '#040405', surface: '#0A0A0C', surface2: '#0E0F12', surface3: '#15161A',
-  border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.15)', cardBorder: 'rgba(255,255,255,0.09)', inputBg: '#0B0B0E',
-  text: '#F5F7FA', text2: '#D8DCE4', text3: '#AFB5C0', muted: '#868D9A', faint: '#5A616D',
-  strong: '#2F6DB5', strong2: '#245A96',
-  primary: '#3E7BE0', primaryTop: '#5C9BF0', primaryDeep: '#2F6DB5', accent: '#A2C8FF', accentDeep: '#CFE2FF',
-  navActiveBg: 'rgba(120,170,255,0.13)', navActiveFg: '#EAF1FF',
-  blue: 'rgba(120,170,255,0.12)', blue2: 'rgba(120,170,255,0.20)', accentSoft: 'rgba(120,170,255,0.10)', accentSofter: 'rgba(120,170,255,0.045)',
+  // Obsidian Ember — true-black panels, warm ember accent, one top glow (matches web)
+  inkRgb: '240,238,236',
+  screenBg: '#040404', surface: '#0A0A0A', surface2: '#0F0E0E', surface3: '#171514',
+  border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.15)', cardBorder: 'rgba(255,255,255,0.09)', inputBg: '#0C0B0B',
+  text: '#F7F5F3', text2: '#E0DCD8', text3: '#B6AFA9', muted: '#8C8681', faint: '#5E5955',
+  strong: '#E8541C', strong2: '#C4390C',
+  primary: '#F2561B', primaryTop: '#FF8A4D', primaryDeep: '#C4390C', accent: '#FF9264', accentDeep: '#FFC2A6',
+  navActiveBg: 'rgba(255,110,45,0.14)', navActiveFg: '#FFD8C6',
+  blue: 'rgba(255,122,61,0.12)', blue2: 'rgba(255,122,61,0.22)', accentSoft: 'rgba(255,122,61,0.10)', accentSofter: 'rgba(255,122,61,0.045)',
   success: '#6FDFA0', successSolid: '#1E9159', successDeep: '#AFF2CC', green: 'rgba(111,223,160,0.12)', success2: 'rgba(111,223,160,0.20)', successSoft: 'rgba(111,223,160,0.07)',
-  danger: '#FF8792', dangerSolid: '#D93A4B', dangerDeep: '#FFB3BA', danger2: 'rgba(255,135,146,0.26)', dangerSoft: 'rgba(255,135,146,0.07)',
+  danger: '#FF7B7B', dangerSolid: '#D93A3A', dangerDeep: '#FFB3B3', danger2: 'rgba(255,123,123,0.26)', dangerSoft: 'rgba(255,123,123,0.07)',
   warning: '#FFC97E', warningSolid: '#B8741E', warningDeep: '#FFE0B0', warning2: '#FFBB5C', peach: 'rgba(255,201,126,0.14)', peach2: '#F5B453', warningSoft: 'rgba(255,201,126,0.07)',
-  mutedSolid: '#1C1D22', mutedSolid2: '#24262C', faintSolid: '#33363E',
-  shadow: '#000000', glow: '#5C9BF0',
+  mutedSolid: '#211D1B', mutedSolid2: '#2A2523', faintSolid: '#3A3431',
+  shadow: '#000000', glow: '#FF5C1A',
 };
 const T = IS_DARK ? DARK : LIGHT;
 

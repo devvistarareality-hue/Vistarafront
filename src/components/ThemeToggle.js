@@ -28,7 +28,7 @@ export default function ThemeToggle({ compact = false, style }) {
 const st = StyleSheet.create({
   wrap: { flexDirection: 'row', padding: 3, borderRadius: 999, backgroundColor: COLORS.surface3, borderWidth: 1, borderColor: COLORS.border, alignSelf: 'flex-start' },
   opt: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999 },
-  on: { backgroundColor: COLORS.isDark ? '#2A3039' : COLORS.surface, shadowColor: '#000', shadowOpacity: COLORS.isDark ? 0.4 : 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  on: { backgroundColor: COLORS.isDark ? '#221D1B' : COLORS.surface, shadowColor: '#000', shadowOpacity: COLORS.isDark ? 0.4 : 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   label: { fontSize: 12, fontWeight: '700' },
 });
 

@@ -5,8 +5,8 @@ import { COLORS } from '../constants/theme';
 // Premium bouncing-ball-on-steps loader — native port of the Uiverse (alexruix)
 // loader used on the website.
 const STEPS = [{ x: 75, y: 18 }, { x: 40, y: 58 }, { x: 5, y: 98 }];
-const BALL_COLOR = COLORS.isDark ? '#A2D2FF' : '#2F6DB5';
-const STEP_COLOR = COLORS.isDark ? '#3A414C' : '#B9CDE4';
+const BALL_COLOR = COLORS.isDark ? '#FF7A3D' : '#2F6DB5';
+const STEP_COLOR = COLORS.isDark ? '#2A2422' : '#B9CDE4';
 
 export default function AppLoader({ label, size = 1, style, fullScreen = false }) {
   const step = useRef(new Animated.Value(0)).current;
