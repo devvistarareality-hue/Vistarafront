@@ -31,18 +31,19 @@ export const IS_DARK = THEME_MODE === 'dark';
  *  1. PALETTE  —  raw colors (don't use directly in UI)          *
  * ============================================================== */
 const LIGHT = {
+  // Daylight Azure — same design as the dark theme, in blue on near-white (matches web)
   inkRgb: '12,24,43',
-  screenBg: '#F3F6FB', surface: '#FFFFFF', surface2: '#F6F9FD', surface3: '#EDF2F8',
-  border: '#E2E9F2', borderStrong: '#CBD7E6', cardBorder: '#E4EBF4', inputBg: '#F7FAFD',
-  text: '#0C182B', text2: '#1F2E45', text3: '#3E4E66', muted: '#5A6A81', faint: '#8A98AD',
+  screenBg: '#EEF3FA', surface: '#FFFFFF', surface2: '#F6F9FE', surface3: '#ECF2FA',
+  border: 'rgba(12,24,43,0.09)', borderStrong: 'rgba(12,24,43,0.18)', cardBorder: 'rgba(12,24,43,0.09)', inputBg: '#F7FAFE',
+  text: '#0B1524', text2: '#1E2C42', text3: '#3D4C63', muted: '#5B6A81', faint: '#8794A8',
   strong: '#2F6DB5', strong2: '#245A96',
-  primary: '#2F6DB5', primaryTop: '#4A8BD8', primaryDeep: '#245A96', accent: '#2466B0', accentDeep: '#1D5392',
-  navActiveBg: '#A2D2FF', navActiveFg: '#0A2A4F',
-  blue: '#A2D2FF', blue2: '#CFE6FF', accentSoft: '#E8F3FF', accentSofter: '#F3F9FF',
-  success: '#1F8047', successSolid: '#23874A', successDeep: '#145A32', green: '#B5F3B7', success2: '#CBF5CC', successSoft: '#EAFAEC',
-  danger: '#D13C45', dangerSolid: '#D9434B', dangerDeep: '#A52A31', danger2: '#F7C6C9', dangerSoft: '#FDEDEE',
-  warning: '#9C6116', warningSolid: '#B8741E', warningDeep: '#6B420C', warning2: '#C77D1A', peach: '#FFE2B5', peach2: '#F5B453', warningSoft: '#FFF5E5',
-  mutedSolid: '#5A6A81', mutedSolid2: '#3E4E66', faintSolid: '#8A98AD',
+  primary: '#2F6DB5', primaryTop: '#4E90E0', primaryDeep: '#245A96', accent: '#1F5FA8', accentDeep: '#17497F',
+  navActiveBg: 'rgba(47,109,181,0.13)', navActiveFg: '#0B3E76',
+  blue: 'rgba(47,109,181,0.10)', blue2: 'rgba(47,109,181,0.18)', accentSoft: 'rgba(47,109,181,0.09)', accentSofter: 'rgba(47,109,181,0.045)',
+  success: '#1B7A45', successSolid: '#23874A', successDeep: '#125730', green: 'rgba(27,122,69,0.12)', success2: 'rgba(27,122,69,0.20)', successSoft: 'rgba(27,122,69,0.07)',
+  danger: '#C8323C', dangerSolid: '#D9434B', dangerDeep: '#9A242C', danger2: 'rgba(200,50,60,0.22)', dangerSoft: 'rgba(200,50,60,0.06)',
+  warning: '#96601A', warningSolid: '#B8741E', warningDeep: '#6B420C', warning2: '#C07D1D', peach: 'rgba(192,125,29,0.14)', peach2: '#F5B453', warningSoft: 'rgba(192,125,29,0.07)',
+  mutedSolid: '#5B6A81', mutedSolid2: '#3D4C63', faintSolid: '#8794A8',
   shadow: '#2F6DB5', glow: '#2F6DB5',
 };
 const DARK = {
