@@ -850,7 +850,7 @@ export default function BookingFormScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
 
       <Modal visible={saving} transparent animationType="fade" onRequestClose={() => {}}>

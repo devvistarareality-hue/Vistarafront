@@ -193,7 +193,7 @@ export default function SalesTeamScreen({ navigation }) {
   const isAssignable = (m) => canAssign && canHoldProjects(m);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>

@@ -29,7 +29,7 @@ export default function PostSignOutScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  container:     { flex: 1, backgroundColor: COLORS.screenBg },
+  container:     { flex: 1, backgroundColor: 'transparent' },
   body:          { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   successCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: COLORS.successBg, justifyContent: 'center', alignItems: 'center', marginBottom: 28 },
   title:         { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },

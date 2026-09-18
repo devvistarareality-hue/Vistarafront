@@ -199,7 +199,7 @@ export default function Club1000SchemesScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       {manager && <NewSchemeSheet visible={showNew} onClose={() => setShowNew(false)} onSaved={() => load()} />}
       {manager && <NewSchemeSheet visible={!!editing} scheme={editing} onClose={() => setEditing(null)} onSaved={() => load()} />}

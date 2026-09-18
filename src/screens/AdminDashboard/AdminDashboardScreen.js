@@ -102,7 +102,7 @@ export default function AdminDashboardScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.screenBg },
+  container: { flex: 1, backgroundColor: 'transparent' },
 
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20 },
   headerLeft:   { flex: 1, marginRight: 12 },

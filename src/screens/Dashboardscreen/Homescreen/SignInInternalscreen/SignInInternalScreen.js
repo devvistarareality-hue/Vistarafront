@@ -609,7 +609,7 @@ export default function SignInInternalScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  screen:        { flex: 1, backgroundColor: COLORS.screenBg },
+  screen:        { flex: 1, backgroundColor: 'transparent' },
   scrollContent: { paddingBottom: 40 },
 
   header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },

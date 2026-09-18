@@ -33,7 +33,7 @@ export const IS_DARK = THEME_MODE === 'dark';
 const LIGHT = {
   // Daylight Azure — same design as the dark theme, in blue on near-white (matches web)
   inkRgb: '12,24,43',
-  screenBg: '#E8F1F9', surface: '#FFFFFF', surface2: '#F4F9FD', surface3: '#E7F0F8',
+  screenBg: '#F4F8FD', surface: '#FFFFFF', surface2: '#F4F9FD', surface3: '#E7F0F8',
   border: 'rgba(12,24,43,0.08)', borderStrong: 'rgba(12,24,43,0.16)', cardBorder: 'rgba(12,24,43,0.04)', inputBg: '#F2F7FC',
   text: '#0B1524', text2: '#1E2C42', text3: '#3D4C63', muted: '#5B6A81', faint: '#8794A8',
   strong: '#1F5490', strong2: '#163F6E',
@@ -49,7 +49,7 @@ const LIGHT = {
 const DARK = {
   // Obsidian Ember — true-black panels, warm ember accent, one top glow (matches web)
   inkRgb: '240,238,236',
-  screenBg: '#040404', surface: '#0A0A0A', surface2: '#0F0E0E', surface3: '#171514',
+  screenBg: '#0A0807', surface: '#0A0A0A', surface2: '#0F0E0E', surface3: '#171514',
   border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.15)', cardBorder: 'rgba(255,255,255,0.09)', inputBg: '#0C0B0B',
   text: '#F7F5F3', text2: '#E0DCD8', text3: '#B6AFA9', muted: '#8C8681', faint: '#5E5955',
   strong: '#E8541C', strong2: '#C4390C',

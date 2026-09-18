@@ -639,7 +639,7 @@ export default function Club1000LeadsScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <AddLeadSheet visible={showAdd} onClose={() => setShowAdd(false)} onSaved={() => load()} schemes={schemes} assignees={assignees} manager={manager} />
       <LeadDetailSheet lead={selected} assignees={assignees} manager={manager} onClose={() => setSelected(null)} onStatusChange={changeStatus} onConvert={convert} onScheduleFollowUp={scheduleFollowUp} onAssigneeChange={changeAssignee} />

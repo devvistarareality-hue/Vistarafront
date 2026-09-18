@@ -74,7 +74,7 @@ const NAV_THEME = {
   ...(COLORS.isDark ? DarkTheme : DefaultTheme),
   colors: {
     ...(COLORS.isDark ? DarkTheme : DefaultTheme).colors,
-    primary: COLORS.link, background: COLORS.screenBg, card: COLORS.surface,
+    primary: COLORS.link, background: 'transparent', card: COLORS.surface,
     text: COLORS.textPrimary, border: COLORS.border, notification: COLORS.error,
   },
 };
@@ -96,7 +96,7 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer ref={navigationRef} theme={NAV_THEME}>
-      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade_from_bottom', animationDuration: 280, contentStyle: { backgroundColor: COLORS.screenBg } }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade_from_bottom', animationDuration: 280, contentStyle: { backgroundColor: 'transparent' } }}>
 
         {!user ? (
           // ── Unauthenticated ──────────────────────────────────────

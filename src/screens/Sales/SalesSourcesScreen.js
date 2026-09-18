@@ -669,7 +669,7 @@ export default function SalesSourcesScreen({ navigation }) {
   const [guideVisible, setGuideVisible] = useState(false);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       <SetupGuideModal visible={guideVisible} onClose={() => setGuideVisible(false)} />

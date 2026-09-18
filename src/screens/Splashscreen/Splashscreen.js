@@ -7,6 +7,7 @@ import { discoverServer } from '../../utils/serverDiscovery';
 import { setBaseUrl, API_PROXY_URL } from '../../constants/api';
 import { loadUser } from '../../redux/actions/authActions';
 import { restoreAdminFilter } from '../../redux/reducers/adminFilterReducer';
+import images from '../../constants/images';
 
 const ORANGE = COLORS.error;
 
@@ -71,7 +72,7 @@ const SplashScreen = ({ onFinish }) => {
               <View style={s.ring1}>
                 <View style={s.logoCircle}>
                   <Image
-                    source={require('../../assets/images/nexora-mark.png')}
+                    source={images.logo}
                     style={s.logoImg}
                     resizeMode="contain"
                   />

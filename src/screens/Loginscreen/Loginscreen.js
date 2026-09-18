@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseUrl } from '../../constants/api';
 import { LOGIN_SUCCESS } from '../../redux/types/authTypes';
+import images from '../../constants/images';
 
 // react-native-onesignal is a native module absent in Expo Go; load it lazily
 let OneSignal = null;
@@ -190,7 +191,7 @@ const LoginScreen = () => {
                 <View style={s.ring1}>
                   <View style={s.logoCircle}>
                     <Image
-                      source={require('../../assets/images/nexora-mark.png')}
+                      source={images.logo}
                       style={s.logoImg}
                       resizeMode="contain"
                     />

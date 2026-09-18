@@ -234,7 +234,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const tabLabel = (TABS.find(([k]) => k === tab) || ['', ''])[1];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.navy} />
       <View style={{ backgroundColor: COLORS.navy, paddingHorizontal: 16, paddingVertical: 14,
         flexDirection: 'row', alignItems: 'center', gap: 12 }}>

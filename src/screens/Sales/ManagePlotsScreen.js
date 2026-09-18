@@ -1281,13 +1281,13 @@ export default function ManagePlotsScreen({ route, navigation }) {
       || a.number.localeCompare(b.number, undefined, { numeric: true }));
 
   if (loading) return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
       <AppLoader />
     </SafeAreaView>
   );
 
   if (!project) return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
       <Text style={{ color: MUTED }}>Project not found.</Text>
       <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 12 }}>
         <Text style={{ color: BLUE, fontWeight: '700' }}>Go back</Text>
@@ -1296,7 +1296,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}

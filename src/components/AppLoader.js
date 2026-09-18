@@ -58,5 +58,5 @@ export default function AppLoader({ label, size = 1, style, fullScreen = false }
     </View>
   );
   if (!fullScreen) return body;
-  return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.screenBg }}>{body}</View>;
+  return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}>{body}</View>;
 }

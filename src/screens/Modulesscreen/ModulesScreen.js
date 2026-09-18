@@ -84,14 +84,14 @@ const ModulesScreen = () => {
   // Never render blank: show a brief loader while the redirect above runs.
   if (userModules.length === 1) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
         <AppLoader size={0.7} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.screenBg }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }}>
 

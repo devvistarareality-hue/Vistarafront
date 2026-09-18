@@ -391,11 +391,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
     });
   }
 
-  if (loading) return <SafeAreaView style={{ flex: 1, backgroundColor: BG }}><AppLoader style={{ marginTop: 60 }} /></SafeAreaView>;
-  if (!project) return <SafeAreaView style={{ flex: 1, backgroundColor: BG }}><Text style={{ textAlign: 'center', marginTop: 60, color: MUTED }}>Project not found.</Text></SafeAreaView>;
+  if (loading) return <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}><AppLoader style={{ marginTop: 60 }} /></SafeAreaView>;
+  if (!project) return <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}><Text style={{ textAlign: 'center', marginTop: 60, color: MUTED }}>Project not found.</Text></SafeAreaView>;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>

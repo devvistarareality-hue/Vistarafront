@@ -10,6 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { verifyCompany } from '../../redux/actions/authActions';
+import images from '../../constants/images';
 
 const { width, height } = Dimensions.get('window');
 
@@ -67,7 +68,7 @@ const HomeScreen = () => {
                 {/* Logo circle */}
                 <View style={s.logoCircle}>
                   <Image
-                    source={require('../../assets/images/nexora-mark.png')}
+                    source={images.logo}
                     style={s.logoImg}
                     resizeMode="contain"
                   />

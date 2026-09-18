@@ -1222,7 +1222,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <AddInvestorSheet visible={showAdd} onClose={() => { setShowAdd(false); setPrefillLead(null); }} onSaved={() => load()} schemes={schemes} prefillLead={prefillLead} />
       <ReviseInvestorSheet visible={!!revising} investor={revising}

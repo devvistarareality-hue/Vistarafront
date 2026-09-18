@@ -1949,7 +1949,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
   }, [isStm, pendingXfers]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}

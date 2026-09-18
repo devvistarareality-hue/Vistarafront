@@ -164,7 +164,7 @@ export default function CompanyManagementScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: COLORS.screenBg },
+  screen:      { flex: 1, backgroundColor: 'transparent' },
 
   header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
   iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },

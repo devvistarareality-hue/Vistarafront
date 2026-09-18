@@ -217,7 +217,7 @@ const HomeScreen = () => {
 
   if (loading && !user) {
     return (
-      <View style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
         <AppLoader />
       </View>
     );
@@ -277,7 +277,7 @@ const HomeScreen = () => {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <ScrollView
         showsVerticalScrollIndicator={false}

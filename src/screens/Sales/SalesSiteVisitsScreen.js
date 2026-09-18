@@ -270,7 +270,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const selProject = projects.find((p) => String(p.id) === String(sForm.project));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}

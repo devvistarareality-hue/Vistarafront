@@ -235,7 +235,7 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   const svScheduled = visits.filter(v => v.status === 'scheduled');
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
 
       {/* Header */}
