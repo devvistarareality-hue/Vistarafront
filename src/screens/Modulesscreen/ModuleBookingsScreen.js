@@ -87,11 +87,11 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     }
   }
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     setErr('');
     try {
       const ck = cacheKey('bookings', 'all', companyId);
-      const cached = getCache(ck);
+      const cached = force ? null : getCache(ck);
       if (cached) { setRows(cached); setLoading(false); setRefreshing(false); return; }
       const res = await apiFetch(SALES_ENDPOINTS.bookingsAll + (companyId ? `?company_id=${companyId}` : ''));
       if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : []; setRows(rows); setCache(ck, rows); }
@@ -159,7 +159,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}>
         {loading ? <AppLoader style={{ marginTop: 24 }} />
         : err ? <View style={[CARD, { alignItems: 'center' }]}><Text style={{ color: COLORS.error }}>{err}</Text></View>
         : <>

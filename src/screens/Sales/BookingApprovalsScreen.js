@@ -150,11 +150,11 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   };
   const [toCancel, setToCancel] = useState(null);      // booking awaiting cancel confirmation
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     try {
       const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : ''].filter(Boolean).join('&');
       const ck = cacheKey('bookings', q);
-      const cached = getCache(ck);
+      const cached = force ? null : getCache(ck);
       if (cached) { setRows(cached); setLoading(false); setRefreshing(false); return; }
       const res = await apiFetch(SALES_ENDPOINTS.bookings + q);
       if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : []; setRows(rows); setCache(ck, rows); }
@@ -317,7 +317,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
+      <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}>
         {section === 'transfers' && xfers.length === 0 && (
           <View style={[CARD, s.emptyCard]}><Text style={s.emptyText}>No lead transfers are waiting for your approval.</Text></View>
         )}
