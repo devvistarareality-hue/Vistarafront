@@ -300,7 +300,6 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           initialNumToRender={12}
           maxToRenderPerBatch={12}
           windowSize={7}
-          removeClippedSubviews
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>
               <Ionicons name="calendar-outline" size={40} color={COLORS.border} />
@@ -310,8 +309,15 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           }
           renderItem={({ item: fu }) => {
             const overdue = fu.status === 'pending' && new Date(fu.scheduled_at) < now;
+            // COLORS.errorBg is a ~6%-alpha red meant to sit on an opaque card (like the
+            // status pills below) — used as the card's own background it let the app-wide
+            // gradient backdrop show straight through, since the screen behind it is
+            // transparent by design, giving overdue rows a washed-out, disturbed look. The
+            // "Overdue" tab was the only place this ever showed, and it was unreachable
+            // until the tab-tap fix, so nobody had seen it. Card stays solid; overdue is a
+            // solid red border instead.
             return (
-              <View style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1.5, borderColor: overdue ? COLORS.errorBg : COLORS.border, backgroundColor: overdue ? COLORS.errorBg : COLORS.cardBg }]}>
+              <View style={[CARD, { padding: 14, marginBottom: 12, borderWidth: overdue ? 1.5 : 1, borderColor: overdue ? COLORS.error : COLORS.border, backgroundColor: COLORS.cardBg }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>

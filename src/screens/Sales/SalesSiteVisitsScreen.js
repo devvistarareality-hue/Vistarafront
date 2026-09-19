@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Platform, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -346,16 +346,28 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       ) : loadErr ? (
         <LoadError message={loadErr} onRetry={() => load(true)} />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-          {visible.length === 0 ? (
+        // Plain ScrollView + .map() mounted every matching visit as a real native view
+        // the instant this screen opened — the same issue that froze Follow-Ups
+        // (see that screen's history) hits here too once the list gets long enough.
+        // FlatList only mounts what's on/near screen and recycles rows on scroll.
+        <FlatList
+          data={visible}
+          keyExtractor={(sv) => String(sv.id)}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={7}
+          ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>
               <Ionicons name="location-outline" size={40} color={COLORS.border} />
               <Text style={{ fontSize: 15, fontWeight: '600', color: MUTED, marginTop: 12 }}>{narrowed ? 'No site visits match these filters' : 'No site visits'}</Text>
               <Text style={{ fontSize: 13, color: COLORS.textTertiary || MUTED, marginTop: 4 }}>Schedule one from your pipeline</Text>
             </View>
-          ) : visible.map((sv) => (
-            <View key={sv.id} style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border }]}>
+          }
+          renderItem={({ item: sv }) => (
+            <View style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{sv.lead_name || 'Lead'}</Text>
                 <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 14, backgroundColor: withAlpha(SV_COLOR[sv.status] || MUTED, '22') }}>
@@ -393,8 +405,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
                 </TouchableOpacity>
               )}
             </View>
-          ))}
-        </ScrollView>
+          )}
+        />
       )}
 
       {/* ── Schedule Modal ── */}
