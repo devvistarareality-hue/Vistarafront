@@ -12,6 +12,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import LoadError from '../../components/LoadError';
 const HISTORY_LABEL = {
   created: 'Lead Created', status: 'Overall Status', telecaller_status: 'TC Status',
   stm_status: 'STM Status', telecaller: 'Telecaller Assigned', stm: 'STM Assigned',
@@ -268,6 +269,7 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   const [visits, setVisits] = useState([]);
   const [closures, setClosures] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [openLead, setOpenLead] = useState(null); // { id, name, phone } | null
 
@@ -308,6 +310,7 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
       return;
     }
     if (refresh) setRefreshing(true); else setLoading(true);
+    setLoadErr('');
     try {
       const [sv, cl] = await Promise.all([
         fetchPage(SALES_ENDPOINTS.siteVisits, 1),
@@ -321,7 +324,9 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
         const page = { page: 1, hasNext: cl.hasNext, total: cl.count };
         setClosures(cl.rows); setClPage(page); setCache(clKey, { rows: cl.rows, page });
       }
-    } catch (e) {}
+    } catch (e) {
+      setLoadErr(e?.message || 'Could not load your conversions.');
+    }
     setLoading(false); setRefreshing(false);
   }, [fetchPage, svKey, clKey]);
 
@@ -384,6 +389,8 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
 
       {loading ? (
         <AppLoader style={{ marginTop: 24 }} />
+      ) : loadErr ? (
+        <LoadError message={loadErr} onRetry={() => { setLoadErr(''); setLoading(true); load(true); }} />
       ) : (
         <FlatList
           data={tab === 'sv' ? visits : closures}

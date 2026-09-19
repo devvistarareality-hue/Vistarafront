@@ -14,6 +14,7 @@ import FilterSelect from '../../components/FilterSelect';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import LoadError from '../../components/LoadError';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -53,6 +54,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
   const [visits,     setVisits]     = useState([]);
   const [loading,    setLoading]    = useState(true);
+  const [loadErr, setLoadErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [filter,     setFilter]     = useState(route?.params?.initialTab || 'today');
   const [range,      setRange]      = useState({ from: '', to: '' });   // visit date
@@ -101,6 +103,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
+    setLoadErr('');
     try {
       const params = [];
       if (companyId) params.push(`company_id=${companyId}`);
@@ -116,7 +119,9 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       if (cached) { setVisits(cached); setLoading(false); return; }
       const res = await apiFetch(url);
       if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : (d.results || []); setVisits(rows); setCache(ck, rows); }
-    } catch (e) {}
+    } catch (e) {
+      setLoadErr(e?.message || 'Could not load site visits.');
+    }
     setLoading(false); setRefreshing(false);
   }, [companyId, adminView, cpOnly]);
 
@@ -338,6 +343,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
       {loading ? (
         <AppLoader style={{ marginTop: 24 }} />
+      ) : loadErr ? (
+        <LoadError message={loadErr} onRetry={() => load(true)} />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
