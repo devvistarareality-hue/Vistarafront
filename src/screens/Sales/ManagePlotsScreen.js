@@ -1,5 +1,5 @@
 'use strict';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, Modal, ScrollView,
   TextInput, StyleSheet, ActivityIndicator, Alert, StatusBar,
@@ -255,7 +255,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
 /* ────────────────────────────────────────────────
    PLOT CARD
 ──────────────────────────────────────────────── */
-function PlotCard({ plot, onStatusChange, onEdit }) {
+const PlotCard = React.memo(function PlotCard({ plot, onStatusChange, onEdit }) {
   const cfg    = STATUS_CFG[plot.status] || STATUS_CFG.available;
   const [saving, setSaving] = useState(false);
 
@@ -264,11 +264,28 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
     ? plot.number.replace(new RegExp('^' + plot.cluster_type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), '')
     : plot.number;
 
+  // The three status buttons sit under the unit number in a tight grid, so a
+  // mis-tap while scrolling used to silently mark a unit sold. Confirm first.
   async function setStatus(s) {
     if (plot.status === s || saving) return;
-    setSaving(true);
-    await onStatusChange(plot.id, s);
-    setSaving(false);
+    const from = (STATUS_CFG[plot.status] || {}).label || plot.status;
+    const to = (STATUS_CFG[s] || {}).label || s;
+    Alert.alert(
+      `Change #${displayNum} to ${to}?`,
+      `This unit is currently ${from}. Changing it to ${to} is visible to everyone on the project.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: `Mark ${to}`,
+          style: s === 'sold' ? 'destructive' : 'default',
+          onPress: async () => {
+            setSaving(true);
+            await onStatusChange(plot.id, s);
+            setSaving(false);
+          },
+        },
+      ],
+    );
   }
 
   const cardW = (SW - 48) / 2;
@@ -338,7 +355,7 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
       )}
     </View>
   );
-}
+});
 
 /* ────────────────────────────────────────────────
    PLOT TYPE FLOOR PLANS EDITOR
@@ -1150,8 +1167,8 @@ function RateMasterEditor({ project, onProjectUpdate }) {
         ))}
       </View>
       <TouchableOpacity onPress={save} disabled={saving}
-        style={{ paddingVertical: 10, borderRadius: 8, backgroundColor: BLUE, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>{saving ? 'Saving…' : 'Save Rates'}</Text>
+        style={[ManagePlotsScreenS.x0, (saving) && ManagePlotsScreenS.x0_0]}>
+        <Text style={ManagePlotsScreenS.x1}>{saving ? 'Saving…' : 'Save Rates'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -1230,17 +1247,27 @@ export default function ManagePlotsScreen({ route, navigation }) {
     if (res.ok) { const u = await res.json(); setPlots(prev => prev.map(p => p.id === plotId ? u : p)); }
   }, []);
 
+  const openEdit = useCallback((plot) => { setEditPlot(plot); setEditModalVisible(true); }, []);
+  const renderPlot = useCallback(({ item }) => (
+    <PlotCard plot={item} onStatusChange={handleStatusChange} onEdit={openEdit} />
+  ), [handleStatusChange, openEdit]);
+
   const handlePlotUpdate = useCallback(updated => {
     setPlots(prev => prev.map(p => p.id === updated.id ? updated : p));
   }, []);
 
-  const clusterTypes = [...new Set(plots.map(p => p.cluster_type).filter(Boolean))];
+  // Rebuilt only when the plots change, not on every keystroke in the header.
+  const [setupOpen, setSetupOpen] = useState(false);
+  const existingNumbers = useMemo(() => new Set(plots.map((p) => String(p.number))), [plots]);
+
+  const clusterTypes = useMemo(
+    () => [...new Set(plots.map(p => p.cluster_type).filter(Boolean))], [plots]);
 
   // The block a unit belongs to is carried by its number ("A-101"), which is also what
   // makes numbers unique across blocks that repeat the same run.
   const blockOfPlot = (p) => { const m = String(p.number || '').match(/^([A-Za-z]+)-/); return m ? m[1] : ''; };
-  const towerBlocks = !project?.floor_wise ? [] : [...new Set(
-    (project.floor_plans || []).map(f => f.block || '').filter(Boolean))];
+  const towerBlocks = useMemo(() => (!project?.floor_wise ? [] : [...new Set(
+    (project.floor_plans || []).map(f => f.block || '').filter(Boolean))]), [project]);
   // Floors offered are the selected block's own — every block numbers its floors from 0,
   // so listing all of them would repeat "1st Floor" once per block.
   const towerFloors = !project?.floor_wise ? [] : (() => {
@@ -1251,18 +1278,6 @@ export default function ManagePlotsScreen({ route, navigation }) {
     return [...seen.entries()].sort((a, b) => a[0] - b[0]);
   })();
 
-  // Block/floor narrow the pool the status tabs then count and filter, so the tab
-  // numbers always describe what is actually on screen.
-  const scoped = plots.filter(p =>
-    (!blockF || blockOfPlot(p) === blockF) &&
-    (floorF === '' || Number(p.floor) === Number(floorF)));
-  const counts = {
-    all:       scoped.length,
-    available: scoped.filter(p => p.status === 'available').length,
-    hold:      scoped.filter(p => p.status === 'hold').length,
-    sold:      scoped.filter(p => p.status === 'sold').length,
-  };
-  const soldPct  = plots.length ? Math.round(plots.filter(p => p.status === 'sold').length / plots.length * 100) : 0;
   // Sort strictly by the numeric plot number (1 → n), ignoring the cluster prefix.
   const plotNumVal = (p) => {
     const disp = p.cluster_type
@@ -1271,15 +1286,44 @@ export default function ManagePlotsScreen({ route, navigation }) {
     const m = String(disp).match(/\d+/);
     return m ? parseInt(m[0], 10) : Number.MAX_SAFE_INTEGER;
   };
-  const filtered = (filter === 'all' ? scoped : scoped.filter(p => p.status === filter))
+
+  // The block and the numeric part of a unit number are parsed once per plot and
+  // reused. They used to be recomputed inside the sort comparator — two regular
+  // expressions per comparison, thousands of comparisons on a 537-unit tower,
+  // on every single render. That was the lag.
+  const indexed = useMemo(() => plots.map(p => ({
+    p,
+    block: blockOfPlot(p),
+    floor: p.floor ?? Number.MAX_SAFE_INTEGER,
+    num: plotNumVal(p),
+  })), [plots]);
+
+  // Block/floor narrow the pool the status tabs then count and filter, so the tab
+  // numbers always describe what is actually on screen.
+  const scopedIdx = useMemo(() => indexed.filter(({ p, block }) =>
+    (!blockF || block === blockF) &&
+    (floorF === '' || Number(p.floor) === Number(floorF))), [indexed, blockF, floorF]);
+
+  const counts = useMemo(() => {
+    const c = { all: scopedIdx.length, available: 0, hold: 0, sold: 0 };
+    for (const { p } of scopedIdx) if (c[p.status] !== undefined) c[p.status] += 1;
+    return c;
+  }, [scopedIdx]);
+
+  const soldPct = useMemo(() => (plots.length
+    ? Math.round(plots.reduce((n, p) => n + (p.status === 'sold' ? 1 : 0), 0) / plots.length * 100)
+    : 0), [plots]);
+
+  const filtered = useMemo(() => (filter === 'all' ? scopedIdx : scopedIdx.filter(({ p }) => p.status === filter))
     .slice()
     // Block first, then floor, then unit number — otherwise every block's "1" sorts
     // together and A/B/C interleave down the list.
     .sort((a, b) =>
-      blockOfPlot(a).localeCompare(blockOfPlot(b))
-      || ((a.floor ?? Number.MAX_SAFE_INTEGER) - (b.floor ?? Number.MAX_SAFE_INTEGER))
-      || (plotNumVal(a) - plotNumVal(b))
-      || a.number.localeCompare(b.number, undefined, { numeric: true }));
+      a.block.localeCompare(b.block)
+      || (a.floor - b.floor)
+      || (a.num - b.num)
+      || a.p.number.localeCompare(b.p.number, undefined, { numeric: true }))
+    .map(({ p }) => p), [scopedIdx, filter]);
 
   if (loading) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
@@ -1323,7 +1367,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
         columnWrapperStyle={{ paddingHorizontal: 10 }}
         contentContainerStyle={{ paddingBottom: 36 }}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={() => (
+        ListHeaderComponent={(
           <View>
             {/* Stats row */}
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
@@ -1362,18 +1406,30 @@ export default function ManagePlotsScreen({ route, navigation }) {
                 floor, a plotted scheme is positioned on a site map. Set it in Edit Project. */}
             {project.floor_wise ? (
               <>
+              {/* Collapsed by default: the builder renders every floor with its
+                  inputs and plan thumbnail, and it sits in the list header, so it
+                  re-rendered on every status tap while browsing 500+ units. It is
+                  a setup tool — open it when you need it. */}
               <View style={[CARD, { margin: 16, padding: 16 }]}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 2 }}>{project.block_industrial ? <><AppIcon name="factory" size={15} /> Block Setup</> : <><AppIcon name="building" size={15} /> Floor-wise Setup</>}</Text>
+                <TouchableOpacity onPress={() => setSetupOpen((o) => !o)} activeOpacity={0.7}
+                  style={mpS.setupHead}>
+                  <Text style={mpS.setupTitle}>{project.block_industrial ? <><AppIcon name="factory" size={15} /> Block Setup</> : <><AppIcon name="building" size={15} /> Floor-wise Setup</>}</Text>
+                  <Text style={mpS.setupChevron}>{setupOpen ? '⌄' : '›'}</Text>
+                </TouchableOpacity>
+                {setupOpen && (
                 <TowerFloorBuilder
                   floors={floorPlans} setFloors={setFloorPlans}
                   folder={`erp/projects/${project.id}/floor-plans`}
-                  existing={new Set(plots.map((p) => String(p.number)))}
+                  existing={existingNumbers}
                   onPersist={saveFloorPlans}
                   industrial={!!project.block_industrial}
                   onGenerate={generateUnits} generating={genBusy} />
+                )}
                 </View>
+                {setupOpen && (
                 <FloorMapEditor project={project} plots={plots} floors={floorPlans}
                   onFloorsChange={(next) => { setFloorPlans(next); saveFloorPlans(next); }} />
+                )}
               </>
             ) : (
               <>
@@ -1406,14 +1462,14 @@ export default function ManagePlotsScreen({ route, navigation }) {
               </ScrollView>
               {/* A single-block tower has nothing to choose between, so only its floors show. */}
               {(towerBlocks.length > 1 || towerFloors.length > 1) && (
-                <View style={mpS.filterBar}>
+                <View style={mpS.row}>
                   {towerBlocks.length > 1 && (
-                    <FilterSelect label="All blocks" value={blockF} style={mpS.filterSel}
+                    <FilterSelect label="All blocks" value={blockF} style={mpS.box}
                       onChange={(v) => { setBlockF(v); setFloorF(''); }}
                       options={[{ value: '', label: 'All blocks' }, ...towerBlocks.map((b) => ({ value: b, label: `Block ${b}` }))]} />
                   )}
                   {towerFloors.length > 1 && (
-                    <FilterSelect label="All floors" value={floorF} style={mpS.filterSel} onChange={setFloorF}
+                    <FilterSelect label="All floors" value={floorF} style={mpS.box} onChange={setFloorF}
                       options={[{ value: '', label: 'All floors' }, ...towerFloors.map(([n, label]) => ({ value: String(n), label }))]} />
                   )}
                 </View>
@@ -1439,13 +1495,11 @@ export default function ManagePlotsScreen({ route, navigation }) {
             </View>
           </View>
         )}
-        renderItem={({ item }) => (
-          <PlotCard
-            plot={item}
-            onStatusChange={handleStatusChange}
-            onEdit={p => { setEditPlot(p); setEditModalVisible(true); }}
-          />
-        )}
+        renderItem={renderPlot}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        removeClippedSubviews
         key="plots-grid"
         ListEmptyComponent={
           <View style={{ alignItems: 'center', padding: 40 }}>
@@ -1475,6 +1529,13 @@ export default function ManagePlotsScreen({ route, navigation }) {
 
 // Block / floor pickers: dropdowns, not rows of chips.
 const mpS = StyleSheet.create({
-  filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  filterSel: { flexGrow: 1, flexBasis: 150, justifyContent: 'space-between' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  box: { flexGrow: 1, flexBasis: 150, justifyContent: 'space-between' },
+});
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ManagePlotsScreenS = StyleSheet.create({
+  btn: { paddingVertical: 10, borderRadius: 8, backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, alignItems: 'center', opacity: 1 },
+  btnDim: { opacity: 0.6 },
+  box2: { fontSize: 13, fontWeight: '700', color: COLORS.btnText },
 });

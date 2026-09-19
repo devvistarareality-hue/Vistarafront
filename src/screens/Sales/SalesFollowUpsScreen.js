@@ -7,11 +7,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { getCache, setCache, bustCache, key as cacheKey } from '../../utils/dataCache';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import LoadError from '../../components/LoadError';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -54,6 +56,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
 
   const [items,      setItems]      = useState([]);
   const [loading,    setLoading]    = useState(true);
+  const [loadErr, setLoadErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   // Deep link from the dashboard's Pending / Overdue tiles.
   const [filter,     setFilter]     = useState(
@@ -80,6 +83,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
+    setLoadErr('');
     try {
       const params = [];
       if (companyId) params.push(`company_id=${companyId}`);
@@ -88,9 +92,14 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       // work — the server reads cp_only exactly as the web CP pages send it.
       if (cpOnly) params.push('cp_only=true');
       const url = params.length ? `${SALES_ENDPOINTS.followUps}?${params.join('&')}` : SALES_ENDPOINTS.followUps;
+      const ck = cacheKey('followups', url);
+      const cached = refresh ? null : getCache(ck);
+      if (cached) { setItems(cached); setLoading(false); return; }
       const res = await apiFetch(url);
-      if (res.ok) setItems(await res.json());
-    } catch (e) {}
+      if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : (d.results || []); setItems(rows); setCache(ck, rows); }
+    } catch (e) {
+      setLoadErr(e?.message || 'Could not load follow-ups.');
+    }
     setLoading(false);
     setRefreshing(false);
   }, [companyId, adminView]);
@@ -267,6 +276,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
 
       {loading ? (
         <AppLoader style={{ marginTop: 24 }} />
+      ) : loadErr ? (
+        <LoadError message={loadErr} onRetry={() => load(true)} />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>

@@ -16,7 +16,7 @@ const ALL_MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase
 
 function ModuleDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
-  const meta = MODULE_META[value] || {};
+  const meta = MODULE_META[value] || FALLBACK_META;
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)} activeOpacity={0.85}
@@ -33,7 +33,7 @@ function ModuleDropdown({ value, onChange }) {
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>Select Module</Text>
             {ALL_MODULES.map(m => {
-              const mt = MODULE_META[m];
+              const mt = MODULE_META[m] || FALLBACK_META;
               return (
                 <TouchableOpacity key={m} onPress={() => { onChange(m); setOpen(false); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.screenBg }}>
@@ -55,10 +55,15 @@ function ModuleDropdown({ value, onChange }) {
 const MODULE_META = {
   Sales:       { color: COLORS.warningAlt, bg: COLORS.warningBg, icon: 'pencil-outline' },
   HR:          { color: COLORS.link, bg: COLORS.linkBg, icon: 'account-group-outline' },
+  // 'Accounts & Finance' is in ALL_MODULES, so leaving it out of here crashed the
+  // screen on open: the grouped list reads meta.color for every module.
+  'Accounts & Finance': { color: COLORS.success, bg: COLORS.successBg, icon: 'wallet-outline' },
   Execution:   { color: COLORS.success, bg: COLORS.successBg, icon: 'wrench-outline' },
   Purchase:    { color: COLORS.warning, bg: COLORS.warningBg, icon: 'cart-outline' },
   Land:        { color: COLORS.purple, bg: COLORS.purpleBg, icon: 'terrain' },
 };
+// A module added to ALL_MODULES without a meta entry must not take the screen down.
+const FALLBACK_META = { color: COLORS.textSecondary, bg: COLORS.surfaceAlt, icon: 'shape-outline' };
 
 export default function DesignationMasterScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -201,7 +206,7 @@ export default function DesignationMasterScreen({ navigation }) {
         ) : (
           <View style={s.groupsWrap}>
             {ALL_MODULES.map((mod) => {
-              const meta = MODULE_META[mod];
+              const meta = MODULE_META[mod] || FALLBACK_META;
               const list = grouped[mod] || [];
               return (
                 <View key={mod} style={s.groupCard}>

@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { getCache, setCache, key as cacheKey } from '../../utils/dataCache';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import LoadError from '../../components/LoadError';
 const HISTORY_LABEL = {
   created: 'Lead Created', status: 'Overall Status', telecaller_status: 'TC Status',
   stm_status: 'STM Status', telecaller: 'Telecaller Assigned', stm: 'STM Assigned',
@@ -23,6 +25,7 @@ const HISTORY_COLOR = {
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+const PAGE_SIZE = 50;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const SV_COLOR = {
@@ -190,6 +193,63 @@ function StatCard({ label, value, color, bg }) {
   );
 }
 
+const Field = React.memo(function Field({ label, value, strong, money }) {
+  return (
+    <View style={mc.field}>
+      <Text style={mc.fieldLabel}>{label}</Text>
+      <Text style={[mc.fieldValue, strong && mc.fieldValueStrong, money && mc.fieldValueMoney]}>{value}</Text>
+    </View>
+  );
+});
+
+// Rows are memoised and rendered through a FlatList: this screen routinely holds
+// a thousand-plus visits, and mapping them all into a ScrollView mounted every
+// card at once — which is what froze the phone.
+const VisitCard = React.memo(function VisitCard({ v, onOpen }) {
+  return (
+    <TouchableOpacity activeOpacity={0.7} onPress={() => onOpen(v.lead, v.lead_name, v.lead_phone)} style={mc.card}>
+      <View style={mc.cardHead}>
+        <View style={mc.cardHeadMain}>
+          <Text style={mc.name}>{v.lead_name || '—'}</Text>
+          <Text style={mc.phone}>{v.lead_phone || '—'}</Text>
+        </View>
+        <StatusBadge status={v.status} colors={SV_COLOR} />
+      </View>
+      <View style={mc.row}>
+        <Field label="Project" value={v.project_name || '—'} strong />
+        <Field label="Visit Date" value={fmtDate(v.visited_at || v.scheduled_at)} strong />
+      </View>
+      <View style={[mc.row, mc.rowGap]}>
+        <Field label="STM" value={v.stm_name || '—'} />
+        <Field label="Telecaller" value={v.referred_by_telecaller_name || '—'} />
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+const ClosureCard = React.memo(function ClosureCard({ c, onOpen }) {
+  return (
+    <TouchableOpacity activeOpacity={c.lead ? 0.7 : 1} onPress={() => onOpen(c.lead, c.lead_name, c.lead_phone)} style={mc.card}>
+      <View style={mc.cardHead}>
+        <View style={mc.cardHeadMain}><Text style={mc.name}>{c.lead_name || '—'}</Text></View>
+        <StatusBadge status={c.status} colors={CLOSURE_COLOR} />
+      </View>
+      <View style={[mc.row, mc.rowGap]}>
+        <Field label="Project" value={c.project_name || '—'} strong />
+        <Field label="Date" value={fmtDate(c.closure_date)} strong />
+      </View>
+      <View style={[mc.row, mc.rowGap]}>
+        <Field label="Unit" value={`${c.unit_type || ''} ${c.unit_no || ''}`} strong />
+        <Field label="Amount" value={c.total_amount ? '₹' + Number(c.total_amount).toLocaleString('en-IN') : '—'} money />
+      </View>
+      <View style={[mc.row, mc.rowGap]}>
+        <Field label="STM" value={c.stm_name || '—'} />
+        <Field label="Telecaller" value={c.referred_by_telecaller_name || '—'} />
+      </View>
+    </TouchableOpacity>
+  );
+});
+
 export default function SalesMyConversionsScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
@@ -209,30 +269,105 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   const [visits, setVisits] = useState([]);
   const [closures, setClosures] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [openLead, setOpenLead] = useState(null); // { id, name, phone } | null
 
-  const showHistory = (leadId, name, phone) => {
+  // Stable identity, or the memoised rows re-render on every parent update.
+  const showHistory = useCallback((leadId, name, phone) => {
     if (leadId) setOpenLead({ id: leadId, name, phone });
-  };
+  }, []);
 
-  const load = useCallback(async (refresh = false) => {
-    if (refresh) setRefreshing(true); else setLoading(true);
-    try {
-      const [svRes, clRes] = await Promise.all([
-        apiFetch(SALES_ENDPOINTS.siteVisits + cq),
-        apiFetch(SALES_ENDPOINTS.closures + cq),
-      ]);
-      if (svRes.ok) setVisits(await svRes.json());
-      if (clRes.ok) setClosures(await clRes.json());
-    } catch (e) {}
-    setLoading(false); setRefreshing(false);
+  // Paged: this screen used to pull every site visit and closure (thousands of
+  // rows on an established company) on every open. Page 1 lands fast, the rest
+  // arrives as the list is scrolled.
+  const [svPage, setSvPage] = useState({ page: 1, hasNext: false, total: 0 });
+  const [clPage, setClPage] = useState({ page: 1, hasNext: false, total: 0 });
+  const [loadingMore, setLoadingMore] = useState(false);
+  const svKey = cacheKey('visits', cq);
+  const clKey = cacheKey('closures', cq);
+
+  const fetchPage = useCallback(async (endpoint, page) => {
+    const sep = cq ? '&' : '?';
+    const res = await apiFetch(`${endpoint}${cq}${sep}page=${page}&page_size=${PAGE_SIZE}`);
+    if (!res.ok) return null;
+    const d = await res.json();
+    // The endpoint still answers with a plain array when it isn't asked to page,
+    // and older backends ignore the params entirely — handle both shapes.
+    return Array.isArray(d)
+      ? { rows: d, hasNext: false, count: d.length }
+      : { rows: d.results || [], hasNext: !!d.has_next, count: d.count ?? (d.results || []).length };
   }, [cq]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const load = useCallback(async (refresh = false) => {
+    const cachedSv = getCache(svKey);
+    const cachedCl = getCache(clKey);
+    if (!refresh && cachedSv && cachedCl) {
+      // Paint the last result immediately; a focus return shouldn't show a spinner.
+      setVisits(cachedSv.rows); setSvPage(cachedSv.page);
+      setClosures(cachedCl.rows); setClPage(cachedCl.page);
+      setLoading(false);
+      return;
+    }
+    if (refresh) setRefreshing(true); else setLoading(true);
+    setLoadErr('');
+    try {
+      const [sv, cl] = await Promise.all([
+        fetchPage(SALES_ENDPOINTS.siteVisits, 1),
+        fetchPage(SALES_ENDPOINTS.closures, 1),
+      ]);
+      if (sv) {
+        const page = { page: 1, hasNext: sv.hasNext, total: sv.count };
+        setVisits(sv.rows); setSvPage(page); setCache(svKey, { rows: sv.rows, page });
+      }
+      if (cl) {
+        const page = { page: 1, hasNext: cl.hasNext, total: cl.count };
+        setClosures(cl.rows); setClPage(page); setCache(clKey, { rows: cl.rows, page });
+      }
+    } catch (e) {
+      setLoadErr(e?.message || 'Could not load your conversions.');
+    }
+    setLoading(false); setRefreshing(false);
+  }, [fetchPage, svKey, clKey]);
 
-  const svCompleted = visits.filter(v => v.status === 'completed');
-  const svScheduled = visits.filter(v => v.status === 'scheduled');
+  const loadMore = useCallback(async () => {
+    const isSv = tab === 'sv';
+    const state = isSv ? svPage : clPage;
+    if (loadingMore || !state.hasNext) return;
+    setLoadingMore(true);
+    try {
+      const next = await fetchPage(isSv ? SALES_ENDPOINTS.siteVisits : SALES_ENDPOINTS.closures, state.page + 1);
+      if (next) {
+        const page = { page: state.page + 1, hasNext: next.hasNext, total: next.count };
+        if (isSv) {
+          setVisits((prev) => { const rows = [...prev, ...next.rows]; setCache(svKey, { rows, page }); return rows; });
+          setSvPage(page);
+        } else {
+          setClosures((prev) => { const rows = [...prev, ...next.rows]; setCache(clKey, { rows, page }); return rows; });
+          setClPage(page);
+        }
+      }
+    } catch (e) {}
+    setLoadingMore(false);
+  }, [tab, svPage, clPage, loadingMore, fetchPage, svKey, clKey]);
+
+  useFocusEffect(useCallback(() => { load(); loadCounts(); }, [load, loadCounts]));
+
+  // Totals come from the server's count query — with paging, counting the loaded
+  // rows would silently under-report (and pulling every row is what we removed).
+  const [counts, setCounts] = useState({ completed: 0, scheduled: 0, closures: 0 });
+  const loadCounts = useCallback(async () => {
+    const sep = cq ? '&' : '?';
+    try {
+      const [svRes, clRes] = await Promise.all([
+        apiFetch(`${SALES_ENDPOINTS.siteVisits}${cq}${sep}counts_only=true`),
+        apiFetch(`${SALES_ENDPOINTS.closures}${cq}${sep}counts_only=true`),
+      ]);
+      const sv = svRes.ok ? await svRes.json() : {};
+      const cl = clRes.ok ? await clRes.json() : {};
+      setCounts({ completed: sv.completed || 0, scheduled: sv.scheduled || 0, closures: cl.total || 0 });
+    } catch (e) {}
+  }, [cq]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
@@ -254,132 +389,53 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
 
       {loading ? (
         <AppLoader style={{ marginTop: 24 }} />
+      ) : loadErr ? (
+        <LoadError message={loadErr} onRetry={() => { setLoadErr(''); setLoading(true); load(true); }} />
       ) : (
-        <ScrollView showsVerticalScrollIndicator persistentScrollbar contentContainerStyle={{ paddingBottom: 36 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-
-          {/* Stats */}
-          <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 16, marginBottom: 12 }}>
-            <StatCard label="Site Visits Done" value={svCompleted.length} color={COLORS.success} bg={COLORS.successBg} />
-            <StatCard label="Closures" value={closures.length} color={COLORS.link} bg={COLORS.linkBg} />
-            <StatCard label="Upcoming Visits" value={svScheduled.length} color={COLORS.warning} bg={COLORS.warningBg} />
-          </View>
-
-          {/* Tabs */}
-          <View style={{ flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, borderBottomWidth: 2, borderBottomColor: COLORS.surfaceAlt }}>
-            {[
-              { key: 'sv', label: 'Site Visits' },
-              { key: 'closures', label: 'Closures' },
-            ].map(t => (
-              <TouchableOpacity key={t.key} onPress={() => setTab(t.key)}
-                style={{ paddingVertical: 10, paddingHorizontal: 16, borderBottomWidth: 2, borderBottomColor: tab === t.key ? COLORS.warning : 'transparent', marginBottom: -2 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: tab === t.key ? COLORS.warning : MUTED }}>{t.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Content */}
-          {tab === 'sv' ? (
-            visits.length === 0 ? (
-              <View style={{ padding: 40, alignItems: 'center' }}>
-                <Ionicons name="location-outline" size={40} color={MUTED} />
-                <Text style={{ fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>{isStm ? 'No site visits recorded yet.' : 'No site visits from your referred leads yet.'}</Text>
+        <FlatList
+          data={tab === 'sv' ? visits : closures}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={({ item }) => (tab === 'sv'
+            ? <VisitCard v={item} onOpen={showHistory} />
+            : <ClosureCard c={item} onOpen={showHistory} />)}
+          contentContainerStyle={mc.listPad}
+          showsVerticalScrollIndicator
+          persistentScrollbar
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.6}
+          ListFooterComponent={loadingMore ? <ActivityIndicator style={mc.more} color={COLORS.link} /> : null}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
+          ListHeaderComponent={
+            <>
+              <View style={mc.stats}>
+                <StatCard label="Site Visits Done" value={counts.completed} color={COLORS.success} bg={COLORS.successBg} />
+                <StatCard label="Closures" value={counts.closures} color={COLORS.link} bg={COLORS.linkBg} />
+                <StatCard label="Upcoming Visits" value={counts.scheduled} color={COLORS.warning} bg={COLORS.warningBg} />
               </View>
-            ) : (
-              <View style={{ paddingHorizontal: 16 }}>
-                {visits.map(v => (
-                  <TouchableOpacity key={v.id} activeOpacity={0.7}
-                    onPress={() => showHistory(v.lead, v.lead_name, v.lead_phone)}
-                    style={[CARD, { padding: 14, marginBottom: 10 }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{v.lead_name || '—'}</Text>
-                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{v.lead_phone || '—'}</Text>
-                      </View>
-                      <StatusBadge status={v.status} colors={SV_COLOR} />
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 16 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Project</Text>
-                        <Text style={{ fontSize: 13, color: TEXT, marginTop: 2 }}>{v.project_name || '—'}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Visit Date</Text>
-                        <Text style={{ fontSize: 13, color: TEXT, marginTop: 2 }}>{fmtDate(v.visited_at || v.scheduled_at)}</Text>
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>STM</Text>
-                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{v.stm_name || '—'}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Telecaller</Text>
-                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{v.referred_by_telecaller_name || '—'}</Text>
-                      </View>
-                    </View>
+              <View style={mc.tabs}>
+                {[{ key: 'sv', label: 'Site Visits' }, { key: 'closures', label: 'Closures' }].map((t) => (
+                  <TouchableOpacity key={t.key} onPress={() => setTab(t.key)} style={[mc.tab, tab === t.key && mc.tabOn]}>
+                    <Text style={[mc.tabText, tab === t.key && mc.tabTextOn]}>{t.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
-            )
-          ) : (
-            closures.length === 0 ? (
-              <View style={{ padding: 40, alignItems: 'center' }}>
-                <Ionicons name="checkmark-circle-outline" size={40} color={MUTED} />
-                <Text style={{ fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>{isStm ? 'No closures recorded yet.' : 'No closures from your referred leads yet.'}</Text>
-              </View>
-            ) : (
-              <View style={{ paddingHorizontal: 16 }}>
-                {/* A closure outlives its lead (trial reset) — don't fake a tap when
-                    there's no lead history left to open. */}
-                {closures.map(c => (
-                  <TouchableOpacity key={c.id} activeOpacity={c.lead ? 0.7 : 1}
-                    onPress={() => showHistory(c.lead, c.lead_name, c.lead_phone)}
-                    style={[CARD, { padding: 14, marginBottom: 10 }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT }}>{c.lead_name || '—'}</Text>
-                      </View>
-                      <StatusBadge status={c.status} colors={CLOSURE_COLOR} />
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 16, marginBottom: 6 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Project</Text>
-                        <Text style={{ fontSize: 13, color: TEXT, marginTop: 2 }}>{c.project_name || '—'}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Date</Text>
-                        <Text style={{ fontSize: 13, color: TEXT, marginTop: 2 }}>{fmtDate(c.closure_date)}</Text>
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 16, marginBottom: 6 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Unit</Text>
-                        <Text style={{ fontSize: 13, color: TEXT, marginTop: 2 }}>{(c.unit_type || '') + ' ' + (c.unit_no || '')}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Amount</Text>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.success, marginTop: 2 }}>
-                          {c.total_amount ? '₹' + Number(c.total_amount).toLocaleString('en-IN') : '—'}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>STM</Text>
-                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{c.stm_name || '—'}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>Telecaller</Text>
-                        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{c.referred_by_telecaller_name || '—'}</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )
-          )}
-        </ScrollView>
+            </>
+          }
+          ListEmptyComponent={
+            <View style={mc.empty}>
+              <Ionicons name={tab === 'sv' ? 'location-outline' : 'checkmark-circle-outline'} size={40} color={MUTED} />
+              <Text style={mc.emptyText}>
+                {tab === 'sv'
+                  ? (isStm ? 'No site visits recorded yet.' : 'No site visits from your referred leads yet.')
+                  : (isStm ? 'No closures recorded yet.' : 'No closures from your referred leads yet.')}
+              </Text>
+            </View>
+          }
+        />
       )}
 
       <LeadHistoryModal lead={openLead} onClose={() => setOpenLead(null)} />
@@ -390,4 +446,31 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const SalesMyConversionsScreenS = StyleSheet.create({
   panel: { backgroundColor: COLORS.panel, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+});
+
+const mc = StyleSheet.create({
+  listPad:   { paddingBottom: 36 },
+  stats:     { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 16, marginBottom: 12 },
+  tabs:      { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, borderBottomWidth: 2, borderBottomColor: COLORS.surfaceAlt },
+  tab:       { paddingVertical: 10, paddingHorizontal: 16, borderBottomWidth: 2, borderBottomColor: 'transparent', marginBottom: -2 },
+  tabOn:     { borderBottomColor: COLORS.warning },
+  tabText:   { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  tabTextOn: { color: COLORS.warning },
+
+  card:         { ...CARD, padding: 14, marginBottom: 10, marginHorizontal: 16 },
+  cardHead:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  cardHeadMain: { flex: 1 },
+  name:         { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  phone:        { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  row:          { flexDirection: 'row', gap: 16 },
+  rowGap:       { marginTop: 6 },
+  field:        { flex: 1 },
+  fieldLabel:   { fontSize: 10, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase' },
+  fieldValue:   { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  fieldValueStrong: { fontSize: 13, color: COLORS.textPrimary },
+  fieldValueMoney:  { fontSize: 13, fontWeight: '700', color: COLORS.success },
+
+  more:      { marginVertical: 18 },
+  empty:     { padding: 40, alignItems: 'center' },
+  emptyText: { fontSize: 14, color: COLORS.textSecondary, marginTop: 12, textAlign: 'center' },
 });

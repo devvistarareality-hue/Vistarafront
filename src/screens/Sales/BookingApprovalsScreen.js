@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { getCache, setCache, bustCache, key as cacheKey } from '../../utils/dataCache';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
@@ -149,11 +150,14 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   };
   const [toCancel, setToCancel] = useState(null);      // booking awaiting cancel confirmation
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     try {
       const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : ''].filter(Boolean).join('&');
+      const ck = cacheKey('bookings', q);
+      const cached = force ? null : getCache(ck);
+      if (cached) { setRows(cached); setLoading(false); setRefreshing(false); return; }
       const res = await apiFetch(SALES_ENDPOINTS.bookings + q);
-      if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
+      if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : []; setRows(rows); setCache(ck, rows); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
   }, [tab, companyId, adminView, cpOnly]);
@@ -313,7 +317,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
+      <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}>
         {section === 'transfers' && xfers.length === 0 && (
           <View style={[CARD, s.emptyCard]}><Text style={s.emptyText}>No lead transfers are waiting for your approval.</Text></View>
         )}

@@ -46,6 +46,7 @@
           }
         }
       ],
+      "./plugins/withAndroidArchitectures",
       "./plugins/withLaunchBackground"
     ],
     "ios": {
@@ -82,7 +83,7 @@
           "apiKey": "AIzaSyCuEw97S0W0PfipI4YTyhNrcdfVlZAum8k"
         }
       },
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/favicon.png"
