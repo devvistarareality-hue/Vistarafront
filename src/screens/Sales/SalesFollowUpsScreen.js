@@ -238,14 +238,20 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             </TouchableOpacity>
           )}
         </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+        {/* flexWrap + gap on Android can under-measure this row once the counts get big
+            enough to wrap to a second line (Prince Soni's 9736/4880/3562/4856 always
+            does) — the box used for touch dispatch ends up taller than what's painted,
+            and the extra invisible slice lands on the Tabs row right below, eating its
+            taps. margin instead of gap keeps the same spacing without wrapping's Yoga
+            quirk. */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginRight: -7, marginBottom: -7 }}>
           {[
             { label: 'Total',     n: counts.total,     c: BLUE,          bg: COLORS.linkBg },
             { label: 'Pending',   n: counts.pending,   c: COLORS.warning, bg: COLORS.warningBg },
             { label: 'Overdue',   n: counts.overdue,   c: COLORS.error,   bg: COLORS.errorBg },
             { label: 'Completed', n: counts.completed, c: COLORS.success, bg: COLORS.successBg },
           ].map((s) => (
-            <View key={s.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 5, borderRadius: 20, backgroundColor: s.bg }}>
+            <View key={s.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 5, borderRadius: 20, backgroundColor: s.bg, marginRight: 7, marginBottom: 7 }}>
               <Text style={{ fontSize: 14, fontWeight: '800', color: s.c }}>{s.n}</Text>
               <Text style={{ fontSize: 10.5, fontWeight: '700', color: s.c, textTransform: 'uppercase', letterSpacing: 0.3 }}>{s.label}</Text>
             </View>
@@ -262,7 +268,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       )}
 
       {/* Tabs */}
-      <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, zIndex: 1, elevation: 1 }}>
         {TABS.map((t) => {
           const active = filter === t.key;
           return (
