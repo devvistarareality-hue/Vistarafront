@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -285,18 +285,33 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       ) : loadErr ? (
         <LoadError message={loadErr} onRetry={() => load(true)} />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-          {visible.length === 0 ? (
+        // Plain ScrollView + .map() used to mount every matching row as real native
+        // views the instant this screen opened — fine for a handful, but an "All
+        // Pending"-sized account (thousands of rows) froze the main thread mounting
+        // them all at once, long enough for Android to show "Nexora is not
+        // responding" with no touch (even Back) getting through until it finished.
+        // FlatList only mounts what's on/near screen and recycles rows on scroll.
+        <FlatList
+          data={visible}
+          keyExtractor={(fu) => String(fu.id)}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={7}
+          removeClippedSubviews
+          ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>
               <Ionicons name="calendar-outline" size={40} color={COLORS.border} />
               <Text style={{ fontSize: 15, fontWeight: '600', color: MUTED, marginTop: 12 }}>No follow-ups</Text>
               <Text style={{ fontSize: 13, color: COLORS.textTertiary || MUTED, marginTop: 4 }}>Schedule follow-ups from lead details</Text>
             </View>
-          ) : visible.map((fu) => {
+          }
+          renderItem={({ item: fu }) => {
             const overdue = fu.status === 'pending' && new Date(fu.scheduled_at) < now;
             return (
-              <View key={fu.id} style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1.5, borderColor: overdue ? COLORS.errorBg : COLORS.border, backgroundColor: overdue ? COLORS.errorBg : COLORS.cardBg }]}>
+              <View style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1.5, borderColor: overdue ? COLORS.errorBg : COLORS.border, backgroundColor: overdue ? COLORS.errorBg : COLORS.cardBg }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -331,8 +346,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                 </View>
               </View>
             );
-          })}
-        </ScrollView>
+          }}
+        />
       )}
 
       {/* Complete follow-up: remarks + optional next follow-up */}
