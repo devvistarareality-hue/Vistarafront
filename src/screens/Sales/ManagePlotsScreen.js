@@ -255,7 +255,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
 /* ────────────────────────────────────────────────
    PLOT CARD
 ──────────────────────────────────────────────── */
-function PlotCard({ plot, onStatusChange, onEdit }) {
+const PlotCard = React.memo(function PlotCard({ plot, onStatusChange, onEdit }) {
   const cfg    = STATUS_CFG[plot.status] || STATUS_CFG.available;
   const [saving, setSaving] = useState(false);
 
@@ -338,7 +338,7 @@ function PlotCard({ plot, onStatusChange, onEdit }) {
       )}
     </View>
   );
-}
+});
 
 /* ────────────────────────────────────────────────
    PLOT TYPE FLOOR PLANS EDITOR
@@ -1230,6 +1230,11 @@ export default function ManagePlotsScreen({ route, navigation }) {
     if (res.ok) { const u = await res.json(); setPlots(prev => prev.map(p => p.id === plotId ? u : p)); }
   }, []);
 
+  const openEdit = useCallback((plot) => { setEditPlot(plot); setEditModalVisible(true); }, []);
+  const renderPlot = useCallback(({ item }) => (
+    <PlotCard plot={item} onStatusChange={handleStatusChange} onEdit={openEdit} />
+  ), [handleStatusChange, openEdit]);
+
   const handlePlotUpdate = useCallback(updated => {
     setPlots(prev => prev.map(p => p.id === updated.id ? updated : p));
   }, []);
@@ -1323,7 +1328,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
         columnWrapperStyle={{ paddingHorizontal: 10 }}
         contentContainerStyle={{ paddingBottom: 36 }}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={() => (
+        ListHeaderComponent={(
           <View>
             {/* Stats row */}
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
@@ -1439,13 +1444,11 @@ export default function ManagePlotsScreen({ route, navigation }) {
             </View>
           </View>
         )}
-        renderItem={({ item }) => (
-          <PlotCard
-            plot={item}
-            onStatusChange={handleStatusChange}
-            onEdit={p => { setEditPlot(p); setEditModalVisible(true); }}
-          />
-        )}
+        renderItem={renderPlot}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        removeClippedSubviews
         key="plots-grid"
         ListEmptyComponent={
           <View style={{ alignItems: 'center', padding: 40 }}>

@@ -464,9 +464,13 @@ export default function BookingFormScreen({ navigation, route }) {
   // (intercepts header back, hardware back and the swipe-back gesture).
   const isDirty = !!(f.land_rate || f.dev_rate || f.const_rate || f.premium_location || f.sale_deed_amount
     || f.legal_charges || f.maint_rate || insts.length || nsdInsts.length || deedAmtStr || loiFile);
+  // Once the booking is in, the form is no longer "unsaved work" — without this the
+  // guard blocked the navigation fired from the "Booking submitted" dialog, so OK
+  // left the user sitting on the same form.
+  const submittedRef = useRef(false);
   useEffect(() => {
     const unsub = navigation.addListener('beforeRemove', (ev) => {
-      if (!isDirty) return;
+      if (!isDirty || submittedRef.current) return;
       ev.preventDefault();
       Alert.alert('Discard booking?', 'You have unsaved booking details. Are you sure you want to go back?', [
         { text: 'Stay', style: 'cancel' },
@@ -815,6 +819,7 @@ export default function BookingFormScreen({ navigation, route }) {
         // resetting saving here left a window where a stray tap could still
         // re-fire submit before the screen navigates away, producing an
         // identical duplicate booking (confirmed in production).
+        submittedRef.current = true;
         Alert.alert('Booking submitted', 'Your booking has been submitted and sent for approval.', [
           { text: 'OK', onPress: () => navigation.navigate(kioskCtx ? 'Kiosk' : 'ClosureProjects') },
         ]);
