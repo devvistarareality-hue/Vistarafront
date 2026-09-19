@@ -559,8 +559,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
                 </Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('BookingForm', { project: project.id, eoi: '1', block: activeBlock, projectName: project?.name, formulaSet: project?.formula_set })}
-                  style={{ backgroundColor: BLUE, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 22 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>Raise EOI for Block {activeBlock || 'this project'}</Text>
+                  style={ClosureViewerScreenS.btn2}>
+                  <Text style={ClosureViewerScreenS.box}>Raise EOI for Block {activeBlock || 'this project'}</Text>
                 </TouchableOpacity>
               </View>
             ) : !visiblePlots.length ? (
@@ -733,8 +733,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Move to Resale', onPress: () => moveToResaleFromPanel(p.id) },
                   ])} disabled={resaleBusy}
-                    style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.purple, alignItems: 'center', opacity: resaleBusy ? 0.7 : 1 }}>
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{resaleBusy ? 'Moving…' : '↻ Move to Resale'}</Text>
+                    style={[ClosureViewerScreenS.btn3, (resaleBusy) && ClosureViewerScreenS.btn3Dim]}>
+                    <Text style={ClosureViewerScreenS.box2}>{resaleBusy ? 'Moving…' : '↻ Move to Resale'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => setSoldPanelPlot(null)} disabled={resaleBusy}
                     style={{ paddingVertical: 10, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
@@ -957,4 +957,9 @@ const pickBtn = { flexDirection: 'row', alignItems: 'center', justifyContent: 's
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClosureViewerScreenS = StyleSheet.create({
   btn: { paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.btnTint, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+  btn2: { backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 22 },
+  box: { fontSize: 13, fontWeight: '800', color: COLORS.btnText },
+  btn3: { paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, alignItems: 'center', opacity: 1 },
+  btn3Dim: { opacity: 0.7 },
+  box2: { color: COLORS.btnText, fontWeight: '700', fontSize: 14 },
 });

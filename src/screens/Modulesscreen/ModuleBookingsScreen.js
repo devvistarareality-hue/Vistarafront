@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { getCache, setCache, bustCache, key as cacheKey } from '../../utils/dataCache';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
@@ -89,8 +90,11 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const load = useCallback(async () => {
     setErr('');
     try {
+      const ck = cacheKey('bookings', 'all', companyId);
+      const cached = getCache(ck);
+      if (cached) { setRows(cached); setLoading(false); setRefreshing(false); return; }
       const res = await apiFetch(SALES_ENDPOINTS.bookingsAll + (companyId ? `?company_id=${companyId}` : ''));
-      if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
+      if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : []; setRows(rows); setCache(ck, rows); }
       else setErr(res.status === 403 ? 'You do not have access to bookings.' : 'Could not load bookings.');
     } catch (_) { setErr('Could not load bookings.'); }
     setLoading(false); setRefreshing(false);

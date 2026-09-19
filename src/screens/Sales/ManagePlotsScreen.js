@@ -1150,8 +1150,8 @@ function RateMasterEditor({ project, onProjectUpdate }) {
         ))}
       </View>
       <TouchableOpacity onPress={save} disabled={saving}
-        style={{ paddingVertical: 10, borderRadius: 8, backgroundColor: BLUE, alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.white }}>{saving ? 'Saving…' : 'Save Rates'}</Text>
+        style={[ManagePlotsScreenS.x0, (saving) && ManagePlotsScreenS.x0_0]}>
+        <Text style={ManagePlotsScreenS.x1}>{saving ? 'Saving…' : 'Save Rates'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -1411,14 +1411,14 @@ export default function ManagePlotsScreen({ route, navigation }) {
               </ScrollView>
               {/* A single-block tower has nothing to choose between, so only its floors show. */}
               {(towerBlocks.length > 1 || towerFloors.length > 1) && (
-                <View style={mpS.filterBar}>
+                <View style={mpS.row}>
                   {towerBlocks.length > 1 && (
-                    <FilterSelect label="All blocks" value={blockF} style={mpS.filterSel}
+                    <FilterSelect label="All blocks" value={blockF} style={mpS.box}
                       onChange={(v) => { setBlockF(v); setFloorF(''); }}
                       options={[{ value: '', label: 'All blocks' }, ...towerBlocks.map((b) => ({ value: b, label: `Block ${b}` }))]} />
                   )}
                   {towerFloors.length > 1 && (
-                    <FilterSelect label="All floors" value={floorF} style={mpS.filterSel} onChange={setFloorF}
+                    <FilterSelect label="All floors" value={floorF} style={mpS.box} onChange={setFloorF}
                       options={[{ value: '', label: 'All floors' }, ...towerFloors.map(([n, label]) => ({ value: String(n), label }))]} />
                   )}
                 </View>
@@ -1478,6 +1478,13 @@ export default function ManagePlotsScreen({ route, navigation }) {
 
 // Block / floor pickers: dropdowns, not rows of chips.
 const mpS = StyleSheet.create({
-  filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  filterSel: { flexGrow: 1, flexBasis: 150, justifyContent: 'space-between' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  box: { flexGrow: 1, flexBasis: 150, justifyContent: 'space-between' },
+});
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ManagePlotsScreenS = StyleSheet.create({
+  btn: { paddingVertical: 10, borderRadius: 8, backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, alignItems: 'center', opacity: 1 },
+  btnDim: { opacity: 0.6 },
+  box2: { fontSize: 13, fontWeight: '700', color: COLORS.btnText },
 });

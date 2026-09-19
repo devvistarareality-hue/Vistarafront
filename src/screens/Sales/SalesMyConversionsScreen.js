@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { getCache, setCache, key as cacheKey } from '../../utils/dataCache';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
@@ -23,6 +24,7 @@ const HISTORY_COLOR = {
 
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+const PAGE_SIZE = 50;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const SV_COLOR = {
@@ -274,23 +276,93 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
     if (leadId) setOpenLead({ id: leadId, name, phone });
   }, []);
 
-  const load = useCallback(async (refresh = false) => {
-    if (refresh) setRefreshing(true); else setLoading(true);
-    try {
-      const [svRes, clRes] = await Promise.all([
-        apiFetch(SALES_ENDPOINTS.siteVisits + cq),
-        apiFetch(SALES_ENDPOINTS.closures + cq),
-      ]);
-      if (svRes.ok) setVisits(await svRes.json());
-      if (clRes.ok) setClosures(await clRes.json());
-    } catch (e) {}
-    setLoading(false); setRefreshing(false);
+  // Paged: this screen used to pull every site visit and closure (thousands of
+  // rows on an established company) on every open. Page 1 lands fast, the rest
+  // arrives as the list is scrolled.
+  const [svPage, setSvPage] = useState({ page: 1, hasNext: false, total: 0 });
+  const [clPage, setClPage] = useState({ page: 1, hasNext: false, total: 0 });
+  const [loadingMore, setLoadingMore] = useState(false);
+  const svKey = cacheKey('visits', cq);
+  const clKey = cacheKey('closures', cq);
+
+  const fetchPage = useCallback(async (endpoint, page) => {
+    const sep = cq ? '&' : '?';
+    const res = await apiFetch(`${endpoint}${cq}${sep}page=${page}&page_size=${PAGE_SIZE}`);
+    if (!res.ok) return null;
+    const d = await res.json();
+    // The endpoint still answers with a plain array when it isn't asked to page,
+    // and older backends ignore the params entirely — handle both shapes.
+    return Array.isArray(d)
+      ? { rows: d, hasNext: false, count: d.length }
+      : { rows: d.results || [], hasNext: !!d.has_next, count: d.count ?? (d.results || []).length };
   }, [cq]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const load = useCallback(async (refresh = false) => {
+    const cachedSv = getCache(svKey);
+    const cachedCl = getCache(clKey);
+    if (!refresh && cachedSv && cachedCl) {
+      // Paint the last result immediately; a focus return shouldn't show a spinner.
+      setVisits(cachedSv.rows); setSvPage(cachedSv.page);
+      setClosures(cachedCl.rows); setClPage(cachedCl.page);
+      setLoading(false);
+      return;
+    }
+    if (refresh) setRefreshing(true); else setLoading(true);
+    try {
+      const [sv, cl] = await Promise.all([
+        fetchPage(SALES_ENDPOINTS.siteVisits, 1),
+        fetchPage(SALES_ENDPOINTS.closures, 1),
+      ]);
+      if (sv) {
+        const page = { page: 1, hasNext: sv.hasNext, total: sv.count };
+        setVisits(sv.rows); setSvPage(page); setCache(svKey, { rows: sv.rows, page });
+      }
+      if (cl) {
+        const page = { page: 1, hasNext: cl.hasNext, total: cl.count };
+        setClosures(cl.rows); setClPage(page); setCache(clKey, { rows: cl.rows, page });
+      }
+    } catch (e) {}
+    setLoading(false); setRefreshing(false);
+  }, [fetchPage, svKey, clKey]);
 
-  const svCompleted = visits.filter(v => v.status === 'completed');
-  const svScheduled = visits.filter(v => v.status === 'scheduled');
+  const loadMore = useCallback(async () => {
+    const isSv = tab === 'sv';
+    const state = isSv ? svPage : clPage;
+    if (loadingMore || !state.hasNext) return;
+    setLoadingMore(true);
+    try {
+      const next = await fetchPage(isSv ? SALES_ENDPOINTS.siteVisits : SALES_ENDPOINTS.closures, state.page + 1);
+      if (next) {
+        const page = { page: state.page + 1, hasNext: next.hasNext, total: next.count };
+        if (isSv) {
+          setVisits((prev) => { const rows = [...prev, ...next.rows]; setCache(svKey, { rows, page }); return rows; });
+          setSvPage(page);
+        } else {
+          setClosures((prev) => { const rows = [...prev, ...next.rows]; setCache(clKey, { rows, page }); return rows; });
+          setClPage(page);
+        }
+      }
+    } catch (e) {}
+    setLoadingMore(false);
+  }, [tab, svPage, clPage, loadingMore, fetchPage, svKey, clKey]);
+
+  useFocusEffect(useCallback(() => { load(); loadCounts(); }, [load, loadCounts]));
+
+  // Totals come from the server's count query — with paging, counting the loaded
+  // rows would silently under-report (and pulling every row is what we removed).
+  const [counts, setCounts] = useState({ completed: 0, scheduled: 0, closures: 0 });
+  const loadCounts = useCallback(async () => {
+    const sep = cq ? '&' : '?';
+    try {
+      const [svRes, clRes] = await Promise.all([
+        apiFetch(`${SALES_ENDPOINTS.siteVisits}${cq}${sep}counts_only=true`),
+        apiFetch(`${SALES_ENDPOINTS.closures}${cq}${sep}counts_only=true`),
+      ]);
+      const sv = svRes.ok ? await svRes.json() : {};
+      const cl = clRes.ok ? await clRes.json() : {};
+      setCounts({ completed: sv.completed || 0, scheduled: sv.scheduled || 0, closures: cl.total || 0 });
+    } catch (e) {}
+  }, [cq]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
@@ -326,13 +398,16 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
           maxToRenderPerBatch={8}
           windowSize={7}
           removeClippedSubviews
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.6}
+          ListFooterComponent={loadingMore ? <ActivityIndicator style={mc.more} color={COLORS.link} /> : null}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
           ListHeaderComponent={
             <>
               <View style={mc.stats}>
-                <StatCard label="Site Visits Done" value={svCompleted.length} color={COLORS.success} bg={COLORS.successBg} />
-                <StatCard label="Closures" value={closures.length} color={COLORS.link} bg={COLORS.linkBg} />
-                <StatCard label="Upcoming Visits" value={svScheduled.length} color={COLORS.warning} bg={COLORS.warningBg} />
+                <StatCard label="Site Visits Done" value={counts.completed} color={COLORS.success} bg={COLORS.successBg} />
+                <StatCard label="Closures" value={counts.closures} color={COLORS.link} bg={COLORS.linkBg} />
+                <StatCard label="Upcoming Visits" value={counts.scheduled} color={COLORS.warning} bg={COLORS.warningBg} />
               </View>
               <View style={mc.tabs}>
                 {[{ key: 'sv', label: 'Site Visits' }, { key: 'closures', label: 'Closures' }].map((t) => (
@@ -388,6 +463,7 @@ const mc = StyleSheet.create({
   fieldValueStrong: { fontSize: 13, color: COLORS.textPrimary },
   fieldValueMoney:  { fontSize: 13, fontWeight: '700', color: COLORS.success },
 
+  more:      { marginVertical: 18 },
   empty:     { padding: 40, alignItems: 'center' },
   emptyText: { fontSize: 14, color: COLORS.textSecondary, marginTop: 12, textAlign: 'center' },
 });

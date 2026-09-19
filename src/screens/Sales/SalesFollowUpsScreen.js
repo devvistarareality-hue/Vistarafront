@@ -7,6 +7,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { getCache, setCache, bustCache, key as cacheKey } from '../../utils/dataCache';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
@@ -88,8 +89,11 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       // work — the server reads cp_only exactly as the web CP pages send it.
       if (cpOnly) params.push('cp_only=true');
       const url = params.length ? `${SALES_ENDPOINTS.followUps}?${params.join('&')}` : SALES_ENDPOINTS.followUps;
+      const ck = cacheKey('followups', url);
+      const cached = refresh ? null : getCache(ck);
+      if (cached) { setItems(cached); setLoading(false); return; }
       const res = await apiFetch(url);
-      if (res.ok) setItems(await res.json());
+      if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : (d.results || []); setItems(rows); setCache(ck, rows); }
     } catch (e) {}
     setLoading(false);
     setRefreshing(false);

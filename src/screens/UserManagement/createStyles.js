@@ -27,16 +27,16 @@ export default StyleSheet.create({
   /* Role pills */
   pillRow:   { gap: 8 },
   pill:      { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 22, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
-  pillActive:{ backgroundColor: COLORS.warningAlt, borderColor: COLORS.warningAlt },
+  pillActive:{ backgroundColor: COLORS.btnTint, borderColor: COLORS.btnBorder },
   pillText:  { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
-  pillTextActive: { color: COLORS.white },
+  pillTextActive: { color: COLORS.btnText },
 
   /* Module pills */
   pillGrid:           { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modulePill:         { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 22, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
-  modulePillActive:   { backgroundColor: COLORS.warningAlt, borderColor: COLORS.warningAlt },
+  modulePillActive:   { backgroundColor: COLORS.btnTint, borderColor: COLORS.btnBorder },
   modulePillText:     { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
-  modulePillTextActive: { color: COLORS.white },
+  modulePillTextActive: { color: COLORS.btnText },
 
   /* Manager pills */
   managerSubtitle:      { fontSize: 12, color: COLORS.textSecondary, marginBottom: 10, marginTop: -6 },

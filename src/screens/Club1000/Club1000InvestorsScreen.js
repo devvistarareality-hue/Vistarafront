@@ -564,9 +564,9 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         </View>
 
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
-          style={[ClubInvestorsScreenS.btn, (saving || !loiFile) && ClubInvestorsScreenS.btnDim]}>
+          style={[ClubInvestorsScreenS.btn, (saving || !loiFile) && ClubInvestorsScreenS.box2]}>
           {saving ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Ionicons name="save-outline" size={17} color={COLORS.btnTextSuccess} />}
-          <Text style={ClubInvestorsScreenS.box}>Submit for Approval</Text>
+          <Text style={ClubInvestorsScreenS.box2}>Submit for Approval</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -784,9 +784,9 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         </View>
 
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
-          style={{ backgroundColor: COLORS.purple, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
-          {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Submit Revision for Approval</Text>
+          style={[ClubInvestorsScreenS.btn3, (saving || !loiFile) && ClubInvestorsScreenS.btn3Dim]}>
+          {saving ? <ActivityIndicator color={COLORS.btnText} /> : <Ionicons name="save-outline" size={17} color={COLORS.btnText} />}
+          <Text style={ClubInvestorsScreenS.box5}>Submit Revision for Approval</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -1242,9 +1242,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
           <Text style={{ fontSize: 12, color: MUTED }}>{manager ? 'All investors' : 'Investors you\'ve added'}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowAdd(true)} disabled={!schemes.length}
-          style={[ClubInvestorsScreenS.btn2, (schemes.length) && ClubInvestorsScreenS.btn2Dim]}>
+          style={[ClubInvestorsScreenS.btn2, (schemes.length) && ClubInvestorsScreenS.box23]}>
           <Ionicons name="add" size={16} color={COLORS.btnTextSuccess} />
-          <Text style={ClubInvestorsScreenS.box2}>Add</Text>
+          <Text style={ClubInvestorsScreenS.box24}>Add</Text>
         </TouchableOpacity>
       </View>
       {!loading && !schemes.length && (
@@ -1352,9 +1352,12 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubInvestorsScreenS = StyleSheet.create({
   btn: { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
-  btnDim: { opacity: 0.5 },
+  box2: { opacity: 0.5 },
   box: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
   btn2: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, opacity: 0.5 },
-  btn2Dim: { opacity: 1 },
-  box2: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
+  box3: { opacity: 1 },
+  box4: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
+  btn3: { backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
+  btn3Dim: { opacity: 0.5 },
+  box5: { color: COLORS.btnText, fontSize: 15, fontWeight: '800' },
 });

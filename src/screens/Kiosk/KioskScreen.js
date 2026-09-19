@@ -418,8 +418,8 @@ const s = StyleSheet.create({
   summary: { marginTop: 14, fontSize: 15, color: COLORS.text2 },
 
   input: { height: 52, paddingHorizontal: 14, borderRadius: 22, borderWidth: 1.5, borderColor: COLORS.border, fontSize: 16, backgroundColor: COLORS.surface, color: NAVY },
-  primary: { height: 54, borderRadius: 18, backgroundColor: BLUE, alignItems: 'center', justifyContent: 'center', marginTop: 26 },
-  primaryT: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  primary: { height: 54, borderRadius: 18, backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, alignItems: 'center', justifyContent: 'center', marginTop: 26 },
+  primaryT: { color: COLORS.btnText, fontSize: 16, fontWeight: '800' },
   fine: { fontSize: 12, color: COLORS.textTertiary, marginTop: 12, textAlign: 'center' },
   err: { marginTop: 14, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error2, borderRadius: 14, padding: 12, fontSize: 14, color: COLORS.error },
 

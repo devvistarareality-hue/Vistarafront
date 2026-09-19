@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar,
-         ActivityIndicator, RefreshControl, Modal, Alert } from 'react-native';
+         ActivityIndicator, RefreshControl, Modal, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -157,8 +157,8 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
             {err ? <Text style={{ color: COLORS.error, fontSize: 13, fontWeight: '600', marginBottom: 12 }}>{err}</Text> : null}
 
             <TouchableOpacity onPress={save} disabled={saving}
-              style={{ backgroundColor: BLUE, borderRadius: 14, paddingVertical: 13, alignItems: 'center', opacity: saving ? 0.7 : 1 }}>
-              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>
+              style={[ChannelPartnersScreenS.btn, (saving) && ChannelPartnersScreenS.btnDim]}>
+              <Text style={ChannelPartnersScreenS.box}>
                 {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Channel Partner'}
               </Text>
             </TouchableOpacity>
@@ -278,3 +278,10 @@ export default function ChannelPartnersScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Styles moved out of JSX (see AGENTS.md: no inline styles).
+const ChannelPartnersScreenS = StyleSheet.create({
+  btn: { backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, borderRadius: 14, paddingVertical: 13, alignItems: 'center', opacity: 1 },
+  btnDim: { opacity: 0.7 },
+  box: { color: COLORS.btnText, fontSize: 14, fontWeight: '800' },
+});

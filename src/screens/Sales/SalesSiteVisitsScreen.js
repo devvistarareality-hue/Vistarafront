@@ -7,6 +7,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { getCache, setCache, bustCache, key as cacheKey } from '../../utils/dataCache';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 
@@ -108,11 +109,16 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       // work — the server reads cp_only exactly as the web CP pages send it.
       if (cpOnly) params.push('cp_only=true');
       const url = params.length ? `${SALES_ENDPOINTS.siteVisits}?${params.join('&')}` : SALES_ENDPOINTS.siteVisits;
+      const ck = cacheKey('visits', url);
+      // Tab, date, project and outcome are all filtered on the device, so this
+      // screen needs the whole set — but only once a minute, not once a tap.
+      const cached = refresh ? null : getCache(ck);
+      if (cached) { setVisits(cached); setLoading(false); return; }
       const res = await apiFetch(url);
-      if (res.ok) setVisits(await res.json());
+      if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : (d.results || []); setVisits(rows); setCache(ck, rows); }
     } catch (e) {}
     setLoading(false); setRefreshing(false);
-  }, [companyId, adminView]);
+  }, [companyId, adminView, cpOnly]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -162,6 +168,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       const res = await apiFetch(SALES_ENDPOINTS.siteVisit(sv.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
+        bustCache('visits');
         setVisits((list) => list.map((v) => (v.id === sv.id ? updated : v)));
       }
     } catch (e) {}
@@ -202,6 +209,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         // tiles), but it does not overwrite the lead's own STM Status.
         await apiFetch(SALES_ENDPOINTS.lead(doneSv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: 'sv_done' }) }).catch(() => {});
         const updated = await res.json();
+        bustCache('visits');
         setVisits((list) => list.map((v) => (v.id === updated.id ? updated : v)));
         setDoneSv(null);
       } else {

@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { getCache, setCache, bustCache, key as cacheKey } from '../../utils/dataCache';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
@@ -152,8 +153,11 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const load = useCallback(async () => {
     try {
       const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : ''].filter(Boolean).join('&');
+      const ck = cacheKey('bookings', q);
+      const cached = getCache(ck);
+      if (cached) { setRows(cached); setLoading(false); setRefreshing(false); return; }
       const res = await apiFetch(SALES_ENDPOINTS.bookings + q);
-      if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
+      if (res.ok) { const d = await res.json(); const rows = Array.isArray(d) ? d : []; setRows(rows); setCache(ck, rows); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
   }, [tab, companyId, adminView, cpOnly]);
