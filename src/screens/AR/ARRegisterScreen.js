@@ -162,11 +162,10 @@ const AccountCard = React.memo(function AccountCard({ r, ageing, onPress }) {
           ))}
         </View>
       ) : null}
-      {(oldest || hasIssue(r) || r.ar_schedule) ? (
+      {(oldest || hasIssue(r)) ? (
         <View style={s.badges}>
           {oldest ? <Badge label={`${oldest} days`} tone="danger" /> : null}
           {ISSUES.filter((i) => i.test(r)).map((i) => <Badge key={i.value} label={i.label} tone={i.tone} />)}
-          {r.ar_schedule ? <Badge label="Schedule set in AR" tone="success" /> : null}
         </View>
       ) : null}
     </TouchableOpacity>
