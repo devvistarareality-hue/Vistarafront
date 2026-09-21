@@ -32,6 +32,10 @@ import Club1000ReferralRewardsScreen from '../screens/Club1000/Club1000ReferralR
 import Club1000LeadsScreen from '../screens/Club1000/Club1000LeadsScreen';
 import Club1000FollowUpsScreen from '../screens/Club1000/Club1000FollowUpsScreen';
 import Club1000InvestorApprovalsScreen from '../screens/Club1000/Club1000InvestorApprovalsScreen';
+import ARDashboardScreen from '../screens/AR/ARDashboardScreen';
+import ARRegisterScreen from '../screens/AR/ARRegisterScreen';
+import ARLedgerScreen from '../screens/AR/ARLedgerScreen';
+import ARReceiptsEntryScreen from '../screens/AR/ARReceiptsEntryScreen';
 
 const Tab = createBottomTabNavigator();
 const ModulesStack = createNativeStackNavigator();
@@ -65,6 +69,10 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="Club1000Leads" component={Club1000LeadsScreen} />
       <ModulesStack.Screen name="Club1000FollowUps" component={Club1000FollowUpsScreen} />
       <ModulesStack.Screen name="Club1000InvestorApprovals" component={Club1000InvestorApprovalsScreen} />
+      <ModulesStack.Screen name="ARDashboard" component={ARDashboardScreen} />
+      <ModulesStack.Screen name="ARRegister" component={ARRegisterScreen} />
+      <ModulesStack.Screen name="ARLedger" component={ARLedgerScreen} />
+      <ModulesStack.Screen name="ARReceiptsEntry" component={ARReceiptsEntryScreen} />
     </ModulesStack.Navigator>
   );
 }

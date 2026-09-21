@@ -369,6 +369,7 @@ export const MODULE_ACCENT = {
   Purchase:    { bg: PALETTE.peach, icon: PALETTE.amber600 },
   Land:        { bg: PALETTE.blue,  icon: PALETTE.blue600 },
   'Accounts & Finance': { bg: PALETTE.green, icon: PALETTE.green600 },
+  AR:          { bg: PALETTE.green, icon: PALETTE.green600 },
   'Club 1000': { bg: PALETTE.green, icon: PALETTE.green600 },
   Reports:     { bg: PALETTE.green, icon: PALETTE.green600 },
   Settings:    { bg: PALETTE.grey,  icon: PALETTE.gray700 },

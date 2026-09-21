@@ -110,6 +110,18 @@ export const SALES_ENDPOINTS = {
   get metaMappings()    { return `${BASE_URL}/api/sales/webhooks/meta/mappings/`; },
 };
 
+// Accounts Receivable — register, ledger, receipts, dashboard, statement.
+export const AR_ENDPOINTS = {
+  get accounts()   { return `${BASE_URL}/api/ar/accounts/`; },
+  account: (id)    => `${BASE_URL}/api/ar/accounts/${id}/`,
+  receipts: (id)   => `${BASE_URL}/api/ar/accounts/${id}/receipts/`,
+  statement: (id)  => `${BASE_URL}/api/ar/accounts/${id}/statement/`,
+  receipt: (id)    => `${BASE_URL}/api/ar/receipts/${id}/`,
+  receiptAudit: (id) => `${BASE_URL}/api/ar/receipts/${id}/audit/`,
+  get dashboard()  { return `${BASE_URL}/api/ar/dashboard/`; },
+  get importEntries() { return `${BASE_URL}/api/ar/import/entries/`; },
+};
+
 export const CLUB1000_ENDPOINTS = {
   get stats()      { return `${BASE_URL}/api/club1000/stats/`; },
   get users()      { return `${BASE_URL}/api/club1000/users/`; },

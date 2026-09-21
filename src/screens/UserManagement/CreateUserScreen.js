@@ -71,9 +71,10 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
     </>
   );
 }
-const MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase', 'Land'];
+const MODULES = ['Sales', 'HR', 'Accounts & Finance', 'AR', 'Execution', 'Purchase', 'Land'];
 
 const MODULE_ICONS = {
+  'AR': 'cash-multiple',
   Sales:      'pencil-outline',
   HR:         'account-group-outline',
   Execution:  'wrench-outline',
