@@ -255,6 +255,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
         stm:               lead.stm             || '',
         stm_status:        lead.stm_status      || '',
         stm_remarks:       lead.stm_remarks     || '',
+        disqualify_reason: lead.disqualify_reason || '',
+        disqualify_note:   lead.disqualify_note || '',
         // City/Address/Purpose/Budget now ship in the list payload → prefill instantly.
         city: lead.city || '', address: lead.address || '',
         purpose: Array.isArray(lead.purpose) ? lead.purpose : [],
@@ -316,6 +318,13 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
     if (_isStm && (!form.stm_status || !(form.stm_remarks || '').trim())) {
       Alert.alert('Required', 'Please set STM Status and add STM Remarks before saving.'); return;
     }
+    const isNotQualified = form.telecaller_status === 'not_qualified' || form.stm_status === 'not_qualified';
+    if (isNotQualified && !form.disqualify_reason) {
+      Alert.alert('Required', 'Pick a reason for Not Qualified.'); return;
+    }
+    if (form.disqualify_reason === 'other' && !(form.disqualify_note || '').trim()) {
+      Alert.alert('Required', 'Add a note for the Other reason.'); return;
+    }
     if (form.stm_status === 'sv_done' && (!svOutcome || !svVisitedDate)) {
       Alert.alert('Required', 'Please pick a visit outcome and visit date.'); return;
     }
@@ -326,6 +335,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       // Picking "closed" just routes the STM into the booking flow below.
       const body = { ...form };
       if (body.stm_status === 'closed') delete body.stm_status;
+      if (!isNotQualified) { body.disqualify_reason = ''; body.disqualify_note = ''; }
+      else if (body.disqualify_reason !== 'other') { body.disqualify_note = ''; }
       const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
@@ -618,7 +629,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 <View style={half}>
                   <Text style={lblS}>TC Status {_isTelecaller ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
                   <PickerDropdown
-                    items={['warm','cold','not_interested','not_reachable','callback'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
+                    items={['warm','cold','not_interested','not_reachable','callback','not_qualified'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
                     value={form.telecaller_status} onChange={v => set('telecaller_status', v)}
                     placeholder="Status" title="TC Status" />
                 </View>
@@ -647,7 +658,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 <View style={half}>
                   <Text style={lblS}>{_isCp ? 'CP Status' : 'STM Status'} {_isStm ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
                   <PickerDropdown
-                    items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
+                    items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
                     value={form.stm_status} onChange={v => set('stm_status', v)}
                     placeholder="Status" title={_isCp ? 'CP Status' : 'STM Status'} />
                 </View>
@@ -785,6 +796,27 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
               )}
               </>)}
+
+              {/* Not Qualified reason — one shared field regardless of whether TC or
+                  STM/CP status is the one set to it. */}
+              {(form.telecaller_status === 'not_qualified' || form.stm_status === 'not_qualified') && (
+                <View style={SalesLeadsScreenS.nqBoxTop}>
+                  <Text style={SalesLeadsScreenS.nqTitle}>NOT QUALIFIED</Text>
+                  <Text style={lblS}>Reason <Text style={SalesLeadsScreenS.nqRequired}>*</Text></Text>
+                  <PickerDropdown
+                    items={[['religion','Religion'],['caste','Caste'],['budget','Budget'],['other','Other']].map(([v, l]) => ({ value: v, label: l }))}
+                    value={form.disqualify_reason} onChange={v => set('disqualify_reason', v)}
+                    placeholder="Select reason" title="Not Qualified Reason" />
+                  {form.disqualify_reason === 'other' && (
+                    <View style={SalesLeadsScreenS.mt10}>
+                      <Text style={lblS}>Note <Text style={SalesLeadsScreenS.nqRequired}>*</Text></Text>
+                      <TextInput value={form.disqualify_note} onChangeText={v => set('disqualify_note', v)}
+                        multiline placeholder="Reason details" placeholderTextColor={COLORS.text3}
+                        style={[inpS, SalesLeadsScreenS.textArea60]} />
+                    </View>
+                  )}
+                </View>
+              )}
 
               {/* Meta Ads Info */}
               {(lead.meta_campaign_name || lead.meta_adset_name || lead.meta_ad_name) && (
@@ -1100,7 +1132,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   const _isAdminMgr = !(_isTelecaller || _isStm || _isCp);
   const showTC  = _isAdminMgr || _isTelecaller;
   const showStm = _isAdminMgr || _isStm || _isCp;
-  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '', lead_date: '' };
+  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '', disqualify_reason: '', disqualify_note: '', lead_date: '' };
   const [form, setForm] = useState(emptyForm);
   const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1142,6 +1174,13 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     }
     if (_isStm && (!form.stm_status || !(form.stm_remarks || '').trim())) {
       Alert.alert('Required', 'Please set STM Status and add STM Remarks before saving.'); return;
+    }
+    const isNotQualified = form.telecaller_status === 'not_qualified' || form.stm_status === 'not_qualified';
+    if (isNotQualified && !form.disqualify_reason) {
+      Alert.alert('Required', 'Pick a reason for Not Qualified.'); return;
+    }
+    if (form.disqualify_reason === 'other' && !(form.disqualify_note || '').trim()) {
+      Alert.alert('Required', 'Add a note for the Other reason.'); return;
     }
     if (showStm && form.stm_status === 'sv_done' && (!svOutcome || !svVisitedDate)) {
       Alert.alert('Required', isWalkIn
@@ -1401,6 +1440,26 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
               </>
             )}
 
+            {/* Not Qualified reason — one shared field regardless of whether TC or
+                STM/CP status is the one set to it. */}
+            {(form.telecaller_status === 'not_qualified' || form.stm_status === 'not_qualified') && (
+              <View style={SalesLeadsScreenS.nqBoxBottom}>
+                <Text style={SalesLeadsScreenS.nqTitle}>NOT QUALIFIED</Text>
+                <Field label="Reason" required>
+                  <DropdownPicker
+                    value={form.disqualify_reason}
+                    onChange={v => set('disqualify_reason', v)}
+                    options={[{ value: '', label: '— Select reason —' }, { value: 'religion', label: 'Religion' }, { value: 'caste', label: 'Caste' }, { value: 'budget', label: 'Budget' }, { value: 'other', label: 'Other' }]}
+                    placeholder="Select reason"
+                    triggerStyle={SalesLeadsScreenS.triggerNoMB}
+                  />
+                </Field>
+                {form.disqualify_reason === 'other' && (
+                  <TextField label="Note" required value={form.disqualify_note} onChangeText={v => set('disqualify_note', v)} placeholder="Reason details" multiline style={SalesLeadsScreenS.textArea60} />
+                )}
+              </View>
+            )}
+
             <Text style={{ fontSize: 12, fontWeight: '800', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>Follow-ups</Text>
             <FollowUpScheduler fuForm={fuForm} setFuForm={setFuForm} canAssign={_isAdminMgr}
               hint="Optional — pick a date &amp; time and it's scheduled when you tap Add Lead." />
@@ -1410,8 +1469,8 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
 }
 
 const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
-const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback'];
-const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed'];
+const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback','not_qualified'];
+const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'];
 
 /* ── Filter Bottom Sheet ── */
 function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false }) {
@@ -2110,4 +2169,11 @@ const SalesLeadsScreenS = StyleSheet.create({
   btn3: { backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
   btn4: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.btnTint, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, borderWidth: 1, borderColor: COLORS.btnBorder },
   panel: { backgroundColor: COLORS.panel, padding: 16 },
+  nqBoxTop:    { backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.error, borderRadius: 16, padding: 12, marginTop: 12 },
+  nqBoxBottom: { backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.error, borderRadius: 16, padding: 12, marginBottom: 16 },
+  nqTitle:     { fontSize: 11, fontWeight: '800', color: COLORS.error, letterSpacing: 0.5, marginBottom: 8 },
+  nqRequired:  { color: COLORS.error },
+  mt10:        { marginTop: 10 },
+  textArea60:  { height: 60, textAlignVertical: 'top' },
+  triggerNoMB: { marginBottom: 0 },
 });
