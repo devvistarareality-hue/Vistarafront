@@ -12,7 +12,7 @@ import common from '../../styles/common';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import FilterSelect from '../../components/FilterSelect';
-import { rupee, inrShort, AGE_LABELS, ISSUES, today, withCompany } from './arShared';
+import { inrShort, AGE_LABELS, ISSUES, today, withCompany, DateField } from './arShared';
 
 const ISSUE_TEXT = {
   no_schedule: 'No installment schedule — set one in the ledger',
@@ -26,6 +26,7 @@ const AGE_COLORS = ['#E8C27A', '#DDA24B', COLORS.warningSolid, '#CF6A33', '#C950
 export default function ARDashboardScreen({ navigation }) {
   const companyId = useSelector((st) => st.adminFilter?.companyId);
   const [project, setProject] = useState('');
+  const [asOf, setAsOf] = useState(today());
   const [data, setData] = useState(null);
   const [projects, setProjects] = useState([]);
   const [err, setErr] = useState('');
@@ -34,7 +35,7 @@ export default function ARDashboardScreen({ navigation }) {
   const load = useCallback(async () => {
     setErr('');
     try {
-      const extra = [`as_of=${today()}`];
+      const extra = [`as_of=${asOf}`];
       if (project) extra.push(`project=${project}`);
       const r = await apiFetch(withCompany(AR_ENDPOINTS.dashboard, companyId, extra));
       const d = await r.json().catch(() => ({}));
@@ -42,7 +43,7 @@ export default function ARDashboardScreen({ navigation }) {
       setData(d);
       if (d.projects) setProjects(d.projects);
     } catch (e) { setErr('Check your connection and try again.'); }
-  }, [project, companyId]);
+  }, [project, companyId, asOf]);
 
   useEffect(() => { setData(null); load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
@@ -69,10 +70,11 @@ export default function ARDashboardScreen({ navigation }) {
         <View style={s.toolbar}>
           <FilterSelect label="Project" value={project} onChange={setProject}
             options={[{ value: '', label: 'All projects' }, ...projects.map((p) => ({ value: String(p.id), label: p.name }))]} />
+          <DateField compact maxToday value={asOf} onChange={(d) => setAsOf(d || today())} style={s.asOf} />
         </View>
         <View style={s.quick}>
           <Quick icon="book-outline" label="Register" onPress={() => go('ARRegister', { project })} />
-          <Quick icon="create-outline" label="Enter receipts" onPress={() => go('ARReceiptsEntry', { project })} />
+          <Quick icon="cloud-upload-outline" label="Import receipts" onPress={() => go('ARImport', { project })} />
         </View>
 
         {data === null && !err ? <AppLoader label="Calculating the receivables book…" /> : err && !data ? <LoadError message={err} onRetry={load} /> : (
@@ -236,7 +238,8 @@ const s = StyleSheet.create({
   bad: { color: COLORS.error },
   warn: { color: COLORS.warning },
   dim: { opacity: 0.5 },
-  toolbar: { flexDirection: 'row', marginBottom: 10 },
+  toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  asOf: { marginLeft: 'auto', minWidth: 132 },
   quick: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   quickBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: RADIUS.md,
               backgroundColor: COLORS.accentSoft, borderWidth: 1, borderColor: withAlpha(COLORS.link, '30') },

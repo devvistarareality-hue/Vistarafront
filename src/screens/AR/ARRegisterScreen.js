@@ -11,7 +11,7 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import FilterSelect from '../../components/FilterSelect';
 import { Badge } from '../../components/ui';
-import { inrShort, ISSUES, hasIssue, worstBucket, today, withCompany } from './arShared';
+import { inrShort, AGE_LABELS, ISSUES, hasIssue, worstBucket, today, withCompany } from './arShared';
 
 const SHOW = [
   { value: '', label: 'All accounts' },
@@ -31,6 +31,7 @@ export default function ARRegisterScreen({ navigation, route }) {
   const [project, setProject] = useState(p.project || '');
   const [show, setShow] = useState(p.issue || (p.overdue ? 'overdue' : ''));
   const [q, setQ] = useState('');
+  const [showAgeing, setShowAgeing] = useState(false);
 
   const load = useCallback(async () => {
     setErr('');
@@ -78,6 +79,10 @@ export default function ARRegisterScreen({ navigation, route }) {
         <FilterSelect label="Project" value={project} onChange={setProject}
           options={[{ value: '', label: 'All projects' }, ...projects.map(([id, name]) => ({ value: id, label: name }))]} />
         <FilterSelect label="Show" value={show} onChange={setShow} options={SHOW} />
+        <TouchableOpacity onPress={() => setShowAgeing((v) => !v)} activeOpacity={0.8} style={[s.toggle, showAgeing && s.toggleOn]}>
+          <Ionicons name={showAgeing ? 'checkbox' : 'square-outline'} size={15} color={showAgeing ? COLORS.link : COLORS.textSecondary} />
+          <Text style={[s.toggleText, showAgeing && s.toggleTextOn]}>Show ageing</Text>
+        </TouchableOpacity>
       </View>
       <View style={s.totals}>
         <Total label="Outstanding" value={totals.outstanding} />
@@ -114,7 +119,8 @@ export default function ARRegisterScreen({ navigation, route }) {
           ListEmptyComponent={<Text style={s.empty}>{(rows || []).length === 0
             ? 'No bookings are fully approved yet. An account appears once Sales and Accounts have both approved a booking.'
             : 'No accounts match these filters.'}</Text>}
-          renderItem={({ item }) => <AccountCard r={item} onPress={() => navigation.navigate('ARLedger', { id: item.id })} />}
+          extraData={showAgeing}
+          renderItem={({ item }) => <AccountCard r={item} ageing={showAgeing} onPress={() => navigation.navigate('ARLedger', { id: item.id })} />}
         />
       )}
     </SafeAreaView>
@@ -130,7 +136,7 @@ function Total({ label, value, bad }) {
   );
 }
 
-const AccountCard = React.memo(function AccountCard({ r, onPress }) {
+const AccountCard = React.memo(function AccountCard({ r, ageing, onPress }) {
   const oldest = worstBucket(r.ageing);
   return (
     <TouchableOpacity style={[common.card, s.card]} activeOpacity={0.8} onPress={onPress}>
@@ -149,6 +155,13 @@ const AccountCard = React.memo(function AccountCard({ r, onPress }) {
         <Metric label="Overdue" value={inrShort(r.overdue)} bad={r.overdue > 0} />
         <Metric label="Interest" value={inrShort(r.net_interest)} />
       </View>
+      {ageing && r.overdue > 0 ? (
+        <View style={s.ages}>
+          {AGE_LABELS.filter((a) => r.ageing[a] > 0).map((a) => (
+            <View key={a} style={s.age}><Text style={s.ageLabel}>{a}d</Text><Text style={s.ageValue}>{inrShort(r.ageing[a])}</Text></View>
+          ))}
+        </View>
+      ) : null}
       {(oldest || hasIssue(r) || r.ar_schedule) ? (
         <View style={s.badges}>
           {oldest ? <Badge label={`${oldest} days`} tone="danger" /> : null}
@@ -190,6 +203,14 @@ const s = StyleSheet.create({
   metric: { flex: 1 },
   metricLabel: { fontSize: 10.5, color: COLORS.textSecondary, fontWeight: '600' },
   metricValue: { fontSize: 12.5, color: COLORS.textPrimary, fontWeight: '700', marginTop: 2 },
+  toggle: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  toggleOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
+  toggleText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  toggleTextOn: { color: COLORS.link, fontWeight: '700' },
+  ages: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  age: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: COLORS.errorBg },
+  ageLabel: { fontSize: 10.5, fontWeight: '700', color: COLORS.textSecondary },
+  ageValue: { fontSize: 12.5, fontWeight: '800', color: COLORS.error },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   empty: { textAlign: 'center', color: COLORS.textSecondary, fontSize: 13.5, paddingVertical: 36, paddingHorizontal: 20, lineHeight: 20 },
 });

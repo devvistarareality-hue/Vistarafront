@@ -66,7 +66,7 @@ import Club1000InvestorApprovalsScreen from '../screens/Club1000/Club1000Investo
 import ARDashboardScreen from '../screens/AR/ARDashboardScreen';
 import ARRegisterScreen  from '../screens/AR/ARRegisterScreen';
 import ARLedgerScreen    from '../screens/AR/ARLedgerScreen';
-import ARReceiptsEntryScreen from '../screens/AR/ARReceiptsEntryScreen';
+import ARImportScreen    from '../screens/AR/ARImportScreen';
 
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
@@ -162,7 +162,7 @@ const AppNavigator = () => {
             <Stack.Screen name="ARDashboard"         component={ARDashboardScreen} />
             <Stack.Screen name="ARRegister"          component={ARRegisterScreen} />
             <Stack.Screen name="ARLedger"            component={ARLedgerScreen} />
-            <Stack.Screen name="ARReceiptsEntry"     component={ARReceiptsEntryScreen} />
+            <Stack.Screen name="ARImport"            component={ARImportScreen} />
             <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
           </>
 
