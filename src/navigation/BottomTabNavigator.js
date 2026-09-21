@@ -35,6 +35,7 @@ import Club1000InvestorApprovalsScreen from '../screens/Club1000/Club1000Investo
 import ARDashboardScreen from '../screens/AR/ARDashboardScreen';
 import ARRegisterScreen from '../screens/AR/ARRegisterScreen';
 import ARLedgerScreen from '../screens/AR/ARLedgerScreen';
+import ARReceiptsEntryScreen from '../screens/AR/ARReceiptsEntryScreen';
 
 const Tab = createBottomTabNavigator();
 const ModulesStack = createNativeStackNavigator();
@@ -71,6 +72,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="ARDashboard" component={ARDashboardScreen} />
       <ModulesStack.Screen name="ARRegister" component={ARRegisterScreen} />
       <ModulesStack.Screen name="ARLedger" component={ARLedgerScreen} />
+      <ModulesStack.Screen name="ARReceiptsEntry" component={ARReceiptsEntryScreen} />
     </ModulesStack.Navigator>
   );
 }

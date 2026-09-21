@@ -11,7 +11,7 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import FilterSelect from '../../components/FilterSelect';
 import { Badge } from '../../components/ui';
-import { rupee, ISSUES, hasIssue, worstBucket, today, withCompany } from './arShared';
+import { inrShort, ISSUES, hasIssue, worstBucket, today, withCompany } from './arShared';
 
 const SHOW = [
   { value: '', label: 'All accounts' },
@@ -125,7 +125,7 @@ function Total({ label, value, bad }) {
   return (
     <View style={s.total}>
       <Text style={s.totalLabel}>{label}</Text>
-      <Text style={[s.totalValue, bad && value > 0 && s.bad]} numberOfLines={1} adjustsFontSizeToFit>{rupee(value)}</Text>
+      <Text style={[s.totalValue, bad && value > 0 && s.bad]} numberOfLines={1} adjustsFontSizeToFit>{inrShort(value)}</Text>
     </View>
   );
 }
@@ -140,14 +140,14 @@ const AccountCard = React.memo(function AccountCard({ r, onPress }) {
           <Text style={s.sub} numberOfLines={1}>{r.project} · Plot {r.plots}{r.status === 'frozen' ? ' · Cancelled' : ''}</Text>
         </View>
         <View style={s.right}>
-          <Text style={s.os}>{rupee(r.os_with_interest)}</Text>
+          <Text style={s.os}>{inrShort(r.os_with_interest)}</Text>
           <Text style={s.osLabel}>O/s + interest</Text>
         </View>
       </View>
       <View style={s.metrics}>
-        <Metric label="Received" value={`${rupee(r.received)} · ${r.pct_realised}%`} />
-        <Metric label="Overdue" value={rupee(r.overdue)} bad={r.overdue > 0} />
-        <Metric label="Interest" value={rupee(r.net_interest)} />
+        <Metric label="Received" value={`${inrShort(r.received)} · ${r.pct_realised}%`} />
+        <Metric label="Overdue" value={inrShort(r.overdue)} bad={r.overdue > 0} />
+        <Metric label="Interest" value={inrShort(r.net_interest)} />
       </View>
       {(oldest || hasIssue(r) || r.ar_schedule) ? (
         <View style={s.badges}>

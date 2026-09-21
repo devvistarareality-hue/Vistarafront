@@ -118,6 +118,7 @@ export const AR_ENDPOINTS = {
   receipt: (id)    => `${BASE_URL}/api/ar/receipts/${id}/`,
   receiptAudit: (id) => `${BASE_URL}/api/ar/receipts/${id}/audit/`,
   get dashboard()  { return `${BASE_URL}/api/ar/dashboard/`; },
+  get importEntries() { return `${BASE_URL}/api/ar/import/entries/`; },
 };
 
 export const CLUB1000_ENDPOINTS = {
