@@ -18,6 +18,7 @@ const ISSUE_TEXT = {
   no_schedule: 'No installment schedule — Sales needs to add one',
   plan_mismatch: "LOI schedule doesn't add up to the deal",
   suspect_amount: 'Deal amount looks mistyped',
+  revision_pending: 'Revision awaiting approval — shown on the last approved version',
 };
 // Ageing shades run from amber (just late) to deep red (over 180 days).
 const AGE_COLORS = ['#E8C27A', '#DDA24B', COLORS.warningSolid, '#CF6A33', '#C9502F', '#A8322A', COLORS.error];
@@ -102,13 +103,13 @@ export default function ARDashboardScreen({ navigation }) {
 
             {issues.map((i) => (
               <TouchableOpacity key={i.value} activeOpacity={0.8} onPress={() => go('ARRegister', { project, issue: i.value })}
-                style={[s.issue, i.tone === 'danger' ? s.issueBad : s.issueWarn]}>
-                <View style={s.issueIcon}><Ionicons name="warning-outline" size={17} color={i.tone === 'danger' ? COLORS.error : COLORS.warning} /></View>
+                style={[s.issue, i.tone === 'danger' ? s.issueBad : i.tone === 'info' ? s.issueInfo : s.issueWarn]}>
+                <View style={s.issueIcon}><Ionicons name={i.tone === 'info' ? 'git-branch-outline' : 'warning-outline'} size={17} color={i.tone === 'danger' ? COLORS.error : i.tone === 'info' ? COLORS.link : COLORS.warning} /></View>
                 <View style={s.flex}>
-                  <Text style={s.issueN}>{data.issues[i.value]} <Text style={i.tone === 'danger' ? s.bad : s.warn}>{i.label}</Text></Text>
+                  <Text style={s.issueN}>{data.issues[i.value]} <Text style={i.tone === 'danger' ? s.bad : i.tone === 'info' ? s.info : s.warn}>{i.label}</Text></Text>
                   <Text style={s.issueText}>{ISSUE_TEXT[i.value]}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={i.tone === 'danger' ? COLORS.error : COLORS.warning} />
+                <Ionicons name="chevron-forward" size={18} color={i.tone === 'danger' ? COLORS.error : i.tone === 'info' ? COLORS.link : COLORS.warning} />
               </TouchableOpacity>
             ))}
 
@@ -237,6 +238,7 @@ const s = StyleSheet.create({
   flex: { flex: 1 },
   bad: { color: COLORS.error },
   warn: { color: COLORS.warning },
+  info: { color: COLORS.link },
   dim: { opacity: 0.5 },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   asOf: { marginLeft: 'auto', minWidth: 132 },
@@ -265,6 +267,7 @@ const s = StyleSheet.create({
   issue: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderRadius: 16, borderWidth: 1, marginBottom: 10 },
   issueWarn: { backgroundColor: COLORS.warningBg, borderColor: withAlpha(COLORS.warning, '30') },
   issueBad: { backgroundColor: COLORS.errorBg, borderColor: withAlpha(COLORS.error, '30') },
+  issueInfo: { backgroundColor: COLORS.accentSoft, borderColor: withAlpha(COLORS.link, '30') },
   issueIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' },
   issueN: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
   issueText: { fontSize: 12, color: COLORS.textSecondary, marginTop: 1 },
