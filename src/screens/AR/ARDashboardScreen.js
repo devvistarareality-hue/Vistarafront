@@ -72,7 +72,7 @@ export default function ARDashboardScreen({ navigation }) {
         </View>
         <View style={s.quick}>
           <Quick icon="book-outline" label="Register" onPress={() => go('ARRegister', { project })} />
-          <Quick icon="create-outline" label="Enter receipts" onPress={() => go('ARReceiptsEntry', { project })} />
+          <Quick icon="cloud-upload-outline" label="Import receipts" onPress={() => go('ARImport', { project })} />
         </View>
 
         {data === null && !err ? <AppLoader label="Calculating the receivables book…" /> : err && !data ? <LoadError message={err} onRetry={load} /> : (
