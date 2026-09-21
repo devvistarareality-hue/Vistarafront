@@ -20,6 +20,15 @@ const SHOW = [
   ...ISSUES.map((i) => ({ value: i.value, label: i.label })),
 ];
 
+// Plot number search: "25" finds plot 25 (not 125 or 250), "Ananda" finds Ananda1…,
+// and "EOI-1" finds EOI-1 — any plot of a multi-plot booking counts.
+function plotMatches(plots, query) {
+  const want = query.trim().toUpperCase();
+  if (!want) return true;
+  return String(plots || '').split(',').map((p) => p.trim().toUpperCase()).some((p) =>
+    (/^\d+$/.test(want) ? (p === want || p.replace(/^[A-Z-]*/, '') === want) : p.startsWith(want)));
+}
+
 // AR Register — one card per approved booking (the old workbook's Plot Master).
 // Tapping a card opens its ledger.
 export default function ARRegisterScreen({ navigation, route }) {
@@ -31,6 +40,7 @@ export default function ARRegisterScreen({ navigation, route }) {
   const [project, setProject] = useState(p.project || '');
   const [show, setShow] = useState(p.issue || (p.overdue ? 'overdue' : ''));
   const [q, setQ] = useState('');
+  const [plotQ, setPlotQ] = useState('');
   const [showAgeing, setShowAgeing] = useState(false);
 
   const load = useCallback(async () => {
@@ -61,8 +71,9 @@ export default function ARRegisterScreen({ navigation, route }) {
       (!project || String(r.project_id) === String(project))
       && (!show || (show === 'overdue' ? r.overdue > 0 : show === 'any' ? hasIssue(r) : issue?.test(r)))
       && (!needle || r.client_name.toLowerCase().includes(needle) || (r.phone || '').includes(needle)
-        || String(r.plots).toLowerCase().includes(needle)));
-  }, [rows, project, show, q]);
+        || String(r.plots).toLowerCase().includes(needle))
+      && plotMatches(r.plots, plotQ));
+  }, [rows, project, show, q, plotQ]);
 
   const totals = useMemo(() => shown.reduce((t, r) => ({
     outstanding: t.outstanding + r.outstanding, overdue: t.overdue + r.overdue, os: t.os + r.os_with_interest,
@@ -70,10 +81,17 @@ export default function ARRegisterScreen({ navigation, route }) {
 
   const header = (
     <View>
-      <View style={[common.searchBox, s.search]}>
-        <Ionicons name="search" size={16} color={COLORS.textSecondary} />
-        <TextInput style={s.searchInput} value={q} onChangeText={setQ} placeholder="Search client, phone or plot"
-          placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
+      <View style={s.searchRow}>
+        <View style={[common.searchBox, s.plotBox]}>
+          <Ionicons name="grid-outline" size={15} color={COLORS.textSecondary} />
+          <TextInput style={s.searchInput} value={plotQ} onChangeText={setPlotQ} placeholder="Plot no."
+            placeholderTextColor={COLORS.textTertiary} autoCorrect={false} autoCapitalize="characters" />
+        </View>
+        <View style={[common.searchBox, s.flex]}>
+          <Ionicons name="search" size={16} color={COLORS.textSecondary} />
+          <TextInput style={s.searchInput} value={q} onChangeText={setQ} placeholder="Client or phone"
+            placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
+        </View>
       </View>
       <View style={s.filters}>
         <FilterSelect label="Project" value={project} onChange={setProject}
@@ -183,7 +201,8 @@ function Metric({ label, value, bad }) {
 
 const s = StyleSheet.create({
   flex: { flex: 1 },
-  search: { marginBottom: 10 },
+  searchRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  plotBox: { width: 118 },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary, paddingVertical: 0 },
   filters: { flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' },
   totals: { flexDirection: 'row', gap: 8, marginBottom: 14 },
