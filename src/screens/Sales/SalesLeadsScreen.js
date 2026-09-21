@@ -310,6 +310,28 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  // Rendered right under whichever status field was actually set to Not
+  // Qualified (TC or STM/CP) — the reason applies to the lead as a whole, but
+  // it belongs next to the decision that produced it, not at the end of the form.
+  const notQualifiedBlock = (
+    <View style={SalesLeadsScreenS.nqBoxTop}>
+      <Text style={SalesLeadsScreenS.nqTitle}>NOT QUALIFIED</Text>
+      <Text style={lblS}>Reason <Text style={SalesLeadsScreenS.nqRequired}>*</Text></Text>
+      <PickerDropdown
+        items={[['religion','Religion'],['caste','Caste'],['budget','Budget'],['other','Other']].map(([v, l]) => ({ value: v, label: l }))}
+        value={form.disqualify_reason} onChange={v => set('disqualify_reason', v)}
+        placeholder="Select reason" title="Not Qualified Reason" />
+      {form.disqualify_reason === 'other' && (
+        <View style={SalesLeadsScreenS.mt10}>
+          <Text style={lblS}>Note <Text style={SalesLeadsScreenS.nqRequired}>*</Text></Text>
+          <TextInput value={form.disqualify_note} onChangeText={v => set('disqualify_note', v)}
+            multiline placeholder="Reason details" placeholderTextColor={COLORS.text3}
+            style={[inpS, SalesLeadsScreenS.textArea60]} />
+        </View>
+      )}
+    </View>
+  );
+
   async function save() {
     // Telecaller / STM portals must record their status + remarks before saving.
     if (_isTelecaller && (!form.telecaller_status || !(form.telecaller_remarks || '').trim())) {
@@ -635,6 +657,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
               </View>
 
+              {form.telecaller_status === 'not_qualified' && notQualifiedBlock}
+
               <Text style={lblS}>TC Remarks {_isTelecaller ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
               <TextInput value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)}
                 multiline placeholder="Call notes…" placeholderTextColor={COLORS.text3}
@@ -663,6 +687,8 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                     placeholder="Status" title={_isCp ? 'CP Status' : 'STM Status'} />
                 </View>
               </View>
+
+              {form.stm_status === 'not_qualified' && notQualifiedBlock}
 
               <Text style={lblS}>{_isCp ? 'CP Remarks' : 'STM Remarks'} {_isStm ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
               <TextInput value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)}
@@ -796,27 +822,6 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 </View>
               )}
               </>)}
-
-              {/* Not Qualified reason — one shared field regardless of whether TC or
-                  STM/CP status is the one set to it. */}
-              {(form.telecaller_status === 'not_qualified' || form.stm_status === 'not_qualified') && (
-                <View style={SalesLeadsScreenS.nqBoxTop}>
-                  <Text style={SalesLeadsScreenS.nqTitle}>NOT QUALIFIED</Text>
-                  <Text style={lblS}>Reason <Text style={SalesLeadsScreenS.nqRequired}>*</Text></Text>
-                  <PickerDropdown
-                    items={[['religion','Religion'],['caste','Caste'],['budget','Budget'],['other','Other']].map(([v, l]) => ({ value: v, label: l }))}
-                    value={form.disqualify_reason} onChange={v => set('disqualify_reason', v)}
-                    placeholder="Select reason" title="Not Qualified Reason" />
-                  {form.disqualify_reason === 'other' && (
-                    <View style={SalesLeadsScreenS.mt10}>
-                      <Text style={lblS}>Note <Text style={SalesLeadsScreenS.nqRequired}>*</Text></Text>
-                      <TextInput value={form.disqualify_note} onChangeText={v => set('disqualify_note', v)}
-                        multiline placeholder="Reason details" placeholderTextColor={COLORS.text3}
-                        style={[inpS, SalesLeadsScreenS.textArea60]} />
-                    </View>
-                  )}
-                </View>
-              )}
 
               {/* Meta Ads Info */}
               {(lead.meta_campaign_name || lead.meta_adset_name || lead.meta_ad_name) && (
@@ -1137,6 +1142,26 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  // Rendered right under whichever status field was actually set to Not
+  // Qualified (TC or STM/CP) — the reason applies to the lead as a whole, but
+  // it belongs next to the decision that produced it, not at the end of the form.
+  const notQualifiedBlock = (
+    <View style={SalesLeadsScreenS.nqBoxBottom}>
+      <Text style={SalesLeadsScreenS.nqTitle}>NOT QUALIFIED</Text>
+      <Field label="Reason" required>
+        <DropdownPicker
+          value={form.disqualify_reason}
+          onChange={v => set('disqualify_reason', v)}
+          options={[{ value: '', label: '— Select reason —' }, { value: 'religion', label: 'Religion' }, { value: 'caste', label: 'Caste' }, { value: 'budget', label: 'Budget' }, { value: 'other', label: 'Other' }]}
+          placeholder="Select reason"
+          triggerStyle={SalesLeadsScreenS.triggerNoMB}
+        />
+      </Field>
+      {form.disqualify_reason === 'other' && (
+        <TextField label="Note" required value={form.disqualify_note} onChangeText={v => set('disqualify_note', v)} placeholder="Reason details" multiline style={SalesLeadsScreenS.textArea60} />
+      )}
+    </View>
+  );
   // "When did this lead actually come in" — optional backdate, e.g. a walk-in logged a
   // day later. Blank = today, same as the default behaviour without this field.
   const [showLeadDatePicker, setShowLeadDatePicker] = useState(false);
@@ -1363,6 +1388,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     triggerStyle={{ marginBottom: 0 }}
                   />
                 </Field>
+                {form.telecaller_status === 'not_qualified' && notQualifiedBlock}
                 <TextField label="TC Remarks" required={_isTelecaller} value={form.telecaller_remarks} onChangeText={v => set('telecaller_remarks', v)} placeholder={_isTelecaller ? 'What was discussed' : 'Optional'} multiline style={{ height: 60, textAlignVertical: 'top' }} />
               </>
             )}
@@ -1388,6 +1414,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                     triggerStyle={{ marginBottom: 0 }}
                   />
                 </Field>
+                {form.stm_status === 'not_qualified' && notQualifiedBlock}
                 <TextField label={_isCp ? 'CP Remarks' : 'STM Remarks'} required={_isStm} value={form.stm_remarks} onChangeText={v => set('stm_remarks', v)} placeholder={_isStm ? 'What was discussed' : 'Optional'} multiline style={{ height: 60, textAlignVertical: 'top' }} />
 
                 {/* A lead added directly at sv_done needs its visit outcome recorded too —
@@ -1440,25 +1467,6 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
               </>
             )}
 
-            {/* Not Qualified reason — one shared field regardless of whether TC or
-                STM/CP status is the one set to it. */}
-            {(form.telecaller_status === 'not_qualified' || form.stm_status === 'not_qualified') && (
-              <View style={SalesLeadsScreenS.nqBoxBottom}>
-                <Text style={SalesLeadsScreenS.nqTitle}>NOT QUALIFIED</Text>
-                <Field label="Reason" required>
-                  <DropdownPicker
-                    value={form.disqualify_reason}
-                    onChange={v => set('disqualify_reason', v)}
-                    options={[{ value: '', label: '— Select reason —' }, { value: 'religion', label: 'Religion' }, { value: 'caste', label: 'Caste' }, { value: 'budget', label: 'Budget' }, { value: 'other', label: 'Other' }]}
-                    placeholder="Select reason"
-                    triggerStyle={SalesLeadsScreenS.triggerNoMB}
-                  />
-                </Field>
-                {form.disqualify_reason === 'other' && (
-                  <TextField label="Note" required value={form.disqualify_note} onChangeText={v => set('disqualify_note', v)} placeholder="Reason details" multiline style={SalesLeadsScreenS.textArea60} />
-                )}
-              </View>
-            )}
 
             <Text style={{ fontSize: 12, fontWeight: '800', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>Follow-ups</Text>
             <FollowUpScheduler fuForm={fuForm} setFuForm={setFuForm} canAssign={_isAdminMgr}
