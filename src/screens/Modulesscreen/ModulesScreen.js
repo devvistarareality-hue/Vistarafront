@@ -31,6 +31,13 @@ const MODULE_CONFIG = {
     screen:    'ModuleHome',
     getParams: () => ({ module: 'Accounts & Finance', name: 'Accounts & Finance' }),
   },
+  AR: {
+    label:     'Accounts Receivable',
+    sub:       'Dues, Receipts & Interest',
+    icon:      'cash',
+    screen:    'ARDashboard',
+    getParams: () => ({}),
+  },
   Execution: {
     label:     'Execution',
     sub:       'Tasks & Progress',
