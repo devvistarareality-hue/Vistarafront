@@ -43,6 +43,7 @@ export const SALES_ENDPOINTS = {
   get statsTrend() { return `${BASE_URL}/api/sales/stats/trend/`; },
   // Leads
   get leads()      { return `${BASE_URL}/api/sales/leads/`; },
+  get leadSearch() { return `${BASE_URL}/api/sales/leads/search/`; },
   get bulkDelete() { return `${BASE_URL}/api/sales/leads/bulk-delete/`; },
   lead: (id)       => `${BASE_URL}/api/sales/leads/${id}/`,
   get leadsImport(){ return `${BASE_URL}/api/sales/leads/import/`; },

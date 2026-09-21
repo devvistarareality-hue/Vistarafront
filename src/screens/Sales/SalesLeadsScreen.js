@@ -1162,6 +1162,28 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
       )}
     </View>
   );
+  // Live duplicate check: as the phone number (and project) settle, look up
+  // whether this contact already has a lead. Same project → submitting here
+  // will update that lead in place, not create a new one (see backend
+  // LeadListView.post's merge path). Different project → informational only,
+  // a separate lead gets created as usual.
+  const [dupMatch, setDupMatch] = useState(null);
+  useEffect(() => {
+    const digits = (form.phone || '').replace(/\D/g, '');
+    if (digits.length < 10) { setDupMatch(null); return undefined; }
+    const t = setTimeout(async () => {
+      try {
+        const res = await apiFetch(`${SALES_ENDPOINTS.leadSearch}?search=${digits.slice(-10)}`);
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || !rows.length) { setDupMatch(null); return; }
+        const sameProject = form.project ? rows.find(r => String(r.project_id) === String(form.project)) : null;
+        setDupMatch({ ...(sameProject || rows[0]), sameProject: !!sameProject });
+      } catch (_) {}
+    }, 500);
+    return () => clearTimeout(t);
+  }, [form.phone, form.project]);
+
   // "When did this lead actually come in" — optional backdate, e.g. a walk-in logged a
   // day later. Blank = today, same as the default behaviour without this field.
   const [showLeadDatePicker, setShowLeadDatePicker] = useState(false);
@@ -1233,6 +1255,12 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 lead: lead.id, project: form.project || null,
                 scheduled_at: visitedIso, visited_at: visitedIso, status: 'completed',
                 stm: form.stm || user?.id,
+                // lead.telecaller (not form.telecaller) — when this Add Lead call
+                // merged into an existing telecaller-held lead (same phone+project),
+                // the returned record carries that telecaller, and their work should
+                // be credited with this visit even though this form never showed a
+                // Telecaller field.
+                referred_by_telecaller: lead.telecaller || null,
                 outcome: svOutcome, remarks: form.stm_remarks || '',
               }),
             });
@@ -1282,6 +1310,15 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <TextField label="Phone" required value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" placeholder="10-digit mobile" />
             <TextField label="Alt Phone" value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" placeholder="Optional" />
             <TextField label="Email" value={form.email} onChangeText={v => set('email', v)} keyboardType="email-address" autoCapitalize="none" placeholder="name@email.com" />
+            {dupMatch && (
+              <View style={SalesLeadsScreenS.dupInfoBox}>
+                {dupMatch.sameProject ? (
+                  <Text style={SalesLeadsScreenS.dupInfoText}>Already a lead here: <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.name}</Text> · {dupMatch.status}{dupMatch.telecaller_name ? ` · TC: ${dupMatch.telecaller_name}` : ''}{dupMatch.stm_name ? ` · ${dupMatch.is_cp ? 'CP' : 'STM'}: ${dupMatch.stm_name}` : ''}. Adding this will update that lead, not create a new one.</Text>
+                ) : (
+                  <Text style={SalesLeadsScreenS.dupInfoText}>This number already has a lead in <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.project_name || 'another project'}</Text>{dupMatch.telecaller_name || dupMatch.stm_name ? ` (${dupMatch.telecaller_name || dupMatch.stm_name})` : ''}. A separate lead will be created for the project selected below.</Text>
+                )}
+              </View>
+            )}
             <Field label="Lead Received Date">
               <TouchableOpacity onPress={() => setShowLeadDatePicker(true)}
                 style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.surface }}>
@@ -2184,4 +2221,7 @@ const SalesLeadsScreenS = StyleSheet.create({
   mt10:        { marginTop: 10 },
   textArea60:  { height: 60, textAlignVertical: 'top' },
   triggerNoMB: { marginBottom: 0 },
+  dupInfoBox:  { backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warningAlt, borderRadius: 14, padding: 12, marginBottom: 16 },
+  dupInfoText: { fontSize: 12.5, color: COLORS.textPrimary, lineHeight: 18 },
+  dupInfoBold: { fontWeight: '800', color: COLORS.warningAlt },
 });
