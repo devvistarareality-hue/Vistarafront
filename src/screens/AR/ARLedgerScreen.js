@@ -22,8 +22,8 @@ const confirm = (title, message, okText, destructive) => new Promise((resolve) =
 });
 
 // Account Ledger — one booking's plan, receipts, interest and ageing, plus the
-// payment form. Only receipts (and, for bookings without one, the schedule) are
-// typed in; every figure comes back computed by the server.
+// payment form. Only receipts are typed in; the plan comes from the booking and
+// every figure comes back computed by the server.
 export default function ARLedgerScreen({ navigation, route }) {
   const id = route?.params?.id;
   const companyId = useSelector((st) => st.adminFilter?.companyId);
@@ -35,8 +35,6 @@ export default function ARLedgerScreen({ navigation, route }) {
   const [formErr, setFormErr] = useState({});
   const [saving, setSaving] = useState(false);
   const [legalDate, setLegalDate] = useState('');
-  const [sched, setSched] = useState(null);      // null | [{ date, amount }]
-  const [schedErr, setSchedErr] = useState('');
   const [audit, setAudit] = useState(null);      // null | { receipt, rows }
   const [sharing, setSharing] = useState(false);
 
@@ -96,29 +94,6 @@ export default function ARLedgerScreen({ navigation, route }) {
     if (r?.ok) { const d = await r.json(); setData(d); setLegalDate(d.legal_due_date || ''); } else Alert.alert('Error', 'Could not save the date.');
   }
 
-  const openSched = () => {
-    setSchedErr('');
-    setSched(data.schedule_rows.length ? data.schedule_rows.map((x) => ({ date: x.date, amount: String(Number(x.amount)) }))
-      : [{ date: '', amount: String(data.schedule_target) }]);
-  };
-
-  async function saveSched(rows) {
-    const clearing = rows.length === 0;
-    const ok = await confirm(clearing ? 'Remove schedule?' : 'Save schedule?',
-      clearing ? 'The account goes back to "No schedule" and stops accruing interest.'
-        : `Save this ${rows.length}-installment schedule? Interest and overdue amounts will be calculated from these dates.`,
-      clearing ? 'Remove' : 'Save', clearing);
-    if (!ok) return;
-    setSaving(true); setSchedErr('');
-    try {
-      const r = await apiFetch(url(AR_ENDPOINTS.account(id)), { method: 'PATCH', body: JSON.stringify({ schedule: rows }) });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setSchedErr(d.detail || 'Could not save the schedule.'); setSaving(false); return; }
-      setData(d); setSched(null);
-    } catch (e) { setSchedErr('Could not save. Check your connection.'); }
-    setSaving(false);
-  }
-
   async function statement() {
     setSharing(true);
     const e = await shareStatement(id, asOf, companyId, `${data.client_name} ${data.project} ${data.plots}`);
@@ -156,7 +131,7 @@ export default function ARLedgerScreen({ navigation, route }) {
         {!frozen && <Button title="Record payment" icon="check-circle" variant="primary" full onPress={openNew} style={s.recordBtn} />}
 
         {frozen && <Note tone="warn" text="This booking was cancelled, so its account is frozen. Receipts and history are kept; no new payments can be recorded." />}
-        {data.no_schedule && <Note tone="warn" text={`The booking has no installment schedule${String(data.plots).toUpperCase().startsWith('EOI') ? ' (an EOI)' : ''}, so the unscheduled amount shows as one undated Balance line with no interest.${data.schedule_editable ? ' Tap “Set schedule” under Payment plan to enter the installments.' : ''}`} />}
+        {data.no_schedule && <Note tone="warn" text={`The booking has no installment schedule${String(data.plots).toUpperCase().startsWith('EOI') ? ' (an EOI)' : ''}, so the unscheduled amount shows as one undated Balance line with no interest. Ask Sales to add the installments to the booking.`} />}
         {data.suspect_amount && <Note tone="bad" text={`The deal amount on this booking is only ${rupee(data.total_deal)}, which looks like a typing mistake. Correct the booking in Sales before relying on these figures.`} />}
         {data.plan_mismatch !== 0 && <Note tone="warn" text={`The LOI schedule adds up to ${rupee(data.collectable)}, which is ${rupee(Math.abs(data.plan_mismatch))} ${data.plan_mismatch > 0 ? 'more' : 'less'} than Total Deal − Stamp Duty − Registration.`} />}
 
@@ -185,11 +160,8 @@ export default function ARLedgerScreen({ navigation, route }) {
           <View style={s.cardHead}>
             <View style={s.flex}>
               <Text style={s.cardTitle}>Payment plan</Text>
-              <Text style={s.cardSub}>{data.ar_schedule
-                ? `Set in AR${data.schedule_by ? ` by ${data.schedule_by}` : ''}${data.schedule_at ? ` on ${formatDMY(data.schedule_at.slice(0, 10))}` : ''}`
-                : 'From the approved LOI'}</Text>
+              <Text style={s.cardSub}>From the approved LOI</Text>
             </View>
-            {data.schedule_editable && <Button title={data.ar_schedule ? 'Edit schedule' : 'Set schedule'} size="sm" variant="soft" onPress={openSched} />}
           </View>
           {data.plan.map((p) => (
             <View key={p.key} style={s.item}>
@@ -286,13 +258,6 @@ export default function ARLedgerScreen({ navigation, route }) {
         )}
       </FormSheet>
 
-      <FormSheet visible={!!sched} onClose={() => !saving && setSched(null)}>
-        {sched && (
-          <ScheduleSheet rows={sched} setRows={setSched} target={data.schedule_target} err={schedErr} saving={saving}
-            canClear={data.ar_schedule} onClose={() => setSched(null)} onSave={saveSched} />
-        )}
-      </FormSheet>
-
       <FormSheet visible={!!audit} onClose={() => setAudit(null)} maxHeight="75%">
         {audit && (
           <ScrollView style={s.sheetScroll}>
@@ -310,46 +275,6 @@ export default function ARLedgerScreen({ navigation, route }) {
         )}
       </FormSheet>
     </SafeAreaView>
-  );
-}
-
-// Installments for a booking that has none. They must add up to the collectable
-// amount less Legal & Other Charges, which keeps its own line and date.
-function ScheduleSheet({ rows, setRows, target, err, saving, canClear, onClose, onSave }) {
-  const total = rows.reduce((t, r) => t + (Number(r.amount) || 0), 0);
-  const diff = Math.round(target - total);
-  const fits = Math.abs(diff) <= 10;
-  const valid = rows.length > 0 && rows.every((r) => r.date && Number(r.amount) > 0) && fits;
-  const set = (i, k, v) => setRows(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
-  return (
-    <ScrollView style={s.sheetScroll} keyboardShouldPersistTaps="handled">
-      <Text style={s.sheetTitle}>Payment schedule</Text>
-      <Text style={s.sheetSub}>Must add up to {rupee(target)}</Text>
-      {err ? <Note tone="bad" text={err} /> : null}
-      {rows.map((r, i) => (
-        <View key={i} style={s.schedRow}>
-          <Text style={s.schedN}>{i + 1}</Text>
-          <DateField compact value={r.date} onChange={(d) => set(i, 'date', d)} placeholder="Due date" style={s.flex} />
-          <TextInput style={[common.input, s.schedAmt]} value={r.amount} keyboardType="decimal-pad" placeholder="Amount"
-            placeholderTextColor={COLORS.textTertiary} onChangeText={(v) => set(i, 'amount', v.replace(/[^0-9.]/g, ''))} />
-          <TouchableOpacity onPress={() => setRows(rows.filter((_, j) => j !== i))} disabled={rows.length === 1}
-            accessibilityLabel="Remove installment" style={s.schedDel}>
-            <Ionicons name="close" size={18} color={rows.length === 1 ? COLORS.textTertiary : COLORS.error} />
-          </TouchableOpacity>
-        </View>
-      ))}
-      <Button title="Add installment" size="sm" variant="soft" onPress={() => setRows([...rows, { date: '', amount: diff > 0 ? String(diff) : '' }])} />
-      <View style={[s.schedTotal, fits ? s.schedOk : s.schedBad]}>
-        <Text style={s.schedTotalText}>Total {rupee(total)}</Text>
-        <Text style={[s.schedTotalText, s.bold, fits ? s.good : s.bad]}>{fits ? 'Adds up' : diff > 0 ? `${rupee(diff)} still to schedule` : `${rupee(-diff)} too much`}</Text>
-      </View>
-      <View style={s.sheetFoot}>
-        <Button title="Cancel" variant="secondary" onPress={onClose} disabled={saving} style={s.flex} />
-        <Button title="Save schedule" variant="primary" loading={saving} disabled={!valid} style={s.flex}
-          onPress={() => onSave(rows.map((r) => ({ date: r.date, amount: r.amount })))} />
-      </View>
-      {canClear && <Button title="Remove schedule" variant="dangerSoft" full onPress={() => onSave([])} disabled={saving} style={s.gapTop} />}
-    </ScrollView>
   );
 }
 
@@ -448,14 +373,6 @@ const s = StyleSheet.create({
   sheetFoot: { flexDirection: 'row', gap: 10, marginTop: 20 },
   fieldErr: { fontSize: 12, color: COLORS.error, marginTop: 4 },
   hint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
-  schedRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  schedN: { width: 18, fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
-  schedAmt: { flex: 1, paddingVertical: 8, paddingHorizontal: 10, fontSize: 14, borderWidth: 1 },
-  schedDel: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
-  schedTotal: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, borderRadius: RADIUS.md, padding: 12, marginTop: 12 },
-  schedOk: { backgroundColor: COLORS.successBg },
-  schedBad: { backgroundColor: COLORS.errorBg },
-  schedTotalText: { fontSize: 13, color: COLORS.textPrimary },
   auditItem: { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 10, marginBottom: 8, gap: 3 },
   auditMeta: { fontSize: 11.5, color: COLORS.textSecondary },
   auditText: { fontSize: 12.5, color: COLORS.textPrimary },

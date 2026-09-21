@@ -15,7 +15,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { inrShort, AGE_LABELS, ISSUES, today, withCompany, DateField } from './arShared';
 
 const ISSUE_TEXT = {
-  no_schedule: 'No installment schedule — set one in the ledger',
+  no_schedule: 'No installment schedule — Sales needs to add one',
   plan_mismatch: "LOI schedule doesn't add up to the deal",
   suspect_amount: 'Deal amount looks mistyped',
 };
