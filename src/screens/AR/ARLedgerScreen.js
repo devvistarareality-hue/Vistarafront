@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, RefreshControl, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, RefreshControl, Alert, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import common from '../../styles/common';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import FormSheet from '../../components/FormSheet';
+import BookingDetails from '../../components/BookingDetails';
 import { Badge, Button, Segmented } from '../../components/ui';
 import { rupee, MODES, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
 
@@ -37,6 +38,7 @@ export default function ARLedgerScreen({ navigation, route }) {
   const [legalDate, setLegalDate] = useState('');
   const [audit, setAudit] = useState(null);      // null | { receipt, rows }
   const [sharing, setSharing] = useState(false);
+  const [booking, setBooking] = useState(null);  // null | 'loading' | booking
 
   const url = useCallback((u) => withCompany(u, companyId, [`as_of=${asOf}`]), [companyId, asOf]);
 
@@ -94,6 +96,23 @@ export default function ARLedgerScreen({ navigation, route }) {
     if (r?.ok) { const d = await r.json(); setData(d); setLegalDate(d.legal_due_date || ''); } else Alert.alert('Error', 'Could not save the date.');
   }
 
+  async function showBooking() {
+    setBooking('loading');
+    const r = await apiFetch(url(AR_ENDPOINTS.booking(id))).catch(() => null);
+    if (r?.ok) setBooking(await r.json());
+    else { setBooking(null); Alert.alert('Error', 'Could not load the booking details.'); }
+  }
+
+  // The LOI / EOI is private: open it through a short-lived signed link.
+  async function openLoi() {
+    try {
+      const r = await apiFetch(url(AR_ENDPOINTS.loiUrl(id)));
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.url) Linking.openURL(d.url);
+      else Alert.alert('Unavailable', d.detail || 'Could not open the document.');
+    } catch (e) { Alert.alert('Error', 'Could not open the document.'); }
+  }
+
   async function statement() {
     setSharing(true);
     const e = await shareStatement(id, asOf, companyId, `${data.client_name} ${data.project} ${data.plots}`);
@@ -111,6 +130,7 @@ export default function ARLedgerScreen({ navigation, route }) {
   }
 
   const frozen = data.status === 'frozen';
+  const isEoi = String(data.plots).toUpperCase().startsWith('EOI');
   const legalDirty = (legalDate || null) !== (data.legal_due_date || null);
 
   return (
@@ -127,6 +147,10 @@ export default function ARLedgerScreen({ navigation, route }) {
             <DateField compact value={asOf} onChange={(d) => setAsOf(d || today())} />
           </View>
           <Button title="Statement" icon="download" size="sm" variant="secondary" loading={sharing} onPress={statement} />
+        </View>
+        <View style={s.docRow}>
+          <Button title="Booking details" icon="book" size="sm" variant="secondary" onPress={showBooking} style={s.flex} />
+          <Button title={`View ${isEoi ? 'EOI' : 'LOI'}`} icon="file" size="sm" variant="secondary" onPress={openLoi} style={s.flex} />
         </View>
         {!frozen && <Button title="Record payment" icon="check-circle" variant="primary" full onPress={openNew} style={s.recordBtn} />}
 
@@ -258,6 +282,20 @@ export default function ARLedgerScreen({ navigation, route }) {
         )}
       </FormSheet>
 
+      <FormSheet visible={!!booking} onClose={() => setBooking(null)}>
+        {booking ? (
+          <ScrollView style={s.sheetScroll}>
+            <Text style={s.sheetTitle}>Booking details</Text>
+            <Text style={s.sheetSub}>{data.client_name} · {data.project} · Plot {data.plots}</Text>
+            {booking === 'loading' ? <AppLoader label="Loading…" /> : <BookingDetails b={booking} />}
+            <View style={s.sheetFoot}>
+              <Button title={`View ${isEoi ? 'EOI' : 'LOI'}`} icon="file" variant="secondary" onPress={openLoi} style={s.flex} />
+              <Button title="Close" variant="primary" onPress={() => setBooking(null)} style={s.flex} />
+            </View>
+          </ScrollView>
+        ) : null}
+      </FormSheet>
+
       <FormSheet visible={!!audit} onClose={() => setAudit(null)} maxHeight="75%">
         {audit && (
           <ScrollView style={s.sheetScroll}>
@@ -336,6 +374,7 @@ const s = StyleSheet.create({
   asOf: { flex: 1, maxWidth: 190 },
   asOfLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 },
   recordBtn: { marginBottom: 14 },
+  docRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   note: { borderRadius: RADIUS.md, borderWidth: 1, padding: 12, marginBottom: 12 },
   noteWarn: { backgroundColor: COLORS.warningBg, borderColor: COLORS.warningBg },
   noteBad: { backgroundColor: COLORS.errorBg, borderColor: COLORS.errorBg },
