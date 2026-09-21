@@ -148,9 +148,9 @@ export default function ARLedgerScreen({ navigation, route }) {
         </View>
 
         <View style={[common.card, s.card]}>
-          <Text style={s.cardTitle}>Due by month</Text>
-          {data.month_forecast.map((m) => <KV key={m.label} k={m.label} v={m.amount} dashZero />)}
-          <KV k="Not due" v={data.not_due} total />
+          <Text style={s.cardTitle}>O/s by month</Text>
+          {data.os_summary.map((m) => <KV key={m.label} k={m.label} v={m.amount} dashZero />)}
+          <KV k="Total" v={data.os_summary.reduce((t, m) => t + m.amount, 0)} total />
           <Text style={[s.cardTitle, s.gapTop]}>Overdue by age</Text>
           {AGE_LABELS.map((a) => <KV key={a} k={`${a} days`} v={data.ageing[a]} dashZero tone={data.ageing[a] ? 'bad' : undefined} />)}
           <KV k="Total overdue" v={data.overdue} total />
