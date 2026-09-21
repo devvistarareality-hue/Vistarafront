@@ -293,7 +293,9 @@ function Header({ navigation, title, sub }) {
 }
 
 function Note({ tone, text }) {
-  return <View style={[s.note, tone === 'bad' ? s.noteBad : s.noteWarn]}><Text style={[s.noteText, tone === 'bad' ? s.bad : s.warn]}>{text}</Text></View>;
+  const box = tone === 'bad' ? s.noteBad : tone === 'info' ? s.noteInfo : s.noteWarn;
+  const ink = tone === 'bad' ? s.bad : tone === 'info' ? s.info : s.warn;
+  return <View style={[s.note, box]}><Text style={[s.noteText, ink]}>{text}</Text></View>;
 }
 
 function KV({ k, v, tone, note, total, dashZero }) {
@@ -328,6 +330,7 @@ const s = StyleSheet.create({
   good: { color: COLORS.success },
   bad: { color: COLORS.error },
   warn: { color: COLORS.warning },
+  info: { color: COLORS.link },
   gapTop: { marginTop: 14 },
   actions: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginBottom: 10 },
   asOf: { flex: 1, maxWidth: 190 },
@@ -336,6 +339,7 @@ const s = StyleSheet.create({
   note: { borderRadius: RADIUS.md, borderWidth: 1, padding: 12, marginBottom: 12 },
   noteWarn: { backgroundColor: COLORS.warningBg, borderColor: COLORS.warningBg },
   noteBad: { backgroundColor: COLORS.errorBg, borderColor: COLORS.errorBg },
+  noteInfo: { backgroundColor: COLORS.accentSoft, borderColor: COLORS.accentSoft },
   noteText: { fontSize: 13, lineHeight: 19, fontWeight: '600' },
   card: { marginBottom: 14 },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
