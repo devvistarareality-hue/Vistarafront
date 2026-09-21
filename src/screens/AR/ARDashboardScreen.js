@@ -18,7 +18,6 @@ const ISSUE_TEXT = {
   no_schedule: 'No installment schedule — Sales needs to add one',
   plan_mismatch: "LOI schedule doesn't add up to the deal",
   suspect_amount: 'Deal amount looks mistyped',
-  revision_pending: 'Revision awaiting approval — shown on the last approved version',
 };
 // Ageing shades run from amber (just late) to deep red (over 180 days).
 const AGE_COLORS = ['#E8C27A', '#DDA24B', COLORS.warningSolid, '#CF6A33', '#C9502F', '#A8322A', COLORS.error];
