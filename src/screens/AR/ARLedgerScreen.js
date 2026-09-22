@@ -156,7 +156,6 @@ export default function ARLedgerScreen({ navigation, route }) {
 
         {frozen && <Note tone="warn" text="This booking was cancelled, so its account is frozen. Receipts and history are kept; no new payments can be recorded." />}
         {data.no_schedule && <Note tone="warn" text={`The booking has no installment schedule${String(data.plots).toUpperCase().startsWith('EOI') ? ' (an EOI)' : ''}, so the unscheduled amount shows as one undated Balance line with no interest. Ask Sales to add the installments to the booking.`} />}
-        {data.suspect_amount && <Note tone="bad" text={`The deal amount on this booking is only ${rupee(data.total_deal)}, which looks like a typing mistake. Correct the booking in Sales before relying on these figures.`} />}
         {data.plan_mismatch !== 0 && <Note tone="warn" text={`The LOI schedule adds up to ${rupee(data.collectable)}, which is ${rupee(Math.abs(data.plan_mismatch))} ${data.plan_mismatch > 0 ? 'more' : 'less'} than Total Deal − Stamp Duty − Registration.`} />}
 
         <View style={[common.card, s.card]}>
