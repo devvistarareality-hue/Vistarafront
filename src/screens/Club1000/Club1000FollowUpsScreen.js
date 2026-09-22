@@ -12,6 +12,7 @@ import FormSheet from '../../components/FormSheet';
 import { TextField, inputStyle } from '../../components/Field';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import common from '../../styles/common';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -231,7 +232,7 @@ export default function Club1000FollowUpsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={common.tabBar}>
         {TABS.map((t) => {
           const active = filter === t.key;
           return (

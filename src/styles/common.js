@@ -25,6 +25,11 @@ const common = StyleSheet.create({
   gap8:          { gap: 8 },
   center:        { alignItems: 'center', justifyContent: 'center' },
 
+  // Tab row under a screen header: sits on the page background (no solid band
+  // across the screen in the dark theme), with a hairline underneath.
+  tabBar:        { flexDirection: 'row', backgroundColor: 'transparent', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  tabBarScroll:  { backgroundColor: 'transparent', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+
   // Header
   header:        { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent' },
   // lineHeight keeps descenders (g, y, p) from being clipped when a title is truncated to one line.

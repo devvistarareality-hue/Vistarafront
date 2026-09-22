@@ -11,6 +11,7 @@ import { BASE_URL } from '../../constants/api';
 import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import SheetHandle from '../../components/SheetHandle';
 
 const ALL_MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase', 'Land'];
 
@@ -30,7 +31,7 @@ function ModuleDropdown({ value, onChange }) {
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={() => setOpen(false)}>
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+            <SheetHandle onClose={() => setOpen(false)} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>Select Module</Text>
             {ALL_MODULES.map(m => {
               const mt = MODULE_META[m] || FALLBACK_META;

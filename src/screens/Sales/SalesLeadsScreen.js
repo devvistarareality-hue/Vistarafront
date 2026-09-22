@@ -17,6 +17,7 @@ import { Field, TextField } from '../../components/Field';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import common from '../../styles/common';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 // Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface, marginBottom: 8 };
@@ -2076,7 +2077,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       {/* To Call / Called split — telecaller & STM portals only */}
       {isCaller && (
-        <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <View style={common.tabBar}>
           {[['pending', 'To Call'], ['called', 'Called']].map(([key, label]) => {
             const active = workTab === key;
             return (
