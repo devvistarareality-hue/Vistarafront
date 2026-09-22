@@ -22,6 +22,7 @@ import { computeFlat } from '../../lib/pratishthaFlat';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
+import { scheduleError } from '../../lib/scheduleCheck';
 const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
 
@@ -654,6 +655,9 @@ export default function BookingFormScreen({ navigation, route }) {
         setMsg('Extra Work Amount installments must be filled and total 100% before downloading the LOI.'); return;
       }
     }
+    // In rupees, not percent: ±0.01% let a schedule ₹498 short through on a ₹1.8 Cr deal.
+    const loiScheduleErr = scheduleError(buildPayload());
+    if (loiScheduleErr) { setMsg(loiScheduleErr); return; }
     const meta = {
       clientName: f.client_name, phoneNumber: f.phone, gender: f.gender, address: f.address,
       project: project?.name, plotNo: plotNo, bookingDate: f.booking_date,
@@ -806,6 +810,8 @@ export default function BookingFormScreen({ navigation, route }) {
       setErrs({});
     }
     if ((!prat || pratSched) && !eoiMode && insts.length && Math.abs(pctTotal - 100) > 0.01) { setMsg('Installments must total 100%.'); return; }
+    const submitScheduleErr = scheduleError(buildPayload());
+    if (submitScheduleErr) { setMsg(submitScheduleErr); return; }
     if (!loiFile && !savedLoiPath) { setMsg('Generate the LOI, get it signed, and attach it before submitting.'); return; }
     setSaving(true); setMsg('');
     const payload = {
