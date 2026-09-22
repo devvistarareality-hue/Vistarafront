@@ -33,6 +33,7 @@ const TYPE_STYLE = {
   ar_followup_due: { icon: 'call', color: COLORS.warning, bg: COLORS.warningBg },
   ar_followup_overdue: { icon: 'alarm', color: COLORS.error, bg: COLORS.errorBg },
   ar_collections_digest: { icon: 'cash', color: COLORS.link, bg: COLORS.accentSoft },
+  ar_due_soon: { icon: 'calendar', color: COLORS.warning, bg: COLORS.warningBg },
   lead_transfer_requested: { icon: 'swap-horizontal', color: COLORS.warning, bg: COLORS.warningBg },
   lead_transfer_approved: { icon: 'swap-horizontal', color: COLORS.success, bg: COLORS.successBg },
   lead_transfer_rejected: { icon: 'swap-horizontal', color: COLORS.error, bg: COLORS.errorBg },

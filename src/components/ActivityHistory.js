@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { ACTIVITY_ENDPOINTS } from '../constants/api';
@@ -30,6 +31,7 @@ const TYPE_NAME = {
 // field that changed, old → new. Same as the website.
 const ActivityRow = React.memo(function ActivityRow({ r, last, showModule }) {
   const [open, setOpen] = useState(false);
+  const navigation = useNavigation();
   const changes = r.changes || [];
   const named = r.label && !(r.summary || '').includes(r.label);
   return (
@@ -40,7 +42,11 @@ const ActivityRow = React.memo(function ActivityRow({ r, last, showModule }) {
       </View>
       <View style={s.body}>
         <Text style={s.summary}>{r.summary}</Text>
-        {named ? <Text style={s.target}><Text style={s.targetType}>{(TYPE_NAME[r.target_type] || 'Record').toUpperCase()}  </Text>{r.label}</Text> : null}
+        {r.lead_id ? (
+          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('SalesLeads', { openLeadId: r.lead_id })}>
+            <Text style={[s.target, s.targetLink]}><Text style={s.targetType}>{(TYPE_NAME[r.target_type] || 'Lead').toUpperCase()}  </Text>{r.label || `Lead #${r.lead_id}`}  ›</Text>
+          </TouchableOpacity>
+        ) : named ? <Text style={s.target}><Text style={s.targetType}>{(TYPE_NAME[r.target_type] || 'Record').toUpperCase()}  </Text>{r.label}</Text> : null}
         <Text style={s.meta}>
           <Text style={s.who}>{r.actor?.name || 'System'}</Text>
           {showModule && r.module ? `  ·  ${r.module}` : ''}{`  ·  ${fmtWhen(r.at)}`}
@@ -121,6 +127,7 @@ const s = StyleSheet.create({
   who: { fontWeight: '800', color: COLORS.textPrimary },
   target: { fontSize: 12.5, fontWeight: '600', color: COLORS.textPrimary, marginTop: 3 },
   targetType: { fontSize: 10.5, fontWeight: '800', color: COLORS.link },
+  targetLink: { color: COLORS.link },
   moreBtn: { fontSize: 12, fontWeight: '700', color: COLORS.link, marginTop: 5 },
   change: { marginTop: 5 },
   changeField: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary },
