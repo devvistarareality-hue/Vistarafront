@@ -12,6 +12,7 @@ import LoadError from '../../components/LoadError';
 import FilterSelect from '../../components/FilterSelect';
 import { Button } from '../../components/ui';
 import { ActivityRows } from '../../components/ActivityHistory';
+import { DateField } from '../AR/arShared';
 
 const ACTIONS = [
   { value: '', label: 'Any action' }, { value: 'created', label: 'Created' }, { value: 'submitted', label: 'Submitted' },
@@ -27,7 +28,7 @@ export default function ActivityLogScreen({ navigation, route }) {
   const modules = route?.params?.modules || null;
   const title = route?.params?.title || 'Activity Log';
   const allowed = user?.role === 'Admin' || user?.is_staff;
-  const [f, setF] = useState({ module: modules ? modules.join(',') : '', actor: '', action: '', q: '' });
+  const [f, setF] = useState({ module: modules ? modules.join(',') : '', actor: '', action: '', from: '', to: '', q: '' });
   const [q, setQ] = useState('');
   const [rows, setRows] = useState(null);
   const [meta, setMeta] = useState({ modules: [], actors: [], can_see_all: false });
@@ -76,6 +77,15 @@ export default function ActivityLogScreen({ navigation, route }) {
         ) : null}
         <FilterSelect label="Action" value={f.action} onChange={set('action')} options={ACTIONS} />
       </View>
+      <View style={s.dates}>
+        <DateField compact maxToday value={f.from} onChange={set('from')} placeholder="From" style={s.flex} />
+        <DateField compact maxToday value={f.to} onChange={set('to')} placeholder="To" style={s.flex} />
+        {(f.from || f.to) ? (
+          <TouchableOpacity onPress={() => setF((x) => ({ ...x, from: '', to: '' }))} style={s.clear} accessibilityLabel="Clear dates">
+            <Ionicons name="close" size={16} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
     </View>
   );
 
@@ -114,7 +124,9 @@ const s = StyleSheet.create({
   flex: { flex: 1 },
   search: { marginBottom: 10 },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.textPrimary, paddingVertical: 0 },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  dates: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  clear: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surfaceAlt },
   card: { padding: 14 },
   more: { alignSelf: 'center', marginTop: 6 },
   denied: { textAlign: 'center', color: COLORS.textSecondary, fontSize: 14, paddingVertical: 40, paddingHorizontal: 24 },
