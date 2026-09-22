@@ -76,7 +76,7 @@ export default function NotificationsScreen({ navigation }) {
           <TouchableOpacity key={n.id} activeOpacity={target ? 0.7 : 1} onPress={() => target && navigation.navigate(target.screen, target.params)}
             style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14,
               borderLeftWidth: n.is_read ? 0 : 3, borderLeftColor: st.color,
-              backgroundColor: n.is_read ? COLORS.cardBg : COLORS.accentSofter }]}>
+              backgroundColor: n.is_read ? COLORS.cardBg : COLORS.accentSofter, elevation: n.is_read ? CARD.elevation : 0 }]}>
             <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: st.bg, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name={st.icon} size={20} color={st.color} />
             </View>

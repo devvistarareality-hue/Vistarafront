@@ -186,7 +186,7 @@ function StatusBadge({ status, colors }) {
 
 function StatCard({ label, value, color, bg }) {
   return (
-    <View style={[CARD, { flex: 1, padding: 14, alignItems: 'center', backgroundColor: bg }]}>
+    <View style={[CARD, { flex: 1, padding: 14, alignItems: 'center', backgroundColor: bg, elevation: 0 }]}>{/* inline-ok: Android draws elevation through a tinted fill as a pale box, so no elevation on tints */}
       <Text style={{ fontSize: 24, fontWeight: '800', color }}>{value ?? '—'}</Text>
       <Text style={{ fontSize: 10, color, marginTop: 3, textAlign: 'center', fontWeight: '600', opacity: 0.8 }}>{label}</Text>
     </View>

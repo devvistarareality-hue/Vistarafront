@@ -328,7 +328,7 @@ const HomeScreen = () => {
               style={{
                 width: 40, height: 40, borderRadius: 20,
                 backgroundColor: COLORS.btnTint, justifyContent: 'center', alignItems: 'center',
-               shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}
+               shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, borderWidth: 1, borderColor: COLORS.btnBorder }}
             >
               <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.powderBlue }}>{initials}</Text>
             </TouchableOpacity>
