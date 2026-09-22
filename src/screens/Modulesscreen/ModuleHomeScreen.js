@@ -18,6 +18,7 @@ export default function ModuleHomeScreen({ navigation, route }) {
   const canSeeTeam = isManagerRole(user) || user?.role === 'Admin' || user?.is_staff;
 
   const isAccounts = /account|finance/i.test(module);
+  const isLogAdmin = user?.role === 'Admin' || user?.is_staff;
   const cards = [
     // My Team is a management view — only managers/admins see it.
     ...(canSeeTeam ? [{ key: 'MyTeam', label: 'My Team', desc: `${name} department org chart`, icon: 'people-circle-outline',
@@ -30,6 +31,9 @@ export default function ModuleHomeScreen({ navigation, route }) {
     // be done from a desktop.
     ...(isAccounts ? [{ key: 'ModuleApprovals', label: 'Approvals', desc: 'Sign off bookings — the Accounts gate', icon: 'checkmark-done-outline',
       color: COLORS.success, bg: COLORS.success2, params: { module, name } }] : []),
+    // Who changed what in this module, and when — real admins only.
+    ...(isLogAdmin ? [{ key: 'ActivityLog', label: 'Log', desc: 'Who changed what, and when', icon: 'time-outline',
+      color: COLORS.link, bg: COLORS.linkBg, params: { modules: [module], title: `${name} Log` } }] : []),
   ];
 
   return (

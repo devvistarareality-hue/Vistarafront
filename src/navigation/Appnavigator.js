@@ -190,6 +190,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
             <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
             <Stack.Screen name="ChannelPartnerHub" component={ChannelPartnerHubScreen} />
+            <Stack.Screen name="ActivityLog"          component={ActivityLogScreen} />
             <Stack.Screen name="ChannelPartners"    component={ChannelPartnersScreen} />
             <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
             <Stack.Screen name="SalesDataReset"      component={SalesDataResetScreen} />

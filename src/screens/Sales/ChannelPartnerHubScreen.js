@@ -27,12 +27,15 @@ const TILES = [
   // Managers only, as in the web menu — a CP Executive has no reports, so the chart
   // would only ever be empty for them.
   { key: 'MyTeam',             label: 'My Team',       desc: 'The CP org chart',            icon: 'people-circle-outline', color: COLORS.purple,  bg: COLORS.purpleBg,  params: { module: 'Sales', title: 'My Team · Channel Partner', cp: true }, managerOnly: true },
+  // Who changed what in Channel Partner, and when — real admins only.
+  { key: 'ActivityLog',        label: 'Log',           desc: 'Who changed what, and when',  icon: 'time-outline',          color: COLORS.link,    bg: COLORS.linkBg,    params: { modules: ['Channel Partner'], title: 'Channel Partner Log' }, adminOnly: true },
 ];
 
 export default function ChannelPartnerHubScreen({ navigation }) {
   const user = useSelector((s) => s.auth.user);
   const isManager = isManagerRole(user) || user?.role === 'Admin' || user?.is_staff;
-  const tiles = TILES.filter((t) => !t.managerOnly || isManager);
+  const isLogAdmin = user?.role === 'Admin' || user?.is_staff;
+  const tiles = TILES.filter((t) => (!t.managerOnly || isManager) && (!t.adminOnly || isLogAdmin));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
