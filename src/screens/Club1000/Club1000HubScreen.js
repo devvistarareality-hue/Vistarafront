@@ -29,6 +29,8 @@ const MENU = [
   { key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
   { key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: false },
   { key: 'MyTeam',             label: 'My Team',      icon: 'people-circle-outline', color: COLORS.purple,   bg: COLORS.purpleBg,  managerOnly: true, navParams: { module: 'Club 1000', title: 'My Team' } },
+  // Who changed what in Club 1000, and when — real admins only.
+  { key: 'ActivityLog',        label: 'Log',          icon: 'time-outline',          color: COLORS.link,     bg: COLORS.linkBg,    adminOnly: true, navParams: { modules: ['Club 1000'], title: 'Club 1000 Log' } },
 ];
 
 function fmtMoney(n) {
@@ -56,6 +58,9 @@ export default function Club1000HubScreen({ navigation, route }) {
       visibleMenu = [...visibleMenu, { key: '__ADMIN__', label: 'Admin', icon: 'shield-checkmark-outline', color: NAVY, bg: COLORS.surfaceAlt }];
     }
   }
+
+  const isLogAdmin = user?.role === 'Admin' || user?.is_staff;
+  visibleMenu = visibleMenu.filter((m) => !m.adminOnly || isLogAdmin);
 
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);

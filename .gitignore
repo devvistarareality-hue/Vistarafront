@@ -51,3 +51,6 @@ build-*.tar.gz
 
 # Claude Code local settings
 .claude/
+
+# Firebase config for Android push — not committed; EAS uploads it from disk (see .easignore)
+/google-services.json

@@ -20,9 +20,14 @@ const ACTIONS = [
 ];
 
 // Every change anyone made, newest first — same as /admin/activity on the website.
-export default function ActivityLogScreen({ navigation }) {
+export default function ActivityLogScreen({ navigation, route }) {
   const companyId = useSelector((st) => st.adminFilter?.companyId);
-  const [f, setF] = useState({ module: '', actor: '', action: '', q: '' });
+  const user = useSelector((st) => st.auth.user);
+  // A module's Log tab passes its module name(s); Admin → Activity Log passes none.
+  const modules = route?.params?.modules || null;
+  const title = route?.params?.title || 'Activity Log';
+  const allowed = user?.role === 'Admin' || user?.is_staff;
+  const [f, setF] = useState({ module: modules ? modules.join(',') : '', actor: '', action: '', q: '' });
   const [q, setQ] = useState('');
   const [rows, setRows] = useState(null);
   const [meta, setMeta] = useState({ modules: [], actors: [], can_see_all: false });
@@ -49,7 +54,7 @@ export default function ActivityLogScreen({ navigation }) {
     } catch (e) { setErr('Check your connection and try again.'); if (pg === 1) setRows([]); }
   }, [f, companyId]);
 
-  useEffect(() => { setRows(null); load(1); }, [load]);
+  useEffect(() => { if (allowed) { setRows(null); load(1); } }, [load, allowed]);
   const onRefresh = async () => { setRefreshing(true); await load(1); setRefreshing(false); };
   const set = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
 
@@ -61,8 +66,10 @@ export default function ActivityLogScreen({ navigation }) {
           placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
       </View>
       <View style={s.filters}>
-        <FilterSelect label="Module" value={f.module} onChange={set('module')}
-          options={[{ value: '', label: 'All modules' }, ...meta.modules.map((m) => ({ value: m, label: m }))]} />
+        {!modules ? (
+          <FilterSelect label="Module" value={f.module} onChange={set('module')}
+            options={[{ value: '', label: 'All modules' }, ...meta.modules.map((m) => ({ value: m, label: m }))]} />
+        ) : null}
         {meta.can_see_all ? (
           <FilterSelect label="Person" value={f.actor} onChange={set('actor')}
             options={[{ value: '', label: 'Everyone' }, ...meta.actors.map((a) => ({ value: String(a.id), label: a.name || '—' }))]} />
@@ -80,11 +87,11 @@ export default function ActivityLogScreen({ navigation }) {
           <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={s.flex}>
-          <Text style={common.headerTitle}>Activity Log</Text>
-          <Text style={common.headerSub}>{meta.can_see_all ? 'Who did what, where and when' : 'What you have changed'}</Text>
+          <Text style={common.headerTitle} numberOfLines={1}>{title}</Text>
+          <Text style={common.headerSub}>Who changed what, and when</Text>
         </View>
       </View>
-      {rows === null && !err ? <AppLoader label="Loading…" /> : err && !rows?.length ? <LoadError message={err} onRetry={() => load(1)} /> : (
+      {!allowed ? <Text style={s.denied}>Only admins can see the log.</Text> : rows === null && !err ? <AppLoader label="Loading…" /> : err && !rows?.length ? <LoadError message={err} onRetry={() => load(1)} /> : (
         <FlatList
           data={[0]}
           keyExtractor={() => 'log'}
@@ -93,7 +100,7 @@ export default function ActivityLogScreen({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.link} />}
           renderItem={() => (
             <View style={[common.card, s.card]}>
-              <ActivityRows rows={rows || []} />
+              <ActivityRows rows={rows || []} showModule={!modules || modules.length > 1} />
               {more ? <Button title="Load more" variant="secondary" size="sm" onPress={() => load(page + 1)} style={s.more} /> : null}
             </View>
           )}
@@ -110,4 +117,5 @@ const s = StyleSheet.create({
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   card: { padding: 14 },
   more: { alignSelf: 'center', marginTop: 6 },
+  denied: { textAlign: 'center', color: COLORS.textSecondary, fontSize: 14, paddingVertical: 40, paddingHorizontal: 24 },
 });

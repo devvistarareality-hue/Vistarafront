@@ -1744,6 +1744,17 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedLead,setSelectedLead]= useState(null);
   const [detailModal, setDetailModal] = useState(false);
+  // Opened from a link such as the Log's (openLeadId): load that lead in full, then
+  // show its details — the modal fills its form from the record it is given.
+  useEffect(() => {
+    const id = route?.params?.openLeadId;
+    if (!id) return;
+    apiFetch(SALES_ENDPOINTS.lead(id)).then(async (r) => {
+      if (!r.ok) return;
+      setSelectedLead(await r.json());
+      setDetailModal(true);
+    }).catch(() => {});
+  }, [route?.params?.openLeadId]);
   const [createModal, setCreateModal] = useState(false);
   // Transfer straight from a lead card — the lead being handed on, or null.
   const [xferLead, setXferLead] = useState(null);

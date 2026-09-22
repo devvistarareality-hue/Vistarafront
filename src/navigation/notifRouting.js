@@ -25,6 +25,7 @@ const ROUTE_FOR_TYPE = {
   ar_followup_due: { screen: 'ARCollections', params: { tab: 'followups' } },
   ar_followup_overdue: { screen: 'ARCollections', params: { tab: 'followups' } },
   ar_collections_digest: { screen: 'ARCollections', params: { tab: 'overdue' } },
+  ar_due_soon: { screen: 'ARCollections', params: { tab: 'upcoming' } },
   lead_transfer_requested: { screen: 'BookingApprovals' },
   lead_transfer_approved: { screen: 'SalesLeads' },
   lead_transfer_rejected: { screen: 'SalesLeads' },

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { ACTIVITY_ENDPOINTS } from '../constants/api';
@@ -21,26 +22,57 @@ function toneOf(action) {
   return COLORS.textTertiary;
 }
 
+const TYPE_NAME = {
+  lead: 'Lead', 'follow-up': 'Follow-up', 'site-visit': 'Site visit', booking: 'Booking', closure: 'Closure',
+  plot: 'Plot', project: 'Project', ar_account: 'AR account', user: 'User', 'channel-partner': 'Channel partner',
+};
+
+// One log line: what happened, to whom (named, not "#45975"), and on tap every
+// field that changed, old → new. Same as the website.
+const ActivityRow = React.memo(function ActivityRow({ r, last, showModule }) {
+  const [open, setOpen] = useState(false);
+  const navigation = useNavigation();
+  const changes = r.changes || [];
+  const named = r.label && !(r.summary || '').includes(r.label);
+  return (
+    <View style={s.item}>
+      <View style={s.rail}>
+        <View style={[s.dot, { borderColor: toneOf(r.action) }]} />{/* inline-ok: tone by action */}
+        {!last ? <View style={s.line} /> : null}
+      </View>
+      <View style={s.body}>
+        <Text style={s.summary}>{r.summary}</Text>
+        {r.lead_id ? (
+          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('SalesLeads', { openLeadId: r.lead_id })}>
+            <Text style={[s.target, s.targetLink]}><Text style={s.targetType}>{(TYPE_NAME[r.target_type] || 'Lead').toUpperCase()}  </Text>{r.label || `Lead #${r.lead_id}`}  ›</Text>
+          </TouchableOpacity>
+        ) : named ? <Text style={s.target}><Text style={s.targetType}>{(TYPE_NAME[r.target_type] || 'Record').toUpperCase()}  </Text>{r.label}</Text> : null}
+        <Text style={s.meta}>
+          <Text style={s.who}>{r.actor?.name || 'System'}</Text>
+          {showModule && r.module ? `  ·  ${r.module}` : ''}{`  ·  ${fmtWhen(r.at)}`}
+          {r.legacy ? '  ·  from the record' : ''}
+        </Text>
+        {changes.length > 0 ? (
+          <TouchableOpacity onPress={() => setOpen((v) => !v)} activeOpacity={0.7}>
+            <Text style={s.moreBtn}>{open ? 'Hide changes' : `${changes.length} change${changes.length === 1 ? '' : 's'}`}</Text>
+          </TouchableOpacity>
+        ) : null}
+        {open ? changes.map((c, i) => (
+          <View key={i} style={s.change}>
+            <Text style={s.changeField}>{c.field}</Text>
+            <Text style={s.changeText}><Text style={s.old}>{c.from}</Text>  →  {c.to}</Text>
+          </View>
+        )) : null}
+      </View>
+    </View>
+  );
+});
+
 export function ActivityRows({ rows, showModule = true }) {
   if (!rows.length) return <Text style={s.empty}>Nothing recorded yet.</Text>;
   return (
     <View style={s.list}>
-      {rows.map((r, i) => (
-        <View key={r.id} style={s.item}>
-          <View style={s.rail}>
-            <View style={[s.dot, { borderColor: toneOf(r.action) }]} />{/* inline-ok: tone by action */}
-            {i < rows.length - 1 ? <View style={s.line} /> : null}
-          </View>
-          <View style={s.body}>
-            <Text style={s.summary}>{r.summary}</Text>
-            <Text style={s.meta}>
-              <Text style={s.who}>{r.actor?.name || 'System'}</Text>
-              {showModule && r.module ? `  ·  ${r.module}` : ''}{`  ·  ${fmtWhen(r.at)}`}
-              {r.legacy ? '  ·  from the record' : ''}
-            </Text>
-          </View>
-        </View>
-      ))}
+      {rows.map((r, i) => <ActivityRow key={r.id} r={r} last={i === rows.length - 1} showModule={showModule} />)}
     </View>
   );
 }
@@ -93,6 +125,14 @@ const s = StyleSheet.create({
   summary: { fontSize: 13.5, fontWeight: '600', color: COLORS.textPrimary, lineHeight: 19 },
   meta: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 3 },
   who: { fontWeight: '800', color: COLORS.textPrimary },
+  target: { fontSize: 12.5, fontWeight: '600', color: COLORS.textPrimary, marginTop: 3 },
+  targetType: { fontSize: 10.5, fontWeight: '800', color: COLORS.link },
+  targetLink: { color: COLORS.link },
+  moreBtn: { fontSize: 12, fontWeight: '700', color: COLORS.link, marginTop: 5 },
+  change: { marginTop: 5 },
+  changeField: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary },
+  changeText: { fontSize: 12.5, color: COLORS.textPrimary, marginTop: 1 },
+  old: { color: COLORS.textTertiary, textDecorationLine: 'line-through' },
   empty: { fontSize: 13, color: COLORS.textSecondary, paddingVertical: 10 },
   err: { fontSize: 13, color: COLORS.error, paddingVertical: 10 },
 });
