@@ -17,6 +17,7 @@ const ADMIN_MODULES = [
   { name: 'User Management',    icon: 'account-cog-outline',  color: COLORS.navy, iconBg: COLORS.linkBg, screen: 'UserManagement',     params: undefined },
   { name: 'Company Management', icon: 'domain',               color: COLORS.info, iconBg: COLORS.infoBg, screen: 'CompanyManagement',  params: undefined },
   { name: 'Designation Master', icon: 'tag-multiple-outline', color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'DesignationMaster',  params: undefined },
+  { name: 'Activity Log',       icon: 'history',              color: COLORS.link, iconBg: COLORS.linkBg, screen: 'ActivityLog',        params: undefined },
   { name: 'Sales',              icon: 'storefront-outline',   color: COLORS.warningAlt, iconBg: COLORS.warningBg, screen: 'SalesCRM',           params: undefined },
   { name: 'HR',                 icon: 'account-group-outline',color: COLORS.link, iconBg: COLORS.linkBg, screen: 'ModuleHome',  params: { module: 'HR', name: 'HR' } },
   { name: 'Accounts & Finance', icon: 'wallet-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Accounts & Finance', name: 'Accounts & Finance' } },

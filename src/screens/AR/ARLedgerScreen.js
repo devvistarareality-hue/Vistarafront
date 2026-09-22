@@ -12,6 +12,8 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import FormSheet from '../../components/FormSheet';
 import BookingDetails from '../../components/BookingDetails';
+import ActivityHistory from '../../components/ActivityHistory';
+import FollowUpSheet from './FollowUpSheet';
 import { Badge, Button, Segmented } from '../../components/ui';
 import { rupee, MODES, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
 
@@ -39,6 +41,7 @@ export default function ARLedgerScreen({ navigation, route }) {
   const [audit, setAudit] = useState(null);      // null | { receipt, rows }
   const [sharing, setSharing] = useState(false);
   const [booking, setBooking] = useState(null);  // null | 'loading' | booking
+  const [followUps, setFollowUps] = useState(false);
 
   const url = useCallback((u) => withCompany(u, companyId, [`as_of=${asOf}`]), [companyId, asOf]);
 
@@ -152,6 +155,7 @@ export default function ARLedgerScreen({ navigation, route }) {
           <Button title="Booking details" icon="book" size="sm" variant="secondary" onPress={showBooking} style={s.flex} />
           <Button title={`View ${isEoi ? 'EOI' : 'LOI'}`} icon="file" size="sm" variant="secondary" onPress={openLoi} style={s.flex} />
         </View>
+        <Button title="Follow-ups" icon="bell" size="sm" variant="secondary" full onPress={() => setFollowUps(true)} style={s.recordBtn} />
         {!frozen && <Button title="Record payment" icon="check-circle" variant="primary" full onPress={openNew} style={s.recordBtn} />}
 
         {frozen && <Note tone="warn" text="This booking was cancelled, so its account is frozen. Receipts and history are kept; no new payments can be recorded." />}
@@ -251,7 +255,13 @@ export default function ARLedgerScreen({ navigation, route }) {
           )}
           <KV k="Net interest" v={data.net_interest} total />
         </View>
+
+        <View style={[common.card, s.card]}>
+          <ActivityHistory targetType="ar_account" targetId={data.id} title="Account history — receipts, follow-ups, changes" />
+        </View>
       </ScrollView>
+
+      <FollowUpSheet row={followUps ? data : null} visible={followUps} onClose={() => setFollowUps(false)} />
 
       <FormSheet visible={!!form} onClose={() => !saving && setForm(null)}>
         {form && (
