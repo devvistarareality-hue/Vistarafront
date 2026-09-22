@@ -61,7 +61,7 @@
         "backgroundImage": "./assets/android-icon-background.png"
       },
       "package": "com.vistararealty.app",
-      "googleServicesFile": "./android/app/google-services.json",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",

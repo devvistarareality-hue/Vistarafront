@@ -1,4 +1,4 @@
-!android/app/google-services.json
+!google-services.json
 ios/Pods
 ios/build
 ios/DerivedData
