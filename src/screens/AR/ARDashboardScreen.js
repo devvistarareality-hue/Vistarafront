@@ -72,6 +72,7 @@ export default function ARDashboardScreen({ navigation }) {
           <DateField compact maxToday value={asOf} onChange={(d) => setAsOf(d || today())} style={s.asOf} />
         </View>
         <View style={s.quick}>
+          <Quick icon="notifications-outline" label="Collections" onPress={() => go('ARCollections', { project })} />
           <Quick icon="book-outline" label="Register" onPress={() => go('ARRegister', { project })} />
           <Quick icon="cloud-upload-outline" label="Import receipts" onPress={() => go('ARImport', { project })} />
         </View>
@@ -150,7 +151,7 @@ function Quick({ icon, label, onPress }) {
   return (
     <TouchableOpacity style={s.quickBtn} activeOpacity={0.8} onPress={onPress}>
       <Ionicons name={icon} size={17} color={COLORS.link} />
-      <Text style={s.quickText}>{label}</Text>
+      <Text style={s.quickText} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
     </TouchableOpacity>
   );
 }

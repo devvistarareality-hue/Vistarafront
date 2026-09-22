@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { COLORS } from '../constants/theme';
+import ActivityHistory from './ActivityHistory';
 
 // The exact details entered on the booking form — client, property, rates, amounts
 // and the payment schedule. Built for the Accounts & Finance review screen and now
@@ -82,6 +83,7 @@ export default function BookingDetails({ b, accent = COLORS.success }) {
       {insts.map((i, idx) => (
         <DRow key={idx} l={`${idx + 1}. ${fmtDate(i.date)}  ${i.pct != null ? i.pct + '%' : ''}  ${i.isNsd ? '(Extra Work)' : i.isExtra ? '(Legal & Other)' : ''}`.trim()} v={money0(i.amt)} />
       ))}
+      {b.id ? <ActivityHistory targetType="booking" targetId={b.id} /> : null}
     </View>
   );
 }

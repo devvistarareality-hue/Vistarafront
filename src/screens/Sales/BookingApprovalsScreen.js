@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Linking, RefreshControl, TextInput, Modal, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -174,11 +174,9 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // booking on that project, so they belong on the same screen.
   const [xfers, setXfers] = useState([]);
   // Lead transfers and booking approvals are two jobs: one section each,
-  // opening on transfers only while some are pending.
+  // always opening on booking approvals.
   const [section, setSection] = useState('bookings');
-  const sectionPicked = useRef(false);
-  useEffect(() => { if (!sectionPicked.current && xfers.length > 0) setSection('transfers'); }, [xfers.length]);
-  const pickSection = (next) => { sectionPicked.current = true; setSection(next); };
+  const pickSection = setSection;
   const loadTransfers = useCallback(() => {
     // cp_only in the Channel Partner module: a lead transfer is a Sales activity, so
     // without it the CP approver was shown transfers for leads that never came through
@@ -300,13 +298,13 @@ export default function BookingApprovalsScreen({ navigation, route }) {
       </View>
 
       <View style={s.sectionTabs}>
+        <TouchableOpacity onPress={() => pickSection('bookings')} style={[s.sectionTab, section === 'bookings' && s.sectionTabOn]}>
+          <Text style={[s.sectionTabText, section === 'bookings' && s.sectionTabTextOn]} numberOfLines={1}>Booking Approvals</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => pickSection('transfers')} style={[s.sectionTab, section === 'transfers' && s.sectionTabOn]}>
           <Text style={[s.sectionTabText, section === 'transfers' && s.sectionTabTextOn]} numberOfLines={1}>
             {xfers.length > 0 ? `Lead Transfers · ${xfers.length}` : 'Lead Transfers'}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => pickSection('bookings')} style={[s.sectionTab, section === 'bookings' && s.sectionTabOn]}>
-          <Text style={[s.sectionTabText, section === 'bookings' && s.sectionTabTextOn]} numberOfLines={1}>Booking Approvals</Text>
         </TouchableOpacity>
       </View>
 

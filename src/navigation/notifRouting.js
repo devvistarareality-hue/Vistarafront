@@ -20,6 +20,11 @@ const ROUTE_FOR_TYPE = {
   accounts_booking_approval: { screen: 'ModuleApprovals', params: { module: 'Accounts & Finance', name: 'Accounts & Finance' } },
   accounts_booking_update: { screen: 'ModuleApprovals', params: { module: 'Accounts & Finance', name: 'Accounts & Finance' } },
   accounts_booking_cancelled: { screen: 'ModuleBookings', params: { module: 'Accounts & Finance', name: 'Accounts & Finance' } },
+  // Accounts Receivable collections: follow-ups and the morning digest.
+  ar_followup_assigned: { screen: 'ARCollections', params: { tab: 'followups' } },
+  ar_followup_due: { screen: 'ARCollections', params: { tab: 'followups' } },
+  ar_followup_overdue: { screen: 'ARCollections', params: { tab: 'followups' } },
+  ar_collections_digest: { screen: 'ARCollections', params: { tab: 'overdue' } },
   lead_transfer_requested: { screen: 'BookingApprovals' },
   lead_transfer_approved: { screen: 'SalesLeads' },
   lead_transfer_rejected: { screen: 'SalesLeads' },

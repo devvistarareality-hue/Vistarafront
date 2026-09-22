@@ -36,6 +36,7 @@ import ARDashboardScreen from '../screens/AR/ARDashboardScreen';
 import ARRegisterScreen from '../screens/AR/ARRegisterScreen';
 import ARLedgerScreen from '../screens/AR/ARLedgerScreen';
 import ARImportScreen from '../screens/AR/ARImportScreen';
+import ARCollectionsScreen from '../screens/AR/ARCollectionsScreen';
 
 const Tab = createBottomTabNavigator();
 const ModulesStack = createNativeStackNavigator();
@@ -73,6 +74,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="ARRegister" component={ARRegisterScreen} />
       <ModulesStack.Screen name="ARLedger" component={ARLedgerScreen} />
       <ModulesStack.Screen name="ARImport" component={ARImportScreen} />
+      <ModulesStack.Screen name="ARCollections" component={ARCollectionsScreen} />
     </ModulesStack.Navigator>
   );
 }
