@@ -27,9 +27,10 @@ const common = StyleSheet.create({
 
   // Header
   header:        { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent' },
-  headerTitle:   { flex: 1, fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
-  headerTitleCenter: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
-  headerSub:     { fontSize: 13, color: COLORS.textSecondary },
+  // lineHeight keeps descenders (g, y, p) from being clipped when a title is truncated to one line.
+  headerTitle:   { flex: 1, fontSize: 18, lineHeight: 24, fontWeight: '800', color: COLORS.textPrimary },
+  headerTitleCenter: { flex: 1, textAlign: 'center', fontSize: 18, lineHeight: 24, fontWeight: '800', color: COLORS.textPrimary },
+  headerSub:     { fontSize: 13, lineHeight: 18, color: COLORS.textSecondary },
   iconBtn:       { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
 
   // Text
