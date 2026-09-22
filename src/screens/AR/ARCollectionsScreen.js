@@ -17,7 +17,8 @@ import { rupee, inrShort, today, withCompany } from './arShared';
 import FollowUpSheet from './FollowUpSheet';
 
 const dmy = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
-const WINDOWS = [7, 30, 60, 90];
+const WINDOWS = [0, 7, 30, 60, 90];   // 0 = due today
+const windowLabel = (w) => (w === 0 ? 'Today' : `${w} days`);
 const WHEN = [['open', 'All open'], ['overdue', 'Overdue'], ['today', 'Today'], ['upcoming', 'Later'], ['done', 'Done']];
 
 // Collections — same as /m/ar/collections on the website: who has not paid,
@@ -76,7 +77,7 @@ export default function ARCollectionsScreen({ navigation, route }) {
     <View>
       <DashKpiGrid>
         <DashKpi icon="alarm-outline" tone="bad" label="Overdue" value={inrShort(c.overdue_amount)} sub={`${c.overdue_accounts || 0} not paid`} onPress={() => setTab('overdue')} />
-        <DashKpi icon="calendar-outline" tone="warn" label={`Due in ${days} days`} value={inrShort(c.upcoming_amount)} sub={`${c.upcoming_accounts || 0} accounts`} onPress={() => setTab('upcoming')} />
+        <DashKpi icon="calendar-outline" tone="warn" label={days === 0 ? 'Due today' : `Due in ${days} days`} value={inrShort(c.upcoming_amount)} sub={`${c.upcoming_accounts || 0} accounts`} onPress={() => setTab('upcoming')} />
         <DashKpi icon="call-outline" tone="info" label="Follow-ups today" value={String(c.followups_today || 0)} sub={`${c.followups_overdue || 0} overdue`} onPress={() => setTab('followups')} />
         <DashKpi icon="person-remove-outline" tone="muted" label="Not followed up" value={String(c.no_followup || 0)} sub="Overdue, nothing scheduled" />
       </DashKpiGrid>
@@ -101,7 +102,7 @@ export default function ARCollectionsScreen({ navigation, route }) {
               options={[{ value: '', label: 'All projects' }, ...(data?.projects || []).map((p) => ({ value: String(p.id), label: p.name }))]} />
             {tab === 'upcoming' ? WINDOWS.map((w) => (
               <TouchableOpacity key={w} onPress={() => setDays(w)} style={[s.chip, days === w && s.chipOn]}>
-                <Text style={[s.chipText, days === w && s.chipTextOn]}>{w} days</Text>
+                <Text style={[s.chipText, days === w && s.chipTextOn]}>{windowLabel(w)}</Text>
               </TouchableOpacity>
             )) : null}
           </View>
@@ -153,7 +154,7 @@ export default function ARCollectionsScreen({ navigation, route }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.link} />}
           ListEmptyComponent={tab === 'followups' && fus === null ? <AppLoader label="Loading…" size={0.5} /> : (
             <Text style={s.empty}>{tab === 'overdue' ? 'Nobody is overdue. Every due installment is paid.'
-              : tab === 'upcoming' ? `Nothing falls due in the next ${days} days.` : 'No follow-ups here.'}</Text>
+              : tab === 'upcoming' ? (days === 0 ? 'Nothing falls due today.' : `Nothing falls due in the next ${days} days.`) : 'No follow-ups here.'}</Text>
           )}
           renderItem={({ item }) => (tab === 'followups'
             ? <FollowUpCard f={item} onPress={() => setOpen(byId[item.account_id] || { ...item.account, overdue: 0 })} />
