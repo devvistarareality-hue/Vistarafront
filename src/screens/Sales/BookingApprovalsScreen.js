@@ -17,6 +17,7 @@ import ExportBookings from '../../components/ExportBookings';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
+import LeadTransfersPanel from './LeadTransfersPanel';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -178,7 +179,6 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const sectionPicked = useRef(false);
   useEffect(() => { if (!sectionPicked.current && xfers.length > 0) setSection('transfers'); }, [xfers.length]);
   const pickSection = (next) => { sectionPicked.current = true; setSection(next); };
-  const [xferBusy, setXferBusy] = useState(null);
   const loadTransfers = useCallback(() => {
     // cp_only in the Channel Partner module: a lead transfer is a Sales activity, so
     // without it the CP approver was shown transfers for leads that never came through
@@ -190,14 +190,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   }, [companyId, cpOnly]);
   useFocusEffect(useCallback(() => { loadTransfers(); }, [loadTransfers]));
 
-  async function actOnTransfer(id, action) {
-    setXferBusy(id);
-    await apiFetch(SALES_ENDPOINTS.leadTransferAction(id), {
-      method: 'POST', body: JSON.stringify({ action }),
-    }).catch(() => {});
-    setXferBusy(null);
-    loadTransfers();
-  }
+
 
   async function act(id, action) { setBusy(id); await apiFetch(`${SALES_ENDPOINTS.bookings}${id}/action/${cq('?')}`, { method: 'POST', body: JSON.stringify({ action }) }).catch(() => {}); setBusy(null); load(); }
 
@@ -318,39 +311,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}>
-        {section === 'transfers' && xfers.length === 0 && (
-          <View style={[CARD, s.emptyCard]}><Text style={s.emptyText}>No lead transfers are waiting for your approval.</Text></View>
-        )}
-
-        {section === 'transfers' && xfers.length > 0 && (
-          <View style={[CARD, { marginBottom: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: COLORS.warning }]}>
-            <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.warning }}>
-              ⇄ Lead Transfers awaiting your approval · {xfers.length}
-            </Text>
-            <Text style={{ fontSize: 11.5, color: MUTED, marginTop: 2, marginBottom: 10 }}>
-              The lead stays with the current STM until you approve.
-            </Text>
-            {xfers.map((x) => (
-              <View key={x.id} style={{ borderWidth: 1, borderColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 8, backgroundColor: COLORS.warningBg }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>
-                  {x.lead_name || 'Lead'}{x.project_name ? ` · ${x.project_name}` : ''}
-                </Text>
-                <Text style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
-                  {x.from_stm_name || 'Unassigned'} → {x.to_stm_name}{x.reason ? ` · ${x.reason}` : ''}
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                  <TouchableOpacity onPress={() => actOnTransfer(x.id, 'reject')} disabled={xferBusy === x.id}
-                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.errorBg, alignItems: 'center', backgroundColor: COLORS.surface }}>
-                    <Text style={{ color: COLORS.error, fontWeight: '700', fontSize: 12.5 }}>Reject</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => actOnTransfer(x.id, 'approve')} disabled={xferBusy === x.id}
-                    style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', backgroundColor: COLORS.btnTintSuccess , borderWidth: 1, borderColor: COLORS.btnBorderSuccess }}>
-                    <Text style={{ color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 12.5 }}>{xferBusy === x.id ? '…' : 'Approve'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
+        {section === 'transfers' && (
+          <LeadTransfersPanel companyId={companyId} cpOnly={cpOnly} pendingCount={xfers.length} onChanged={loadTransfers} refreshKey={refreshing} />
         )}
 
         {section === 'bookings' && (<>
