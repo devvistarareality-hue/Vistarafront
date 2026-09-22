@@ -15,6 +15,12 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': 
 // The ERP is company-wise — Vistara Group is one tenant of several — so a hardcoded
 // name would put the wrong seller on another company's signed instrument. Callers
 // pass `companyName`; an empty one prints nothing rather than someone else's name.
+// Joint buyers typed on one line ("A (50%), B (25%) & C (25%)") print one per row.
+export function splitBuyers(name) {
+  const parts = String(name || '').split(/\s*[,&]\s*/).map((x) => x.trim()).filter(Boolean);
+  return parts.length ? parts : [String(name || '').trim() || '—'];
+}
+
 export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const sellerName = (opts.companyName || '').toString().trim();
   const fs = opts.formulaSet || 'kalrav';
@@ -327,7 +333,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .datebelow { display: flex; justify-content: space-between; color: #1e3a5f; font-size: 11px; font-weight: 700; margin: 0 0 8px; }
   .client { background: #eef3fb; border: 1px solid #c9d7ee; border-radius: 6px; padding: 9px 12px 9px 16px; margin-bottom: 12px; position: relative; }
   .client::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 3px; background: #ff6b2b; border-radius: 2px; }
-  .client .nm { font-size: 14px; font-weight: 800; color: #2e4a78; }
+  .client .nm { font-size: 14px; font-weight: 800; color: #2e4a78; line-height: 1.35; }
   .client .ph { font-size: 10px; color: #475569; margin-top: 1px; }
   .client .sub { display: flex; margin-top: 7px; }
   .client .sub .c { flex: 1; border-left: 1px solid #d7e3f5; padding-left: 8px; }
@@ -385,7 +391,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sign .box { width: 46%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 10px 10px; text-align: center; }
   .sign .t { font-size: 9px; color: #94a3b8; font-weight: 700; letter-spacing: .5px; }
   .sign .line { border-top: 1px solid #cbd5e1; margin: 24px 10px 6px; }
-  .sign .nm { font-size: 11px; color: #1e293b; }
+  .sign .nm { font-size: 11px; color: #1e293b; line-height: 1.4; }
   .dateline { text-align: center; color: #475569; font-size: 10px; margin-top: 10px; }
   .decl { background: #eef3fb; border: 1px solid #c9d7ee; border-radius: 6px; padding: 9px 14px; font-style: italic; text-align: center; color: #2e4a78; margin-top: 14px; font-size: 10px; position: relative; }
   .decl::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 3px; background: #ff6b2b; border-radius: 2px; }
@@ -404,7 +410,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   <div class="datebelow"><span>${isEOI ? 'EOI No: ' + esc(meta.plotNo || '—') : (unitDisplay ? esc(unitDisplay) : unitLabel + esc(stripPlotPrefix(meta.plotNo || '—')))}</span><span>Booking Date: ${esc(fmtDate(meta.bookingDate))}</span></div>
 
   <div class="client">
-    <div class="nm">${esc(meta.clientName || '—')}</div>
+    ${splitBuyers(meta.clientName).map((n) => `<div class="nm">${esc(n)}</div>`).join('')}
     ${meta.phoneNumber ? `<div class="ph">Ph: ${esc(meta.phoneNumber)}</div>` : ''}
     <div class="sub">
       <div class="c"><div class="k">Gender</div><div class="d">${esc(meta.gender || '—')}</div></div>
@@ -426,7 +432,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
 
   <div class="block">
     <div class="sign">
-      <div class="box"><div class="t">BUYER SIGNATURE</div><div class="line"></div><div class="nm">${esc(meta.clientName || '—')}</div></div>
+      <div class="box"><div class="t">BUYER SIGNATURE</div><div class="line"></div>${splitBuyers(meta.clientName).map((n) => `<div class="nm">${esc(n)}</div>`).join('')}</div>
       <div class="box"><div class="t">SELLER SIGNATURE</div><div class="line"></div><div class="nm">${esc(sellerName) || "&mdash;"}</div></div>
     </div>
     <div class="dateline">Date: ________________________</div>
