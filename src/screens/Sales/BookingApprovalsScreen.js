@@ -156,7 +156,9 @@ export default function BookingApprovalsScreen({ navigation, route }) {
 
   const load = useCallback(async (force = false) => {
     try {
-      const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : ''].filter(Boolean).join('&');
+      // Channel Partner's approvals are the partner-sourced bookings; Sales's are
+      // the rest. Each module answers for its own book, so nothing shows in both.
+      const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : 'source=sales'].filter(Boolean).join('&');
       const ck = cacheKey('bookings', q);
       const cached = force ? null : getCache(ck);
       if (cached) { setRows(cached); setLoading(false); setRefreshing(false); return; }
