@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, StatusBar, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
+import { can } from '../../lib/roles';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/theme';
 import { AR_ENDPOINTS } from '../../constants/api';
@@ -25,6 +26,7 @@ const WHEN = [['open', 'All open'], ['overdue', 'Overdue'], ['today', 'Today'], 
 // what falls due next, and the follow-ups chasing both.
 export default function ARCollectionsScreen({ navigation, route }) {
   const companyId = useSelector((st) => st.adminFilter?.companyId);
+  const me = useSelector((st) => st.auth.user);
   const [tab, setTab] = useState(route?.params?.tab || 'overdue');
   const [days, setDays] = useState(30);
   const [project, setProject] = useState(route?.params?.project || '');
@@ -158,7 +160,7 @@ export default function ARCollectionsScreen({ navigation, route }) {
           )}
           renderItem={({ item }) => (tab === 'followups'
             ? <FollowUpCard f={item} onPress={() => setOpen(byId[item.account_id] || { ...item.account, overdue: 0 })} />
-            : <AccountCard r={item} tab={tab} onFollowUp={() => setOpen(item)} onLedger={() => navigation.navigate('ARLedger', { id: item.id })} />)}
+            : <AccountCard r={item} tab={tab} onFollowUp={can(me, 'ar.followup.manage') ? () => setOpen(item) : null} onLedger={() => navigation.navigate('ARLedger', { id: item.id })} />)}
         />
       )}
       <FollowUpSheet row={open} visible={!!open} onClose={() => setOpen(null)} onChanged={changed} />
@@ -201,7 +203,7 @@ function AccountCard({ r, tab, onFollowUp, onLedger }) {
       {r.last_outcome?.text ? <Text style={s.outcome} numberOfLines={2}>“{r.last_outcome.text}”</Text> : null}
       <View style={s.actions}>
         <Button title="Ledger" variant="secondary" size="sm" onPress={onLedger} />
-        <Button title="Follow up" icon="notifications-outline" size="sm" onPress={onFollowUp} />
+        {onFollowUp ? <Button title="Follow up" icon="notifications-outline" size="sm" onPress={onFollowUp} /> : null}
       </View>
     </View>
   );

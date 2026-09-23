@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Sta
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
+import { can } from '../../lib/roles';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { CLUB1000_ENDPOINTS } from '../../constants/api';
@@ -125,7 +126,7 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
                       {r.status === 'paid' ? 'Paid' : 'Pending'}
                     </Text>
                   </View>
-                  {manager && r.status === 'pending' && (
+                  {manager && r.status === 'pending' && can(user, 'club.payout.mark_paid') && (
                     <TouchableOpacity onPress={() => markPaid(r.id)} style={ClubReferralRewardsScreenS.btn}>
                       <Text style={ClubReferralRewardsScreenS.box}>Mark Paid</Text>
                     </TouchableOpacity>

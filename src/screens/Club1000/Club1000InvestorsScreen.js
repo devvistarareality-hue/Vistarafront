@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
+import { can } from '../../lib/roles';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -1241,11 +1242,11 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Investors</Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{manager ? 'All investors' : 'Investors you\'ve added'}</Text>
         </View>
-        <TouchableOpacity onPress={() => setShowAdd(true)} disabled={!schemes.length}
+        {can(user, 'club.investor.manage') && <TouchableOpacity onPress={() => setShowAdd(true)} disabled={!schemes.length}
           style={[ClubInvestorsScreenS.btn2, (schemes.length) && ClubInvestorsScreenS.box23]}>
           <Ionicons name="add" size={16} color={COLORS.btnTextSuccess} />
           <Text style={ClubInvestorsScreenS.box24}>Add</Text>
-        </TouchableOpacity>
+        </TouchableOpacity>}
       </View>
       {!loading && !schemes.length && (
         <Text style={{ fontSize: 11, color: COLORS.warning, textAlign: 'center', paddingTop: 8 }}>
@@ -1319,10 +1320,12 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                 <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}><AppIcon name="book" size={11} /> Ledger</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => setRevising(inv)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.purpleBg }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.purple }}>↻ Revise LOI</Text>
-                </TouchableOpacity>
-                {inv.is_matured ? (
+                {can(user, 'club.investor.manage') && (
+                  <TouchableOpacity onPress={() => setRevising(inv)} style={ClubInvestorsScreenS.rowBtnPurple}>
+                    <Text style={ClubInvestorsScreenS.rowBtnPurpleText}>↻ Revise LOI</Text>
+                  </TouchableOpacity>
+                )}
+                {inv.is_matured ? (can(user, 'club.investor.manage') && (
                   <>
                     <TouchableOpacity onPress={() => setRenewing(inv)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: AMBER }}>↻ Renew</Text>
@@ -1333,8 +1336,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                       </TouchableOpacity>
                     )}
                   </>
-                ) : (
-                  manager && inv.status === 'active' && (
+                )) : (
+                  manager && inv.status === 'active' && can(user, 'club.investor.manage') && (
                     <TouchableOpacity onPress={() => redeem(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.warning }}>Redeem</Text>
                     </TouchableOpacity>
@@ -1359,5 +1362,8 @@ const ClubInvestorsScreenS = StyleSheet.create({
   box4: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
   btn3: { backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
   btn3Dim: { opacity: 0.5 },
+  // A small action chip in an investor row (Revise LOI).
+  rowBtnPurple: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.purpleBg },
+  rowBtnPurpleText: { fontSize: 11, fontWeight: '700', color: COLORS.purple },
   box5: { color: COLORS.btnText, fontSize: 15, fontWeight: '800' },
 });

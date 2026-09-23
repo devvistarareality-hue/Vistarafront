@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
+import { can } from '../../lib/roles';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
@@ -25,6 +26,7 @@ const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 // Single payments are recorded from the ledger.
 export default function ARImportScreen({ navigation, route }) {
   const companyId = useSelector((st) => st.adminFilter?.companyId);
+  const me = useSelector((st) => st.auth.user);
   const [accounts, setAccounts] = useState(null);
   const [err, setErr] = useState('');
   const [project, setProject] = useState(route?.params?.project || '');
@@ -137,8 +139,10 @@ export default function ARImportScreen({ navigation, route }) {
               </View>
               {result.committed ? (
                 <View style={[s.note, s.noteOk]}><Text style={[s.noteText, s.good]}>Done — {result.ready} receipts are now on their accounts.</Text></View>
-              ) : result.ready > 0 ? (
+              ) : result.ready > 0 && can(me, 'ar.import.run') ? (
                 <Button title={`Import ${result.ready} receipts`} variant="primary" full loading={busy === 'import'} onPress={confirmImport} style={s.importBtn} />
+              ) : result.ready > 0 ? (
+                <View style={[s.note, s.noteOk]}><Text style={s.noteText}>{result.ready} receipts are ready. Importing is not part of your permissions.</Text></View>
               ) : (
                 <View style={[s.note, s.noteBad]}><Text style={[s.noteText, s.bad]}>No payment in this file can be imported — see the reasons below.</Text></View>
               )}

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, RefreshControl, Alert, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
+import { can } from '../../lib/roles';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS } from '../../constants/theme';
 import { AR_ENDPOINTS } from '../../constants/api';
@@ -30,6 +31,7 @@ const confirm = (title, message, okText, destructive) => new Promise((resolve) =
 export default function ARLedgerScreen({ navigation, route }) {
   const id = route?.params?.id;
   const companyId = useSelector((st) => st.adminFilter?.companyId);
+  const me = useSelector((st) => st.auth.user);
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   const [asOf, setAsOf] = useState(today());
@@ -134,7 +136,7 @@ export default function ARLedgerScreen({ navigation, route }) {
 
   const frozen = data.status === 'frozen';
   const isEoi = String(data.plots).toUpperCase().startsWith('EOI');
-  const legalDirty = (legalDate || null) !== (data.legal_due_date || null);
+  const legalDirty = can(me, 'ar.legal_date.set') && (legalDate || null) !== (data.legal_due_date || null);
 
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
@@ -156,7 +158,7 @@ export default function ARLedgerScreen({ navigation, route }) {
           <Button title={`View ${isEoi ? 'EOI' : 'LOI'}`} icon="file" size="sm" variant="secondary" onPress={openLoi} style={s.flex} />
         </View>
         <Button title="Follow-ups" icon="bell" size="sm" variant="secondary" full onPress={() => setFollowUps(true)} style={s.recordBtn} />
-        {!frozen && <Button title="Record payment" icon="check-circle" variant="primary" full onPress={openNew} style={s.recordBtn} />}
+        {!frozen && can(me, 'ar.receipt.record') && <Button title="Record payment" icon="check-circle" variant="primary" full onPress={openNew} style={s.recordBtn} />}
 
         {frozen && <Note tone="warn" text="This booking was cancelled, so its account is frozen. Receipts and history are kept; no new payments can be recorded." />}
         {data.no_schedule && <Note tone="warn" text={`The booking has no installment schedule${String(data.plots).toUpperCase().startsWith('EOI') ? ' (an EOI)' : ''}, so the unscheduled amount shows as one undated Balance line with no interest. Ask Sales to add the installments to the booking.`} />}
@@ -226,8 +228,8 @@ export default function ARLedgerScreen({ navigation, route }) {
               <View style={s.itemFoot}>
                 <Text style={s.by} numberOfLines={1}>{rc.source === 'import' ? 'Excel import' : (rc.created_by || '—')}</Text>
                 <View style={s.rowBtns}>
-                  {!frozen && <IconBtn icon="pencil" label="Edit receipt" onPress={() => openEdit(rc)} />}
-                  {!frozen && <IconBtn icon="trash-outline" label="Delete receipt" danger onPress={() => deleteReceipt(rc)} />}
+                  {!frozen && can(me, 'ar.receipt.edit') && <IconBtn icon="pencil" label="Edit receipt" onPress={() => openEdit(rc)} />}
+                  {!frozen && can(me, 'ar.receipt.edit') && <IconBtn icon="trash-outline" label="Delete receipt" danger onPress={() => deleteReceipt(rc)} />}
                   <IconBtn icon="time-outline" label="Receipt history" onPress={() => showAudit(rc)} />
                 </View>
               </View>
