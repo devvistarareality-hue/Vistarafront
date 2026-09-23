@@ -38,6 +38,9 @@ export const isCpUser = (user) => can(user, 'sales.pipeline.cp');
 // Which menu items this person sees. `screens` is null unless their company set the
 // menu for their designation, in which case the old role-based rules still decide.
 export function canSee(user, key) {
+  // A tile with no screen key isn't something an admin can switch off (the Log
+  // tile), so it always shows.
+  if (!key) return true;
   const screens = user?.screens;
   if (!Array.isArray(screens)) return true;
   return screens.includes(key);

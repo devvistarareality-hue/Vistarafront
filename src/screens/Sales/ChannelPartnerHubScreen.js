@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-import { isManagerRole } from '../../lib/roles';
+import { isManagerRole, canSee } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -18,15 +18,15 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW 
 // list. They are separate items here for the same reason they are on the web: sharing
 // one entry only ever opened the approvals list.
 const TILES = [
-  { key: 'ChannelPartners',    label: 'All Partners',  desc: 'The CP directory',            icon: 'people-outline',        color: COLORS.link,    bg: COLORS.linkBg,    params: {} },
-  { key: 'SalesSiteVisits',    label: 'Site Visits',   desc: 'Partner-sourced visits',      icon: 'location-outline',      color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, adminView: true } },
-  { key: 'SalesFollowUps',     label: 'Follow-Ups',    desc: 'Partner-sourced follow-ups',  icon: 'calendar-outline',      color: COLORS.warning, bg: COLORS.warningBg, params: { cpOnly: true, adminView: true } },
-  { key: 'SalesMyConversions', label: 'Closures',      desc: 'Partner-sourced conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, adminView: true } },
-  { key: 'ClosureProjects',    label: 'Booking',       desc: 'Record a CP booking',         icon: 'document-text-outline', color: COLORS.link,    bg: COLORS.linkBg,    params: { cpOnly: true } },
-  { key: 'BookingApprovals',   label: 'Approvals',     desc: 'CP bookings to sign off',     icon: 'checkmark-done-outline',color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, cpMode: true, adminView: true } },
+  { screen: 'cp.screen.leads', key: 'ChannelPartners',    label: 'All Partners',  desc: 'The CP directory',            icon: 'people-outline',        color: COLORS.link,    bg: COLORS.linkBg,    params: {} },
+  { screen: 'cp.screen.sitevisits', key: 'SalesSiteVisits',    label: 'Site Visits',   desc: 'Partner-sourced visits',      icon: 'location-outline',      color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, adminView: true } },
+  { screen: 'cp.screen.followups', key: 'SalesFollowUps',     label: 'Follow-Ups',    desc: 'Partner-sourced follow-ups',  icon: 'calendar-outline',      color: COLORS.warning, bg: COLORS.warningBg, params: { cpOnly: true, adminView: true } },
+  { screen: 'cp.screen.closures', key: 'SalesMyConversions', label: 'Closures',      desc: 'Partner-sourced conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, adminView: true } },
+  { screen: 'cp.screen.booking', key: 'ClosureProjects',    label: 'Booking',       desc: 'Record a CP booking',         icon: 'document-text-outline', color: COLORS.link,    bg: COLORS.linkBg,    params: { cpOnly: true } },
+  { screen: 'cp.screen.approvals', key: 'BookingApprovals',   label: 'Approvals',     desc: 'CP bookings to sign off',     icon: 'checkmark-done-outline',color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, cpMode: true, adminView: true } },
   // Managers only, as in the web menu — a CP Executive has no reports, so the chart
   // would only ever be empty for them.
-  { key: 'MyTeam',             label: 'My Team',       desc: 'The CP org chart',            icon: 'people-circle-outline', color: COLORS.purple,  bg: COLORS.purpleBg,  params: { module: 'Sales', title: 'My Team · Channel Partner', cp: true }, managerOnly: true },
+  { screen: 'cp.screen.myteam', key: 'MyTeam',             label: 'My Team',       desc: 'The CP org chart',            icon: 'people-circle-outline', color: COLORS.purple,  bg: COLORS.purpleBg,  params: { module: 'Sales', title: 'My Team · Channel Partner', cp: true }, managerOnly: true },
   // Who changed what in Channel Partner, and when — real admins only.
   { key: 'ActivityLog',        label: 'Log',           desc: 'Who changed what, and when',  icon: 'time-outline',          color: COLORS.link,    bg: COLORS.linkBg,    params: { modules: ['Channel Partner'], title: 'Channel Partner Log' }, adminOnly: true },
 ];
@@ -35,7 +35,9 @@ export default function ChannelPartnerHubScreen({ navigation }) {
   const user = useSelector((s) => s.auth.user);
   const isManager = isManagerRole(user) || user?.role === 'Admin' || user?.is_staff;
   const isLogAdmin = user?.role === 'Admin' || user?.is_staff;
-  const tiles = TILES.filter((t) => (!t.managerOnly || isManager) && (!t.adminOnly || isLogAdmin));
+  // Which of these a designation sees is set per company in Designation Master →
+  // Permissions → Menu; unset keeps the old role-based list.
+  const tiles = TILES.filter((t) => canSee(user, t.screen) && (!t.managerOnly || isManager) && (!t.adminOnly || isLogAdmin));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
