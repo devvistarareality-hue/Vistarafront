@@ -9,7 +9,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-import { isManagerRole, can } from '../../lib/roles';
+import { isManagerRole, can, canSee, dashboardFor } from '../../lib/roles';
 import { ThemeIconButton } from '../../components/ThemeToggle';
 import AppLoader from '../../components/AppLoader';
 import { DashHero, DashAlerts } from '../../components/Dash';
@@ -38,27 +38,27 @@ async function authHeaders() {
 }
 
 const MENU = [
-  { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false },
-  { key: 'SalesFollowUps',    label: 'Follow-Ups',   icon: 'calendar-outline',        color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: false },
-  { key: 'SalesSiteVisits',   label: 'Site Visits',  icon: 'location-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, stmOnly: true },
-  { key: 'ClosureProjects',   label: 'Booking',      icon: 'document-text-outline',   color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, stmOnly: true },
+  { key: 'SalesLeads',        label: 'All Leads',    icon: 'people-outline',         color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false , screen: 'sales.screen.leads' },
+  { key: 'SalesFollowUps',    label: 'Follow-Ups',   icon: 'calendar-outline',        color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: false , screen: 'sales.screen.followups' },
+  { key: 'SalesSiteVisits',   label: 'Site Visits',  icon: 'location-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, stmOnly: true , screen: 'sales.screen.sitevisits' },
+  { key: 'ClosureProjects',   label: 'Booking',      icon: 'document-text-outline',   color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, stmOnly: true , screen: 'sales.screen.booking' },
   // Not for an STM: their site visits and closures are reached from Site Visits
   // and Booking -> My Bookings, which the dashboard tiles now link to directly.
-  { key: 'SalesMyConversions', label: 'My Conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, tcStmOnly: true, hideForStm: true },
-  { key: 'MyTeam',            label: 'My Team',      icon: 'people-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: false, managerOnly: true, navParams: { module: 'Sales', title: 'My Team' } },
-  { key: 'BookingApprovals',  label: 'Approvals',    icon: 'checkmark-done-outline',  color: COLORS.success, bg: COLORS.successBg, adminOnly: false, managerOnly: true },
-  { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: true  },
-  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: COLORS.info, bg: COLORS.infoBg,  adminOnly: true  },
-  { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  },
+  { key: 'SalesMyConversions', label: 'My Conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, tcStmOnly: true, hideForStm: true , screen: 'sales.screen.conversions' },
+  { key: 'MyTeam',            label: 'My Team',      icon: 'people-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: false, managerOnly: true, navParams: { module: 'Sales', title: 'My Team' } , screen: 'sales.screen.myteam' },
+  { key: 'BookingApprovals',  label: 'Approvals',    icon: 'checkmark-done-outline',  color: COLORS.success, bg: COLORS.successBg, adminOnly: false, managerOnly: true , screen: 'sales.screen.approvals' },
+  { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: true  , screen: 'sales.screen.projects' },
+  { key: 'SalesSources',      label: 'Lead Setup',    icon: 'git-network-outline',     color: COLORS.info, bg: COLORS.infoBg,  adminOnly: true  , screen: 'sales.screen.leadsetup' },
+  { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  , screen: 'sales.screen.teamusers' },
   // The Channel Partner module — its own pipeline over the partner-sourced slice
   // of Sales, the same eight destinations the web nav lists. Admin-only, as there.
-  { key: 'ChannelPartnerHub', label: 'Channel Partner', icon: 'people-outline',        color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  },
-  { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: true  },
-  { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: COLORS.info, bg: COLORS.infoBg,  adminOnly: false },
-  { key: 'SalesDataReset',    label: 'Data Reset',    icon: 'trash-outline',           color: COLORS.error, bg: COLORS.errorBg,  adminOnly: true  },
+  { key: 'ChannelPartnerHub', label: 'Channel Partner', icon: 'people-outline',        color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  , screen: 'sales.screen.cp' },
+  { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: true  , screen: 'sales.screen.distribution' },
+  { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: COLORS.info, bg: COLORS.infoBg,  adminOnly: false , screen: 'sales.screen.import' },
+  { key: 'SalesDataReset',    label: 'Data Reset',    icon: 'trash-outline',           color: COLORS.error, bg: COLORS.errorBg,  adminOnly: true  , screen: 'sales.screen.datareset' },
   // Who changed what in Sales, and when — real admins only.
-  { key: 'ActivityLog',       label: 'Log',           icon: 'time-outline',            color: COLORS.link, bg: COLORS.linkBg,  adminOnly: true, trueAdminOnly: true, navParams: { modules: ['Sales', 'Channel Partner'], title: 'Sales Log' } },
-  { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: COLORS.linkPressed, bg: COLORS.infoBg,  adminOnly: false },
+  { key: 'ActivityLog',       label: 'Log',           icon: 'time-outline',            color: COLORS.link, bg: COLORS.linkBg,  adminOnly: true, trueAdminOnly: true, navParams: { modules: ['Sales', 'Channel Partner'], title: 'Sales Log' } , screen: 'sales.screen.datareset' },
+  { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: COLORS.linkPressed, bg: COLORS.infoBg,  adminOnly: false , screen: 'sales.screen.reports' },
 ];
 
 function getDesignationLabel(user) {
@@ -90,8 +90,11 @@ export default function SalesCRMScreen({ navigation, route }) {
   const isModuleAdmin = user?.role === 'Admin' && !user?.is_staff && (user?.modules || []).length === 1;
   useEffect(() => { if (isModuleAdmin && companyId != null) dispatch(setAdminCompany(null)); }, [isModuleAdmin, companyId]);
   const _des = (user?.designation || '').toLowerCase();
-  const isStm = can(user, 'sales.pipeline.stm');
-  const isTelecaller = can(user, 'sales.pipeline.telecalling');
+  // A company can pin which dashboard a designation opens (Designation Master →
+  // Permissions); '' keeps deciding from their permissions, as before.
+  const _pinned = dashboardFor(user);
+  const isStm = _pinned ? _pinned === 'stm' : can(user, 'sales.pipeline.stm');
+  const isTelecaller = _pinned ? _pinned === 'telecaller' : can(user, 'sales.pipeline.telecalling');
   // Managers also get the STM-portal modules (Site Visits, Booking, My Conversions).
   const isManager = isManagerRole(user);
   // CP Executive works their own leads like an STM (no Meta) → same modules.
@@ -104,7 +107,7 @@ export default function SalesCRMScreen({ navigation, route }) {
   // headed by) the CP side rather than Sales.
   const teamParams = (m) => (m.key === 'MyTeam' && isCp
     ? { ...m, navParams: { cp: true, title: 'My Team' } } : m);
-  const baseFilter = m => (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
+  const baseFilter = m => canSee(user, m.screen) && (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
   // Tiles that pull hierarchy-scoped data need adminView threaded into their own
   // params so THEY request full company data too (see backend's admin_view=1).
   const withAdminParams = (m) => ({ ...m, navParams: { ...(m.navParams || {}), adminView: true } });

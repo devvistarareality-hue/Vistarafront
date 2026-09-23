@@ -34,3 +34,14 @@ export function can(user, key) {
 export const isTelecallerUser = (user) => can(user, 'sales.pipeline.telecalling');
 export const isStmUser = (user) => can(user, 'sales.pipeline.stm');
 export const isCpUser = (user) => can(user, 'sales.pipeline.cp');
+
+// Which menu items this person sees. `screens` is null unless their company set the
+// menu for their designation, in which case the old role-based rules still decide.
+export function canSee(user, key) {
+  const screens = user?.screens;
+  if (!Array.isArray(screens)) return true;
+  return screens.includes(key);
+}
+
+// Which dashboard opens: '' means decide from their permissions, as before.
+export const dashboardFor = (user) => user?.dashboard || '';

@@ -15,6 +15,8 @@ export default function PermissionsSheet({ designation, visible, onClose, onSave
   const [catalogue, setCatalogue] = useState(null);
   const [caps, setCaps] = useState([]);
   const [scope, setScope] = useState('');
+  const [screens, setScreens] = useState([]);
+  const [dash, setDash] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
@@ -23,18 +25,22 @@ export default function PermissionsSheet({ designation, visible, onClose, onSave
     setErr('');
     setCaps(designation.effective_capabilities || designation.capabilities || []);
     setScope(designation.data_scope || '');
+    setScreens(designation.effective_screens || designation.screens || []);
+    setDash(designation.dashboard || '');
     apiFetch(`${BASE_URL}/api/auth/designations/capabilities/`)
       .then((r) => r.json()).then(setCatalogue)
       .catch(() => setErr('Could not load the permission list.'));
   }, [visible, designation?.id]);
 
   const toggle = (key) => setCaps((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const toggleScreen = (key) => setScreens((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
 
   const save = async () => {
     setSaving(true); setErr('');
     try {
       const r = await apiFetch(`${BASE_URL}/api/auth/designations/${designation.id}/`, {
-        method: 'PATCH', body: JSON.stringify({ capabilities: caps, data_scope: scope }),
+        method: 'PATCH',
+        body: JSON.stringify({ capabilities: caps, data_scope: scope, screens, dashboard: dash }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(d.detail || 'Could not save.'); return; }
@@ -64,7 +70,8 @@ export default function PermissionsSheet({ designation, visible, onClose, onSave
             <Text style={s.section}>START FROM</Text>
             <View style={s.presets}>
               {catalogue.presets.map((p) => (
-                <TouchableOpacity key={p.key} style={s.preset} activeOpacity={0.8} onPress={() => setCaps(p.capabilities)}>
+                <TouchableOpacity key={p.key} style={s.preset} activeOpacity={0.8}
+                  onPress={() => { setCaps(p.capabilities); setScreens(p.screens || []); }}>
                   <Text style={s.presetText}>{p.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -88,6 +95,28 @@ export default function PermissionsSheet({ designation, visible, onClose, onSave
                 })}
               </View>
             ))}
+
+            <Text style={s.section}>MENU — WHICH SCREENS THEY SEE</Text>
+            {[...new Set((catalogue.screens || []).map((c) => c.module))].map((mod) => (
+              <View key={mod} style={s.screenGroup}>
+                <Text style={s.screenMod}>{mod}</Text>
+                <View style={s.presets}>
+                  {(catalogue.screens || []).filter((c) => c.module === mod).map((c) => {
+                    const on = screens.includes(c.key);
+                    return (
+                      <TouchableOpacity key={c.key} activeOpacity={0.8} onPress={() => toggleScreen(c.key)}
+                        style={[s.preset, on && s.presetOn]}>
+                        <Text style={[s.presetText, on && s.presetTextOn]}>{c.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+
+            <Text style={s.section}>WHICH DASHBOARD OPENS</Text>
+            <FilterSelect label="Dashboard" value={dash} onChange={setDash}
+              options={(catalogue.dashboards || []).map((d) => ({ value: d.value, label: d.label }))} />
 
             <Text style={s.section}>WHOSE RECORDS THEY SEE</Text>
             <FilterSelect label="Scope" value={scope} onChange={setScope}
@@ -120,6 +149,10 @@ const s = StyleSheet.create({
   preset: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
             borderColor: COLORS.border, backgroundColor: COLORS.surface },
   presetText: { fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
+  presetOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
+  presetTextOn: { color: COLORS.link },
+  screenGroup: { marginBottom: 10 },
+  screenMod: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, marginBottom: 6 },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 12, borderRadius: 14,
          borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface, marginBottom: 6 },
   rowOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
