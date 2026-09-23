@@ -121,7 +121,10 @@ export default function SalesCRMScreen({ navigation, route }) {
   // headed by) the CP side rather than Sales.
   const teamParams = (m) => (m.key === 'MyTeam' && isCp
     ? { ...m, navParams: { cp: true, title: 'My Team' } } : m);
-  const baseFilter = m => canSee(user, m.screen) && (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
+  // Someone whose designation boxes them into Channel Partner always keeps that
+  // tile — it is the module they are boxed into, and hiding it leaves them with
+  // no way in (the same rule the website applies to the CP menu).
+  const baseFilter = m => (canSee(user, m.screen) || (isCp && m.key === 'ChannelPartnerHub')) && (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
   // Tiles that pull hierarchy-scoped data need adminView threaded into their own
   // params so THEY request full company data too (see backend's admin_view=1).
   const withAdminParams = (m) => ({ ...m, navParams: { ...(m.navParams || {}), adminView: true } });
