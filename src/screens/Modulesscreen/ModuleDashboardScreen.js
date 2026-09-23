@@ -24,7 +24,7 @@ export default function ModuleDashboardScreen({ navigation, route }) {
       .then((r) => r.json())
       .then((d) => setOptions((d?.dashboards || [])
         .filter((x) => x.module === module)
-        .map((x) => ({ key: x.value, role: x.role, label: x.role }))))
+        .map((x) => ({ key: x.value, role: x.role, label: x.label }))))
       .catch(() => {});
   }, [module]);
   return (

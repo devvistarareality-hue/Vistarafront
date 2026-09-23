@@ -43,7 +43,7 @@ export default function ARDashboardScreen({ navigation }) {
       .then((r) => r.json())
       .then((d) => _setDashOptions((d?.dashboards || [])
         .filter((x) => x.module === 'AR')
-        .map((x) => ({ key: x.value, role: x.role, label: x.role }))))
+        .map((x) => ({ key: x.value, role: x.role, label: x.label }))))
       .catch(() => {});
   }, []);
 
