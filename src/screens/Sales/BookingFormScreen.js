@@ -638,6 +638,10 @@ export default function BookingFormScreen({ navigation, route }) {
       const e = {};
       if (!f.client_name.trim()) e.client_name = true;
       if (!f.phone.trim()) e.phone = true;
+      // A booking tagged Source = Channel Partner with no CP actually picked left
+      // Lead.channel_partner unset downstream, silently losing the attribution —
+      // required now so that can't happen again.
+      if (/^channel partner$/i.test(f.source) && !f.cp_name.trim()) e.cp_name = true;
       // Pratishtha has no rate fields — its amounts come from the unit's price book, so
       // requiring area/land rate would flag inputs that aren't on the form.
       if (!prat && !v.plotBasic) { if (!f.area) e.area = true; if (!f.land_rate) e.land_rate = true; }
@@ -805,6 +809,7 @@ export default function BookingFormScreen({ navigation, route }) {
       const e = {};
       if (!f.client_name.trim()) e.client_name = true;
       if (!f.phone.trim()) e.phone = true;
+      if (/^channel partner$/i.test(f.source) && !f.cp_name.trim()) e.cp_name = true;
       if (!prat && (!f.land_rate || !v.plotBasic)) { e.land_rate = true; if (!f.area) e.area = true; }
       if (Object.keys(e).length) { setErrs(e); setMsg('Please fill the highlighted fields.'); return; }
       setErrs({});
@@ -894,7 +899,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Fld l="Phone *" val={f.phone} on={(t) => set('phone', t)} kb="phone-pad" invalid={errs.phone} />
           <Pick l="Source" val={f.source} on={(x) => set('source', x)} opts={(() => { const mapped = sources.map(s => { if (/^referral$/i.test(s.name)) return 'Reference'; if (/^other$/i.test(s.name)) return 'Other'; return s.name; }); const extra = ['Reference', 'Channel Partner', 'Other'].filter(n => !mapped.some(m => m.toLowerCase() === n.toLowerCase())); return [...mapped, ...extra]; })()} />
           {/^reference$/i.test(f.source) && <Fld l="Reference Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
-          {/^channel partner$/i.test(f.source) && <Fld l="Channel Partner Name" val={f.cp_name} on={(t) => set('cp_name', t)} />}
+          {/^channel partner$/i.test(f.source) && <Fld l="Channel Partner Name *" val={f.cp_name} on={(t) => set('cp_name', t)} invalid={errs.cp_name} />}
           {/^other$/i.test(f.source) && <Fld l="Other" val={f.cp_name} on={(t) => set('cp_name', t)} />}
           {/* Kiosk: the booking is created by the kiosk account, so the salesperson
               assisting types their own name — it's what the LOI prints as STM Name. */}
