@@ -19,8 +19,8 @@ const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN')
 // Same tabs as Bookings & Approvals, minus Drafts: this list is what you submitted,
 // and a draft has not been. Values are the stored statuses — 'sold' is an approved
 // booking, which is why the label and the value differ.
-const TABS = [['', 'All'], ['pending', 'Pending'], ['sold', 'Approved'],
-              ['rejected', 'Rejected'], ['cancelled', 'Cancelled']];
+const TABS = [['', 'All'], ['pending', 'Pending'], ['accounts', 'Pending from Accounts'],
+              ['sold', 'Approved'], ['rejected', 'Rejected'], ['cancelled', 'Cancelled']];
 
 // A cancelled booking and a rejected one are both stored at status='rejected'; the
 // difference is in approval_status. Filtering on status alone put a live sale that
@@ -41,9 +41,11 @@ const inTab = (b, tab) => (
   : tab === 'rejected' ? ((b.status === 'rejected' && !isCancelled(b))
                           || (b.status === 'sold' && accStatus(b) === 'rejected'))
   : tab === 'sold' ? (b.status === 'sold' && accountsApproved(b))
-  // Waiting at either gate, so a deal is never in none of the tabs.
-  : tab === 'pending' ? (b.status === 'pending'
-                         || (b.status === 'sold' && accStatus(b) === 'pending'))
+  // The two gates get a tab each: still with the Sales or CP approver, or past
+  // them and sitting with Accounts. Together they are everything in flight, so a
+  // deal is never in none of the tabs.
+  : tab === 'pending' ? b.status === 'pending'
+  : tab === 'accounts' ? (b.status === 'sold' && accStatus(b) === 'pending')
   : b.status === tab
 );
 
