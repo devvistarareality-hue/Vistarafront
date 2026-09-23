@@ -20,6 +20,8 @@ const TABS = [
 export default function PermissionsSheet({ designation, visible, onClose, onSaved }) {
   const [catalogue, setCatalogue] = useState(null);
   const [tab, setTab] = useState('actions');
+  // The Dashboard tab lists one view per role per module; this narrows it.
+  const [dashRole, setDashRole] = useState('');
   const [caps, setCaps] = useState([]);
   const [scope, setScope] = useState('');
   const [screens, setScreens] = useState([]);
@@ -170,14 +172,28 @@ export default function PermissionsSheet({ designation, visible, onClose, onSave
                 <Ionicons name="grid-outline" size={14} color={COLORS.textSecondary} />
                 <Text style={s.cardTitle}>WHICH DASHBOARD OPENS</Text>
               </View>
-              {(catalogue.dashboards || []).map((d) => {
+              <View style={s.chips}>
+                {['', ...(catalogue.dashboard_roles || [])].map((r) => (
+                  <Pressable key={r || 'all'} onPress={() => setDashRole(r)} style={[s.chip, dashRole === r && s.chipOn]}>
+                    <Text style={[s.chipText, dashRole === r && s.chipTextOn]}>{r || 'All roles'}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {(catalogue.dashboards || [])
+                .filter((d) => !dashRole || !d.role || d.role === dashRole)
+                .map((d) => {
                 const isOn = dash === d.value;
                 return (
                   <Pressable key={d.value || 'auto'} onPress={() => setDash(d.value)} style={[s.row, isOn && s.rowOn]}>
                     <View style={[s.radio, isOn && s.radioOn]}>{isOn ? <View style={s.dot} /> : null}</View>
                     <View style={s.flex}>
                       <Text style={s.rowLabel}>{d.label}</Text>
-                      {d.module ? <Text style={s.rowHelp}>{d.module}</Text> : null}
+                      {d.module ? (
+                        <Text style={s.rowHelp}>
+                          {d.module}{d.role ? ` · ${d.role}` : ''}
+                          {d.built === false ? ' · not built yet — opens the current dashboard' : ''}
+                        </Text>
+                      ) : null}
                     </View>
                   </Pressable>
                 );
