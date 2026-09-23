@@ -47,4 +47,7 @@ export function canSee(user, key) {
 }
 
 // Which dashboard opens: '' means decide from their permissions, as before.
-export const dashboardFor = (user) => user?.dashboard || '';
+// `module` also honours what their ROLE opens there — what an admin set with
+// "Copy to role" on that module's Dashboard. The designation's own pin wins.
+export const dashboardFor = (user, module) =>
+  user?.dashboard || (module && user?.role_dashboards?.[module]) || '';

@@ -106,7 +106,7 @@ export default function SalesCRMScreen({ navigation, route }) {
   // Permissions); '' keeps deciding from their permissions, as before.
   // An admin can look at any role's dashboard from here — that is how you see
   // what each role gets before pinning it to a designation.
-  const _pinned = _preview || dashboardFor(user);
+  const _pinned = _preview || dashboardFor(user, 'Sales');
   const isStm = _pinned ? _pinned === 'stm' : can(user, 'sales.pipeline.stm');
   const isTelecaller = _pinned ? _pinned === 'telecaller' : can(user, 'sales.pipeline.telecalling');
   // Managers also get the STM-portal modules (Site Visits, Booking, My Conversions).
@@ -372,7 +372,7 @@ export default function SalesCRMScreen({ navigation, route }) {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36, paddingTop: 12 }}>
         {isTrueAdmin ? (
-          <DashboardRoleFilter options={SALES_DASHBOARDS} value={_pinned} onChange={_setPreview} />
+          <DashboardRoleFilter options={SALES_DASHBOARDS} value={_pinned} onChange={_setPreview} module="Sales" />
         ) : null}
 
         {/* The headline and what needs doing; the full tile breakdown lives in the Reports tab. */}

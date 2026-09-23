@@ -74,9 +74,18 @@ export default function PermissionsSheet({ designation, others, visible, onClose
     } finally { setSaving(false); }
   };
 
+  // A designation belongs to one module and only decides that module — a Sales
+  // title has nothing to say about AR. Channel Partner rides with Sales.
+  const FAMILY = {
+    'Sales': ['Sales', 'Channel Partner'],
+    'Channel Partner': ['Sales', 'Channel Partner'],
+    'Accounts Receivable': ['AR'],
+  };
+  const mine = FAMILY[designation?.module] || [designation?.module];
   const group = (rows) => {
-    const mods = [...new Set((rows || []).map((c) => c.module))];
-    return mods.map((m) => ({ module: m, items: rows.filter((c) => c.module === m) }));
+    const own = (rows || []).filter((c) => mine.includes(c.module));
+    const mods = [...new Set(own.map((c) => c.module))];
+    return mods.map((m) => ({ module: m, items: own.filter((c) => c.module === m) }));
   };
   const byModule = useMemo(() => group(catalogue?.capabilities), [catalogue]);
   const screensByModule = useMemo(() => group(catalogue?.screens), [catalogue]);
@@ -206,6 +215,7 @@ export default function PermissionsSheet({ designation, others, visible, onClose
                 ))}
               </View>
               {(catalogue.dashboards || [])
+                .filter((d) => !d.module || mine.includes(d.module))
                 .filter((d) => !dashRole || !d.role || d.role === dashRole)
                 .map((d) => {
                 const isOn = dash === d.value;

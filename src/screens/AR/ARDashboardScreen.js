@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
-import { canSee, isManagerRole } from '../../lib/roles';
+import { canSee, isManagerRole, dashboardFor } from '../../lib/roles';
+import DashboardRoleFilter from '../../components/DashboardRoleFilter';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
@@ -27,12 +28,24 @@ const AGE_COLORS = ['#E8C27A', '#DDA24B', COLORS.warningSolid, '#CF6A33', '#C950
 export default function ARDashboardScreen({ navigation }) {
   const companyId = useSelector((st) => st.adminFilter?.companyId);
   const me = useSelector((st) => st.auth.user);
+  const _isAdmin = me?.role === 'Admin' || me?.is_staff;
+  const [_preview, _setPreview] = useState('');
+  const [_dashOptions, _setDashOptions] = useState([]);
   const [project, setProject] = useState('');
   const [asOf, setAsOf] = useState(today());
   const [data, setData] = useState(null);
   const [projects, setProjects] = useState([]);
   const [err, setErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    apiFetch(`${BASE_URL}/api/auth/designations/capabilities/`)
+      .then((r) => r.json())
+      .then((d) => _setDashOptions((d?.dashboards || [])
+        .filter((x) => x.module === 'AR')
+        .map((x) => ({ key: x.value, role: x.role, label: x.role }))))
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setErr('');
@@ -74,6 +87,10 @@ export default function ARDashboardScreen({ navigation }) {
         ) : null}
       </View>
 
+      {_isAdmin ? (
+        <DashboardRoleFilter options={_dashOptions} value={_preview || dashboardFor(me, 'AR')}
+          onChange={_setPreview} module="AR" />
+      ) : null}
       <ScrollView contentContainerStyle={common.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.link} />}>
         <View style={s.toolbar}>
