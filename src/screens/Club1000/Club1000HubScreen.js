@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
+import { canSee } from '../../lib/roles';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import { DashHero, DashKpi, DashKpiGrid, DashAlerts, DashCard, DashBars } from '../../components/Dash';
@@ -21,14 +22,14 @@ const MUTED = COLORS.textSecondary;
 const CARD  = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const MENU = [
-  { key: 'Club1000Leads',      label: 'Leads',        icon: 'person-add-outline',    color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },
-  { key: 'Club1000FollowUps',  label: 'Follow-Ups',   icon: 'calendar-outline',      color: COLORS.warning,  bg: COLORS.warningBg, managerOnly: false },
-  { key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: COLORS.successBg,        managerOnly: false },
-  { key: 'Club1000InvestorApprovals', label: 'Approvals', icon: 'checkmark-done-outline', color: COLORS.success, bg: COLORS.successBg, managerOnly: true },
-  { key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: false },
-  { key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
-  { key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: false },
-  { key: 'MyTeam',             label: 'My Team',      icon: 'people-circle-outline', color: COLORS.purple,   bg: COLORS.purpleBg,  managerOnly: true, navParams: { module: 'Club 1000', title: 'My Team' } },
+  { screen: 'club.screen.leads', key: 'Club1000Leads',      label: 'Leads',        icon: 'person-add-outline',    color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },
+  { screen: 'club.screen.followups', key: 'Club1000FollowUps',  label: 'Follow-Ups',   icon: 'calendar-outline',      color: COLORS.warning,  bg: COLORS.warningBg, managerOnly: false },
+  { screen: 'club.screen.investors', key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: COLORS.successBg,        managerOnly: false },
+  { screen: 'club.screen.approvals', key: 'Club1000InvestorApprovals', label: 'Approvals', icon: 'checkmark-done-outline', color: COLORS.success, bg: COLORS.successBg, managerOnly: true },
+  { screen: 'club.screen.schemes', key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: false },
+  { screen: 'club.screen.payouts', key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
+  { screen: 'club.screen.rewards', key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: false },
+  { screen: 'club.screen.myteam', key: 'MyTeam',             label: 'My Team',      icon: 'people-circle-outline', color: COLORS.purple,   bg: COLORS.purpleBg,  managerOnly: true, navParams: { module: 'Club 1000', title: 'My Team' } },
   // Who changed what in Club 1000, and when — real admins only.
   { key: 'ActivityLog',        label: 'Log',          icon: 'time-outline',          color: COLORS.link,     bg: COLORS.linkBg,    adminOnly: true, navParams: { modules: ['Club 1000'], title: 'Club 1000 Log' } },
 ];
@@ -51,9 +52,9 @@ export default function Club1000HubScreen({ navigation, route }) {
   const isAdminModulesOnly = !isTrueManager && (user?.admin_modules || []).includes('Club 1000');
   let visibleMenu;
   if (isTrueManager || adminView) {
-    visibleMenu = MENU.filter((m) => !m.managerOnly || manager);
+    visibleMenu = MENU.filter((m) => canSee(user, m.screen) && (!m.managerOnly || manager));
   } else {
-    visibleMenu = MENU.filter((m) => !m.managerOnly);
+    visibleMenu = MENU.filter((m) => canSee(user, m.screen) && !m.managerOnly);
     if (isAdminModulesOnly) {
       visibleMenu = [...visibleMenu, { key: '__ADMIN__', label: 'Admin', icon: 'shield-checkmark-outline', color: NAVY, bg: COLORS.surfaceAlt }];
     }

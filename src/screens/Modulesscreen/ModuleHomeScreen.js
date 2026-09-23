@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-import { isManagerRole } from '../../lib/roles';
+import { isManagerRole, canSee } from '../../lib/roles';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -24,12 +24,12 @@ export default function ModuleHomeScreen({ navigation, route }) {
     ...(canSeeTeam ? [{ key: 'MyTeam', label: 'My Team', desc: `${name} department org chart`, icon: 'people-circle-outline',
       color: COLORS.link, bg: COLORS.linkBg, params: { module, title: `My Team · ${name}` } }] : []),
     // Accounts & Finance: read-only view of all sales bookings (LOI / EOI).
-    ...(isAccounts ? [{ key: 'ModuleBookings', label: 'Bookings', desc: 'All sales bookings — LOI & EOI', icon: 'document-text-outline',
+    ...(isAccounts && canSee(user, 'accounts.screen.bookings') ? [{ key: 'ModuleBookings', label: 'Bookings', desc: 'All sales bookings — LOI & EOI', icon: 'document-text-outline',
       color: COLORS.success, bg: COLORS.success2, params: { module, name } }] : []),
     // The second approval gate. Sales/CP puts a deal on the books; a unit does not
     // actually turn sold until Accounts signs off here — which, until now, could only
     // be done from a desktop.
-    ...(isAccounts ? [{ key: 'ModuleApprovals', label: 'Approvals', desc: 'Sign off bookings — the Accounts gate', icon: 'checkmark-done-outline',
+    ...(isAccounts && canSee(user, 'accounts.screen.approvals') ? [{ key: 'ModuleApprovals', label: 'Approvals', desc: 'Sign off bookings — the Accounts gate', icon: 'checkmark-done-outline',
       color: COLORS.success, bg: COLORS.success2, params: { module, name } }] : []),
     // Who changed what in this module, and when — real admins only.
     ...(isLogAdmin ? [{ key: 'ActivityLog', label: 'Log', desc: 'Who changed what, and when', icon: 'time-outline',
