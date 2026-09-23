@@ -256,7 +256,7 @@ export default function DesignationMasterScreen({ navigation }) {
       </ScrollView>
 
       <PermissionsSheet
-        designation={perms} visible={!!perms} onClose={() => setPerms(null)}
+        designation={perms} others={designations} visible={!!perms} onClose={() => setPerms(null)}
         onSaved={(saved) => setDesignations((prev) => prev.map((x) => (x.id === saved.id ? { ...x, ...saved } : x)))} />
     </SafeAreaView>
   );

@@ -10,6 +10,7 @@ import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole, can, canSee, dashboardFor } from '../../lib/roles';
+import DashboardRoleFilter from '../../components/DashboardRoleFilter';
 import { ThemeIconButton } from '../../components/ThemeToggle';
 import AppLoader from '../../components/AppLoader';
 import { DashHero, DashAlerts } from '../../components/Dash';
@@ -70,6 +71,16 @@ function getDesignationLabel(user) {
   return { title: 'Sales CRM', sub: 'Nexora' };
 }
 
+// The dashboards this module has, one per role level — the same keys the
+// website uses, and the ones Designation → Permissions pins.
+const SALES_DASHBOARDS = [
+  { key: 'telecaller', role: 'Employee', label: 'Telecaller' },
+  { key: 'stm', role: 'Employee', label: 'Sales Executive' },
+  { key: 'manager', role: 'Manager', label: 'Manager' },
+  { key: 'gm', role: 'General Manager', label: 'General Manager' },
+  { key: 'director', role: 'Director', label: 'Director' },
+];
+
 export default function SalesCRMScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
@@ -83,6 +94,7 @@ export default function SalesCRMScreen({ navigation, route }) {
   // module-scoped admins (e.g. a Manager granted Sales in Admin Modules) — it never
   // changes behavior for real admins.
   const isTrueAdmin = user?.role === 'Admin' || user?.is_staff;
+  const [_preview, _setPreview] = useState('');
   const isSalesModuleAdmin = !isTrueAdmin && (user?.admin_modules || []).includes('Sales');
   const isAdmin   = isTrueAdmin || isSalesModuleAdmin;
   // A module (Sales) admin is locked to their own company — clear any stale company
@@ -92,7 +104,9 @@ export default function SalesCRMScreen({ navigation, route }) {
   const _des = (user?.designation || '').toLowerCase();
   // A company can pin which dashboard a designation opens (Designation Master →
   // Permissions); '' keeps deciding from their permissions, as before.
-  const _pinned = dashboardFor(user);
+  // An admin can look at any role's dashboard from here — that is how you see
+  // what each role gets before pinning it to a designation.
+  const _pinned = _preview || dashboardFor(user);
   const isStm = _pinned ? _pinned === 'stm' : can(user, 'sales.pipeline.stm');
   const isTelecaller = _pinned ? _pinned === 'telecaller' : can(user, 'sales.pipeline.telecalling');
   // Managers also get the STM-portal modules (Site Visits, Booking, My Conversions).
@@ -357,6 +371,9 @@ export default function SalesCRMScreen({ navigation, route }) {
       </Modal>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36, paddingTop: 12 }}>
+        {isTrueAdmin ? (
+          <DashboardRoleFilter options={SALES_DASHBOARDS} value={_pinned} onChange={_setPreview} />
+        ) : null}
 
         {/* The headline and what needs doing; the full tile breakdown lives in the Reports tab. */}
         {stats ? (

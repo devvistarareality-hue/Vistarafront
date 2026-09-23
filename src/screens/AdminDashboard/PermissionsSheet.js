@@ -6,6 +6,7 @@ import { BASE_URL } from '../../constants/api';
 import { apiFetch } from '../../utils/apiFetch';
 import FormSheet from '../../components/FormSheet';
 import { Button, Segmented } from '../../components/ui';
+import FilterSelect from '../../components/FilterSelect';
 
 // What a designation may do, per company — the same editor as Designation Master
 // on the website, in the same three tabs: what they do, which menu they see, and
@@ -17,11 +18,13 @@ const TABS = [
   { value: 'view', label: 'Dashboard' },
 ];
 
-export default function PermissionsSheet({ designation, visible, onClose, onSaved }) {
+export default function PermissionsSheet({ designation, others, visible, onClose, onSaved }) {
   const [catalogue, setCatalogue] = useState(null);
   const [tab, setTab] = useState('actions');
   // The Dashboard tab lists one view per role per module; this narrows it.
   const [dashRole, setDashRole] = useState('');
+  // Copying from a designation that is already set up.
+  const [copyFrom, setCopyFrom] = useState('');
   const [caps, setCaps] = useState([]);
   const [scope, setScope] = useState('');
   const [screens, setScreens] = useState([]);
@@ -44,6 +47,16 @@ export default function PermissionsSheet({ designation, visible, onClose, onSave
   const flip = (setter) => (key) => setter((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
   const toggle = flip(setCaps);
   const toggleScreen = flip(setScreens);
+
+  const sourceRow = (others || []).find((d) => String(d.id) === String(copyFrom));
+  const copyAll = () => {
+    if (!sourceRow) return;
+    setCaps(sourceRow.effective_capabilities || sourceRow.capabilities || []);
+    setScreens(sourceRow.effective_screens || sourceRow.screens || []);
+    setDash(sourceRow.dashboard || '');
+    setScope(sourceRow.data_scope || '');
+  };
+  const copyDashboard = () => { if (sourceRow) setDash(sourceRow.dashboard || ''); };
 
   const save = async () => {
     setSaving(true); setErr('');
@@ -94,6 +107,19 @@ export default function PermissionsSheet({ designation, visible, onClose, onSave
 
       <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         {err ? <Text style={s.err}>{err}</Text> : null}
+        {(others || []).length > 1 ? (
+          <View style={s.copyBox}>
+            <Text style={s.copyLead}>COPY FROM ANOTHER DESIGNATION</Text>
+            <FilterSelect label="Designation" value={copyFrom} onChange={setCopyFrom}
+              options={(others || []).filter((d) => d.id !== designation.id)
+                .map((d) => ({ value: String(d.id), label: `${d.name} · ${d.module}` }))} />
+            <View style={s.copyBtns}>
+              <Button title="Everything" variant="secondary" size="sm" disabled={!sourceRow} onPress={copyAll} />
+              <Button title="Dashboard only" variant="secondary" size="sm" disabled={!sourceRow} onPress={copyDashboard} />
+            </View>
+            <Text style={s.copyHint}>Nothing is saved until you press Save.</Text>
+          </View>
+        ) : null}
         {!designation.capabilities_set ? (
           <Text style={s.note}>Ticked with what this title already allows today. Saving makes it explicit for this company.</Text>
         ) : null}
@@ -244,6 +270,11 @@ const s = StyleSheet.create({
   scroll: { flexShrink: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 12 },
   err: { color: COLORS.danger, fontSize: 13, marginVertical: 8 },
+  copyBox: { marginTop: 12, padding: 12, borderRadius: RADIUS.lg, borderWidth: 1,
+             borderColor: COLORS.cardBorder, backgroundColor: COLORS.surface2 },
+  copyLead: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8, color: COLORS.textSecondary, marginBottom: 8 },
+  copyBtns: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  copyHint: { fontSize: 11, color: COLORS.textTertiary, marginTop: 6 },
   muted: { color: COLORS.textSecondary, fontSize: 13, paddingVertical: 14 },
   lead: { fontSize: 12.5, color: COLORS.textSecondary, marginTop: 10 },
   note: { fontSize: 12.5, lineHeight: 18, color: COLORS.link, backgroundColor: COLORS.accentSoft,
