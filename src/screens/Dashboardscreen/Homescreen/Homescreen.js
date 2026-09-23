@@ -274,6 +274,7 @@ const HomeScreen = () => {
     { icon: 'business-outline',        label: 'Organisation',       value: p?.company_name },
     { icon: 'folder-outline',          label: 'Department',         value: p?.department },
     { icon: 'briefcase-outline',       label: 'Designation',        value: p?.designation },
+    { icon: 'ribbon-outline',          label: 'Role',               value: p?.role },
     { icon: 'people-circle-outline',   label: 'Reporting Manager',  value: p?.reporting_manager?.name },
   ];
 

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-import { isManagerRole, canSee } from '../../lib/roles';
+import { isManagerRole, canSee, dashboardFor } from '../../lib/roles';
+import DashboardRoleFilter from '../../components/DashboardRoleFilter';
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -31,8 +32,24 @@ const TILES = [
   { key: 'ActivityLog',        label: 'Log',           desc: 'Who changed what, and when',  icon: 'time-outline',          color: COLORS.link,    bg: COLORS.linkBg,    params: { modules: ['Channel Partner'], title: 'Channel Partner Log' }, adminOnly: true },
 ];
 
+// The partner desk's dashboards, one per role level — the same keys the website
+// uses. A CP designation pinned to a Sales dashboard maps onto the partner view
+// of the same thing, so the pin is never ignored.
+const CP_DASHBOARDS = [
+  { key: 'cp_exec', role: 'Employee', label: 'CP Executive' },
+  { key: 'cp_manager', role: 'Manager', label: 'CP Manager' },
+  { key: 'cp_gm', role: 'General Manager', label: 'General Manager' },
+  { key: 'cp_director', role: 'Director', label: 'Director' },
+];
+const SAME_AS = { manager: 'cp_manager', gm: 'cp_gm', director: 'cp_director',
+                  stm: 'cp_exec', telecaller: 'cp_exec' };
+
 export default function ChannelPartnerHubScreen({ navigation }) {
   const user = useSelector((s) => s.auth.user);
+  const isTrueAdmin = user?.role === 'Admin' || user?.is_staff;
+  const [preview, setPreview] = useState('');
+  const _pinned = dashboardFor(user, 'Channel Partner');
+  const chosen = preview || SAME_AS[_pinned] || _pinned;
   const isManager = isManagerRole(user) || user?.role === 'Admin' || user?.is_staff;
   const isLogAdmin = user?.role === 'Admin' || user?.is_staff;
   // Which of these a designation sees is set per company in Designation Master →
@@ -54,6 +71,9 @@ export default function ChannelPartnerHubScreen({ navigation }) {
         </View>
       </View>
 
+      {isTrueAdmin ? (
+        <DashboardRoleFilter options={CP_DASHBOARDS} value={chosen} onChange={setPreview} module="Channel Partner" />
+      ) : null}
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {tiles.map((t) => (
