@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
+import { can } from '../../lib/roles';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS } from '../../constants/theme';
 import { AR_ENDPOINTS } from '../../constants/api';
@@ -39,6 +40,9 @@ function Chip({ on, label, icon, onPress }) {
 export default function FollowUpSheet({ row, visible, onClose, onChanged }) {
   const companyId = useSelector((st) => st.adminFilter?.companyId);
   const me = useSelector((st) => st.auth.user?.id);
+  // Reading the history is fine without the capability; booking, closing or
+  // cancelling a follow-up is not (Designation Master → Permissions).
+  const mayManage = can(useSelector((st) => st.auth.user), 'ar.followup.manage');
   const [items, setItems] = useState(null);
   const [people, setPeople] = useState([]);
   const [draft, setDraft] = useState(() => blank(me));
@@ -140,20 +144,20 @@ export default function FollowUpSheet({ row, visible, onClose, onChanged }) {
                         <Button title="Mark done" variant="success" size="sm" onPress={close} loading={busy} disabled={!closing.outcome.trim()} />
                       </View>
                     </View>
-                  ) : (
+                  ) : mayManage ? (
                     <View style={s.actions}>
                       <Button title="Cancel" variant="secondary" size="sm" disabled={busy}
                         onPress={() => send(AR_ENDPOINTS.followUp(f.id), 'PATCH', { status: 'cancelled' }, 'Follow-up cancelled')} />
                       <Button title="Log outcome" icon="checkmark-circle-outline" size="sm" disabled={busy}
                         onPress={() => setClosing({ id: f.id, outcome: '', promised_amount: '', promised_on: '', next_date: '' })} />
                     </View>
-                  )}
+                  ) : null}
                 </View>
               </View>
             ))}
 
-            <Text style={s.section}>NEW FOLLOW-UP</Text>
-            <View style={s.newBox}>
+            {mayManage ? <Text style={s.section}>NEW FOLLOW-UP</Text> : null}
+            {mayManage ? <View style={s.newBox}>
               <View style={s.chips}>
                 {CHANNELS.map((c) => <Chip key={c.value} on={draft.channel === c.value} label={c.label} icon={c.icon} onPress={() => setDraft({ ...draft, channel: c.value })} />)}
               </View>
@@ -173,7 +177,7 @@ export default function FollowUpSheet({ row, visible, onClose, onChanged }) {
               <TextInput style={s.input} placeholder="Note — e.g. Remind about inst 2 and interest" placeholderTextColor={COLORS.textTertiary}
                 value={draft.note} onChangeText={(v) => setDraft({ ...draft, note: v })} />
               <Button title="Schedule" icon="calendar-outline" onPress={schedule} loading={busy} disabled={!draft.date} full />
-            </View>
+            </View> : null}
 
             {past.length > 0 && <Text style={s.section}>HISTORY</Text>}
             {past.map((f) => (
