@@ -106,7 +106,10 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // list rather than the regular one — the two flags the web CP page passes.
   const cpOnly = !!route?.params?.cpOnly;
   const cpMode = !!route?.params?.cpMode;
-  const [tab, setTab] = useState('pending');
+  // Opens on Pending unless the caller asked for another tab — the Closures
+  // card in Channel Partner points straight at Approved.
+  const _wanted = route?.params?.initialTab;
+  const [tab, setTab] = useState(TABS.some(([k]) => k === _wanted) ? _wanted : 'pending');
   // Resale cuts across every status — a resold unit can be pending, approved or
   // cancelled — so it is a filter beside the others rather than a tab of its own.
   const [resale, setResale] = useState(false);

@@ -22,7 +22,6 @@ const TILES = [
   { screen: 'cp.screen.leads', key: 'ChannelPartners',    label: 'All Partners',  desc: 'The CP directory',            icon: 'people-outline',        color: COLORS.link,    bg: COLORS.linkBg,    params: {} },
   { screen: 'cp.screen.sitevisits', key: 'SalesSiteVisits',    label: 'Site Visits',   desc: 'Partner-sourced visits',      icon: 'location-outline',      color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, adminView: true } },
   { screen: 'cp.screen.followups', key: 'SalesFollowUps',     label: 'Follow-Ups',    desc: 'Partner-sourced follow-ups',  icon: 'calendar-outline',      color: COLORS.warning, bg: COLORS.warningBg, params: { cpOnly: true, adminView: true } },
-  { screen: 'cp.screen.closures', key: 'SalesMyConversions', label: 'Closures',      desc: 'Partner-sourced conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, adminView: true } },
   { screen: 'cp.screen.booking', key: 'ClosureProjects',    label: 'Booking',       desc: 'Record a CP booking',         icon: 'document-text-outline', color: COLORS.link,    bg: COLORS.linkBg,    params: { cpOnly: true } },
   { screen: 'cp.screen.approvals', key: 'BookingApprovals',   label: 'Approvals',     desc: 'CP bookings to sign off',     icon: 'checkmark-done-outline',color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, cpMode: true, adminView: true } },
   // Managers only, as in the web menu — a CP Executive has no reports, so the chart
