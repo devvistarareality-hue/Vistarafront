@@ -145,6 +145,12 @@ export default function PermissionsSheet({ designation, others, visible, onClose
               ))}
             </View>
 
+            {!byModule.length ? (
+              <Text style={s.note}>
+                {designation.module} has no switchable actions yet — everyone with the module can do
+                what it offers. Its menu and dashboard are on the other tabs.
+              </Text>
+            ) : null}
             {byModule.map(({ module, items }) => {
               const on = items.filter((c) => caps.includes(c.key)).length;
               const allOn = on === items.length;
