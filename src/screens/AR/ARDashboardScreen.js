@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
 import { COLORS, RADIUS, SHADOWS, withAlpha } from '../../constants/theme';
-import { AR_ENDPOINTS } from '../../constants/api';
+import {AR_ENDPOINTS, BASE_URL} from '../../constants/api';
 import { apiFetch } from '../../utils/apiFetch';
 import common from '../../styles/common';
 import AppLoader from '../../components/AppLoader';

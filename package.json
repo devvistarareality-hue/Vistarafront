@@ -53,7 +53,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "prepare": "git config core.hooksPath .githooks || true",
-    "check:styles": "node scripts/check-inline-styles.js"
+    "check:styles": "node scripts/check-inline-styles.js",
+    "check:undefined": "node scripts/check-undefined.js"
   },
   "private": true,
   "devDependencies": {
