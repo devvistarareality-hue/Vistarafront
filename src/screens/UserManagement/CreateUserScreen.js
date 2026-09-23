@@ -72,7 +72,8 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
     </>
   );
 }
-const MODULES = ['Sales', 'HR', 'Accounts & Finance', 'AR', 'Execution', 'Purchase', 'Land'];
+const MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
+                 'Execution', 'Purchase', 'Land', 'Club 1000'];
 
 const MODULE_ICONS = {
   'AR': 'cash-multiple',

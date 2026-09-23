@@ -14,7 +14,8 @@ import AppLoader from '../../components/AppLoader';
 import SheetHandle from '../../components/SheetHandle';
 import PermissionsSheet from './PermissionsSheet';
 
-const ALL_MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase', 'Land'];
+const ALL_MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
+                     'Execution', 'Purchase', 'Land', 'Club 1000'];
 
 function ModuleDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -56,6 +57,9 @@ function ModuleDropdown({ value, onChange }) {
 
 const MODULE_META = {
   Sales:       { color: COLORS.warningAlt, bg: COLORS.warningBg, icon: 'pencil-outline' },
+  'Channel Partner': { color: COLORS.warning, bg: COLORS.warningBg, icon: 'handshake-outline' },
+  AR:          { color: COLORS.link, bg: COLORS.linkBg, icon: 'cash-multiple' },
+  'Club 1000': { color: COLORS.success, bg: COLORS.successBg, icon: 'trending-up' },
   HR:          { color: COLORS.link, bg: COLORS.linkBg, icon: 'account-group-outline' },
   // 'Accounts & Finance' is in ALL_MODULES, so leaving it out of here crashed the
   // screen on open: the grouped list reads meta.color for every module.
