@@ -105,7 +105,7 @@ function DecidedBy({ b }) {
   );
 }
 
-export function MyBookingsList({ navigation, cpOnly = false }) {
+export function MyBookingsList({navigation, cpOnly = false, initialTab = '' }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +114,8 @@ export function MyBookingsList({ navigation, cpOnly = false }) {
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
   // Filtered here rather than server-side: the list is already everything this
   // person submitted, so narrowing it is instant and costs no round trip.
-  const [tab, setTab] = useState('');
+  // The Closures card opens this already filtered to Approved.
+  const [tab, setTab] = useState(TABS.some(([k]) => k === initialTab) ? initialTab : '');
   const [q, setQ] = useState('');
   const [proj, setProj] = useState('');
   const [who, setWho] = useState('');     // 'booked by' — a user id, '' for everyone

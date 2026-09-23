@@ -242,10 +242,10 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { group: 'Conversions', label: 'Closures',      value: stats?.closures       ?? '—', color: COLORS.error,    bg: COLORS.errorBg,
-      // In Channel Partner a closure is a booking, so the card opens the
-      // bookings list on its Approved tab instead of the Conversions screen.
-      target: isCp ? 'BookingApprovals' : 'SalesMyConversions',
-      params: isCp ? { cpOnly: true, cpMode: true, adminView: true, initialTab: 'sold' } : { initialTab: 'closures' } },
+      // In Channel Partner a closure is a booking, so the card opens Booking →
+      // My Bookings with Approved chosen, instead of the Conversions screen.
+      target: isCp ? 'ClosureProjects' : 'SalesMyConversions',
+      params: isCp ? { cpOnly: true, initialView: 'mybookings', initialTab: 'sold' } : { initialTab: 'closures' } },
   ];
 
   const STM_CARDS = [

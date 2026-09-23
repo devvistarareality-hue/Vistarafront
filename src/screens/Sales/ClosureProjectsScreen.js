@@ -71,7 +71,7 @@ export default function ClosureProjectsScreen({ navigation, route }) {
         ))}
       </View>
 
-      {view === 'mybookings' ? <MyBookingsList navigation={navigation} cpOnly={cpOnly} /> : loading ? (
+      {view === 'mybookings' ? <MyBookingsList navigation={navigation} cpOnly={cpOnly} initialTab={route.params?.initialTab} /> : loading ? (
         <AppLoader style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}
