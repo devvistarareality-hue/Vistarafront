@@ -53,7 +53,6 @@ const MENU = [
   { key: 'SalesTeam',         label: 'Team Users',    icon: 'person-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  , screen: 'sales.screen.teamusers' },
   // The Channel Partner module — its own pipeline over the partner-sourced slice
   // of Sales, the same eight destinations the web nav lists. Admin-only, as there.
-  { key: 'ChannelPartnerHub', label: 'Channel Partner', icon: 'people-outline',        color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: true  , screen: 'sales.screen.cp' },
   { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: true  , screen: 'sales.screen.distribution' },
   { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: COLORS.info, bg: COLORS.infoBg,  adminOnly: false , screen: 'sales.screen.import' },
   { key: 'SalesDataReset',    label: 'Data Reset',    icon: 'trash-outline',           color: COLORS.error, bg: COLORS.errorBg,  adminOnly: true  , screen: 'sales.screen.datareset' },
@@ -121,10 +120,7 @@ export default function SalesCRMScreen({ navigation, route }) {
   // headed by) the CP side rather than Sales.
   const teamParams = (m) => (m.key === 'MyTeam' && isCp
     ? { ...m, navParams: { cp: true, title: 'My Team' } } : m);
-  // Someone whose designation boxes them into Channel Partner always keeps that
-  // tile — it is the module they are boxed into, and hiding it leaves them with
-  // no way in (the same rule the website applies to the CP menu).
-  const baseFilter = m => (canSee(user, m.screen) || (isCp && m.key === 'ChannelPartnerHub')) && (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
+  const baseFilter = m => canSee(user, m.screen) && (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
   // Tiles that pull hierarchy-scoped data need adminView threaded into their own
   // params so THEY request full company data too (see backend's admin_view=1).
   const withAdminParams = (m) => ({ ...m, navParams: { ...(m.navParams || {}), adminView: true } });

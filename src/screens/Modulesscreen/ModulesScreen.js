@@ -13,6 +13,7 @@ import { FadeInUp } from '../../components/ui';
 // Each module's card — same titles, descriptions and tones as the website portal.
 const MODULE_CONFIG = {
   Sales:                { title: 'Sales',               desc: 'Leads, follow-ups, site visits and bookings', icon: 'trending-up',     tone: 'peach', screen: 'SalesCRM',    getParams: () => ({}) },
+  'Channel Partner':    { title: 'Channel Partner',     desc: 'Partner-sourced leads, visits and bookings',  icon: 'people',          tone: 'peach', screen: 'ChannelPartnerHub', getParams: () => ({}) },
   HR:                   { title: 'HR',                  desc: 'People, attendance and team structure',       icon: 'people',          tone: 'blue',  screen: 'ModuleHome',  getParams: () => ({ module: 'HR', name: 'HR' }) },
   'Accounts & Finance': { title: 'Accounts & Finance',  desc: 'Booking approvals and the bookings ledger',   icon: 'wallet',          tone: 'green', screen: 'ModuleHome',  getParams: () => ({ module: 'Accounts & Finance', name: 'Accounts & Finance' }) },
   AR:                   { title: 'Accounts Receivable', desc: 'Collections, dues, ageing and interest',      icon: 'receipt',         tone: 'blue',  screen: 'ARDashboard', getParams: () => ({}) },
