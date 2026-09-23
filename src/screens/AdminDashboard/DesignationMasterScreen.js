@@ -12,6 +12,7 @@ import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import SheetHandle from '../../components/SheetHandle';
+import PermissionsSheet from './PermissionsSheet';
 
 const ALL_MODULES = ['Sales', 'HR', 'Accounts & Finance', 'Execution', 'Purchase', 'Land'];
 
@@ -67,6 +68,8 @@ const MODULE_META = {
 const FALLBACK_META = { color: COLORS.textSecondary, bg: COLORS.surfaceAlt, icon: 'shape-outline' };
 
 export default function DesignationMasterScreen({ navigation }) {
+  // Which designation's permissions are open for editing.
+  const [perms, setPerms] = useState(null);
   const dispatch = useDispatch();
   const loggedInUser = useSelector((s) => s.auth.user);
   const { companies } = useSelector((s) => s.companies);
@@ -227,10 +230,17 @@ export default function DesignationMasterScreen({ navigation }) {
                         <View key={d.id} style={[s.chip, { backgroundColor: meta.bg }]}>
                           <Text style={[s.chipText, { color: meta.color }]}>{d.name}</Text>
                           <TouchableOpacity
+                            onPress={() => setPerms(d)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel={`Permissions for ${d.name}`}
+                          >
+                            <Ionicons name="shield-checkmark-outline" size={15} color={meta.color} style={s.chipIcon} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
                             onPress={() => handleDelete(d)}
                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                           >
-                            <Ionicons name="close-circle" size={15} color={meta.color} style={{ opacity: 0.7 }} />
+                            <Ionicons name="close-circle" size={15} color={meta.color} style={s.chipIcon} />
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -244,6 +254,10 @@ export default function DesignationMasterScreen({ navigation }) {
         </>
         )}
       </ScrollView>
+
+      <PermissionsSheet
+        designation={perms} visible={!!perms} onClose={() => setPerms(null)}
+        onSaved={(saved) => setDesignations((prev) => prev.map((x) => (x.id === saved.id ? { ...x, ...saved } : x)))} />
     </SafeAreaView>
   );
 }
@@ -276,4 +290,5 @@ const s = StyleSheet.create({
   chipWrap:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip:        { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
   chipText:    { fontSize: 13, fontWeight: '600' },
+  chipIcon:    { opacity: 0.7 },
 });

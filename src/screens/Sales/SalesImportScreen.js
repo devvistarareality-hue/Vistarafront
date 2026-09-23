@@ -12,6 +12,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
+import { can } from '../../lib/roles';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -25,7 +26,7 @@ export default function SalesImportScreen({ navigation }) {
   // An STM only works the STM stage — the template the backend generates for them
   // already omits the telecaller columns (uploads ignore them regardless either
   // way); this just keeps the on-screen copy accurate for who's looking at it.
-  const isStm = (user?.designation || '').toLowerCase().includes('stm');
+  const isStm = can(user, 'sales.pipeline.stm');
   const [projects,   setProjects]   = useState([]);
   const [sources,    setSources]    = useState([]);
   const [project,    setProject]    = useState('');

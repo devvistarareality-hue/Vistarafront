@@ -9,7 +9,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-import { isManagerRole } from '../../lib/roles';
+import { isManagerRole, can } from '../../lib/roles';
 import { ThemeIconButton } from '../../components/ThemeToggle';
 import AppLoader from '../../components/AppLoader';
 import { DashHero, DashAlerts } from '../../components/Dash';
@@ -63,10 +63,10 @@ const MENU = [
 
 function getDesignationLabel(user) {
   const des = (user?.designation || '').toLowerCase();
-  if (des.includes('telecaller') || des.includes('tele caller')) return { title: 'Telecaller Portal', sub: 'Your call queue & leads' };
+  if (can(user, 'sales.pipeline.telecalling')) return { title: 'Telecaller Portal', sub: 'Your call queue & leads' };
   if (des.includes('cp cluster head')) return { title: 'Channel Partner', sub: 'Your CP team' };
-  if (des.includes('cp executive') || des.includes('channel partner')) return { title: 'Channel Partner', sub: 'Your pipeline & site visits' };
-  if (des.includes('stm') || des.includes('sales team') || des.includes('sales executive')) return { title: 'Sales Executive', sub: 'Your pipeline & site visits' };
+  if (can(user, 'sales.pipeline.cp')) return { title: 'Channel Partner', sub: 'Your pipeline & site visits' };
+  if (can(user, 'sales.pipeline.stm')) return { title: 'Sales Executive', sub: 'Your pipeline & site visits' };
   return { title: 'Sales CRM', sub: 'Nexora' };
 }
 
@@ -90,8 +90,8 @@ export default function SalesCRMScreen({ navigation, route }) {
   const isModuleAdmin = user?.role === 'Admin' && !user?.is_staff && (user?.modules || []).length === 1;
   useEffect(() => { if (isModuleAdmin && companyId != null) dispatch(setAdminCompany(null)); }, [isModuleAdmin, companyId]);
   const _des = (user?.designation || '').toLowerCase();
-  const isStm = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive');
-  const isTelecaller = _des.includes('telecaller') || _des.includes('tele caller');
+  const isStm = can(user, 'sales.pipeline.stm');
+  const isTelecaller = can(user, 'sales.pipeline.telecalling');
   // Managers also get the STM-portal modules (Site Visits, Booking, My Conversions).
   const isManager = isManagerRole(user);
   // CP Executive works their own leads like an STM (no Meta) → same modules.

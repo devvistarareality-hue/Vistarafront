@@ -20,6 +20,7 @@ import { COLORS, CARD_SHADOW as THEME_SHADOW } from '../../../constants/theme';
 import AppIcon from '../../../components/AppIcon';
 import { withAlpha } from '../../../constants/theme';
 import AppLoader from '../../../components/AppLoader';
+import { can } from '../../../lib/roles';
 const { width } = Dimensions.get('window');
 
 const MONTH_NAMES = [
@@ -64,8 +65,8 @@ const HomeScreen = () => {
 
   // Telecaller / STM self-availability (auto-resets after 12h; reflected in Sales admin Distribution).
   const _desig = (user?.designation || authUser?.designation || '').toLowerCase();
-  const isTcOrStm = _desig.includes('telecaller') || _desig.includes('tele caller')
-    || _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
+  const isTcOrStm = can(user, 'sales.pipeline.telecalling')
+    || can(user, 'sales.pipeline.stm');
   const [avail,     setAvail]     = useState(null);   // { is_available, expires_at }
   const [availBusy, setAvailBusy] = useState(false);
   const [unread,    setUnread]    = useState(0);

@@ -18,6 +18,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import common from '../../styles/common';
+import { can } from '../../lib/roles';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 // Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface, marginBottom: 8 };
@@ -203,9 +204,9 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   // Only admins/managers may (re)assign telecaller / STM. Telecaller & Sales Executive
   // portals can update status & remarks but cannot reassign leads.
   const _desig = (user?.designation || '').toLowerCase();
-  const _isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
-  const _isStm = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
-  const _isCp  = _desig.includes('cp executive') || _desig.includes('channel partner') || _desig.includes('cp cluster head');
+  const _isTelecaller = can(user, 'sales.pipeline.telecalling');
+  const _isStm = can(user, 'sales.pipeline.stm');
+  const _isCp  = can(user, 'sales.pipeline.cp') || _desig.includes('cp cluster head');
   const canAssign = !(_isTelecaller || _isStm || _isCp);
   // Telecallers see only the Telecaller (TC) section; STMs / CPs (exec + cluster
   // head) see only the STM/CP section. Admins/managers see both.
@@ -1131,10 +1132,10 @@ function FollowUpScheduler({ fuForm, setFuForm, canAssign, hint }) {
 function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps = [], visible, onClose, onCreated }) {
   const user = useSelector((s) => s.auth.user);
   const _desig = (user?.designation || '').toLowerCase();
-  const _isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
-  const _isStm = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
+  const _isTelecaller = can(user, 'sales.pipeline.telecalling');
+  const _isStm = can(user, 'sales.pipeline.stm');
   const _isCpHead = _desig.includes('cp cluster head');
-  const _isCp  = _desig.includes('cp executive') || _desig.includes('channel partner') || _isCpHead;
+  const _isCp  = can(user, 'sales.pipeline.cp') || _isCpHead;
   const _isAdminMgr = !(_isTelecaller || _isStm || _isCp);
   const showTC  = _isAdminMgr || _isTelecaller;
   const showStm = _isAdminMgr || _isStm || _isCp;
@@ -1800,9 +1801,9 @@ export default function SalesLeadsScreen({ navigation, route }) {
   // Telecaller / STM portals get a "To Call" vs "Called" split so they can tell
   // which of their assigned leads are still pending vs already actioned.
   const _desig = (user?.designation || '').toLowerCase();
-  const isTelecaller = _desig.includes('telecaller') || _desig.includes('tele caller');
-  const isStm        = _desig.includes('stm') || _desig.includes('sales team') || _desig.includes('sales executive');
-  const isCp         = _desig.includes('cp executive') || _desig.includes('channel partner');
+  const isTelecaller = can(user, 'sales.pipeline.telecalling');
+  const isStm        = can(user, 'sales.pipeline.stm');
+  const isCp         = can(user, 'sales.pipeline.cp');
   const isCpHead     = _desig.includes('cp cluster head');
   const isCpAny      = isCp || isCpHead;
   const isCaller     = isTelecaller || isStm || isCp;       // CP Head sees the full team list (no work split)

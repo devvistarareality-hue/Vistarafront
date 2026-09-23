@@ -13,6 +13,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
+import { can } from '../../lib/roles';
 const HISTORY_LABEL = {
   created: 'Lead Created', status: 'Overall Status', telecaller_status: 'TC Status',
   stm_status: 'STM Status', telecaller: 'Telecaller Assigned', stm: 'STM Assigned',
@@ -263,7 +264,7 @@ export default function SalesMyConversionsScreen({ navigation, route }) {
   if (cpOnly) cqParts.push('cp_only=true');
   const cq = cqParts.length ? `?${cqParts.join('&')}` : '';
   const des = (user?.designation || '').toLowerCase();
-  const isStm = des.includes('stm') || des.includes('sales team') || des.includes('sales executive');
+  const isStm = can(user, 'sales.pipeline.stm');
   // Cancelling a booking lives on Bookings & Approvals — this screen is read-only.
   const [tab, setTab] = useState(route?.params?.initialTab === 'closures' ? 'closures' : 'sv');
   const [visits, setVisits] = useState([]);

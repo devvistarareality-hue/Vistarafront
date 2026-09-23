@@ -10,7 +10,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
-import { isManagerRole } from '../../lib/roles';
+import { isManagerRole, can } from '../../lib/roles';
 
 const NAVY = COLORS.navy;
 const BLUE = COLORS.link;
@@ -158,7 +158,7 @@ export default function SalesReportsScreen({ navigation }) {
   const isAdmin     = isTrueAdmin || (user?.admin_modules || []).includes('Sales');
   const isManager   = isManagerRole(user);
   // Same rule as the CRM home these tiles moved from: any CP-side designation counts.
-  const isStmView = _des.includes('stm') || _des.includes('sales team') || _des.includes('sales executive') || _des.startsWith('cp') || _des.includes('channel partner');
+  const isStmView = can(user, 'sales.pipeline.stm') || _des.startsWith('cp') || _des.includes('channel partner');
 
   const fmtDate  = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
