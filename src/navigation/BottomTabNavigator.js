@@ -12,7 +12,6 @@ import NotificationsScreen from '../screens/Sales/NotificationsScreen';
 import SalesLeadsScreen from '../screens/Sales/SalesLeadsScreen';
 import SalesFollowUpsScreen from '../screens/Sales/SalesFollowUpsScreen';
 import SalesSiteVisitsScreen from '../screens/Sales/SalesSiteVisitsScreen';
-import SalesMyConversionsScreen from '../screens/Sales/SalesMyConversionsScreen';
 import MyTeamScreen from '../screens/Sales/MyTeamScreen';
 import ModuleHomeScreen from '../screens/Modulesscreen/ModuleHomeScreen';
 import ModuleBookingsScreen from '../screens/Modulesscreen/ModuleBookingsScreen';
@@ -51,7 +50,6 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="SalesLeads"    component={SalesLeadsScreen} />
       <ModulesStack.Screen name="SalesFollowUps" component={SalesFollowUpsScreen} />
       <ModulesStack.Screen name="SalesSiteVisits" component={SalesSiteVisitsScreen} />
-      <ModulesStack.Screen name="SalesMyConversions" component={SalesMyConversionsScreen} />
       <ModulesStack.Screen name="MyTeam" component={MyTeamScreen} />
       <ModulesStack.Screen name="ModuleHome" component={ModuleHomeScreen} />
       <ModulesStack.Screen name="ModuleBookings" component={ModuleBookingsScreen} />

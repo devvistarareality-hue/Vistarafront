@@ -45,7 +45,6 @@ const MENU = [
   { key: 'ClosureProjects',   label: 'Booking',      icon: 'document-text-outline',   color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, stmOnly: true , screen: 'sales.screen.booking' },
   // Not for an STM: their site visits and closures are reached from Site Visits
   // and Booking -> My Bookings, which the dashboard tiles now link to directly.
-  { key: 'SalesMyConversions', label: 'My Conversions', icon: 'trending-up-outline',   color: COLORS.success, bg: COLORS.successBg,  adminOnly: false, tcStmOnly: true, hideForStm: true , screen: 'sales.screen.conversions' },
   { key: 'MyTeam',            label: 'My Team',      icon: 'people-circle-outline',   color: COLORS.purple, bg: COLORS.purpleBg,  adminOnly: false, managerOnly: true, navParams: { module: 'Sales', title: 'My Team' } , screen: 'sales.screen.myteam' },
   { key: 'BookingApprovals',  label: 'Approvals',    icon: 'checkmark-done-outline',  color: COLORS.success, bg: COLORS.successBg, adminOnly: false, managerOnly: true , screen: 'sales.screen.approvals' },
   { key: 'SalesProjects',     label: 'Projects',      icon: 'business-outline',        color: COLORS.success, bg: COLORS.successBg,  adminOnly: true  , screen: 'sales.screen.projects' },
@@ -236,16 +235,17 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesFollowUps' },
     { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { group: 'Conversions', label: 'Warm/SQL',      value: stats?.warm_count     ?? '—', color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
-    { group: 'Conversions', label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
-    { group: 'Conversions', label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesMyConversions' },
+    { group: 'Conversions', label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    { group: 'Conversions', label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { group: 'Follow-ups Due', label: 'Callback Due',  value: stats?.callback_count ?? '—', color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { group: 'Conversions', label: 'Closures',      value: stats?.closures       ?? '—', color: COLORS.error,    bg: COLORS.errorBg,
       // In Channel Partner a closure is a booking, so the card opens Booking →
       // My Bookings with Approved chosen, instead of the Conversions screen.
-      target: isCp ? 'ClosureProjects' : 'SalesMyConversions',
-      params: isCp ? { cpOnly: true, initialView: 'mybookings', initialTab: 'sold' } : { initialTab: 'closures' } },
+      target: 'ClosureProjects',
+      params: isCp ? { cpOnly: true, initialView: 'mybookings', initialTab: 'sold' }
+                   : { initialView: 'mybookings', initialTab: 'sold' } },
     // Closed and approved here, but not yet signed off by Accounts. Not counted
     // as a closure until they are — they join that tile the moment it happens.
     { group: 'Conversions', label: 'Pending from Accounts', value: stats?.accounts_pending ?? '—',

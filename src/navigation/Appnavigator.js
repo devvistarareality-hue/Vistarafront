@@ -31,7 +31,6 @@ import SalesCRMScreen          from '../screens/Sales/SalesCRMScreen';
 import SalesLeadsScreen        from '../screens/Sales/SalesLeadsScreen';
 import SalesFollowUpsScreen    from '../screens/Sales/SalesFollowUpsScreen';
 import SalesSiteVisitsScreen   from '../screens/Sales/SalesSiteVisitsScreen';
-import SalesMyConversionsScreen from '../screens/Sales/SalesMyConversionsScreen';
 import MyTeamScreen             from '../screens/Sales/MyTeamScreen';
 import ModuleDashboardScreen from '../screens/Modulesscreen/ModuleDashboardScreen';
 import ModuleHomeScreen         from '../screens/Modulesscreen/ModuleHomeScreen';
@@ -135,7 +134,6 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
             <Stack.Screen name="SalesFollowUps"      component={SalesFollowUpsScreen} />
             <Stack.Screen name="SalesSiteVisits"     component={SalesSiteVisitsScreen} />
-            <Stack.Screen name="SalesMyConversions"  component={SalesMyConversionsScreen} />
             <Stack.Screen name="MyTeam"              component={MyTeamScreen} />
             <Stack.Screen name="ModuleDashboard"      component={ModuleDashboardScreen} />
             <Stack.Screen name="ModuleHome"          component={ModuleHomeScreen} />
@@ -179,7 +177,6 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
             <Stack.Screen name="SalesFollowUps"      component={SalesFollowUpsScreen} />
             <Stack.Screen name="SalesSiteVisits"     component={SalesSiteVisitsScreen} />
-            <Stack.Screen name="SalesMyConversions"  component={SalesMyConversionsScreen} />
             <Stack.Screen name="MyTeam"              component={MyTeamScreen} />
             <Stack.Screen name="BookingForm"         component={BookingFormScreen} />
             <Stack.Screen name="BookingApprovals"    component={BookingApprovalsScreen} />

@@ -337,12 +337,12 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
     { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
     { group: 'Conversions', label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm', ...dateFilter } } },
-    { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesMyConversions', params: { initialTab: 'sv' } },
-    { group: 'Conversions', label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesMyConversions' },
+    { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    { group: 'Conversions', label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { group: 'Follow-ups Due', label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback', ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,             color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,             color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
-    { group: 'Conversions', label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesMyConversions', params: { initialTab: 'closures' }, sub: otherSub(_otherSrc) },
+    { group: 'Conversions', label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'sold' }, sub: otherSub(_otherSrc) },
     // Closed and approved here, waiting at the Accounts gate — not a closure until
     // Accounts signs off, at which point it moves into the tile above.
     { group: 'Conversions', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg, sub: otherSub(_otherSrcWait) },

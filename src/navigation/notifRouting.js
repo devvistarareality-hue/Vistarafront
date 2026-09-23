@@ -29,7 +29,7 @@ const ROUTE_FOR_TYPE = {
   lead_transfer_requested: { screen: 'BookingApprovals' },
   lead_transfer_approved: { screen: 'SalesLeads' },
   lead_transfer_rejected: { screen: 'SalesLeads' },
-  closure: { screen: 'SalesMyConversions' },
+  closure: { screen: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'sold' } },
   followup_overdue: { screen: 'SalesFollowUps' },
   sv_overdue: { screen: 'SalesSiteVisits' },
   // availability_reminder intentionally unmapped — tapping just opens the app to the
