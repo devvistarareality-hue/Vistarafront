@@ -33,7 +33,9 @@ const common = StyleSheet.create({
   // Header
   header:        { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent' },
   // lineHeight keeps descenders (g, y, p) from being clipped when a title is truncated to one line.
-  headerTitle:   { flex: 1, fontSize: 18, lineHeight: 24, fontWeight: '800', color: COLORS.textPrimary },
+  // No flex here: every screen puts the title above a sub-line inside a column, and
+  // flex:1 squeezed its height there, clipping the letters ("Activity Log" → "Activitv Loa").
+  headerTitle:   { fontSize: 18, lineHeight: 24, fontWeight: '800', color: COLORS.textPrimary },
   headerTitleCenter: { flex: 1, textAlign: 'center', fontSize: 18, lineHeight: 24, fontWeight: '800', color: COLORS.textPrimary },
   headerSub:     { fontSize: 13, lineHeight: 18, color: COLORS.textSecondary },
   iconBtn:       { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' },

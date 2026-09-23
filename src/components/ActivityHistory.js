@@ -44,7 +44,7 @@ const ActivityRow = React.memo(function ActivityRow({ r, last, showModule }) {
         <Text style={s.summary}>{r.summary}</Text>
         {r.lead_id ? (
           <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('SalesLeads', { openLeadId: r.lead_id })}>
-            <Text style={[s.target, s.targetLink]}><Text style={s.targetType}>{(TYPE_NAME[r.target_type] || 'Lead').toUpperCase()}  </Text>{r.label || `Lead #${r.lead_id}`}  ›</Text>
+            <Text style={[s.target, s.targetLink]} numberOfLines={2}><Text style={s.targetType}>{(TYPE_NAME[r.target_type] || 'Lead').toUpperCase()}  </Text>{r.label || `Lead #${r.lead_id}`}  ›</Text>
           </TouchableOpacity>
         ) : named ? <Text style={s.target}><Text style={s.targetType}>{(TYPE_NAME[r.target_type] || 'Record').toUpperCase()}  </Text>{r.label}</Text> : null}
         <Text style={s.meta}>
@@ -122,10 +122,10 @@ const s = StyleSheet.create({
   dot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2, backgroundColor: COLORS.surface, marginTop: 3 },
   line: { flex: 1, width: 2, backgroundColor: COLORS.border, marginVertical: 2 },
   body: { flex: 1, paddingBottom: 14 },
-  summary: { fontSize: 13.5, fontWeight: '600', color: COLORS.textPrimary, lineHeight: 19 },
-  meta: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 3 },
+  summary: { fontSize: 13.5, fontWeight: '600', color: COLORS.textPrimary, lineHeight: 20 },
+  meta: { fontSize: 11.5, lineHeight: 16, color: COLORS.textSecondary, marginTop: 4 },
   who: { fontWeight: '800', color: COLORS.textPrimary },
-  target: { fontSize: 12.5, fontWeight: '600', color: COLORS.textPrimary, marginTop: 3 },
+  target: { fontSize: 12.5, lineHeight: 18, fontWeight: '600', color: COLORS.textPrimary, marginTop: 4 },
   targetType: { fontSize: 10.5, fontWeight: '800', color: COLORS.link },
   targetLink: { color: COLORS.link },
   moreBtn: { fontSize: 12, fontWeight: '700', color: COLORS.link, marginTop: 5 },
