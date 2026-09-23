@@ -12,6 +12,8 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole } from '../../lib/roles';
 import { ThemeIconButton } from '../../components/ThemeToggle';
 import AppLoader from '../../components/AppLoader';
+import { DashHero, DashAlerts } from '../../components/Dash';
+import { pct } from '../../lib/inr';
 
 const NAVY  = COLORS.navy;
 const BLUE  = COLORS.link;
@@ -54,6 +56,8 @@ const MENU = [
   { key: 'SalesDistribution', label: 'Distribution',  icon: 'shuffle-outline',         color: COLORS.warning, bg: COLORS.warningBg,  adminOnly: true  },
   { key: 'SalesImport',       label: 'Import Leads',  icon: 'cloud-upload-outline',    color: COLORS.info, bg: COLORS.infoBg,  adminOnly: false },
   { key: 'SalesDataReset',    label: 'Data Reset',    icon: 'trash-outline',           color: COLORS.error, bg: COLORS.errorBg,  adminOnly: true  },
+  // Who changed what in Sales, and when — real admins only.
+  { key: 'ActivityLog',       label: 'Log',           icon: 'time-outline',            color: COLORS.link, bg: COLORS.linkBg,  adminOnly: true, trueAdminOnly: true, navParams: { modules: ['Sales', 'Channel Partner'], title: 'Sales Log' } },
   { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: COLORS.linkPressed, bg: COLORS.infoBg,  adminOnly: false },
 ];
 
@@ -100,7 +104,7 @@ export default function SalesCRMScreen({ navigation, route }) {
   // headed by) the CP side rather than Sales.
   const teamParams = (m) => (m.key === 'MyTeam' && isCp
     ? { ...m, navParams: { cp: true, title: 'My Team' } } : m);
-  const baseFilter = m => (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
+  const baseFilter = m => (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
   // Tiles that pull hierarchy-scoped data need adminView threaded into their own
   // params so THEY request full company data too (see backend's admin_view=1).
   const withAdminParams = (m) => ({ ...m, navParams: { ...(m.navParams || {}), adminView: true } });
@@ -351,7 +355,34 @@ export default function SalesCRMScreen({ navigation, route }) {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36, paddingTop: 12 }}>
 
-        {/* Pipeline / calling / follow-up / conversion numbers live in the Reports tab. */}
+        {/* The headline and what needs doing; the full tile breakdown lives in the Reports tab. */}
+        {stats ? (
+          <View style={SalesCRMScreenS.dash}>
+            {(isStm || isCp) ? (
+              <DashHero eyebrow="My pipeline" value={(stats.total_leads ?? 0).toLocaleString('en-IN')}
+                splits={[{ label: 'Hot', value: String(stats.stm_hot_count ?? 0) }, { label: 'Warm / SQL', value: String(stats.stm_warm_count ?? 0) },
+                         { label: 'Site visits', value: String(stats.sv_done ?? 0) }]}
+                ring={{ pct: pct(stats.closures || 0, stats.sql_count ?? stats.stm_warm_count ?? 0), label: 'SQL closed' }} />
+            ) : (
+              <DashHero eyebrow={(isAdmin || isManager) ? 'Total leads' : 'My leads'} value={(stats.total_leads ?? 0).toLocaleString('en-IN')}
+                splits={[{ label: 'New today', value: String(stats.leads_today ?? 0) },
+                         (isAdmin || isManager) ? { label: 'Site visits', value: String(stats.sv_done ?? 0) } : { label: 'To call', value: String(stats.to_call_count ?? 0) },
+                         { label: 'Closures', value: String(stats.closures ?? 0) }]}
+                ring={(isAdmin || isManager)
+                  ? { pct: pct(stats.closures || 0, stats.total_leads || 0), label: 'converted' }
+                  : { pct: pct(stats.called_count || 0, stats.total_leads || 0), label: 'called' }} />
+            )}
+            <DashAlerts items={[
+              ...((isAdmin || isManager) && !isCp ? [{ tone: 'warn', icon: 'person-add-outline', count: stats.unassigned_leads ?? 0, label: 'Unassigned leads', text: 'Waiting for an owner',
+                onPress: () => navigation.navigate('SalesLeads', { initialFilter: { unassigned: true } }) }] : []),
+              { tone: 'bad', icon: 'time-outline', count: stats.followup_overdue_count ?? 0, label: 'Follow-ups overdue', text: 'Past their follow-up date', onPress: () => navigation.navigate('SalesFollowUps') },
+              ...(!(isStm || isCp) ? [{ tone: 'info', icon: 'call-outline', count: stats.callback_count ?? 0, label: 'Callbacks due', text: 'Asked to be called back',
+                onPress: () => navigation.navigate('SalesLeads', { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } }) }] : []),
+              ...((isStm || isCp) ? [{ tone: 'warn', icon: 'calendar-outline', count: stats.stm_sv_scheduled_count ?? 0, label: 'Site visits scheduled', text: 'Coming up',
+                onPress: () => navigation.navigate('SalesSiteVisits', { initialTab: 'scheduled' }) }] : []),
+            ]} />
+          </View>
+        ) : null}
 
         {/* Menu */}
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
@@ -379,5 +410,6 @@ export default function SalesCRMScreen({ navigation, route }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const SalesCRMScreenS = StyleSheet.create({
+  dash: { paddingHorizontal: 16, paddingTop: 4, marginBottom: 4 },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
 });

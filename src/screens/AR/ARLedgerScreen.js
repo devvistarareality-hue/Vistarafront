@@ -12,6 +12,8 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import FormSheet from '../../components/FormSheet';
 import BookingDetails from '../../components/BookingDetails';
+import ActivityHistory from '../../components/ActivityHistory';
+import FollowUpSheet from './FollowUpSheet';
 import { Badge, Button, Segmented } from '../../components/ui';
 import { rupee, MODES, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
 
@@ -39,6 +41,7 @@ export default function ARLedgerScreen({ navigation, route }) {
   const [audit, setAudit] = useState(null);      // null | { receipt, rows }
   const [sharing, setSharing] = useState(false);
   const [booking, setBooking] = useState(null);  // null | 'loading' | booking
+  const [followUps, setFollowUps] = useState(false);
 
   const url = useCallback((u) => withCompany(u, companyId, [`as_of=${asOf}`]), [companyId, asOf]);
 
@@ -152,6 +155,7 @@ export default function ARLedgerScreen({ navigation, route }) {
           <Button title="Booking details" icon="book" size="sm" variant="secondary" onPress={showBooking} style={s.flex} />
           <Button title={`View ${isEoi ? 'EOI' : 'LOI'}`} icon="file" size="sm" variant="secondary" onPress={openLoi} style={s.flex} />
         </View>
+        <Button title="Follow-ups" icon="bell" size="sm" variant="secondary" full onPress={() => setFollowUps(true)} style={s.recordBtn} />
         {!frozen && <Button title="Record payment" icon="check-circle" variant="primary" full onPress={openNew} style={s.recordBtn} />}
 
         {frozen && <Note tone="warn" text="This booking was cancelled, so its account is frozen. Receipts and history are kept; no new payments can be recorded." />}
@@ -251,11 +255,17 @@ export default function ARLedgerScreen({ navigation, route }) {
           )}
           <KV k="Net interest" v={data.net_interest} total />
         </View>
+
+        <View style={[common.card, s.card]}>
+          <ActivityHistory targetType="ar_account" targetId={data.id} title="Account history — receipts, follow-ups, changes" />
+        </View>
       </ScrollView>
+
+      <FollowUpSheet row={followUps ? data : null} visible={followUps} onClose={() => setFollowUps(false)} />
 
       <FormSheet visible={!!form} onClose={() => !saving && setForm(null)}>
         {form && (
-          <ScrollView style={s.sheetScroll} keyboardShouldPersistTaps="handled">
+          <ScrollView style={s.sheetScroll} contentContainerStyle={s.sheetBody} keyboardShouldPersistTaps="handled">
             <Text style={s.sheetTitle}>{form.id ? 'Edit receipt' : 'Record payment'}</Text>
             <Text style={s.sheetSub}>{data.client_name} · Plot {data.plots} · Outstanding {rupee(data.outstanding)}</Text>
             {formErr._ ? <Note tone="bad" text={formErr._} /> : null}
@@ -283,7 +293,7 @@ export default function ARLedgerScreen({ navigation, route }) {
 
       <FormSheet visible={!!booking} onClose={() => setBooking(null)}>
         {booking ? (
-          <ScrollView style={s.sheetScroll}>
+          <ScrollView style={s.sheetScroll} contentContainerStyle={s.sheetBody}>
             <Text style={s.sheetTitle}>Booking details</Text>
             <Text style={s.sheetSub}>{data.client_name} · {data.project} · Plot {data.plots}</Text>
             {booking === 'loading' ? <AppLoader label="Loading…" /> : <BookingDetails b={booking} />}
@@ -297,7 +307,7 @@ export default function ARLedgerScreen({ navigation, route }) {
 
       <FormSheet visible={!!audit} onClose={() => setAudit(null)} maxHeight="75%">
         {audit && (
-          <ScrollView style={s.sheetScroll}>
+          <ScrollView style={s.sheetScroll} contentContainerStyle={s.sheetBody}>
             <Text style={s.sheetTitle}>Receipt history</Text>
             <Text style={s.sheetSub}>{rupee(audit.receipt.amount)} · {formatDMY(audit.receipt.paid_on)}</Text>
             {audit.rows === null ? <AppLoader label="Loading…" /> : audit.rows.map((a, i) => (
@@ -410,6 +420,7 @@ const s = StyleSheet.create({
   intAmt: { fontSize: 13.5, fontWeight: '800', color: COLORS.textPrimary },
   empty: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 14 },
   sheetScroll: { flexShrink: 1 },
+  sheetBody: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
   sheetTitle: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
   sheetSub: { fontSize: 12.5, color: COLORS.textSecondary, marginTop: 3, marginBottom: 16 },
   sheetFoot: { flexDirection: 'row', gap: 10, marginTop: 20 },

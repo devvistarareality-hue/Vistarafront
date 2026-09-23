@@ -10,6 +10,8 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import { DashHero, DashKpi, DashKpiGrid, DashAlerts, DashCard, DashBars } from '../../components/Dash';
+import { inrShort, pct } from '../../lib/inr';
 
 const NAVY  = COLORS.navy;
 const TEAL  = COLORS.success;
@@ -27,6 +29,8 @@ const MENU = [
   { key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },
   { key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: false },
   { key: 'MyTeam',             label: 'My Team',      icon: 'people-circle-outline', color: COLORS.purple,   bg: COLORS.purpleBg,  managerOnly: true, navParams: { module: 'Club 1000', title: 'My Team' } },
+  // Who changed what in Club 1000, and when — real admins only.
+  { key: 'ActivityLog',        label: 'Log',          icon: 'time-outline',          color: COLORS.link,     bg: COLORS.linkBg,    adminOnly: true, navParams: { modules: ['Club 1000'], title: 'Club 1000 Log' } },
 ];
 
 function fmtMoney(n) {
@@ -54,6 +58,9 @@ export default function Club1000HubScreen({ navigation, route }) {
       visibleMenu = [...visibleMenu, { key: '__ADMIN__', label: 'Admin', icon: 'shield-checkmark-outline', color: NAVY, bg: COLORS.surfaceAlt }];
     }
   }
+
+  const isLogAdmin = user?.role === 'Admin' || user?.is_staff;
+  visibleMenu = visibleMenu.filter((m) => !m.adminOnly || isLogAdmin);
 
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);
@@ -150,25 +157,6 @@ export default function Club1000HubScreen({ navigation, route }) {
   }
 
   useEffect(() => { loadStats(); }, [companyId, dateFrom, dateTo, selectedMonths, selectedQuarter, selectedFyYear]);
-
-  const STAT_CARDS = manager
-    ? [
-        { label: 'Leads',            value: stats?.leads_count ?? '—',        color: COLORS.link,    target: 'Club1000Leads' },
-        { label: 'Converted',        value: stats?.converted_count ?? '—',    color: COLORS.success, target: 'Club1000Leads' },
-        { label: 'Total Invested',   value: fmtMoney(stats?.total_invested),  color: TEAL,           target: 'Club1000Investors' },
-        { label: 'Investors',        value: stats?.investor_count ?? '—',     color: COLORS.link,    target: 'Club1000Investors' },
-        { label: 'Active Schemes',   value: stats?.active_scheme_count ?? '—', color: COLORS.success, target: 'Club1000Schemes' },
-        { label: 'Pending Payouts',  value: stats?.pending_payout_count ?? '—', color: COLORS.warning, target: 'Club1000Payouts', params: { initialFilter: 'pending' } },
-        { label: 'Paid Payouts',     value: stats?.paid_payout_count ?? '—',   color: COLORS.success, target: 'Club1000Payouts', params: { initialFilter: 'paid' } },
-      ]
-    : [
-        { label: 'My Leads',         value: stats?.leads_count ?? '—',        color: COLORS.link,    target: 'Club1000Leads' },
-        { label: 'Converted',        value: stats?.converted_count ?? '—',    color: COLORS.success, target: 'Club1000Leads' },
-        { label: 'My Investors',     value: stats?.investor_count ?? '—',     color: COLORS.link,    target: 'Club1000Investors' },
-        { label: 'Total Invested',   value: fmtMoney(stats?.total_invested),  color: TEAL,           target: 'Club1000Investors' },
-        { label: 'Pending Payouts',  value: stats?.pending_payout_count ?? '—', color: COLORS.warning },
-        { label: 'Paid Payouts',     value: stats?.paid_payout_count ?? '—',   color: COLORS.success },
-      ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
@@ -347,21 +335,48 @@ export default function Club1000HubScreen({ navigation, route }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadStats(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
-        <View style={{ paddingHorizontal: 16, paddingTop: 14, marginBottom: 8 }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Overview</Text>
+        <View style={ClubHubScreenS.dash}>
           {loading ? (
-            <AppLoader size={0.7} style={{ marginVertical: 20 }} />
+            <AppLoader size={0.7} style={ClubHubScreenS.loader} />
           ) : (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-              {STAT_CARDS.map((s) => (
-                <TouchableOpacity key={s.label} activeOpacity={s.target ? 0.7 : 1}
-                  onPress={() => s.target && navigation.navigate(s.target, s.params)}
-                  style={[CARD, { width: '30%', flexGrow: 1, padding: 12, alignItems: 'center' }]}>
-                  <Text style={{ fontSize: 18, fontWeight: '800', color: s.color }}>{s.value}</Text>
-                  <Text style={{ fontSize: 10, color: MUTED, marginTop: 3, textAlign: 'center', fontWeight: '600', minHeight: 26, lineHeight: 13 }}>{s.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <>
+              <DashHero
+                eyebrow={manager ? 'Total invested' : 'My total invested'}
+                value={inrShort(stats?.total_invested)}
+                splits={[
+                  { label: manager ? 'Investors' : 'My investors', value: String(stats?.investor_count ?? 0) },
+                  { label: 'Pending payouts', value: inrShort(stats?.pending_payout_amount) },
+                  { label: 'Paid out', value: inrShort(stats?.paid_payout_amount) },
+                ]}
+                ring={manager
+                  ? { pct: pct(stats?.investor_status_breakdown?.active || 0, stats?.investor_count || 0), label: 'active' }
+                  : { pct: pct(stats?.converted_count || 0, stats?.leads_count || 0), label: 'converted' }}
+              />
+              <DashKpiGrid>
+                <DashKpi icon="call-outline" tone="info" label={manager ? 'Leads' : 'My leads'} value={String(stats?.leads_count ?? 0)} onPress={() => navigation.navigate('Club1000Leads')} />
+                <DashKpi icon="sparkles-outline" tone="good" label="Converted" value={String(stats?.converted_count ?? 0)} sub={`${pct(stats?.converted_count || 0, stats?.leads_count || 0)}% of leads`} onPress={() => navigation.navigate('Club1000Leads')} />
+                <DashKpi icon="time-outline" tone="warn" label="Pending payouts" value={inrShort(stats?.pending_payout_amount)} sub={`${stats?.pending_payout_count ?? 0} payouts`}
+                  onPress={manager ? () => navigation.navigate('Club1000Payouts', { initialFilter: 'pending' }) : undefined} />
+                <DashKpi icon="checkmark-done-outline" tone="good" label="Paid payouts" value={inrShort(stats?.paid_payout_amount)} sub={`${stats?.paid_payout_count ?? 0} payouts`}
+                  onPress={manager ? () => navigation.navigate('Club1000Payouts', { initialFilter: 'paid' }) : undefined} />
+                {manager && <DashKpi icon="business-outline" tone="warn" label="Active schemes" value={String(stats?.active_scheme_count ?? 0)} onPress={() => navigation.navigate('Club1000Schemes')} />}
+                {manager && <DashKpi icon="people-outline" tone="info" label="Investors" value={String(stats?.investor_count ?? 0)} onPress={() => navigation.navigate('Club1000Investors')} />}
+              </DashKpiGrid>
+              <DashAlerts items={[
+                { tone: 'warn', icon: 'alarm-outline', count: stats?.investor_status_breakdown?.due_for_renewal ?? 0, label: 'Due for renewal', text: 'Past maturity, awaiting a decision', onPress: () => navigation.navigate('Club1000Investors') },
+                { tone: 'info', icon: 'calendar-outline', count: stats?.upcoming_maturities_count ?? 0, label: 'Maturing in 30 days', text: inrShort(stats?.upcoming_maturities_amount), onPress: () => navigation.navigate('Club1000Investors') },
+                ...(manager ? [{ tone: 'bad', icon: 'clipboard-outline', count: stats?.pending_approval_count ?? 0, label: 'Pending approvals', text: 'Investors waiting for your sign-off', onPress: () => navigation.navigate('Club1000InvestorApprovals') }] : []),
+                { tone: 'bad', icon: 'time-outline', count: stats?.followups_overdue ?? 0, label: 'Overdue follow-ups', text: 'Leads past their follow-up date', onPress: () => navigation.navigate('Club1000FollowUps') },
+              ]} />
+              <DashCard title={manager ? 'Portfolio status' : 'My portfolio status'} sub="Investors by status" total={String(stats?.investor_count ?? 0)}>
+                <DashBars empty="No investors yet." rows={[
+                  { label: 'Active', value: stats?.investor_status_breakdown?.active || 0, tone: 'good' },
+                  { label: 'Due for renewal', value: stats?.investor_status_breakdown?.due_for_renewal || 0, tone: 'warn' },
+                  { label: 'Redeemed', value: stats?.investor_status_breakdown?.redeemed || 0, tone: 'info' },
+                  { label: 'Premature redeemed', value: stats?.investor_status_breakdown?.premature_redeemed || 0, tone: 'bad' },
+                ]} />
+              </DashCard>
+            </>
           )}
         </View>
 
@@ -390,5 +405,7 @@ export default function Club1000HubScreen({ navigation, route }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubHubScreenS = StyleSheet.create({
+  dash: { paddingHorizontal: 16, paddingTop: 12, marginBottom: 4 },
+  loader: { marginVertical: 20 },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4, borderWidth: 1, borderColor: COLORS.btnBorder },
 });

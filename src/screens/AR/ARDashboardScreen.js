@@ -24,6 +24,7 @@ const AGE_COLORS = ['#E8C27A', '#DDA24B', COLORS.warningSolid, '#CF6A33', '#C950
 // AR landing: the receivables book at a glance — same layout as the website.
 export default function ARDashboardScreen({ navigation }) {
   const companyId = useSelector((st) => st.adminFilter?.companyId);
+  const me = useSelector((st) => st.auth.user);
   const [project, setProject] = useState('');
   const [asOf, setAsOf] = useState(today());
   const [data, setData] = useState(null);
@@ -50,6 +51,8 @@ export default function ARDashboardScreen({ navigation }) {
   const t = data?.totals;
   const issues = data?.issues ? ISSUES.filter((i) => data.issues[i.value]) : [];
   const go = (screen, params) => navigation.navigate(screen, params);
+  // The AR Log (who changed what) is for real admins only.
+  const isLogAdmin = me?.role === 'Admin' || me?.is_staff;
 
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
@@ -62,6 +65,11 @@ export default function ARDashboardScreen({ navigation }) {
           <Text style={common.headerTitle}>Receivables</Text>
           <Text style={common.headerSub}>{data?.accounts != null ? `${data.accounts} active accounts` : 'Accounts receivable'}</Text>
         </View>
+        {isLogAdmin ? (
+          <TouchableOpacity onPress={() => go('ActivityLog', { modules: ['AR'], title: 'Accounts Receivable Log' })} style={common.iconBtn} accessibilityLabel="Log">
+            <Ionicons name="time-outline" size={19} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={common.scroll}
@@ -72,6 +80,7 @@ export default function ARDashboardScreen({ navigation }) {
           <DateField compact maxToday value={asOf} onChange={(d) => setAsOf(d || today())} style={s.asOf} />
         </View>
         <View style={s.quick}>
+          <Quick icon="notifications-outline" label="Collections" onPress={() => go('ARCollections', { project })} />
           <Quick icon="book-outline" label="Register" onPress={() => go('ARRegister', { project })} />
           <Quick icon="cloud-upload-outline" label="Import receipts" onPress={() => go('ARImport', { project })} />
         </View>
@@ -150,7 +159,7 @@ function Quick({ icon, label, onPress }) {
   return (
     <TouchableOpacity style={s.quickBtn} activeOpacity={0.8} onPress={onPress}>
       <Ionicons name={icon} size={17} color={COLORS.link} />
-      <Text style={s.quickText}>{label}</Text>
+      <Text style={s.quickText} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
     </TouchableOpacity>
   );
 }

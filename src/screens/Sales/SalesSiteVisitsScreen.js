@@ -15,6 +15,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
+import common from '../../styles/common';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -314,7 +315,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       </View>
 
       {/* Tabs */}
-      <View style={{ backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={common.tabBarScroll}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8 }}>
           {TABS.map((t) => {
             const active = filter === t.key;
@@ -491,7 +492,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
               {!!err && <Text style={{ color: COLORS.error, fontSize: 12, marginTop: 10 }}>{err}</Text>}
               <TouchableOpacity onPress={submitDone} disabled={saving || !doneForm.outcome || !doneForm.remarks.trim()}
                 style={{ marginTop: 16, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 13, alignItems: 'center',
-                  opacity: (saving || !doneForm.outcome || !doneForm.remarks.trim()) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 , borderWidth: 1, borderColor: COLORS.btnBorder }}>
+                  opacity: (saving || !doneForm.outcome || !doneForm.remarks.trim()) ? 0.5 : 1 , shadowColor: COLORS.glow, shadowOpacity: COLORS.isDark ? 0.45 : 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, borderWidth: 1, borderColor: COLORS.btnBorder }}>
                 <Text style={{ color: COLORS.btnText, fontWeight: '800', fontSize: 15 }}>{saving ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
             </ScrollView>

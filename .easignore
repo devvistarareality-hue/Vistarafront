@@ -1,4 +1,20 @@
-!android/app/google-services.json
+!google-services.json
 ios/Pods
 ios/build
 ios/DerivedData
+
+# Generated build output — never needed on the EAS build machine, and it made the
+# upload 1.7 GB. (Android sources stay; only their build/cache folders are skipped.)
+android/build
+android/app/build
+android/.gradle
+android/app/.cxx
+android/.kotlin
+build-*/
+build-*.tar.gz
+*.apk
+*.aab
+*.ipa
+dist/
+web-build/
+.expo/

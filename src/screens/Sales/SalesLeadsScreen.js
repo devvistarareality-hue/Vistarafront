@@ -17,6 +17,7 @@ import { Field, TextField } from '../../components/Field';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import common from '../../styles/common';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 // Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface, marginBottom: 8 };
@@ -1743,6 +1744,17 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedLead,setSelectedLead]= useState(null);
   const [detailModal, setDetailModal] = useState(false);
+  // Opened from a link such as the Log's (openLeadId): load that lead in full, then
+  // show its details — the modal fills its form from the record it is given.
+  useEffect(() => {
+    const id = route?.params?.openLeadId;
+    if (!id) return;
+    apiFetch(SALES_ENDPOINTS.lead(id)).then(async (r) => {
+      if (!r.ok) return;
+      setSelectedLead(await r.json());
+      setDetailModal(true);
+    }).catch(() => {});
+  }, [route?.params?.openLeadId]);
   const [createModal, setCreateModal] = useState(false);
   // Transfer straight from a lead card — the lead being handed on, or null.
   const [xferLead, setXferLead] = useState(null);
@@ -2076,7 +2088,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       {/* To Call / Called split — telecaller & STM portals only */}
       {isCaller && (
-        <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+        <View style={common.tabBar}>
           {[['pending', 'To Call'], ['called', 'Called']].map(([key, label]) => {
             const active = workTab === key;
             return (

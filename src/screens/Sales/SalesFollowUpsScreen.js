@@ -14,6 +14,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
+import common from '../../styles/common';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -268,7 +269,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       )}
 
       {/* Tabs */}
-      <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, zIndex: 1, elevation: 1 }}>
+      <View style={common.tabBar}>
         {TABS.map((t) => {
           const active = filter === t.key;
           return (

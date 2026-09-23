@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, View, Pressable, Keyboard, Platform, Dimensions, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Modal, View, Pressable, Keyboard, Platform, Dimensions, Animated, StyleSheet } from 'react-native';
+import SheetHandle from './SheetHandle';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/theme';
 
@@ -44,6 +45,14 @@ export default function FormSheet({ visible, onClose, children, maxHeight = '92%
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
+  // Swipe the top bar down to close: the sheet follows the finger, then either
+  // slides away or springs back.
+  const dragY = useRef(new Animated.Value(0)).current;
+  useEffect(() => { if (visible) dragY.setValue(0); }, [visible]);
+  const springBack = () => Animated.spring(dragY, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start();
+  const dismiss = () => Animated.timing(dragY, { toValue: Dimensions.get('window').height, duration: 180, useNativeDriver: true })
+    .start(() => onClose?.());
+
   const windowHeight = Dimensions.get('window').height;
   const baseMaxHeight = resolveMaxHeight(maxHeight, windowHeight);
   const effectiveMaxHeight = keyboardHeight ? Math.max(baseMaxHeight - keyboardHeight, 200) : baseMaxHeight;
@@ -53,10 +62,10 @@ export default function FormSheet({ visible, onClose, children, maxHeight = '92%
       <View style={styles.root}>
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={[styles.kav, { maxHeight: effectiveMaxHeight, marginBottom: keyboardHeight }]}>
-          <View style={[styles.sheet, { paddingBottom: insets.bottom }]}>
-            <View style={styles.handle} />
+          <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom, transform: [{ translateY: dragY }] }]}>{/* inline-ok: safe-area inset and drag offset */}
+            <SheetHandle onMove={(dy) => dragY.setValue(dy)} onClose={dismiss} onCancel={springBack} />
             {children}
-          </View>
+          </Animated.View>
         </View>
       </View>
     </Modal>
@@ -76,11 +85,5 @@ const styles = StyleSheet.create({
     // Allow the sheet to shrink to the kav's maxHeight so a tall inner ScrollView
     // (flexShrink:1) gets a bounded height and can actually scroll.
     flexShrink: 1,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40, height: 5, borderRadius: 3,
-    backgroundColor: COLORS.divider,
-    marginTop: 10, marginBottom: 6,
   },
 });

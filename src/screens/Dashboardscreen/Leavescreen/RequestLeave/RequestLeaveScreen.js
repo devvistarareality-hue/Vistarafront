@@ -23,6 +23,7 @@ import { requestLeave, resetRequestLeave } from '../../../../redux/actions/reque
 import styles from './styles';
 
 import AppIcon from '../../../../components/AppIcon';
+import SheetHandle from '../../../../components/SheetHandle';
 const { height } = Dimensions.get('window');
 
 const LEAVE_OPTIONS = ['Paid Leave', 'Sick Leave', 'Casual Leave', 'LOP'];
@@ -54,7 +55,7 @@ const LeaveBottomSheet = ({ visible, selected, onSelect, onClose }) => {
       {/* Sheet */}
       <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
         {/* Handle */}
-        <View style={styles.sheetHandle} />
+        <SheetHandle onClose={onClose} />
         <Text style={styles.sheetTitle}>Select Leave Type</Text>
 
         {LEAVE_OPTIONS.map((option) => (

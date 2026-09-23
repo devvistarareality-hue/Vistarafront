@@ -21,6 +21,22 @@ const TYPE_STYLE = {
   booking_approval: { icon: 'document-text',    color: COLORS.warning, bg: COLORS.warningBg },
   booking_approved: { icon: 'trophy',           color: COLORS.success, bg: COLORS.successBg },
   booking_rejected: { icon: 'close-circle',     color: COLORS.error, bg: COLORS.errorBg },
+  booking_submitted: { icon: 'document-text',   color: COLORS.link, bg: COLORS.accentSoft },
+  booking_update:   { icon: 'document-text',    color: COLORS.link, bg: COLORS.accentSoft },
+  booking_cancelled: { icon: 'close-circle',    color: COLORS.error, bg: COLORS.errorBg },
+  accounts_booking_approval: { icon: 'wallet',  color: COLORS.warning, bg: COLORS.warningBg },
+  accounts_booking_update: { icon: 'wallet',    color: COLORS.link, bg: COLORS.accentSoft },
+  accounts_booking_approved: { icon: 'checkmark-done', color: COLORS.success, bg: COLORS.successBg },
+  accounts_booking_rejected: { icon: 'close-circle', color: COLORS.error, bg: COLORS.errorBg },
+  accounts_booking_cancelled: { icon: 'close-circle', color: COLORS.error, bg: COLORS.errorBg },
+  ar_followup_assigned: { icon: 'call', color: COLORS.link, bg: COLORS.accentSoft },
+  ar_followup_due: { icon: 'call', color: COLORS.warning, bg: COLORS.warningBg },
+  ar_followup_overdue: { icon: 'alarm', color: COLORS.error, bg: COLORS.errorBg },
+  ar_collections_digest: { icon: 'cash', color: COLORS.link, bg: COLORS.accentSoft },
+  ar_due_soon: { icon: 'calendar', color: COLORS.warning, bg: COLORS.warningBg },
+  lead_transfer_requested: { icon: 'swap-horizontal', color: COLORS.warning, bg: COLORS.warningBg },
+  lead_transfer_approved: { icon: 'swap-horizontal', color: COLORS.success, bg: COLORS.successBg },
+  lead_transfer_rejected: { icon: 'swap-horizontal', color: COLORS.error, bg: COLORS.errorBg },
   closure:          { icon: 'ribbon',           color: COLORS.link, bg: COLORS.accentSoft },
   overdue:          { icon: 'alarm',            color: COLORS.error, bg: COLORS.errorBg },
   followup_overdue: { icon: 'alarm',            color: COLORS.error, bg: COLORS.errorBg },
@@ -76,7 +92,7 @@ export default function NotificationsScreen({ navigation }) {
           <TouchableOpacity key={n.id} activeOpacity={target ? 0.7 : 1} onPress={() => target && navigation.navigate(target.screen, target.params)}
             style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14,
               borderLeftWidth: n.is_read ? 0 : 3, borderLeftColor: st.color,
-              backgroundColor: n.is_read ? COLORS.cardBg : COLORS.accentSofter }]}>
+              backgroundColor: n.is_read ? COLORS.cardBg : COLORS.accentSofter, elevation: n.is_read ? CARD.elevation : 0 }]}>
             <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: st.bg, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name={st.icon} size={20} color={st.color} />
             </View>

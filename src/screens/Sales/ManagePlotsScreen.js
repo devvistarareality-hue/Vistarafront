@@ -22,6 +22,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import SheetHandle from '../../components/SheetHandle';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -140,7 +141,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: BG, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 }}>
-          <View style={{ width: 40, height: 4, backgroundColor: COLORS.divider, borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />
+          <SheetHandle onClose={onClose} />
           <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT, marginBottom: 18 }}>Edit Plot Info</Text>
 
           {/* Size */}
@@ -157,7 +158,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
           <Modal visible={unitOpen} transparent animationType="slide" onRequestClose={() => setUnitOpen(false)}>
             <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={() => setUnitOpen(false)}>
               <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
-                <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+                <SheetHandle onClose={() => setUnitOpen(false)} />
                 <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT, paddingHorizontal: 16, paddingVertical: 12 }}>Select Unit</Text>
                 {UNITS.map(u => (
                   <TouchableOpacity key={u} onPress={() => { setUnit(u); setUnitOpen(false); }}

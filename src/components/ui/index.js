@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, Animated, Easing } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Animated, Easing, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SHADOWS } from '../../constants/theme';
 import AppIcon from '../AppIcon';
@@ -30,7 +30,9 @@ export function Button({ title, onPress, variant = 'primary', size = 'md', icon,
     <Pressable onPress={onPress} disabled={off} accessibilityRole="button" accessibilityState={{ disabled: off }}
       style={({ pressed }) => [
         { borderRadius: sz.r, opacity: off ? 0.55 : 1, transform: [{ scale: pressed ? 0.97 : 1 }], alignSelf: full ? 'stretch' : 'auto' },
-        v.shadow, style,
+        // Android draws an elevation shadow as a solid shape *through* a see-through
+        // (tinted) button, which shows up as a pale box inside it. The glow is an iOS-only touch.
+        Platform.OS === 'android' ? null : v.shadow, style,
       ]}>
       {v.gradient ? (
         <LinearGradient colors={v.gradient} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ borderRadius: sz.r }}>{content}</LinearGradient>

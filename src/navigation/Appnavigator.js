@@ -67,6 +67,8 @@ import ARDashboardScreen from '../screens/AR/ARDashboardScreen';
 import ARRegisterScreen  from '../screens/AR/ARRegisterScreen';
 import ARLedgerScreen    from '../screens/AR/ARLedgerScreen';
 import ARImportScreen    from '../screens/AR/ARImportScreen';
+import ARCollectionsScreen from '../screens/AR/ARCollectionsScreen';
+import ActivityLogScreen from '../screens/AdminDashboard/ActivityLogScreen';
 
 // Placeholder & post-sign-out
 import PlaceholderScreen  from '../screens/PlaceholderScreen/PlaceholderScreen';
@@ -127,6 +129,7 @@ const AppNavigator = () => {
             <Stack.Screen name="CompanyManagement"  component={CompanyManagementScreen} />
             <Stack.Screen name="EditCompany"        component={EditCompanyScreen} />
             <Stack.Screen name="DesignationMaster"    component={DesignationMasterScreen} />
+            <Stack.Screen name="ActivityLog"          component={ActivityLogScreen} />
             <Stack.Screen name="SalesCRM"            component={SalesCRMScreen} />
             <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
             <Stack.Screen name="SalesFollowUps"      component={SalesFollowUpsScreen} />
@@ -163,6 +166,7 @@ const AppNavigator = () => {
             <Stack.Screen name="ARRegister"          component={ARRegisterScreen} />
             <Stack.Screen name="ARLedger"            component={ARLedgerScreen} />
             <Stack.Screen name="ARImport"            component={ARImportScreen} />
+            <Stack.Screen name="ARCollections"       component={ARCollectionsScreen} />
             <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
           </>
 
@@ -186,6 +190,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
             <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
             <Stack.Screen name="ChannelPartnerHub" component={ChannelPartnerHubScreen} />
+            <Stack.Screen name="ActivityLog"          component={ActivityLogScreen} />
             <Stack.Screen name="ChannelPartners"    component={ChannelPartnersScreen} />
             <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
             <Stack.Screen name="SalesDataReset"      component={SalesDataResetScreen} />

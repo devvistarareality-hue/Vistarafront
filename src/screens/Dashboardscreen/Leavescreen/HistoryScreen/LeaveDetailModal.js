@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { COLORS } from '../../../../constants/theme';
+import SheetHandle from '../../../../components/SheetHandle';
 
 const { width, height } = Dimensions.get('window');
 const SHEET_HEIGHT = height * 0.65;
@@ -62,7 +63,7 @@ const LeaveDetailModal = ({ visible, leave, onClose, onApprove, onReject, action
 
       <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
         {/* Handle */}
-        <View style={styles.handle} />
+        <SheetHandle onClose={onClose} />
 
         {/* Header */}
         <View style={styles.header}>

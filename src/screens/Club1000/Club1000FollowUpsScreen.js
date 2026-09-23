@@ -12,6 +12,7 @@ import FormSheet from '../../components/FormSheet';
 import { TextField, inputStyle } from '../../components/Field';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import common from '../../styles/common';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -231,7 +232,7 @@ export default function Club1000FollowUpsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
+      <View style={common.tabBar}>
         {TABS.map((t) => {
           const active = filter === t.key;
           return (
@@ -257,7 +258,7 @@ export default function Club1000FollowUpsScreen({ navigation }) {
           ) : visible.map((fu) => {
             const overdue = fu.status === 'pending' && new Date(fu.scheduled_at) < now;
             return (
-              <View key={fu.id} style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1.5, borderColor: overdue ? COLORS.errorBg : COLORS.border, backgroundColor: overdue ? COLORS.errorBg : COLORS.cardBg }]}>
+              <View key={fu.id} style={[CARD, { padding: 14, marginBottom: 12, borderWidth: 1.5, borderColor: overdue ? COLORS.errorBg : COLORS.border, backgroundColor: overdue ? COLORS.errorBg : COLORS.cardBg, elevation: overdue ? 0 : CARD.elevation }]}>{/* inline-ok: Android draws elevation through a tinted fill as a pale box, so no elevation on tints */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>

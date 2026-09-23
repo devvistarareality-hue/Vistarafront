@@ -692,6 +692,6 @@ const s = StyleSheet.create({
   modFieldLabel:   { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6, marginBottom: 6, marginTop: 14 },
   modFieldRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.screenBg, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 },
   modFieldValue:   { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
-  saveBtn:         { marginTop: 24, backgroundColor: COLORS.btnTint, borderRadius: 18, paddingVertical: 15, alignItems: 'center', elevation: 3, shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 , borderWidth: 1, borderColor: COLORS.btnBorder },
+  saveBtn:         { marginTop: 24, backgroundColor: COLORS.btnTint, borderRadius: 18, paddingVertical: 15, alignItems: 'center', shadowColor: COLORS.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 , borderWidth: 1, borderColor: COLORS.btnBorder },
   saveBtnText:     { color: COLORS.btnText, fontSize: 15, fontWeight: '700' },
 });

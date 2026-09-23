@@ -17,6 +17,7 @@ import { COLORS } from '../../constants/theme';
 import styles from './createStyles';
 import { isManagerRole } from '../../lib/roles';
 import { needsReportingManager } from '../../lib/orgTree';
+import SheetHandle from '../../components/SheetHandle';
 
 const VOWELS = new Set(['a', 'e', 'i', 'o', 'u']);
 
@@ -56,7 +57,7 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay }} activeOpacity={1} onPress={() => setOpen(false)}>
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+            <SheetHandle onClose={() => setOpen(false)} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>{label}</Text>
             {options.map(o => (
               <TouchableOpacity key={String(o.value)} onPress={() => { onChange(o.value); setOpen(false); }}

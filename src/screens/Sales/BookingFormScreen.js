@@ -1176,7 +1176,7 @@ export default function BookingFormScreen({ navigation, route }) {
           <Fld l="Legal Documentation charge (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
         </Sec>
 
-        <View style={[CARD, { backgroundColor: COLORS.accentSoft }]}>
+        <View style={[CARD, { backgroundColor: COLORS.accentSoft, elevation: 0 }]}>{/* inline-ok: Android draws elevation through a tinted fill as a pale box, so no elevation on tints */}
           <Tot l="Plot Basic Amount" sub="Plot Area × Land Rate" sub2={`${inr(v.area)} × ${inr(v.landRate)}`} val={v.plotBasic} />
           {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${formulaSet === 'ankhol' ? 'Construction' : 'Plot'} Area × Dev Rate`} sub2={`${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)}`} val={v.plotDev} />}
           {flags.hasConstructionFields && <Tot l="Construction Amount" sub="Construction Area × Construction Rate" sub2={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
