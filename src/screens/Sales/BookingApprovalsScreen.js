@@ -24,7 +24,11 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ..
 // Cancelled sits beside Rejected rather than inside it: both are stored at
 // status='rejected', but one was refused before it counted and the other was a live
 // sale that came off the books and keeps its signed LOI. The server splits them.
+// 'accounts' is not a booking status — it is the Approved set narrowed to the
+// deals Accounts has not signed off yet. They are on the books but not closures,
+// and their units are held rather than sold, so they are worth seeing on their own.
 const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['sold', 'Approved'],
+              ['accounts', 'Pending from Accounts'],
               ['rejected', 'Rejected'], ['cancelled', 'Cancelled'], ['', 'All']];
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
@@ -158,7 +162,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
     try {
       // Channel Partner's approvals are the partner-sourced bookings; Sales's are
       // the rest. Each module answers for its own book, so nothing shows in both.
-      const q = '?' + [tab ? `status=${tab}` : '', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : 'source=sales'].filter(Boolean).join('&');
+      const q = '?' + [tab === 'accounts' ? 'status=sold&accounts_status=pending' : tab ? `status=${tab}` : '',
+        companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : 'source=sales'].filter(Boolean).join('&');
       const ck = cacheKey('bookings', q);
       const cached = force ? null : getCache(ck);
       if (cached) { setRows(cached); setLoading(false); setRefreshing(false); return; }
