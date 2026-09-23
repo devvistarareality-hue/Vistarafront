@@ -246,6 +246,10 @@ export default function SalesCRMScreen({ navigation, route }) {
       // My Bookings with Approved chosen, instead of the Conversions screen.
       target: isCp ? 'ClosureProjects' : 'SalesMyConversions',
       params: isCp ? { cpOnly: true, initialView: 'mybookings', initialTab: 'sold' } : { initialTab: 'closures' } },
+    // Closed and approved here, but not yet signed off by Accounts. Not counted
+    // as a closure until they are — they join that tile the moment it happens.
+    { group: 'Conversions', label: 'Pending from Accounts', value: stats?.accounts_pending ?? '—',
+      color: COLORS.warning, bg: COLORS.warningBg },
   ];
 
   const STM_CARDS = [
@@ -261,6 +265,9 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
     { group: 'Site Visits & Closures', label: 'SV Done', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { group: 'Site Visits & Closures', label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' } },
+    // Waiting at the Accounts gate — not a closure until Accounts signs off.
+    { group: 'Site Visits & Closures', label: 'Pending from Accounts', value: stats?.accounts_pending ?? '—',
+      color: COLORS.warning, bg: COLORS.warningBg },
   ];
 
   // "Unassigned" only means anything to someone who sees the whole company's leads.
