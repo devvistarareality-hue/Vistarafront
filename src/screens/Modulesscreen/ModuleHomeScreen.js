@@ -6,6 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole, canSee } from '../../lib/roles';
 
+// Display name → the prefix its screen keys use.
+const MODULE_SLUG = { 'Accounts & Finance': 'accounts', HR: 'hr', Execution: 'execution',
+                      Purchase: 'purchase', Land: 'land', AR: 'ar' };
+
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -19,9 +23,16 @@ export default function ModuleHomeScreen({ navigation, route }) {
 
   const isAccounts = /account|finance/i.test(module);
   const isLogAdmin = user?.role === 'Admin' || user?.is_staff;
+  // The key prefix this module's screens are declared under (accounts/capabilities.py).
+  const slug = MODULE_SLUG[module] || module.toLowerCase().replace(/[^a-z]+/g, '');
   const cards = [
+    // Every module has the same three: a Dashboard, My Team, and — for admins —
+    // the Log. AR has its own dashboard screen; the rest open the plain one.
+    ...(canSee(user, `${slug}.screen.dashboard`) ? [{ key: module === 'AR' ? 'ARDashboard' : 'ModuleDashboard',
+      label: 'Dashboard', desc: `${name} at a glance`, icon: 'bar-chart-outline',
+      color: COLORS.link, bg: COLORS.linkBg, params: { module, name } }] : []),
     // My Team is a management view — only managers/admins see it.
-    ...(canSeeTeam ? [{ key: 'MyTeam', label: 'My Team', desc: `${name} department org chart`, icon: 'people-circle-outline',
+    ...(canSeeTeam && canSee(user, `${slug}.screen.myteam`) ? [{ key: 'MyTeam', label: 'My Team', desc: `${name} department org chart`, icon: 'people-circle-outline',
       color: COLORS.link, bg: COLORS.linkBg, params: { module, title: `My Team · ${name}` } }] : []),
     // Accounts & Finance: read-only view of all sales bookings (LOI / EOI).
     ...(isAccounts && canSee(user, 'accounts.screen.bookings') ? [{ key: 'ModuleBookings', label: 'Bookings', desc: 'All sales bookings — LOI & EOI', icon: 'document-text-outline',

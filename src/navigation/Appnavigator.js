@@ -33,6 +33,7 @@ import SalesFollowUpsScreen    from '../screens/Sales/SalesFollowUpsScreen';
 import SalesSiteVisitsScreen   from '../screens/Sales/SalesSiteVisitsScreen';
 import SalesMyConversionsScreen from '../screens/Sales/SalesMyConversionsScreen';
 import MyTeamScreen             from '../screens/Sales/MyTeamScreen';
+import ModuleDashboardScreen from '../screens/Modulesscreen/ModuleDashboardScreen';
 import ModuleHomeScreen         from '../screens/Modulesscreen/ModuleHomeScreen';
 import ModuleBookingsScreen     from '../screens/Modulesscreen/ModuleBookingsScreen';
 import ModuleApprovalsScreen    from '../screens/Modulesscreen/ModuleApprovalsScreen';
@@ -136,6 +137,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesSiteVisits"     component={SalesSiteVisitsScreen} />
             <Stack.Screen name="SalesMyConversions"  component={SalesMyConversionsScreen} />
             <Stack.Screen name="MyTeam"              component={MyTeamScreen} />
+            <Stack.Screen name="ModuleDashboard"      component={ModuleDashboardScreen} />
             <Stack.Screen name="ModuleHome"          component={ModuleHomeScreen} />
             <Stack.Screen name="ModuleBookings"      component={ModuleBookingsScreen} />
             <Stack.Screen name="ModuleApprovals"      component={ModuleApprovalsScreen} />
