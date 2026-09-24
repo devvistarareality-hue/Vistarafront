@@ -15,7 +15,7 @@ import SheetHandle from '../../components/SheetHandle';
 import PermissionsSheet from './PermissionsSheet';
 
 const ALL_MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
-                     'Execution', 'Purchase', 'Land', 'Club 1000'];
+                     'Task Allocation', 'Purchase', 'Land', 'Club 1000'];
 
 function ModuleDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -64,7 +64,7 @@ const MODULE_META = {
   // 'Accounts & Finance' is in ALL_MODULES, so leaving it out of here crashed the
   // screen on open: the grouped list reads meta.color for every module.
   'Accounts & Finance': { color: COLORS.success, bg: COLORS.successBg, icon: 'wallet-outline' },
-  Execution:   { color: COLORS.success, bg: COLORS.successBg, icon: 'wrench-outline' },
+  'Task Allocation': { color: COLORS.success, bg: COLORS.successBg, icon: 'wrench-outline' },
   Purchase:    { color: COLORS.warning, bg: COLORS.warningBg, icon: 'cart-outline' },
   Land:        { color: COLORS.purple, bg: COLORS.purpleBg, icon: 'terrain' },
 };

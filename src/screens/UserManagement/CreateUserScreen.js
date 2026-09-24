@@ -73,13 +73,13 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
   );
 }
 const MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
-                 'Execution', 'Purchase', 'Land', 'Club 1000'];
+                 'Task Allocation', 'Purchase', 'Land', 'Club 1000'];
 
 const MODULE_ICONS = {
   'AR': 'cash-multiple',
   Sales:      'pencil-outline',
   HR:         'account-group-outline',
-  Execution:  'wrench-outline',
+  'Task Allocation': 'wrench-outline',
   Purchase:   'cart-outline',
   Land:       'terrain',
 };

@@ -22,7 +22,7 @@ const ADMIN_MODULES = [
   { name: 'HR',                 icon: 'account-group-outline',color: COLORS.link, iconBg: COLORS.linkBg, screen: 'ModuleHome',  params: { module: 'HR', name: 'HR' } },
   { name: 'Accounts & Finance', icon: 'wallet-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Accounts & Finance', name: 'Accounts & Finance' } },
   { name: 'Accounts Receivable', icon: 'cash-multiple',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ARDashboard', params: undefined },
-  { name: 'Execution',          icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Execution', name: 'Execution' } },
+  { name: 'Task Allocation',    icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'TaskDashboard', params: undefined },
   { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'ModuleHome',  params: { module: 'Purchase', name: 'Purchase' } },
   { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'ModuleHome',  params: { module: 'Land', name: 'Land' } },
   { name: 'Club 1000',          icon: 'trending-up',          color: COLORS.success, iconBg: COLORS.green, screen: 'Club1000Hub', params: undefined },

@@ -7,7 +7,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole, canSee } from '../../lib/roles';
 
 // Display name → the prefix its screen keys use.
-const MODULE_SLUG = { 'Accounts & Finance': 'accounts', HR: 'hr', Execution: 'execution',
+const MODULE_SLUG = { 'Accounts & Finance': 'accounts', HR: 'hr', 'Task Allocation': 'execution',
                       Purchase: 'purchase', Land: 'land', AR: 'ar' };
 
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;

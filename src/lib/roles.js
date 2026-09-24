@@ -56,7 +56,7 @@ export function canSee(user, key) {
 // in the backend's capabilities.py.
 const SCREEN_PREFIX = {
   sales: 'Sales', cp: 'Channel Partner', hr: 'HR', accounts: 'Accounts & Finance',
-  ar: 'AR', execution: 'Execution', purchase: 'Purchase', land: 'Land', club: 'Club 1000',
+  ar: 'AR', execution: 'Task Allocation', purchase: 'Purchase', land: 'Land', club: 'Club 1000',
 };
 export function moduleOfScreen(key) {
   return SCREEN_PREFIX[String(key || '').split('.')[0]] || '';

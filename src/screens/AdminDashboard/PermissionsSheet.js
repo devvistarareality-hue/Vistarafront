@@ -11,7 +11,7 @@ import FilterSelect from '../../components/FilterSelect';
 // Every module the system knows, and the short name the capability vocabulary
 // uses for AR. Mirrors the web editor, so the two offer the same list.
 const ALL_MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
-                     'Execution', 'Purchase', 'Land', 'Club 1000'];
+                     'Task Allocation', 'Purchase', 'Land', 'Club 1000'];
 const ALIAS_MODULE = { 'Accounts Receivable': 'AR' };
 
 // What a designation may do, per company — the same editor as Designation Master

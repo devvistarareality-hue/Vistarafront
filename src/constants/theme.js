@@ -365,7 +365,7 @@ export const CARD_SHADOW = SHADOWS.md;
 export const MODULE_ACCENT = {
   HR:          { bg: PALETTE.blue,  icon: PALETTE.blue600 },
   Sales:       { bg: PALETTE.peach, icon: PALETTE.amber600 },
-  Execution:   { bg: PALETTE.green, icon: PALETTE.green600 },
+  'Task Allocation': { bg: PALETTE.green, icon: PALETTE.green600 },
   Purchase:    { bg: PALETTE.peach, icon: PALETTE.amber600 },
   Land:        { bg: PALETTE.blue,  icon: PALETTE.blue600 },
   'Accounts & Finance': { bg: PALETTE.green, icon: PALETTE.green600 },
