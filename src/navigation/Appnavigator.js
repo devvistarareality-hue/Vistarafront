@@ -68,6 +68,10 @@ import ARRegisterScreen  from '../screens/AR/ARRegisterScreen';
 import ARLedgerScreen    from '../screens/AR/ARLedgerScreen';
 import ARImportScreen    from '../screens/AR/ARImportScreen';
 import ARCollectionsScreen from '../screens/AR/ARCollectionsScreen';
+
+// Task Allocation
+import TaskDashboardScreen from '../screens/Tasks/TaskDashboardScreen';
+import TaskListScreen from '../screens/Tasks/TaskListScreen';
 import ActivityLogScreen from '../screens/AdminDashboard/ActivityLogScreen';
 
 // Placeholder & post-sign-out
@@ -167,6 +171,8 @@ const AppNavigator = () => {
             <Stack.Screen name="ARLedger"            component={ARLedgerScreen} />
             <Stack.Screen name="ARImport"            component={ARImportScreen} />
             <Stack.Screen name="ARCollections"       component={ARCollectionsScreen} />
+            <Stack.Screen name="TaskDashboard"       component={TaskDashboardScreen} />
+            <Stack.Screen name="TaskList"            component={TaskListScreen} />
             <Stack.Screen name="Placeholder"         component={PlaceholderScreen} />
           </>
 

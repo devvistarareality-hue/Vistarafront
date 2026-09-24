@@ -34,6 +34,12 @@ const ROUTE_FOR_TYPE = {
   sv_overdue: { screen: 'SalesSiteVisits' },
   // availability_reminder intentionally unmapped — tapping just opens the app to the
   // dashboard, where the Mark-available toggle already lives.
+  // Task Allocation: detail is a bottom sheet, not its own route, so all three
+  // land on My Tasks (matching how the AR notifications pass a `tab` param
+  // rather than a distinct screen).
+  task_assigned: { screen: 'TaskList', params: { tab: 'my_tasks' } },
+  task_comment: { screen: 'TaskList', params: { tab: 'my_tasks' } },
+  task_due_soon: { screen: 'TaskList', params: { tab: 'my_tasks' } },
 };
 
 export function routeForNotifType(type) {
