@@ -111,8 +111,8 @@ export default function PermissionsSheet({ designation, others, visible, onClose
     const mods = [...new Set(own.map((c) => c.module))];
     return mods.map((m) => ({ module: m, items: own.filter((c) => c.module === m) }));
   };
-  const byModule = useMemo(() => group(catalogue?.capabilities), [catalogue]);
-  const screensByModule = useMemo(() => group(catalogue?.screens), [catalogue]);
+  const byModule = useMemo(() => group(catalogue?.capabilities), [catalogue, extra]);
+  const screensByModule = useMemo(() => group(catalogue?.screens), [catalogue, extra]);
 
   if (!designation) return null;
   const tabs = TABS.map((t) => ({
