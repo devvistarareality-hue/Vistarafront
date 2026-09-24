@@ -8,6 +8,12 @@ import FormSheet from '../../components/FormSheet';
 import { Button, Segmented } from '../../components/ui';
 import FilterSelect from '../../components/FilterSelect';
 
+// Every module the system knows, and the short name the capability vocabulary
+// uses for AR. Mirrors the web editor, so the two offer the same list.
+const ALL_MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
+                     'Execution', 'Purchase', 'Land', 'Club 1000'];
+const ALIAS_MODULE = { 'Accounts Receivable': 'AR' };
+
 // What a designation may do, per company — the same editor as Designation Master
 // on the website, in the same three tabs: what they do, which menu they see, and
 // where they land. The vocabulary comes from the server; the ticks are this
@@ -28,6 +34,10 @@ export default function PermissionsSheet({ designation, others, visible, onClose
   const [caps, setCaps] = useState([]);
   const [scope, setScope] = useState('');
   const [screens, setScreens] = useState([]);
+  // Modules beyond this designation's own that its menu also answers for. A CFO
+  // sits under Accounts & Finance but may be granted Sales and Land; without
+  // naming those here, saving an Accounts menu would empty them.
+  const [extra, setExtra] = useState([]);
   const [dash, setDash] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -38,6 +48,9 @@ export default function PermissionsSheet({ designation, others, visible, onClose
     setCaps(designation.effective_capabilities || designation.capabilities || []);
     setScope(designation.data_scope || '');
     setScreens(designation.effective_screens || designation.screens || []);
+    const ownModule = ALIAS_MODULE[designation?.module] || designation?.module;
+    setExtra((designation.effective_screen_modules || designation.screens_modules || [])
+      .filter((m) => m && m !== ownModule));
     setDash(designation.dashboard || '');
     apiFetch(`${BASE_URL}/api/auth/designations/capabilities/`)
       .then((r) => r.json()).then(setCatalogue)
@@ -63,7 +76,8 @@ export default function PermissionsSheet({ designation, others, visible, onClose
     try {
       const r = await apiFetch(`${BASE_URL}/api/auth/designations/${designation.id}/`, {
         method: 'PATCH',
-        body: JSON.stringify({ capabilities: caps, data_scope: scope, screens, dashboard: dash }),
+        body: JSON.stringify({ capabilities: caps, data_scope: scope, screens,
+          screens_modules: mine, dashboard: dash }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(d.detail || 'Could not save.'); return; }
@@ -76,8 +90,9 @@ export default function PermissionsSheet({ designation, others, visible, onClose
 
   // A designation belongs to one module and only decides that module — a Sales
   // title has nothing to say about Channel Partner or AR, and vice versa.
-  const ALIAS = { 'Accounts Receivable': 'AR' };
-  const mine = [ALIAS[designation?.module] || designation?.module];
+  const own = ALIAS_MODULE[designation?.module] || designation?.module;
+  const mine = [own, ...extra];
+  const otherModules = ALL_MODULES.filter((m) => m !== own);
   const group = (rows) => {
     const own = (rows || []).filter((c) => mine.includes(c.module));
     const mods = [...new Set(own.map((c) => c.module))];
@@ -182,6 +197,32 @@ export default function PermissionsSheet({ designation, others, visible, onClose
         ) : tab === 'menu' ? (
           <>
             <Text style={s.lead}>Tap a screen to show or hide it for this designation.</Text>
+            {/* A module left off this list keeps its own default menu, so a CFO
+                granted Sales still sees the Sales sidebar. Adding it here is how
+                you take charge of it — including hiding all of it. */}
+            <View style={s.card}>
+              <View style={s.cardHead}>
+                <Text style={s.cardTitle}>WHICH MODULES THIS MENU ANSWERS FOR</Text>
+                <Text style={s.count}>{mine.length}</Text>
+              </View>
+              <View style={s.chips}>
+                <View style={[s.chip, s.chipOn]}>
+                  <Ionicons name="checkmark" size={13} color={COLORS.link} />
+                  <Text style={[s.chipText, s.chipTextOn]}>{own}</Text>
+                </View>
+                {otherModules.map((m) => {
+                  const on = extra.includes(m);
+                  return (
+                    <Pressable key={m} style={[s.chip, on && s.chipOn]}
+                      onPress={() => setExtra((e) => (e.includes(m) ? e.filter((x) => x !== m) : [...e, m]))}>
+                      {on ? <Ionicons name="checkmark" size={13} color={COLORS.link} /> : null}
+                      <Text style={[s.chipText, on && s.chipTextOn]}>{m}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={s.note}>A module not chosen here keeps its default menu for anyone holding it.</Text>
+            </View>
             {screensByModule.map(({ module, items }) => (
               <View key={module} style={s.card}>
                 <View style={s.cardHead}>
@@ -319,6 +360,8 @@ const s = StyleSheet.create({
           borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   chipOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
   chipText: { fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
+  // Says what NOT choosing a module means.
+  note: { marginTop: 10, fontSize: 11.5, color: COLORS.textSecondary },
   chipTextOn: { color: COLORS.link },
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: COLORS.border,
            alignItems: 'center', justifyContent: 'center' },
