@@ -37,6 +37,8 @@ import ARRegisterScreen from '../screens/AR/ARRegisterScreen';
 import ARLedgerScreen from '../screens/AR/ARLedgerScreen';
 import ARImportScreen from '../screens/AR/ARImportScreen';
 import ARCollectionsScreen from '../screens/AR/ARCollectionsScreen';
+import TaskDashboardScreen from '../screens/Tasks/TaskDashboardScreen';
+import TaskListScreen from '../screens/Tasks/TaskListScreen';
 import ActivityLogScreen from '../screens/AdminDashboard/ActivityLogScreen';
 
 const Tab = createBottomTabNavigator();
@@ -76,6 +78,8 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="ARLedger" component={ARLedgerScreen} />
       <ModulesStack.Screen name="ARImport" component={ARImportScreen} />
       <ModulesStack.Screen name="ARCollections" component={ARCollectionsScreen} />
+      <ModulesStack.Screen name="TaskDashboard" component={TaskDashboardScreen} />
+      <ModulesStack.Screen name="TaskList" component={TaskListScreen} />
       <ModulesStack.Screen name="ActivityLog" component={ActivityLogScreen} />
     </ModulesStack.Navigator>
   );
