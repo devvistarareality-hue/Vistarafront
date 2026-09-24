@@ -303,9 +303,6 @@ export default function SalesReportsScreen({ navigation }) {
   // the Sales book, so they are not in Closures — the tile names them rather than
   // leaving it to look short against the same people's My Bookings. Zero for
   // everyone else, so the line simply does not appear.
-  const _otherSrc     = stats?.closures_other_source ?? 0;
-  const _otherSrcWait = stats?.accounts_pending_other_source ?? 0;
-  const otherSub = (n) => (n ? `+${n.toLocaleString('en-IN')} other sources` : null);
   // SQLs per outcome, e.g. "4.0 : 1" = four warm leads for every site visit.
   // Divides by the outcome, so the guard sits on _svDone/_closures, not on _sql.
   const _sqlToSv      = _svDone > 0 ? (_sql / _svDone).toFixed(1) + ' : 1' : '—';
@@ -342,10 +339,10 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Follow-ups Due', label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback', ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,             color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,             color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
-    { group: 'Conversions', label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'sold', initialScope: 'visible' }, sub: otherSub(_otherSrc) },
+    { group: 'Conversions', label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'sold', initialScope: 'visible' } },
     // Closed and approved here, waiting at the Accounts gate — not a closure until
     // Accounts signs off, at which point it moves into the tile above.
-    { group: 'Conversions', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg, sub: otherSub(_otherSrcWait) },
+    { group: 'Conversions', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg },
   ];
   const STM_CARDS = [
     { group: 'My Pipeline', label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
@@ -355,8 +352,8 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Lead Temperature', label: 'Cold Leads',   value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold', ...dateFilter } } },
     { group: 'Site Visits & Closures', label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'scheduled' } },
     { group: 'Site Visits & Closures', label: 'SV Done', value: _svDone,             color: COLORS.success, bg: COLORS.successBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
-    { group: 'Site Visits & Closures', label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' }, sub: otherSub(_otherSrc) },
-    { group: 'Site Visits & Closures', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg, sub: otherSub(_otherSrcWait) },
+    { group: 'Site Visits & Closures', label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' } },
+    { group: 'Site Visits & Closures', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg },
     { group: 'Conversion Rates', label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { group: 'Conversion Rates', label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
@@ -632,7 +629,7 @@ export default function SalesReportsScreen({ navigation }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const SalesReportsScreenS = StyleSheet.create({
-  // The second line on a tile — the partner desk's work from other sources.
+  // The optional second line on a tile.
   tileSub: { fontSize: 9.5, color: COLORS.textSecondary, textAlign: 'center', fontWeight: '600' },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4, borderWidth: 1, borderColor: COLORS.btnBorder },
 });
