@@ -61,6 +61,19 @@ export default function PermissionsSheet({ designation, others, visible, onClose
   const toggle = flip(setCaps);
   const toggleScreen = flip(setScreens);
 
+  // Adding a module brings its whole menu in, ticked, so the job is to untick
+  // what this designation should not see — rather than starting from a blank
+  // sidebar and having to remember every tab. Removing it takes its keys back
+  // out, so a module dropped by mistake leaves nothing behind.
+  const toggleModule = (m) => {
+    const keys = (catalogue?.screens || []).filter((c) => c.module === m).map((c) => c.key);
+    const adding = !extra.includes(m);
+    setExtra((e) => (adding ? [...e, m] : e.filter((x) => x !== m)));
+    setScreens((prev) => (adding
+      ? [...new Set([...prev, ...keys])]
+      : prev.filter((k) => !keys.includes(k))));
+  };
+
   const sourceRow = (others || []).find((d) => String(d.id) === String(copyFrom));
   const copyAll = () => {
     if (!sourceRow) return;
@@ -213,15 +226,18 @@ export default function PermissionsSheet({ designation, others, visible, onClose
                 {otherModules.map((m) => {
                   const on = extra.includes(m);
                   return (
-                    <Pressable key={m} style={[s.chip, on && s.chipOn]}
-                      onPress={() => setExtra((e) => (e.includes(m) ? e.filter((x) => x !== m) : [...e, m]))}>
+                    <Pressable key={m} style={[s.chip, on && s.chipOn]} onPress={() => toggleModule(m)}>
                       {on ? <Ionicons name="checkmark" size={13} color={COLORS.link} /> : null}
                       <Text style={[s.chipText, on && s.chipTextOn]}>{m}</Text>
                     </Pressable>
                   );
                 })}
               </View>
-              <Text style={s.note}>A module not chosen here keeps its default menu for anyone holding it.</Text>
+              <Text style={s.note}>
+                A module not chosen here keeps its default menu for anyone holding it.
+                Choose one and its tabs appear below, all on — untick the ones this
+                designation should not see.
+              </Text>
             </View>
             {screensByModule.map(({ module, items }) => (
               <View key={module} style={s.card}>
