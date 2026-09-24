@@ -342,7 +342,7 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Follow-ups Due', label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback', ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,             color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,             color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
-    { group: 'Conversions', label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'sold' }, sub: otherSub(_otherSrc) },
+    { group: 'Conversions', label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'sold', initialScope: 'visible' }, sub: otherSub(_otherSrc) },
     // Closed and approved here, waiting at the Accounts gate — not a closure until
     // Accounts signs off, at which point it moves into the tile above.
     { group: 'Conversions', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg, sub: otherSub(_otherSrcWait) },

@@ -245,7 +245,7 @@ export default function SalesCRMScreen({ navigation, route }) {
       // My Bookings with Approved chosen, instead of the Conversions screen.
       target: 'ClosureProjects',
       params: isCp ? { cpOnly: true, initialView: 'mybookings', initialTab: 'sold' }
-                   : { initialView: 'mybookings', initialTab: 'sold' } },
+                   : { initialView: 'mybookings', initialTab: 'sold', initialScope: 'visible' } },
     // Closed and approved here, but not yet signed off by Accounts. Not counted
     // as a closure until they are — they join that tile the moment it happens.
     { group: 'Conversions', label: 'Pending from Accounts', value: stats?.accounts_pending ?? '—',

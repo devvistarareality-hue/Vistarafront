@@ -12,6 +12,8 @@ import ExportBookings from '../../components/ExportBookings';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
+import FilterSelect from '../../components/FilterSelect';
+import { isManagerRole } from '../../lib/roles';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -121,7 +123,7 @@ function DecidedBy({ b }) {
   );
 }
 
-export function MyBookingsList({navigation, cpOnly = false, initialTab = '' }) {
+export function MyBookingsList({navigation, cpOnly = false, initialTab = '', initialScope = '' }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +137,11 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '' }) {
   const [q, setQ] = useState('');
   const [proj, setProj] = useState('');
   const [who, setWho] = useState('');     // 'booked by' — a user id, '' for everyone
+  // Whose bookings the server sends: this person's own desk, or everything they
+  // may see. The default is the desk — that is what My Bookings means — but the
+  // dashboard's Closures tile counts everything a manager can see, so it opens
+  // this list on the wider view rather than one its figure cannot fit inside.
+  const [scope, setScope] = useState(initialScope === 'visible' ? 'visible' : '');
   // Revision history, fetched per booking on demand: only a handful of deals are ever
   // revised, so loading every chain up front would be work for nothing.
   const [revs, setRevs] = useState({});      // booking id → array of versions
@@ -157,12 +164,13 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '' }) {
       // The two modules are two books: Channel Partner keeps the partner-sourced
       // bookings, Sales keeps the rest, so a booking is only ever counted once.
       const q = '?mine=1' + (cpOnly ? '&cp_only=true' : '&source=sales')
+        + (scope === 'visible' && !cpOnly ? '&scope=visible' : '')
         + (companyId ? `&company_id=${companyId}` : '');
       const res = await apiFetch(SALES_ENDPOINTS.bookings + q);
       if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
-  }, [companyId, cpOnly]);
+  }, [companyId, cpOnly, scope]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   // The reporting tree, for the 'Booked by' filter. Failing quietly is right here:
@@ -369,6 +377,13 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '' }) {
           </View>
         </ScrollView>
       )}
+      {/* Only for someone who sees past their own desk — for everyone else the two
+          options are the same list. */}
+      {!cpOnly && (isManagerRole(me) || me?.is_staff || me?.role === 'Admin') ? (
+        <FilterSelect label="Show" value={scope}
+          onChange={(v) => { setScope(v); setOpen({}); setWho(''); }}
+          options={[{ value: '', label: 'My desk' }, { value: 'visible', label: 'Everyone I can see' }]} />
+      ) : null}
       {whoChips.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', gap: 6 }}>
