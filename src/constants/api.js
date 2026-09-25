@@ -106,9 +106,20 @@ export const SALES_ENDPOINTS = {
   get mediaDelete()     { return `${BASE_URL}/api/sales/media/delete/`; },
   get dataReset()       { return `${BASE_URL}/api/sales/admin/reset-trial-data/`; },
   // No company_id means "my own company" — the server pins it and refuses anyone else's.
-  backupExcel: (companyId) => `${BASE_URL}/api/sales/backups/excel/${companyId ? `?company_id=${companyId}` : ''}`,
+  backupExcel: (companyId, modules) => {
+    const q = [companyId ? `company_id=${companyId}` : '',
+               (modules && modules.length) ? `modules=${encodeURIComponent(modules.join(','))}` : '']
+      .filter(Boolean).join('&');
+    return `${BASE_URL}/api/sales/backups/excel/${q ? `?${q}` : ''}`;
+  },
+  backupSchedule: (companyId) => `${BASE_URL}/api/sales/backups/schedule/${companyId ? `?company_id=${companyId}` : ''}`,
   get backupRestore()   { return `${BASE_URL}/api/sales/backups/restore/`; },
-  backupReset: (companyId) => `${BASE_URL}/api/sales/backups/reset/${companyId ? `?company_id=${companyId}` : ''}`,
+  backupReset: (companyId, modules) => {
+    const q = [companyId ? `company_id=${companyId}` : '',
+               (modules && modules.length) ? `modules=${encodeURIComponent(modules.join(','))}` : '']
+      .filter(Boolean).join('&');
+    return `${BASE_URL}/api/sales/backups/reset/${q ? `?${q}` : ''}`;
+  },
   source: (id)          => `${BASE_URL}/api/sales/sources/${id}/`,
   get metaWebhookConfig(){ return `${BASE_URL}/api/sales/webhooks/meta/config/`; },
   get metaMappings()    { return `${BASE_URL}/api/sales/webhooks/meta/mappings/`; },

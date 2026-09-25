@@ -42,6 +42,8 @@ export default function DataBackupScreen({ navigation }) {
   const [preview, setPreview] = useState(null);
   const [resetInfo, setResetInfo] = useState(null);
   const [resetKey, setResetKey] = useState('');
+  const [backupMods, setBackupMods] = useState([]);
+  const [resetMods, setResetMods] = useState([]);
 
   useEffect(() => { if (isPlatformAdmin) dispatch(fetchCompanies()); }, [dispatch, isPlatformAdmin]);
   // A different company or a different file invalidates what was checked.
@@ -50,10 +52,10 @@ export default function DataBackupScreen({ navigation }) {
   const loadReset = useCallback(async () => {
     if (!ready) { setResetInfo(null); return; }
     try {
-      const r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId));
+      const r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId, resetMods));
       setResetInfo(r.ok ? await r.json() : null);
     } catch (e) { setResetInfo(null); }
-  }, [ready, companyId]);
+  }, [ready, companyId, resetMods]);
 
   useEffect(() => { loadReset(); }, [loadReset]);
 
@@ -70,7 +72,9 @@ export default function DataBackupScreen({ navigation }) {
     setBusy('reset');
     try {
       const r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
-        method: 'POST', body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE' }) });
+        method: 'POST',
+        body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE',
+                               modules: resetMods.join(',') }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) Alert.alert('Reset refused', d.detail || 'Could not reset.');
       else { Alert.alert('Reset done', d.detail); setResetKey(''); }
@@ -85,7 +89,7 @@ export default function DataBackupScreen({ navigation }) {
       const token = await AsyncStorage.getItem('access_token');
       const name = `${(company?.name || 'company').replace(/[^A-Za-z0-9]+/g, '-')}-backup.xlsx`;
       const { uri, status } = await FileSystem.downloadAsync(
-        SALES_ENDPOINTS.backupExcel(companyId), FileSystem.cacheDirectory + name,
+        SALES_ENDPOINTS.backupExcel(companyId, backupMods), FileSystem.cacheDirectory + name,
         { headers: { Authorization: `Bearer ${token}` } });
       if (status === 403) { Alert.alert('No access', 'Only a platform super admin can take a backup.'); return; }
       if (status === 404) { Alert.alert('Not available yet', 'This server does not have the Excel backup — the backend needs deploying.'); return; }
@@ -177,6 +181,11 @@ export default function DataBackupScreen({ navigation }) {
               ? `A sheet per module for ${company.name} — Sales, Channel Partner, HR, AR, Task Allocation and Club 1000, as they stand right now.`
               : 'Choose a company above — a backup is always of one company.'}
           </Text>
+          <ModuleChips all={resetInfo?.modules || []} picked={backupMods} onToggle={setBackupMods}
+            note={backupMods.length
+              ? `${backupMods.length} module${backupMods.length === 1 ? '' : 's'} — a reset is only allowed for what a backup covers.`
+              : 'Nothing picked, so the backup covers every module.'} />
+
           <Button title={busy === 'download' ? 'Building…' : 'Download Excel'}
             icon="download-outline" onPress={download}
             loading={busy === 'download'} disabled={!ready || !!busy} full />
@@ -236,10 +245,18 @@ export default function DataBackupScreen({ navigation }) {
             first.
           </Text>
 
+          <ModuleChips all={resetInfo?.modules || []} picked={resetMods} onToggle={setResetMods}
+            forced={(resetInfo?.destroys || []).filter((m) => !resetMods.includes(m))}
+            note={resetMods.length === 0
+              ? 'Nothing picked, so every module goes.'
+              : (resetInfo?.destroys || []).length > resetMods.length
+                ? `Also empties ${(resetInfo.destroys || []).filter((m) => !resetMods.includes(m)).join(', ')} — those records hang off what you picked.`
+                : 'Only these modules go.'} />
+
           <Text style={[s.gate, resetInfo?.can_reset ? s.gateOk : s.gateBad]}>
             {resetInfo?.can_reset
-              ? '✓  Backup taken — a reset is allowed for 2 hours'
-              : '✕  No recent backup, so a reset is blocked'}
+              ? `✓  Backup covers ${(resetInfo.backup_covers || []).join(', ') || 'every module'}`
+              : `✕  No recent backup covering ${(resetInfo?.destroys || []).join(', ') || 'these modules'}`}
           </Text>
           <Text style={[s.gate, resetInfo?.key_configured ? s.gateOk : s.gateBad]}>
             {resetInfo?.key_configured
@@ -266,6 +283,28 @@ export default function DataBackupScreen({ navigation }) {
   );
 }
 
+function ModuleChips({ all, picked, onToggle, forced = [], note }) {
+  if (!all.length) return null;
+  const flip = (m) => onToggle(picked.includes(m) ? picked.filter((x) => x !== m) : [...picked, m]);
+  return (
+    <>
+      <View style={s.chips}>
+        {all.map((m) => {
+          const on = picked.includes(m);
+          const dragged = !on && forced.includes(m);
+          return (
+            <TouchableOpacity key={m} onPress={() => flip(m)} activeOpacity={0.8}
+              style={[s.chip, on && s.chipOn, dragged && s.chipForced]}>
+              <Text style={[s.chipText, on && s.chipTextOn, dragged && s.chipTextForced]}>{m}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+      {note ? <Text style={s.hint}>{note}</Text> : null}
+    </>
+  );
+}
+
 const s = StyleSheet.create({
   flex: { flex: 1 },
   card: { marginTop: 12, padding: 16, gap: 10 },
@@ -284,6 +323,14 @@ const s = StyleSheet.create({
   planTotalLabel: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
   planTotalValue: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
   actions: { flexDirection: 'row', gap: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1.5,
+          borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  chipOn: { backgroundColor: COLORS.accentSoft, borderColor: COLORS.link },
+  chipForced: { backgroundColor: COLORS.errorBg, borderColor: COLORS.error2 },
+  chipText: { fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
+  chipTextOn: { color: COLORS.link },
+  chipTextForced: { color: COLORS.error },
   danger: { borderColor: COLORS.error2, backgroundColor: COLORS.errorBg },
   dangerTitle: { color: COLORS.error },
   gate: { fontSize: 12.5, paddingVertical: 2 },
