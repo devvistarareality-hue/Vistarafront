@@ -61,6 +61,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const [range,      setRange]      = useState({ from: '', to: '' });   // visit date
   const [proj,       setProj]       = useState('');                     // '' = every project
   const [outcomeFilter, setOutcomeFilter] = useState('');                // '' = every outcome
+  const [svSearch, setSvSearch] = useState('');
   const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
   const DATE_PRESETS = [
@@ -278,8 +279,11 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const projOptions = [...new Set(visits.map(projName))].sort((a, b) => a.localeCompare(b));
   const narrowed = dated || !!proj;
 
+  const svQ = svSearch.trim().toLowerCase();
   const visible = visits.filter((v) => {
     if (!inRange(v)) return false;
+    // Search by name or phone, as on the web.
+    if (svQ && !(v.lead_name || '').toLowerCase().includes(svQ) && !(v.lead_phone || '').toLowerCase().includes(svQ)) return false;
     if (proj && projName(v) !== proj) return false;
     if (outcomeFilter && v.outcome !== outcomeFilter) return false;
     if (filter === 'all') return true;
@@ -331,6 +335,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
       {/* Filters — dropdowns rather than rows of chips */}
       <View style={fs.bar}>
+        <TextInput style={fs.search} value={svSearch} onChangeText={setSvSearch}
+          placeholder="Search name, phone…" placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
         <FilterSelect label="Any date" value={datePreset === 'All' ? '' : datePreset} onChange={pickDatePreset} style={fs.sel}
           options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any date' : l }))} />
         {projOptions.length > 1 && (
@@ -658,6 +664,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 const fs = StyleSheet.create({
   bar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 10 },
   sel: { flexGrow: 1, flexBasis: 150, justifyContent: 'space-between' },
+  search: { flexBasis: '100%', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, paddingHorizontal: 10,
+            paddingVertical: 8, fontSize: 13, color: COLORS.textPrimary },
 });
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).

@@ -1516,7 +1516,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   );
 }
 
-const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
+const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', campaign: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
 const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback','not_qualified'];
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'];
 
@@ -1637,6 +1637,13 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
             <DropdownPicker value={local.source_id} onChange={v => set('source_id', v)}
               options={[{ value: '', label: 'All Sources' }, ...sources.map(s => ({ value: String(s.id), label: s.name }))]}
               placeholder="All Sources" />
+          </View>
+
+          {/* Meta campaign name — as on the web */}
+          <View>
+            <Text style={fsLbl}>CAMPAIGN</Text>
+            <TextInput style={lcf.input} value={local.campaign} onChangeText={(v) => set('campaign', v)}
+              placeholder="Campaign name…" placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
           </View>
 
           {/* Telecaller / STM assignee filters — admins/managers only */}
@@ -1874,6 +1881,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (filters.status)        url += `&status=${filters.status}`;
     if (filters.project_id)    url += `&project_id=${filters.project_id}`;
     if (filters.source_id)     url += `&source_id=${filters.source_id}`;
+    if (filters.campaign?.trim()) url += `&campaign=${encodeURIComponent(filters.campaign.trim())}`;
     if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
     if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
     if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
@@ -2239,4 +2247,10 @@ const SalesLeadsScreenS = StyleSheet.create({
   dupInfoBox:  { backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warningAlt, borderRadius: 14, padding: 12, marginBottom: 16 },
   dupInfoText: { fontSize: 12.5, color: COLORS.textPrimary, lineHeight: 18 },
   dupInfoBold: { fontWeight: '800', color: COLORS.warningAlt },
+});
+
+// Campaign text field in the filter sheet.
+const lcf = StyleSheet.create({
+  input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12,
+           fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.surface },
 });

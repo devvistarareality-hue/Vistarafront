@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,6 +11,8 @@ import { getCache, setCache, bustCache, key as cacheKey } from '../../utils/data
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
+import FilterSelect from '../../components/FilterSelect';
+import { can } from '../../lib/roles';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
@@ -26,6 +28,9 @@ const STATUS_COLOR = { pending: COLORS.warning, completed: COLORS.success, misse
 // auto-transfers it into the STM pipeline (backend handles the transfer).
 const TC_STATUS_OPTS  = [['warm', 'Warm'], ['cold', 'Cold'], ['not_interested', 'Not Interested'], ['not_reachable', 'Not Reachable'], ['callback', 'Callback']];
 const STM_STATUS_OPTS = [['hot', 'Hot'], ['warm', 'Warm'], ['cold', 'Cold'], ['not_interested', 'Not Interested'], ['sv_scheduled', 'SV Scheduled'], ['sv_done', 'SV Done'], ['closed', 'Closed']];
+
+const TC_FILTER_STATUSES = ['warm', 'cold', 'not_interested', 'not_reachable', 'callback', 'not_qualified'];
+const STM_FILTER_STATUSES = ['hot', 'warm', 'cold', 'not_interested', 'sv_scheduled', 'sv_done', 'closed', 'not_qualified'];
 
 const TABS = [
   { key: 'today',   label: "Today's" },
@@ -51,6 +56,27 @@ const endOfToday   = () => { const d = new Date(); d.setHours(23, 59, 59, 999); 
 export default function SalesFollowUpsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  // Who sees which filters — the web Follow-Ups page's rule exactly: a manager-level
+  // viewer (anyone not a telecaller, STM or CP) gets both status filters and the
+  // telecaller / STM pickers.
+  const isTelecaller = can(user, 'sales.pipeline.telecalling');
+  const isStmRole    = can(user, 'sales.pipeline.stm');
+  const isCpRole     = can(user, 'sales.pipeline.cp') || can(user, 'sales.pipeline.cp_manager');
+  const isAdminMgr   = !isTelecaller && !isStmRole && !isCpRole;
+  const showTcStatus = isAdminMgr || isTelecaller;
+  const showStmStatus = isAdminMgr || isStmRole || isCpRole;
+  const [searchText, setSearchText] = useState('');
+  const [projFilter, setProjFilter] = useState('');
+  const [tcStatusFilter, setTcStatusFilter] = useState('');
+  const [stmStatusFilter, setStmStatusFilter] = useState('');
+  const [tcPerson, setTcPerson] = useState('');
+  const [stmPerson, setStmPerson] = useState('');
+  const [projects, setProjects] = useState([]);
+  useEffect(() => {
+    apiFetch(SALES_ENDPOINTS.projects + (companyId ? `?company_id=${companyId}` : ''))
+      .then((r) => (r.ok ? r.json() : [])).then((d) => setProjects(Array.isArray(d) ? d : d.results || []))
+      .catch(() => {});
+  }, [companyId]);
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
   const cpOnly = !!route?.params?.cpOnly;
@@ -181,7 +207,26 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     if (dateTo)   { const e = new Date(dateTo);   e.setHours(23, 59, 59, 999); if (d > e) return false; }
     return true;
   };
-  const dateItems = items.filter(inDateRange);
+  // The rest of the filter bar, applied before the counts so they describe what is shown.
+  const q = searchText.trim().toLowerCase();
+  const matchesFilters = (fu) => {
+    if (q && !(fu.lead_name || '').toLowerCase().includes(q) && !(fu.lead_phone || '').toLowerCase().includes(q)) return false;
+    if (projFilter && String(fu.lead_project || '') !== String(projFilter)) return false;
+    if (tcStatusFilter && (fu.lead_telecaller_status || '') !== tcStatusFilter) return false;
+    if (stmStatusFilter && (fu.lead_stm_status || '') !== stmStatusFilter) return false;
+    if (tcPerson && String(fu.assigned_to || '') !== String(tcPerson)) return false;
+    if (stmPerson && String(fu.assigned_to || '') !== String(stmPerson)) return false;
+    return true;
+  };
+  const dateItems = items.filter((fu) => inDateRange(fu) && matchesFilters(fu));
+  // Telecaller / STM pickers list the people these follow-ups are assigned to.
+  const people = (role) => {
+    const m = new Map();
+    items.forEach((fu) => { if (fu.assigned_to && ((fu.role_context === 'telecaller') === (role === 'telecaller'))) m.set(fu.assigned_to, fu.assigned_to_name || `#${fu.assigned_to}`); });
+    return [...m.entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1]))).map(([value, label]) => ({ value, label }));
+  };
+  const anyFilter = !!(q || projFilter || tcStatusFilter || stmStatusFilter || tcPerson || stmPerson);
+  const clearFilters = () => { setSearchText(''); setProjFilter(''); setTcStatusFilter(''); setStmStatusFilter(''); setTcPerson(''); setStmPerson(''); };
 
   // Status-wise counts for the selected date range (independent of the tab).
   const counts = {
@@ -236,6 +281,35 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           {(dateFrom || dateTo) && (
             <TouchableOpacity onPress={() => { setDateFrom(null); setDateTo(null); }} style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border }}>
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <TextInput style={fuf.search} value={searchText} onChangeText={setSearchText}
+          placeholder="Search name, phone…" placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
+        <View style={fuf.row}>
+          {projects.length > 0 && (
+            <FilterSelect label="All Projects" value={projFilter} onChange={setProjFilter} style={fuf.sel}
+              options={[{ value: '', label: 'All Projects' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]} />
+          )}
+          {showTcStatus && (
+            <FilterSelect label="TC Status" value={tcStatusFilter} onChange={setTcStatusFilter} style={fuf.sel}
+              options={[{ value: '', label: 'TC Status' }, ...TC_FILTER_STATUSES.map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
+          )}
+          {showStmStatus && (
+            <FilterSelect label="STM Status" value={stmStatusFilter} onChange={setStmStatusFilter} style={fuf.sel}
+              options={[{ value: '', label: 'STM Status' }, ...STM_FILTER_STATUSES.map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
+          )}
+          {isAdminMgr && (
+            <FilterSelect label="All Telecallers" value={tcPerson} onChange={setTcPerson} style={fuf.sel}
+              options={[{ value: '', label: 'All Telecallers' }, ...people('telecaller')]} />
+          )}
+          {isAdminMgr && (
+            <FilterSelect label="All STMs" value={stmPerson} onChange={setStmPerson} style={fuf.sel}
+              options={[{ value: '', label: 'All STMs' }, ...people('stm')]} />
+          )}
+          {anyFilter && (
+            <TouchableOpacity onPress={clearFilters} style={fuf.clear}>
+              <Text style={fuf.clearText}>Clear filters</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -469,4 +543,14 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const SalesFollowUpsScreenS = StyleSheet.create({
   header: { backgroundColor: 'transparent', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+});
+
+// The filter bar under the date range (search + dropdowns), as on the web.
+const fuf = StyleSheet.create({
+  search:    { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8,
+               fontSize: 13, color: COLORS.textPrimary, marginBottom: 8 },
+  row:       { flexDirection: 'row', flexWrap: 'wrap', marginRight: -8, marginBottom: 2 },
+  sel:       { minWidth: 140, marginRight: 8, marginBottom: 8 },
+  clear:     { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 8 },
+  clearText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
 });
