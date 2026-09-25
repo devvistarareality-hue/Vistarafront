@@ -22,6 +22,7 @@ import { computeFlat } from '../../lib/pratishthaFlat';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
+import { explainApiError, explainNetworkError } from '../../lib/apiError';
 import { scheduleError } from '../../lib/scheduleCheck';
 const MAX_LOI_FILE_SIZE_MB = 100;
 const MAX_LOI_FILE_SIZE = MAX_LOI_FILE_SIZE_MB * 1024 * 1024;
@@ -836,9 +837,9 @@ export default function BookingFormScreen({ navigation, route }) {
         ]);
         return;
       }
-      const errData = await res.json().catch(() => ({}));
-      setMsg('Error: ' + (errData.detail || JSON.stringify(errData)));
-    } catch (e) { setMsg(e.message); }
+      const errData = await res.json().catch(() => null);
+      setMsg(explainApiError(res, errData));
+    } catch (e) { setMsg(explainNetworkError(e)); }
     setSaving(false);
   }
 
@@ -859,9 +860,9 @@ export default function BookingFormScreen({ navigation, route }) {
           ? `✅ Draft saved — but Plot ${conflicts.map((c) => c.number).join(', ')} is no longer held for you.`
           : '✅ Draft saved — safe to come back later.');
       } else {
-        setMsg('Error: ' + (data.detail || JSON.stringify(data)));
+        setMsg(explainApiError(res, data, 'The draft could not be saved. Nothing was lost — try again.'));
       }
-    } catch (e) { setMsg(e.message); }
+    } catch (e) { setMsg(explainNetworkError(e)); }
     setSaving(false);
   }
 
@@ -1307,10 +1308,30 @@ export default function BookingFormScreen({ navigation, route }) {
           <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Generate → print/sign → capture pages or attach the signed copy → Submit.</Text>
         </Sec>
 
-        {!!msg && (() => { const ok = msg.startsWith('✅') || msg.startsWith('📎'); return (
-        <View style={{ padding: 12, borderRadius: 8, backgroundColor: ok ? COLORS.successBg : COLORS.errorBg, marginBottom: 12 }}>
-          <Text style={{ color: ok ? COLORS.success : COLORS.error, fontSize: 13 }}><AppIcon name={msg.startsWith('📎') ? 'clip' : ok ? 'check-circle' : 'alert'} size={14} /> {msg.replace(/^[^A-Za-z0-9]+/, '')}</Text>
-        </View>); })()}
+        {!!msg && (() => {
+          const ok = msg.startsWith('✅') || msg.startsWith('📎');
+          const body = msg.replace(/^[^A-Za-z0-9]+/, '');
+          // A rejected submit can name several fields at once; each gets its own
+          // line so the list reads as a checklist rather than a paragraph.
+          const lines = body.split('\n').filter(Boolean);
+          return (
+            <View style={[BookingFormScreenS.msg, ok ? BookingFormScreenS.msgOk : BookingFormScreenS.msgBad]}>
+              <View style={[BookingFormScreenS.msgMark, ok ? BookingFormScreenS.msgMarkOk : BookingFormScreenS.msgMarkBad]}>
+                <AppIcon name={msg.startsWith('📎') ? 'clip' : ok ? 'check' : 'alert'} size={13} color="#fff" />
+              </View>
+              <View style={BookingFormScreenS.msgText}>
+                <Text style={[BookingFormScreenS.msgTitle, ok ? BookingFormScreenS.msgTitleOk : BookingFormScreenS.msgTitleBad]}>
+                  {ok ? 'Saved' : lines.length > 1 ? 'This booking could not be submitted' : 'Could not submit'}
+                </Text>
+                {lines.map((line, i) => (
+                  <Text key={i} style={BookingFormScreenS.msgLine}>
+                    {lines.length > 1 ? '• ' : ''}{line}
+                  </Text>
+                ))}
+              </View>
+            </View>
+          );
+        })()}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity onPress={saveDraft} disabled={saving || !projectId || pratBookMissing}
             style={{ flex: 1, backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 22, paddingVertical: 15, alignItems: 'center', opacity: (saving || !projectId) ? 0.6 : 1 }}>
@@ -1417,4 +1438,19 @@ const Tot = ({ l, sub, sub2, val, valFmt, big, subtotal }) => (
 const BookingFormScreenS = StyleSheet.create({
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
   btnDim: { opacity: 0.4 },
+
+  // The answer to a failed submit. It sits directly above the buttons that were
+  // just pressed, and it has to survive being several lines long.
+  msg: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, padding: 14,
+         borderRadius: 14, borderWidth: 1.5, marginBottom: 12 },
+  msgOk: { backgroundColor: COLORS.successBg, borderColor: COLORS.success },
+  msgBad: { backgroundColor: COLORS.errorBg, borderColor: COLORS.error },
+  msgMark: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  msgMarkOk: { backgroundColor: COLORS.success },
+  msgMarkBad: { backgroundColor: COLORS.error },
+  msgText: { flex: 1, minWidth: 0 },
+  msgTitle: { fontSize: 13.5, fontWeight: '800', marginBottom: 3 },
+  msgTitleOk: { color: COLORS.success },
+  msgTitleBad: { color: COLORS.error },
+  msgLine: { fontSize: 12.5, color: COLORS.textSecondary, lineHeight: 18 },
 });
