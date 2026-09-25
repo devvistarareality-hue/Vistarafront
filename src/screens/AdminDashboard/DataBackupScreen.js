@@ -61,15 +61,39 @@ export default function DataBackupScreen({ navigation }) {
     Alert.alert('Delete everything?',
       `This empties every module for ${company?.name || 'this company'} — leads, bookings, `
       + 'projects, plots, users, AR, tasks, Club 1000. Your own account is kept so you can sign '
-      + 'back in and restore, and everyone else comes back with the password they had. There is '
-      + 'no undo.',
+      + 'back in and restore, and everyone else comes back with the password they had. A full '
+      + 'backup is taken and saved to this phone first; there is no other undo.',
       [{ text: 'Cancel', style: 'cancel' },
        { text: 'Delete everything', style: 'destructive', onPress: runReset }]);
   }
 
+  // A reset always starts from a fresh backup: store one, save it to the phone, and only
+  // then empty the company. If either step fails the reset does not run.
   async function runReset() {
-    setBusy('reset');
+    setBusy('reset-backup');
     try {
+      const b = await apiFetch(SALES_ENDPOINTS.backupSchedule(companyId), { method: 'POST' });
+      const bd = await b.json().catch(() => ({}));
+      const latest = (bd.history || [])[0];
+      if (!b.ok || !latest?.id) {
+        Alert.alert('Reset stopped', `The backup failed, so nothing was deleted.${bd.detail ? `\n\n${bd.detail}` : ''}`);
+        setBusy(''); return;
+      }
+      const l = await apiFetch(SALES_ENDPOINTS.backupStored(latest.id, companyId));
+      const ld = await l.json().catch(() => ({}));
+      const name = `${(company?.name || 'company').replace(/[^A-Za-z0-9]+/g, '-')}-before-reset.xlsx`;
+      const got = l.ok && ld.url
+        ? await FileSystem.downloadAsync(ld.url, FileSystem.cacheDirectory + name).catch(() => null)
+        : null;
+      if (!got || got.status !== 200) {
+        Alert.alert('Reset stopped', 'The backup is stored on the server, but it could not be saved to this phone. Nothing was deleted.');
+        setBusy(''); return;
+      }
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(got.uri, { mimeType: XLSX, UTI: 'org.openxmlformats.spreadsheetml.sheet',
+          dialogTitle: `Backup before reset · ${company?.name || ''}` });
+      }
+      setBusy('reset');
       const r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
         method: 'POST',
         body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE' }) });
@@ -249,7 +273,7 @@ export default function DataBackupScreen({ navigation }) {
           <Text style={[s.gate, resetInfo?.can_reset ? s.gateOk : s.gateBad]}>
             {resetInfo?.can_reset
               ? '✓  Backup taken — a reset is allowed for 2 hours'
-              : '✕  No recent backup — download one above first'}
+              : '✕  No recent backup — one is taken and saved automatically when you reset'}
           </Text>
           <Text style={[s.gate, resetInfo?.key_configured ? s.gateOk : s.gateBad]}>
             {resetInfo?.key_configured
@@ -264,11 +288,12 @@ export default function DataBackupScreen({ navigation }) {
           <TextInput style={s.input} value={resetKey} onChangeText={setResetKey}
             placeholder="Reset key" placeholderTextColor={COLORS.textTertiary}
             secureTextEntry autoCapitalize="none"
-            editable={!!resetInfo?.can_reset && !!resetInfo?.key_configured && !busy} />
+            editable={!!resetInfo?.key_configured && !busy} />
 
-          <Button title={busy === 'reset' ? 'Deleting…' : 'Reset this company'} variant="danger"
-            onPress={confirmReset} loading={busy === 'reset'}
-            disabled={!resetInfo?.can_reset || !resetInfo?.key_configured || !resetKey || !!busy}
+          <Button title={busy === 'reset' ? 'Deleting…' : busy === 'reset-backup' ? 'Backing up…' : 'Back up & reset this company'}
+            variant="danger"
+            onPress={confirmReset} loading={busy === 'reset' || busy === 'reset-backup'}
+            disabled={!resetInfo?.key_configured || !resetKey || !!busy}
             full />
         </View>
       </ScrollView>

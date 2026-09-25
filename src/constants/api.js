@@ -115,6 +115,7 @@ export const SALES_ENDPOINTS = {
     return `${BASE_URL}/api/sales/backups/excel/${q ? `?${q}` : ''}`;
   },
   backupSchedule: (companyId) => `${BASE_URL}/api/sales/backups/schedule/${companyId ? `?company_id=${companyId}` : ''}`,
+  backupStored: (id, companyId) => `${BASE_URL}/api/sales/backups/stored/${id}/${companyId ? `?company_id=${companyId}` : ''}`,
   get backupRestore()   { return `${BASE_URL}/api/sales/backups/restore/`; },
   backupReset: (companyId, modules) => {
     const q = [companyId ? `company_id=${companyId}` : '',
