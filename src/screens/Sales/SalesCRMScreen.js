@@ -238,12 +238,12 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'My Pipeline', label: 'To Call',       value: _toCall,                      color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads' },
     { group: 'Calling Activity', label: 'Called/MQL',    value: _called,                      color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesFollowUps', params: { initialFilter: 'completed' } },
-    { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
+    { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success,  bg: COLORS.successBg },  // view only — no list behind it
     { group: 'Conversions', label: 'Warm/SQL',      value: stats?.warm_count     ?? '—', color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
     { group: 'Conversions', label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     // Visits booked from my leads that haven't happened yet (telecallers only — see STAT_CARDS).
     ...(!(isAdmin || isManager) ? [{ group: 'Conversions', label: 'Upcoming SV', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'scheduled' } }] : []),
-    { group: 'Conversions', label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    { group: 'Conversions', label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg },  // view only — no list behind it
     { group: 'Follow-ups Due', label: 'Callback Due',  value: stats?.callback_count ?? '—', color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,    bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
@@ -269,7 +269,7 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesFollowUps', params: { initialFilter: 'completed' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
-    { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
+    { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg },  // view only — no list behind it
     { group: 'Site Visits & Closures', label: 'SV Done', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { group: 'Site Visits & Closures', label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects',
       params: isCp ? { cpOnly: true, initialView: 'mybookings', initialTab: 'sold' }
