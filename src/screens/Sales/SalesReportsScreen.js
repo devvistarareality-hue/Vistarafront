@@ -326,12 +326,16 @@ export default function SalesReportsScreen({ navigation }) {
   // special-cases in SalesLeadsScreen, not a value we want to send here.
   const dateFilter = { date_from: effectiveDates.from || '', date_to: effectiveDates.to || '' };
 
+  // Today's date, local — what New Today counts, whatever range the screen is set to.
+
+  const _today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+
   const TELECALLER_CARDS = [
-    { group: 'My Pipeline', label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
-    { group: 'My Pipeline', label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
+    { group: 'My Pipeline', label: 'My Leads',     value: stats?.total_leads    ?? '—', color: BLUE,          bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialWorkTab: 'all', initialFilter: { ...dateFilter } } },
+    { group: 'My Pipeline', label: 'New Today',    value: stats?.leads_today    ?? '—', color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'all', initialFilter: { date_from: _today, date_to: _today } } },
     { group: 'My Pipeline', label: 'To Call',      value: _toCall,                      color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'Calling Activity', label: 'Called/MQL',  value: _called,                       color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
-    { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
+    { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps', params: { initialFilter: 'completed' } },
     { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
     { group: 'Conversions', label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm', ...dateFilter } } },
     { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
@@ -356,7 +360,7 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Site Visits & Closures', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg, target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'accounts', initialScope: 'visible' } },
     { group: 'Conversion Rates', label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { group: 'Conversion Rates', label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
-    { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
+    { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps', params: { initialFilter: 'completed' } },
     { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending',  value: _fuPending,    color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue',  value: _fuOverdue,    color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
