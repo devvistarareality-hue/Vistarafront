@@ -16,6 +16,7 @@ import common from '../../styles/common';
 import FilterSelect from '../../components/FilterSelect';
 import { Button } from '../../components/ui';
 import ReviveCompanyCard from './ReviveCompanyCard';
+import AutoBackupCard from './AutoBackupCard';
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -282,6 +283,8 @@ export default function DataBackupScreen({ navigation }) {
             loading={busy === 'download'} disabled={!ready || !!busy} full />
           {company ? <Text style={s.hint}>A large company takes a minute to build.</Text> : null}
         </View>
+
+        <AutoBackupCard companyId={companyId} company={company} ready={ready} />
 
         <View style={[common.card, s.card]}>
           <Text style={s.title}>Restore from Excel</Text>

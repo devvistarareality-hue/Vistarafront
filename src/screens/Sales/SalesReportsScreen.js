@@ -10,7 +10,9 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
-import { isManagerRole, can } from '../../lib/roles';
+import { isManagerRole, can, canSee } from '../../lib/roles';
+import { DashHero, DashAlerts } from '../../components/Dash';
+import { pct } from '../../lib/inr';
 
 const NAVY = COLORS.navy;
 const BLUE = COLORS.link;
@@ -158,7 +160,8 @@ export default function SalesReportsScreen({ navigation }) {
   const isAdmin     = isTrueAdmin || (user?.admin_modules || []).includes('Sales');
   const isManager   = isManagerRole(user);
   // Same rule as the CRM home these tiles moved from: any CP-side designation counts.
-  const isStmView = can(user, 'sales.pipeline.stm') || _des.startsWith('cp') || _des.includes('channel partner');
+  const _isCp     = _des.startsWith('cp') || _des.includes('channel partner');
+  const isStmView = can(user, 'sales.pipeline.stm') || _isCp;
 
   const fmtDate  = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
@@ -328,6 +331,10 @@ export default function SalesReportsScreen({ navigation }) {
 
   // Today's date, local — what New Today counts, whatever range the screen is set to.
 
+  // Telecaller conversion tiles open My Conversions where the menu has it — as on
+  // the web — and the real screens otherwise.
+  const convTarget = (tab, target, params) => (canSee(user, 'sales.screen.conversions')
+    ? { target: 'MyConversions', params: { initialTab: tab } } : { target, params });
   const _today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
 
   const TELECALLER_CARDS = [
@@ -338,9 +345,9 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps', params: { initialFilter: 'completed' } },
     { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg },  // view only — no list behind it
     { group: 'Conversions', label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm', ...dateFilter } } },
-    { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  ...convTarget('sv', 'SalesSiteVisits', { initialTab: 'completed' }) },
     // Visits booked from my leads that haven't happened yet — telecallers only, as on the web.
-    { group: 'Conversions', label: 'Upcoming SV', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'scheduled' }, tcOnly: true },
+    { group: 'Conversions', label: 'Upcoming SV', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, ...convTarget('upcoming', 'SalesSiteVisits', { initialTab: 'scheduled' }), tcOnly: true },
     { group: 'Conversions', label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg },  // view only — no list behind it
     { group: 'Follow-ups Due', label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback', ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,             color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
@@ -567,6 +574,34 @@ export default function SalesReportsScreen({ navigation }) {
           <AppLoader size={0.7} style={{ marginVertical: 40 }} />
         ) : (
           <>
+          {/* The headline and what needs doing, then the full tile breakdown and charts. */}
+          {stats ? (
+            <View style={SalesReportsScreenS.dash}>
+              {isStmView ? (
+                <DashHero eyebrow="My pipeline" value={(stats.total_leads ?? 0).toLocaleString('en-IN')}
+                  splits={[{ label: 'Hot', value: String(stats.stm_hot_count ?? 0) }, { label: 'Warm / SQL', value: String(stats.stm_warm_count ?? 0) },
+                           { label: 'Site visits', value: String(stats.sv_done ?? 0) }]}
+                  ring={{ pct: pct(stats.closures || 0, stats.sql_count ?? stats.stm_warm_count ?? 0), label: 'SQL closed' }} />
+              ) : (
+                <DashHero eyebrow={(isAdmin || isManager) ? 'Total leads' : 'My leads'} value={(stats.total_leads ?? 0).toLocaleString('en-IN')}
+                  splits={[{ label: 'New today', value: String(stats.leads_today ?? 0) },
+                           (isAdmin || isManager) ? { label: 'Site visits', value: String(stats.sv_done ?? 0) } : { label: 'To call', value: String(stats.to_call_count ?? 0) },
+                           { label: 'Closures', value: String(stats.closures ?? 0) }]}
+                  ring={(isAdmin || isManager)
+                    ? { pct: pct(stats.closures || 0, stats.total_leads || 0), label: 'converted' }
+                    : { pct: pct(stats.called_count || 0, stats.total_leads || 0), label: 'called' }} />
+              )}
+              <DashAlerts items={[
+                ...((isAdmin || isManager) && !_isCp ? [{ tone: 'warn', icon: 'person-add-outline', count: stats.unassigned_leads ?? 0, label: 'Unassigned leads', text: 'Waiting for an owner',
+                  onPress: () => navigation.navigate('SalesLeads', { initialFilter: { unassigned: true } }) }] : []),
+                { tone: 'bad', icon: 'time-outline', count: stats.followup_overdue_count ?? 0, label: 'Follow-ups overdue', text: 'Past their follow-up date', onPress: () => navigation.navigate('SalesFollowUps') },
+                ...(!isStmView ? [{ tone: 'info', icon: 'call-outline', count: stats.callback_count ?? 0, label: 'Callbacks due', text: 'Asked to be called back',
+                  onPress: () => navigation.navigate('SalesLeads', { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } }) }] : []),
+                ...(isStmView ? [{ tone: 'warn', icon: 'calendar-outline', count: stats.stm_sv_scheduled_count ?? 0, label: 'Site visits scheduled', text: 'Coming up',
+                  onPress: () => navigation.navigate('SalesSiteVisits', { initialTab: 'scheduled' }) }] : []),
+              ]} />
+            </View>
+          ) : null}
             {STAT_SECTIONS.map(sec => (
               <View key={sec.title} style={[CARD, { padding: 14, marginBottom: 12 }]}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>{sec.title}</Text>
@@ -635,6 +670,7 @@ export default function SalesReportsScreen({ navigation }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const SalesReportsScreenS = StyleSheet.create({
+  dash: { marginBottom: 12 },
   // The optional second line on a tile.
   tileSub: { fontSize: 9.5, color: COLORS.textSecondary, textAlign: 'center', fontWeight: '600' },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4, borderWidth: 1, borderColor: COLORS.btnBorder },

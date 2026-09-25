@@ -81,6 +81,7 @@ import PostSignOutScreen  from '../screens/PostSignOut/PostSignOutScreen';
 
 // Kiosk — client-facing self-booking (role=Kiosk)
 import KioskScreen        from '../screens/Kiosk/KioskScreen';
+import MyConversionsScreen     from '../screens/Sales/MyConversionsScreen';
 
 // Navigation chrome follows the app theme so screen transitions never flash white.
 const NAV_THEME = {
@@ -140,6 +141,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
             <Stack.Screen name="SalesFollowUps"      component={SalesFollowUpsScreen} />
             <Stack.Screen name="SalesSiteVisits"     component={SalesSiteVisitsScreen} />
+            <Stack.Screen name="MyConversions" component={MyConversionsScreen} />
             <Stack.Screen name="MyTeam"              component={MyTeamScreen} />
             <Stack.Screen name="ModuleDashboard"      component={ModuleDashboardScreen} />
             <Stack.Screen name="ModuleHome"          component={ModuleHomeScreen} />
@@ -185,6 +187,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
             <Stack.Screen name="SalesFollowUps"      component={SalesFollowUpsScreen} />
             <Stack.Screen name="SalesSiteVisits"     component={SalesSiteVisitsScreen} />
+            <Stack.Screen name="MyConversions" component={MyConversionsScreen} />
             <Stack.Screen name="MyTeam"              component={MyTeamScreen} />
             <Stack.Screen name="BookingForm"         component={BookingFormScreen} />
             <Stack.Screen name="BookingApprovals"    component={BookingApprovalsScreen} />

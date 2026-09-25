@@ -40,6 +40,7 @@ import TaskDashboardScreen from '../screens/Tasks/TaskDashboardScreen';
 import TaskListScreen from '../screens/Tasks/TaskListScreen';
 import ActivityLogScreen from '../screens/AdminDashboard/ActivityLogScreen';
 import DataBackupScreen from '../screens/AdminDashboard/DataBackupScreen';
+import MyConversionsScreen from '../screens/Sales/MyConversionsScreen';
 
 const Tab = createBottomTabNavigator();
 const ModulesStack = createNativeStackNavigator();
@@ -53,6 +54,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="SalesLeads"    component={SalesLeadsScreen} />
       <ModulesStack.Screen name="SalesFollowUps" component={SalesFollowUpsScreen} />
       <ModulesStack.Screen name="SalesSiteVisits" component={SalesSiteVisitsScreen} />
+      <ModulesStack.Screen name="MyConversions" component={MyConversionsScreen} />
       <ModulesStack.Screen name="MyTeam" component={MyTeamScreen} />
       <ModulesStack.Screen name="ModuleHome" component={ModuleHomeScreen} />
       <ModulesStack.Screen name="ModuleBookings" component={ModuleBookingsScreen} />
