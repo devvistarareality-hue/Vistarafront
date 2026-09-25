@@ -194,9 +194,11 @@ export default function DataBackupScreen({ navigation }) {
           <Text style={s.title}>Restore from Excel</Text>
           <Text style={s.sub}>
             Rebuilds this company from the workbook — every module, with the original ids, so
-            everything still points where it did. Records already there are left alone, so this
-            fills what is missing and never overwrites what is live. Restored user accounts come
-            back without a password, so set one for each before they sign in.
+            everything still points where it did and restored accounts keep the passwords they
+            had. Records already there are left alone, so this fills what is missing and never
+            overwrites what is live. Notifications are the one thing not carried: a reset clears
+            the bell and it stays clear, rather than re-delivering alerts for things that already
+            happened.
           </Text>
 
           <TouchableOpacity onPress={pickFile} style={s.file} activeOpacity={0.8} disabled={!!busy}>
