@@ -21,6 +21,7 @@ import AppIcon from '../../../components/AppIcon';
 import { withAlpha } from '../../../constants/theme';
 import AppLoader from '../../../components/AppLoader';
 import { can } from '../../../lib/roles';
+import { useImpersonating } from '../../../lib/useImpersonating';
 const { width } = Dimensions.get('window');
 
 const MONTH_NAMES = [
@@ -45,6 +46,7 @@ const CARD = {
 const CAL_CELL = Math.floor((width - 40 - 32) / 7);
 
 const HomeScreen = () => {
+  const viewingAs = useImpersonating();   // hide Sign Out while viewing as someone
   const navigation = useNavigation();
   const dispatch   = useDispatch();
   const { loading, user, stats, weeklyAttendance, monthlyAttendance, monthlyLoading } =
@@ -780,6 +782,7 @@ const HomeScreen = () => {
             </TouchableOpacity>
 
             {/* Sign Out */}
+            {!viewingAs && (
             <TouchableOpacity
               onPress={handleLogout}
               activeOpacity={0.85}
@@ -792,6 +795,7 @@ const HomeScreen = () => {
               <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
               <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.error }}>Sign Out</Text>
             </TouchableOpacity>
+            )}
 
           </Animated.View>
         </View>

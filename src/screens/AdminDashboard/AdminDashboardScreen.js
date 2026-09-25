@@ -12,6 +12,7 @@ import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import FilterSelect from '../../components/FilterSelect';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import ThemeToggle from '../../components/ThemeToggle';
+import { useImpersonating } from '../../lib/useImpersonating';
 
 const ADMIN_MODULES = [
   { name: 'User Management',    icon: 'account-cog-outline',  color: COLORS.navy, iconBg: COLORS.linkBg, screen: 'UserManagement',     params: undefined },
@@ -30,6 +31,7 @@ const ADMIN_MODULES = [
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
+  const viewingAs = useImpersonating();   // hide Logout while viewing as someone
   const dispatch = useDispatch();
   const user     = useSelector((s) => s.auth.user);
   const { companies } = useSelector((s) => s.companies);
@@ -62,9 +64,11 @@ export default function AdminDashboardScreen({ navigation }) {
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <ThemeToggle compact />
+            {!viewingAs && (
             <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={20} color={COLORS.textPrimary} />
             </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
