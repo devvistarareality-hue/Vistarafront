@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchCompanies, updateCompany, resetUpdateCompany, deleteCompany } from '../../redux/actions/companiesActions';
+import { fetchCompanies, updateCompany, resetUpdateCompany } from '../../redux/actions/companiesActions';
+import DeleteCompanySheet from './DeleteCompanySheet';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 
@@ -89,11 +90,14 @@ export default function CompanyManagementScreen({ navigation }) {
   const handleEdit     = (c) => navigation.navigate('EditCompany', { company: c });
   const handleDeactivate = (c) => dispatch(updateCompany({ id: c.id, is_active: false }));
   const handleActivate   = (c) => dispatch(updateCompany({ id: c.id, is_active: true }));
-  const handleDelete     = (c) => {
-    Alert.alert('Delete Company', `Delete ${c.name}? This action cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => dispatch(deleteCompany(c.id)) },
-    ]);
+  // Delete goes through its own guarded sheet: backup saved to the phone first,
+  // reset key, company code typed out.
+  const [delTarget, setDelTarget] = useState(null);
+  const handleDelete     = (c) => setDelTarget(c);
+  const handleDeleted    = (c) => {
+    setDelTarget(null);
+    dispatch(fetchCompanies());
+    Alert.alert('Company deleted', `${c.name} was deleted. Its backup was saved before it went.`);
   };
 
   const filtered = companies.filter((c) => {
@@ -109,6 +113,7 @@ export default function CompanyManagementScreen({ navigation }) {
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
+      <DeleteCompanySheet company={delTarget} onClose={() => setDelTarget(null)} onDeleted={handleDeleted} />
 
       {/* Header */}
       <View style={s.header}>
