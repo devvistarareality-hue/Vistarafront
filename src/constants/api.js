@@ -25,6 +25,8 @@ export const ATTENDANCE_ENDPOINTS = {
 export const USER_ENDPOINTS = {
   get list()   { return `${BASE_URL}/api/auth/users/`; },
   get detail() { return (id) => `${BASE_URL}/api/auth/users/${id}/`; },
+  // Platform admins only: open a session as another user to see what they see.
+  get impersonate() { return `${BASE_URL}/api/auth/impersonate/`; },
 };
 
 export const COMPANY_ENDPOINTS = {

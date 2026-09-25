@@ -14,6 +14,7 @@ import { navigateFromNotif } from './src/navigation/notifRouting';
 import { COLORS } from './src/constants/theme';
 import { DialogHost, showDialog, isDialogHostMounted } from './src/components/AppDialog';
 import AppBackground from './src/components/AppBackground';
+import ImpersonationBanner from './src/components/ImpersonationBanner';
 
 // Every Alert.alert in the app renders the themed premium dialog.
 const nativeAlert = Alert.alert;
@@ -76,6 +77,7 @@ function App() {
         <View style={{ flex: 1, backgroundColor: COLORS.screenBg }}>
           <AppBackground />
           <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
+          <ImpersonationBanner />
           <AppNavigator />
           <DialogHost />
         </View>

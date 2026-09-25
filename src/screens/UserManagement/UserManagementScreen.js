@@ -14,6 +14,8 @@ import {
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import AppLoader from '../../components/AppLoader';
+import { isSuperAdmin } from '../../lib/roles';
+import { startImpersonation } from '../../lib/impersonate';
 
 const ROLE_AVATAR_COLOR = {
   Admin:       COLORS.navy,
@@ -37,6 +39,8 @@ export default function UserManagementScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const companyId = useSelector((s) => s.adminFilter.companyId);
   const { companies: allCompanies } = useSelector((s) => s.companies);
+  const me = useSelector((st) => st.auth?.user);
+  const canViewAs = isSuperAdmin(me);
 
   useFocusEffect(useCallback(() => { dispatch(fetchUsers()); }, [dispatch]));
   useEffect(() => { if (error) Alert.alert('Error', error); }, [error]);
@@ -49,6 +53,20 @@ export default function UserManagementScreen({ navigation }) {
 
   const handleToggle = (user) => {
     dispatch(updateUser({ id: user.id, is_active: !user.is_active }));
+  };
+
+  // Open the app as this person, to see exactly what they see. Confirmed first
+  // because it is a real session in their account, not a read-only preview.
+  const handleViewAs = (user) => {
+    Alert.alert('View as User',
+      `Open the app as ${user.name}? You will see what they see, and anything you do will be recorded against them. Use Exit in the banner to come back.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'View as user', onPress: async () => {
+          try { await dispatch(startImpersonation(user.id)); navigation.popToTop(); }
+          catch (e) { Alert.alert('Could not switch', e.message); }
+        } },
+      ]);
   };
 
   const handleDelete = (user) => {
@@ -158,6 +176,11 @@ export default function UserManagementScreen({ navigation }) {
                 <TouchableOpacity style={s.editBtn} onPress={() => navigation.navigate('CreateUser', { user: item })}>
                   <Ionicons name="pencil" size={16} color={COLORS.link} />
                 </TouchableOpacity>
+                {canViewAs && item.is_active && !item.is_staff && item.id !== me?.id ? (
+                  <TouchableOpacity style={s.viewAsBtn} onPress={() => handleViewAs(item)}>
+                    <Ionicons name="eye-outline" size={16} color={COLORS.warningSolid} />
+                  </TouchableOpacity>
+                ) : null}
                 <TouchableOpacity style={s.toggleBtn} onPress={() => handleToggle(item)}>
                   <Ionicons name={item.is_active ? 'pause-circle' : 'checkmark-circle'} size={20} color={item.is_active ? COLORS.warning : COLORS.success} />
                 </TouchableOpacity>
@@ -207,6 +230,7 @@ const s = StyleSheet.create({
 
   actions:     { flexDirection: 'column', gap: 6, marginLeft: 8 },
   editBtn:     { padding: 6, borderRadius: 8, backgroundColor: COLORS.linkBg },
+  viewAsBtn:   { padding: 6, borderRadius: 8, backgroundColor: COLORS.warningSoft },
   toggleBtn:   { padding: 2 },
   deleteBtn:   { padding: 6, borderRadius: 8, backgroundColor: COLORS.screenBg },
 });

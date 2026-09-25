@@ -122,6 +122,10 @@ export const login = (companyCode, userCode, password) => async (dispatch) => {
 export const logout = () => async (dispatch) => {
   await AsyncStorage.removeItem('access_token');
   await AsyncStorage.removeItem('refresh_token');
+  // Logging out while viewing as another user must not leave the banner up over
+  // a logged-out app, nor the admin's stashed tokens sitting in storage.
+  await AsyncStorage.multiRemove(['impersonated_by', 'admin_access_token',
+                                  'admin_refresh_token', 'admin_user']);
   try { OneSignal?.logout(); } catch (e) {}
   dispatch({ type: LOGOUT });
 };
