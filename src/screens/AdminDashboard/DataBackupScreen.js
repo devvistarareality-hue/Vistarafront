@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StatusBar, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, ScrollView, StatusBar, Alert, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { COLORS } from '../../constants/theme';
 import { SALES_ENDPOINTS } from '../../constants/api';
+import { apiFetch } from '../../utils/apiFetch';
 import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import common from '../../styles/common';
@@ -39,10 +40,44 @@ export default function DataBackupScreen({ navigation }) {
   const [busy, setBusy] = useState('');       // 'download' | 'check' | 'restore'
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [resetInfo, setResetInfo] = useState(null);
+  const [resetKey, setResetKey] = useState('');
 
   useEffect(() => { if (isPlatformAdmin) dispatch(fetchCompanies()); }, [dispatch, isPlatformAdmin]);
   // A different company or a different file invalidates what was checked.
   useEffect(() => { setPreview(null); }, [companyId, file]);
+
+  const loadReset = useCallback(async () => {
+    if (!ready) { setResetInfo(null); return; }
+    try {
+      const r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId));
+      setResetInfo(r.ok ? await r.json() : null);
+    } catch (e) { setResetInfo(null); }
+  }, [ready, companyId]);
+
+  useEffect(() => { loadReset(); }, [loadReset]);
+
+  function confirmReset() {
+    Alert.alert('Delete everything?',
+      `This empties every module for ${company?.name || 'this company'} — leads, bookings, `
+      + 'projects, plots, users, AR, tasks, Club 1000. Your own account is kept so you can sign '
+      + 'back in and restore from the backup. There is no undo.',
+      [{ text: 'Cancel', style: 'cancel' },
+       { text: 'Delete everything', style: 'destructive', onPress: runReset }]);
+  }
+
+  async function runReset() {
+    setBusy('reset');
+    try {
+      const r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
+        method: 'POST', body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE' }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) Alert.alert('Reset refused', d.detail || 'Could not reset.');
+      else { Alert.alert('Reset done', d.detail); setResetKey(''); }
+      loadReset();
+    } catch (e) { Alert.alert('Reset failed', 'Check your connection and try again.'); }
+    setBusy('');
+  }
 
   async function download() {
     setBusy('download');
@@ -61,6 +96,7 @@ export default function DataBackupScreen({ navigation }) {
       } else {
         Alert.alert('Saved', 'Workbook saved to:\n' + uri);
       }
+      loadReset();
     } catch (e) {
       Alert.alert('Backup failed', 'Check your connection and try again.');
     }
@@ -91,7 +127,7 @@ export default function DataBackupScreen({ navigation }) {
         setPreview(null);
         Alert.alert('Restore failed', d.detail || 'The file could not be read.');
       } else if (commit) {
-        setPreview(null); setFile(null);
+        setPreview(null); setFile(null); loadReset();
         Alert.alert('Restored', `${d.total} record${d.total === 1 ? '' : 's'} put back into ${company?.name || 'the company'}.`);
       } else {
         setPreview(d);
@@ -191,6 +227,40 @@ export default function DataBackupScreen({ navigation }) {
               disabled={!preview || !!busy} style={s.flex} />
           </View>
         </View>
+
+        <View style={[common.card, s.card, s.danger]}>
+          <Text style={[s.title, s.dangerTitle]}>Delete everything in this company</Text>
+          <Text style={s.sub}>
+            Empties every module back to nothing. Your own account is kept so you can sign back in
+            and restore. There is no undo except the backup above, which is why one is required
+            first.
+          </Text>
+
+          <Text style={[s.gate, resetInfo?.can_reset ? s.gateOk : s.gateBad]}>
+            {resetInfo?.can_reset
+              ? '✓  Backup taken — a reset is allowed for 2 hours'
+              : '✕  No recent backup, so a reset is blocked'}
+          </Text>
+          <Text style={[s.gate, resetInfo?.key_configured ? s.gateOk : s.gateBad]}>
+            {resetInfo?.key_configured
+              ? '✓  Reset key is configured on the server'
+              : '✕  No reset key on the server — reset is disabled'}
+          </Text>
+
+          {resetInfo?.total > 0 ? (
+            <Text style={s.hint}>{resetInfo.total.toLocaleString('en-IN')} records would be deleted.</Text>
+          ) : null}
+
+          <TextInput style={s.input} value={resetKey} onChangeText={setResetKey}
+            placeholder="Reset key" placeholderTextColor={COLORS.textTertiary}
+            secureTextEntry autoCapitalize="none"
+            editable={!!resetInfo?.can_reset && !!resetInfo?.key_configured && !busy} />
+
+          <Button title={busy === 'reset' ? 'Deleting…' : 'Reset this company'} variant="danger"
+            onPress={confirmReset} loading={busy === 'reset'}
+            disabled={!resetInfo?.can_reset || !resetInfo?.key_configured || !resetKey || !!busy}
+            full />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -214,4 +284,11 @@ const s = StyleSheet.create({
   planTotalLabel: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
   planTotalValue: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
   actions: { flexDirection: 'row', gap: 8 },
+  danger: { borderColor: COLORS.error2, backgroundColor: COLORS.errorBg },
+  dangerTitle: { color: COLORS.error },
+  gate: { fontSize: 12.5, paddingVertical: 2 },
+  gateOk: { color: COLORS.success },
+  gateBad: { color: COLORS.error },
+  input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14,
+           paddingVertical: 11, fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.inputBg },
 });

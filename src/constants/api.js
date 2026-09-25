@@ -108,6 +108,7 @@ export const SALES_ENDPOINTS = {
   // No company_id means "my own company" — the server pins it and refuses anyone else's.
   backupExcel: (companyId) => `${BASE_URL}/api/sales/backups/excel/${companyId ? `?company_id=${companyId}` : ''}`,
   get backupRestore()   { return `${BASE_URL}/api/sales/backups/restore/`; },
+  backupReset: (companyId) => `${BASE_URL}/api/sales/backups/reset/${companyId ? `?company_id=${companyId}` : ''}`,
   source: (id)          => `${BASE_URL}/api/sales/sources/${id}/`,
   get metaWebhookConfig(){ return `${BASE_URL}/api/sales/webhooks/meta/config/`; },
   get metaMappings()    { return `${BASE_URL}/api/sales/webhooks/meta/mappings/`; },
