@@ -117,6 +117,23 @@ export default function DataBackupScreen({ navigation }) {
     setBusy('');
   }
 
+  // A restore is done once the company's record count has grown and then holds still.
+  async function waitForRestore(before) {
+    let last = before, still = 0;
+    for (let i = 0; i < 120; i++) {              // up to 10 minutes
+      await new Promise((res) => setTimeout(res, 5000));
+      try {
+        const x = await apiFetch(SALES_ENDPOINTS.backupReset(companyId));
+        if (!x.ok) continue;
+        const total = (await x.json()).total || 0;
+        still = total === last ? still + 1 : 0;
+        last = total;
+        if (total > before && still >= 2) return total;
+      } catch (e) { /* keep asking */ }
+    }
+    return last;
+  }
+
   // Emptied means nothing is left but the account(s) the reset keeps.
   async function waitForEmpty() {
     for (let i = 0; i < 120; i++) {              // up to 10 minutes
@@ -172,11 +189,28 @@ export default function DataBackupScreen({ navigation }) {
       form.append('file', { uri: file.uri, name: file.name || 'backup.xlsx', type: file.mimeType || XLSX });
       if (companyId) form.append('company_id', String(companyId));
       if (commit) form.append('commit', '1');
+      const before = resetInfo?.total ?? 0;
       // multipart: let fetch set the boundary, so no JSON content-type here
-      const r = await fetch(SALES_ENDPOINTS.backupRestore, {
-        method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
-      const d = await r.json().catch(() => ({}));
-      if (r.status === 409) {
+      let r = null, d = {};
+      try {
+        r = await fetch(SALES_ENDPOINTS.backupRestore, {
+          method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+        d = await r.json().catch(() => ({}));
+      } catch (e) { r = null; }
+      // A big restore can outlast the connection while the server finishes it —
+      // a lost reply means "ask the server", not "it failed".
+      if (commit && (!r || r.status === 502 || r.status === 504)) {
+        const after = await waitForRestore(before);
+        setPreview(null); setFile(null); loadReset();
+        if (after > before) {
+          Alert.alert('Restored', `${after - before} records put back into ${company?.name || 'the company'}. `
+            + 'It took longer than the connection stayed open, but the server finished it.');
+        } else {
+          Alert.alert('Could not confirm the restore', 'The server may still be working. Check this screen again in a minute.');
+        }
+      } else if (!r) {
+        Alert.alert('Check failed', 'The connection dropped. Try again.');
+      } else if (r.status === 409) {
         setPreview(null);
         Alert.alert('Already there', d.detail || 'Those records still exist, so nothing was written.');
       } else if (!r.ok) {
