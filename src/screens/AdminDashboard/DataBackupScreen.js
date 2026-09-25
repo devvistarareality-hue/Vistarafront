@@ -72,6 +72,14 @@ export default function DataBackupScreen({ navigation }) {
   async function runReset() {
     setBusy('reset-backup');
     try {
+      // Refuse a wrong key straight away, before minutes of backup.
+      const chk = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
+        method: 'POST', body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE', check_only: true }) });
+      if (!chk.ok) {
+        const cd = await chk.json().catch(() => ({}));
+        Alert.alert('Reset refused', cd.detail || 'Nothing was changed.');
+        setBusy(''); return;
+      }
       const b = await apiFetch(SALES_ENDPOINTS.backupSchedule(companyId), { method: 'POST' });
       const bd = await b.json().catch(() => ({}));
       const latest = (bd.history || [])[0];

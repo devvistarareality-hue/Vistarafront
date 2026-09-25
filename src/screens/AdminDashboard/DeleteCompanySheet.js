@@ -13,6 +13,7 @@ const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 // into — so, like the web, it asks for the reset key and the company's own code, and
 // backs the company up and saves that backup to the phone before anything goes.
 const STAGES = {
+  check:    'Checking the reset key and company code…',
   backup:   'Taking a full backup…',
   download: 'Saving the backup to this phone…',
   delete:   'Deleting the company…',
@@ -60,6 +61,15 @@ export default function DeleteCompanySheet({ company, onClose, onDeleted }) {
 
   async function run() {
     try {
+      // Refuse a wrong key or code straight away, before minutes of backup.
+      setStage('check');
+      const chk = await apiFetch(COMPANY_ENDPOINTS.detail(company.id), {
+        method: 'DELETE', body: JSON.stringify({ reset_key: key, confirm: typed.trim(), check_only: true }) });
+      if (!chk.ok) {
+        const cd = await chk.json().catch(() => ({}));
+        Alert.alert('Not deleted', cd.detail || 'Nothing was deleted.');
+        setStage(''); return;
+      }
       setStage('backup');
       await saveBackup(company);
       setStage('delete');
