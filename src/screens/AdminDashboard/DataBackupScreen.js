@@ -94,15 +94,41 @@ export default function DataBackupScreen({ navigation }) {
           dialogTitle: `Backup before reset · ${company?.name || ''}` });
       }
       setBusy('reset');
-      const r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
-        method: 'POST',
-        body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE' }) });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) Alert.alert('Reset refused', d.detail || 'Could not reset.');
+      let r = null, d = {};
+      try {
+        r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
+          method: 'POST',
+          body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE' }) });
+        d = await r.json().catch(() => ({}));
+      } catch (e) { r = null; }
+      // A big company can take longer to empty than the connection stays open; the
+      // server still finishes. A lost reply means "ask the server", not "it failed".
+      if (!r || r.status === 502 || r.status === 504) {
+        if (await waitForEmpty()) {
+          Alert.alert('Reset done', 'It took longer than the connection stayed open, but the server finished it.');
+          setResetKey('');
+        } else {
+          Alert.alert('Could not confirm the reset', 'The server may still be working. Check this screen again in a minute.');
+        }
+      } else if (!r.ok) Alert.alert('Reset refused', d.detail || 'Could not reset.');
       else { Alert.alert('Reset done', d.detail); setResetKey(''); }
       loadReset();
     } catch (e) { Alert.alert('Reset failed', 'Check your connection and try again.'); }
     setBusy('');
+  }
+
+  // Emptied means nothing is left but the account(s) the reset keeps.
+  async function waitForEmpty() {
+    for (let i = 0; i < 120; i++) {              // up to 10 minutes
+      await new Promise((res) => setTimeout(res, 5000));
+      try {
+        const x = await apiFetch(SALES_ENDPOINTS.backupReset(companyId));
+        if (!x.ok) continue;
+        const info = await x.json();
+        if (Object.keys(info.counts || {}).every((k) => k === 'Users')) return true;
+      } catch (e) { /* keep asking */ }
+    }
+    return false;
   }
 
   async function download() {
