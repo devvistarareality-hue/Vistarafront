@@ -54,7 +54,8 @@
     "web": "expo start --web",
     "prepare": "git config core.hooksPath .githooks || true",
     "check:styles": "node scripts/check-inline-styles.js",
-    "check:undefined": "node scripts/check-undefined.js"
+    "check:undefined": "node scripts/check-undefined.js",
+    "check:imports": "node scripts/check-imports.js"
   },
   "private": true,
   "devDependencies": {
