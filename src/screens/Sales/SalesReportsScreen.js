@@ -345,7 +345,7 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Conversions', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg },
   ];
   const STM_CARDS = [
-    { group: 'My Pipeline', label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
+    { group: 'My Pipeline', label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialWorkTab: 'all', initialFilter: { ...dateFilter } } },
     { group: 'My Pipeline', label: 'To Work',      value: _toCall,                              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
     { group: 'Lead Temperature', label: 'Hot Leads',    value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { stm_status: 'hot', ...dateFilter } } },
     { group: 'Lead Temperature', label: 'Warm/SQL',     value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { stm_status: 'warm', ...dateFilter } } },

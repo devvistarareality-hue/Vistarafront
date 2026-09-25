@@ -1813,7 +1813,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const showTcStatus = isAdminMgr || isTelecaller;
   const showStmStatus= isAdminMgr || isStm || isCpAny;
   const showAssignees= isAdminMgr;
-  const [workTab, setWorkTab] = useState(route?.params?.initialWorkTab === 'called' ? 'called' : 'pending'); // 'pending' | 'called' (callers only)
+  // 'all' is both together — the whole pipeline, which the dashboard's My Pipeline opens.
+  const [workTab, setWorkTab] = useState(['called', 'all'].includes(route?.params?.initialWorkTab) ? route.params.initialWorkTab : 'pending'); // 'pending' | 'called' | 'all' (callers only)
   const [total,   setTotal]   = useState(0); // backend count for the current filter
 
   const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
@@ -2077,7 +2078,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>All Leads</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginTop: 1 }}>
-            {total.toLocaleString()} {isCaller ? (workTab === 'pending' ? 'to call' : 'called') : (activeFilterCount > 0 ? 'matching' : 'total')} lead{total === 1 ? '' : 's'}
+            {total.toLocaleString()} {isCaller ? (workTab === 'pending' ? 'to call' : workTab === 'called' ? 'called' : 'in your pipeline') : (activeFilterCount > 0 ? 'matching' : 'total')} lead{total === 1 ? '' : 's'}
           </Text>
         </View>
         <TouchableOpacity onPress={() => setCreateModal(true)}
@@ -2090,7 +2091,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
       {/* To Call / Called split — telecaller & STM portals only */}
       {isCaller && (
         <View style={common.tabBar}>
-          {[['pending', 'To Call'], ['called', 'Called']].map(([key, label]) => {
+          {[['pending', 'To Call'], ['called', 'Called'], ['all', 'All']].map(([key, label]) => {
             const active = workTab === key;
             return (
               <TouchableOpacity key={key} onPress={() => setWorkTab(key)}
