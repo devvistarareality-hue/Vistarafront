@@ -105,6 +105,8 @@ export const SALES_ENDPOINTS = {
   get mediaUpload()     { return `${BASE_URL}/api/sales/media/upload/`; },
   get mediaDelete()     { return `${BASE_URL}/api/sales/media/delete/`; },
   get dataReset()       { return `${BASE_URL}/api/sales/admin/reset-trial-data/`; },
+  backupExcel: (companyId) => `${BASE_URL}/api/sales/backups/excel/?company_id=${companyId}`,
+  get backupRestore()   { return `${BASE_URL}/api/sales/backups/restore/`; },
   source: (id)          => `${BASE_URL}/api/sales/sources/${id}/`,
   get metaWebhookConfig(){ return `${BASE_URL}/api/sales/webhooks/meta/config/`; },
   get metaMappings()    { return `${BASE_URL}/api/sales/webhooks/meta/mappings/`; },

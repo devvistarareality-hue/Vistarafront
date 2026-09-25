@@ -25,6 +25,7 @@ import CreateUserScreen         from '../screens/UserManagement/CreateUserScreen
 import CompanyManagementScreen  from '../screens/AdminDashboard/CompanyManagementScreen';
 import EditCompanyScreen        from '../screens/AdminDashboard/EditCompanyScreen';
 import DesignationMasterScreen  from '../screens/AdminDashboard/DesignationMasterScreen';
+import DataBackupScreen         from '../screens/AdminDashboard/DataBackupScreen';
 
 // Sales CRM screens
 import SalesCRMScreen          from '../screens/Sales/SalesCRMScreen';
@@ -133,6 +134,7 @@ const AppNavigator = () => {
             <Stack.Screen name="CompanyManagement"  component={CompanyManagementScreen} />
             <Stack.Screen name="EditCompany"        component={EditCompanyScreen} />
             <Stack.Screen name="DesignationMaster"    component={DesignationMasterScreen} />
+            <Stack.Screen name="DataBackup"           component={DataBackupScreen} />
             <Stack.Screen name="ActivityLog"          component={ActivityLogScreen} />
             <Stack.Screen name="SalesCRM"            component={SalesCRMScreen} />
             <Stack.Screen name="SalesLeads"          component={SalesLeadsScreen} />
