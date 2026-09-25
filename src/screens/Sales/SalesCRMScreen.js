@@ -228,6 +228,9 @@ export default function SalesCRMScreen({ navigation, route }) {
   // Telecallers (and admins/managers) see call-queue metrics; STM/CP see their
   // pipeline (stm_status based) — mirrors the web's per-role dashboards.
   // Today's date, local — what New Today counts, whatever range the screen is set to.
+  // Pending from Accounts opens My Bookings on that tab — Channel Partner's own when in CP.
+  const PENDING_ACCOUNTS_PARAMS = isCp ? { cpOnly: true, initialView: 'mybookings', initialTab: 'accounts' }
+    : { initialView: 'mybookings', initialTab: 'accounts', initialScope: 'visible' };
   const _today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
   const TELECALLER_CARDS = [
     { group: 'My Pipeline', label: 'My Leads',      value: stats?.total_leads    ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialWorkTab: 'all' } },
@@ -238,6 +241,8 @@ export default function SalesCRMScreen({ navigation, route }) {
     { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success,  bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { group: 'Conversions', label: 'Warm/SQL',      value: stats?.warm_count     ?? '—', color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm' } } },
     { group: 'Conversions', label: 'SV Done',       value: _svDone,                      color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    // Visits booked from my leads that haven't happened yet (telecallers only — see STAT_CARDS).
+    ...(!(isAdmin || isManager) ? [{ group: 'Conversions', label: 'Upcoming SV', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'scheduled' } }] : []),
     { group: 'Conversions', label: 'MQL→SV Ratio',  value: _mqlToSv,                     color: BLUE,            bg: COLORS.linkBg,    target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { group: 'Follow-ups Due', label: 'Callback Due',  value: stats?.callback_count ?? '—', color: COLORS.purple,   bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback' } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning,  bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
@@ -251,25 +256,27 @@ export default function SalesCRMScreen({ navigation, route }) {
     // Closed and approved here, but not yet signed off by Accounts. Not counted
     // as a closure until they are — they join that tile the moment it happens.
     { group: 'Conversions', label: 'Pending from Accounts', value: stats?.accounts_pending ?? '—',
-      color: COLORS.warning, bg: COLORS.warningBg },
+      color: COLORS.warning, bg: COLORS.warningBg, target: 'ClosureProjects', params: PENDING_ACCOUNTS_PARAMS },
   ];
 
   const STM_CARDS = [
-    { group: 'My Pipeline', label: 'My Pipeline',   value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads' },
+    { group: 'My Pipeline', label: 'My Pipeline',   value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialWorkTab: 'all' } },
     { group: 'My Pipeline', label: 'To Work',       value: _toCall,                              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads' },
-    { group: 'Lead Temperature', label: 'Hot Leads',     value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialFilter: { stm_status: 'hot' } } },
-    { group: 'Lead Temperature', label: 'Warm Leads',    value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialFilter: { stm_status: 'warm' } } },
-    { group: 'Lead Temperature', label: 'Cold Leads',    value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialFilter: { stm_status: 'cold' } } },
+    { group: 'Lead Temperature', label: 'Hot Leads',     value: stats?.stm_hot_count          ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { stm_status: 'hot' } } },
+    { group: 'Lead Temperature', label: 'Warm Leads',    value: stats?.stm_warm_count         ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { stm_status: 'warm' } } },
+    { group: 'Lead Temperature', label: 'Cold Leads',    value: stats?.stm_cold_count         ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { stm_status: 'cold' } } },
     { group: 'Site Visits & Closures', label: 'SV Scheduled',  value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'scheduled' } },
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls,                   color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesFollowUps', params: { initialFilter: 'completed' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,              color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue', value: _fuOverdue,              color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
-    { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads' },
+    { group: 'Calling Activity', label: 'Total Called',  value: _totCall,                     color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called' } },
     { group: 'Site Visits & Closures', label: 'SV Done', value: _svDone,              color: COLORS.success, bg: COLORS.successBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
-    { group: 'Site Visits & Closures', label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' } },
+    { group: 'Site Visits & Closures', label: 'Closures',      value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects',
+      params: isCp ? { cpOnly: true, initialView: 'mybookings', initialTab: 'sold' }
+                   : { initialView: 'mybookings', initialTab: 'sold', initialScope: 'visible' } },
     // Waiting at the Accounts gate — not a closure until Accounts signs off.
     { group: 'Site Visits & Closures', label: 'Pending from Accounts', value: stats?.accounts_pending ?? '—',
-      color: COLORS.warning, bg: COLORS.warningBg },
+      color: COLORS.warning, bg: COLORS.warningBg, target: 'ClosureProjects', params: PENDING_ACCOUNTS_PARAMS },
   ];
 
   // "Unassigned" only means anything to someone who sees the whole company's leads.

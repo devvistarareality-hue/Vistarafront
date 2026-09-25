@@ -339,6 +339,8 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
     { group: 'Conversions', label: 'Warm/SQL',     value: stats?.warm_count     ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'warm', ...dateFilter } } },
     { group: 'Conversions', label: 'SV Done',      value: _svDone,                      color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
+    // Visits booked from my leads that haven't happened yet — telecallers only, as on the web.
+    { group: 'Conversions', label: 'Upcoming SV', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'scheduled' }, tcOnly: true },
     { group: 'Conversions', label: 'MQL→SV Ratio', value: _mqlToSv,                     color: BLUE,           bg: COLORS.linkBg,    target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { group: 'Follow-ups Due', label: 'Callback Due', value: stats?.callback_count ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { tc_status: 'callback', ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending', value: _fuPending,             color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
@@ -361,7 +363,7 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Conversion Rates', label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { group: 'Conversion Rates', label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps', params: { initialFilter: 'completed' } },
-    { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialFilter: { ...dateFilter } } },
+    { group: 'Calling Activity', label: 'Total Called', value: _totCall, color: COLORS.success, bg: COLORS.successBg, target: 'SalesLeads', params: { initialWorkTab: 'called', initialFilter: { ...dateFilter } } },
     { group: 'Follow-ups Due', label: 'Follow-ups Pending',  value: _fuPending,    color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesFollowUps', params: { initialFilter: 'pending' } },
     { group: 'Follow-ups Due', label: 'Follow-ups Overdue',  value: _fuOverdue,    color: COLORS.error,   bg: COLORS.errorBg,   target: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
     { group: 'Conversion Rates', label: 'Avg Closure Time',    value: _avgCloseMo,   color: COLORS.error,  bg: COLORS.errorBg },
@@ -373,7 +375,7 @@ export default function SalesReportsScreen({ navigation }) {
   };
   const STAT_CARDS = isStmView ? STM_CARDS
     : (isAdmin || isManager)
-      ? [...TELECALLER_CARDS.slice(0, 2), UNASSIGNED_CARD, ...TELECALLER_CARDS.slice(2)]
+      ? [...TELECALLER_CARDS.slice(0, 2), UNASSIGNED_CARD, ...TELECALLER_CARDS.slice(2)].filter((c) => !c.tcOnly)
       : TELECALLER_CARDS;
   // Club the tiles under the question each block answers, so the row a number
   // sits in already says how to read it. Order is fixed; a group with no cards
