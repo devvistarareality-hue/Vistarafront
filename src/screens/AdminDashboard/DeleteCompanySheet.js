@@ -43,8 +43,9 @@ async function waitUntilGone(id) {
   for (let i = 0; i < 120; i++) {                 // up to 10 minutes
     await new Promise((res) => setTimeout(res, 5000));
     try {
-      const r = await apiFetch(COMPANY_ENDPOINTS.detail(id));
-      if (r.status === 404) return true;
+      // The detail URL has no GET, so ask the list whether it is still there.
+      const r = await apiFetch(COMPANY_ENDPOINTS.list);
+      if (r.ok && !(await r.json()).some((c) => c.id === id)) return true;
     } catch (e) { /* keep asking */ }
   }
   return false;
@@ -102,7 +103,8 @@ export default function DeleteCompanySheet({ company, onClose, onDeleted }) {
           <Text style={st.text}>
             This permanently deletes {company.name} and everything in it — users, leads, bookings,
             projects, AR, Club 1000, tasks and its backups list. A full backup is taken and saved to
-            this phone first, but it can only be restored into this company, which will no longer exist.
+            this phone first — keep it: Data Backup → Bring back a deleted company can recreate
+            the company from that file.
           </Text>
 
           <Text style={st.label}>Reset key</Text>

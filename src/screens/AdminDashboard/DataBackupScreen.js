@@ -15,6 +15,7 @@ import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import common from '../../styles/common';
 import FilterSelect from '../../components/FilterSelect';
 import { Button } from '../../components/ui';
+import ReviveCompanyCard from './ReviveCompanyCard';
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -328,6 +329,8 @@ export default function DataBackupScreen({ navigation }) {
               disabled={!preview || !!busy} style={s.flex} />
           </View>
         </View>
+
+        {isPlatformAdmin ? <ReviveCompanyCard /> : null}
 
         <View style={[common.card, s.card, s.danger]}>
           <Text style={[s.title, s.dangerTitle]}>Delete everything in this company</Text>
