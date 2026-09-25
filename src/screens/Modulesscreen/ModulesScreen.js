@@ -38,6 +38,13 @@ const ModulesScreen = () => {
   const navigation = useNavigation();
   const user       = useSelector((st) => st.auth.user);
 
+  // A company's own full Admin can take an Excel backup of their own company —
+  // the same thing the website offers them. Not a module-scoped admin: a
+  // Sales-only admin has no business pulling HR, AR and Club 1000 out in one
+  // file. Mirrors backend/sales/views.py::_may_back_up.
+  const isModuleAdmin = user?.role === 'Admin' && !user?.is_staff && (user?.modules || []).length === 1;
+  const mayBackUp = user?.role === 'Admin' && !isModuleAdmin;
+
   const userModules = (user?.modules || [])
     .filter((m) => MODULE_CONFIG[m])
     .map((m) => ({ key: m, ...MODULE_CONFIG[m] }));
@@ -118,6 +125,27 @@ const ModulesScreen = () => {
             </FadeInUp>
           );
         })}
+
+        {mayBackUp ? (
+          <>
+            <View style={s.sectionHead}>
+              <Text style={s.sectionTitle}>Your company</Text>
+              <Text style={s.sectionSub}>Keep a copy of your own records</Text>
+            </View>
+            <FadeInUp index={userModules.length}>
+              <TouchableOpacity activeOpacity={0.85} style={s.card} onPress={() => navigation.navigate('DataBackup')}>
+                <View style={[s.icon, s.adminIcon]}>
+                  <Ionicons name="save-outline" size={24} color={COLORS.link} />
+                </View>
+                <View style={s.cardBody}>
+                  <Text style={s.cardTitle} numberOfLines={1}>Data Backup</Text>
+                  <Text style={s.cardDesc} numberOfLines={2}>Download your company as Excel, or restore one back</Text>
+                </View>
+                <View style={s.go}><Ionicons name="arrow-forward" size={17} color={COLORS.link} /></View>
+              </TouchableOpacity>
+            </FadeInUp>
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -149,6 +177,7 @@ const s = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, marginBottom: 12, borderRadius: 22,
           backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.cardBorder, ...SHADOWS.md },
   icon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  adminIcon: { backgroundColor: COLORS.accentSoft, borderColor: COLORS.border },
   cardBody: { flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
   cardDesc: { fontSize: 12.5, color: COLORS.textSecondary, marginTop: 3, lineHeight: 17 },

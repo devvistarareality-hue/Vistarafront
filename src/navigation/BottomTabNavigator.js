@@ -39,6 +39,7 @@ import ARCollectionsScreen from '../screens/AR/ARCollectionsScreen';
 import TaskDashboardScreen from '../screens/Tasks/TaskDashboardScreen';
 import TaskListScreen from '../screens/Tasks/TaskListScreen';
 import ActivityLogScreen from '../screens/AdminDashboard/ActivityLogScreen';
+import DataBackupScreen from '../screens/AdminDashboard/DataBackupScreen';
 
 const Tab = createBottomTabNavigator();
 const ModulesStack = createNativeStackNavigator();
@@ -79,6 +80,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="TaskDashboard" component={TaskDashboardScreen} />
       <ModulesStack.Screen name="TaskList" component={TaskListScreen} />
       <ModulesStack.Screen name="ActivityLog" component={ActivityLogScreen} />
+      <ModulesStack.Screen name="DataBackup" component={DataBackupScreen} />
     </ModulesStack.Navigator>
   );
 }

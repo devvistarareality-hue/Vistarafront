@@ -22,15 +22,25 @@ const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 // JSON backups stay a web/server concern — there is nothing to tap for those.
 export default function DataBackupScreen({ navigation }) {
   const dispatch = useDispatch();
-  const companyId = useSelector((s) => s.adminFilter?.companyId);
+  const me = useSelector((s) => s.auth.user);
+  const picked = useSelector((s) => s.adminFilter?.companyId);
   const companies = useSelector((s) => s.companies?.companies || []);
-  const company = companies.find((c) => c.id === companyId) || null;
+  // Only a VRL platform admin backs up somebody else's company, so only they get
+  // a picker. Everyone else has exactly one — theirs — and the id is left off so
+  // the server pins it to them.
+  const isModuleAdmin = me?.role === 'Admin' && !me?.is_staff && (me?.modules || []).length === 1;
+  const isPlatformAdmin = me?.company_code === 'VRL' && me?.role === 'Admin' && !isModuleAdmin;
+  const companyId = isPlatformAdmin ? picked : null;
+  const company = isPlatformAdmin
+    ? (companies.find((c) => c.id === picked) || null)
+    : (me?.company_name ? { name: me.company_name } : null);
+  const ready = isPlatformAdmin ? !!picked : true;
 
   const [busy, setBusy] = useState('');       // 'download' | 'check' | 'restore'
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  useEffect(() => { dispatch(fetchCompanies()); }, [dispatch]);
+  useEffect(() => { if (isPlatformAdmin) dispatch(fetchCompanies()); }, [dispatch, isPlatformAdmin]);
   // A different company or a different file invalidates what was checked.
   useEffect(() => { setPreview(null); }, [companyId, file]);
 
@@ -68,7 +78,7 @@ export default function DataBackupScreen({ navigation }) {
       const token = await AsyncStorage.getItem('access_token');
       const form = new FormData();
       form.append('file', { uri: file.uri, name: file.name || 'backup.xlsx', type: file.mimeType || XLSX });
-      form.append('company_id', String(companyId));
+      if (companyId) form.append('company_id', String(companyId));
       if (commit) form.append('commit', '1');
       // multipart: let fetch set the boundary, so no JSON content-type here
       const r = await fetch(SALES_ENDPOINTS.backupRestore, {
@@ -115,10 +125,14 @@ export default function DataBackupScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={common.scroll}>
-        <Text style={common.sectionLabel}>Company</Text>
-        <FilterSelect label="Choose a company" value={companyId}
-          onChange={(v) => dispatch(setAdminCompany(v))}
-          options={companies.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` }))} />
+        {isPlatformAdmin ? (
+          <>
+            <Text style={common.sectionLabel}>Company</Text>
+            <FilterSelect label="Choose a company" value={picked}
+              onChange={(v) => dispatch(setAdminCompany(v))}
+              options={companies.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` }))} />
+          </>
+        ) : null}
 
         <View style={[common.card, s.card]}>
           <Text style={s.title}>Download as Excel</Text>
@@ -129,7 +143,7 @@ export default function DataBackupScreen({ navigation }) {
           </Text>
           <Button title={busy === 'download' ? 'Building…' : 'Download Excel'}
             icon="download-outline" onPress={download}
-            loading={busy === 'download'} disabled={!companyId || !!busy} full />
+            loading={busy === 'download'} disabled={!ready || !!busy} full />
           {company ? <Text style={s.hint}>A large company takes a minute to build.</Text> : null}
         </View>
 
@@ -165,7 +179,7 @@ export default function DataBackupScreen({ navigation }) {
           <View style={s.actions}>
             <Button title={busy === 'check' ? 'Checking…' : 'Check file'} variant="secondary"
               onPress={() => send(false)} loading={busy === 'check'}
-              disabled={!companyId || !file || !!busy} style={s.flex} />
+              disabled={!ready || !file || !!busy} style={s.flex} />
             <Button title={busy === 'restore' ? 'Restoring…' : 'Restore'}
               onPress={confirmRestore} loading={busy === 'restore'}
               disabled={!preview || !!busy} style={s.flex} />
