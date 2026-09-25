@@ -106,7 +106,11 @@ export default function DataBackupScreen({ navigation }) {
   }
 
   async function pickFile() {
-    const res = await DocumentPicker.getDocumentAsync({ type: [XLSX, 'application/vnd.ms-excel'], copyToCacheDirectory: true });
+    // application/gzip is in the list because stored backups taken before the
+    // content-type fix land on the device labelled gzip. The bytes are the same
+    // workbook, so they restore as they are.
+    const res = await DocumentPicker.getDocumentAsync({
+      type: [XLSX, 'application/vnd.ms-excel', 'application/gzip'], copyToCacheDirectory: true });
     if (!res.canceled && res.assets?.[0]) { setFile(res.assets[0]); setPreview(null); }
   }
 
