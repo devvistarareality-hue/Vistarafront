@@ -342,7 +342,7 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Conversions', label: 'Closures',     value: stats?.closures       ?? '—', color: COLORS.error,   bg: COLORS.errorBg,   target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'sold', initialScope: 'visible' } },
     // Closed and approved here, waiting at the Accounts gate — not a closure until
     // Accounts signs off, at which point it moves into the tile above.
-    { group: 'Conversions', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg },
+    { group: 'Conversions', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg, target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'accounts', initialScope: 'visible' } },
   ];
   const STM_CARDS = [
     { group: 'My Pipeline', label: 'My Pipeline',  value: stats?.total_leads            ?? '—', color: BLUE,           bg: COLORS.linkBg,    target: 'SalesLeads', params: { initialWorkTab: 'all', initialFilter: { ...dateFilter } } },
@@ -353,7 +353,7 @@ export default function SalesReportsScreen({ navigation }) {
     { group: 'Site Visits & Closures', label: 'SV Scheduled', value: stats?.stm_sv_scheduled_count ?? '—', color: COLORS.warning, bg: COLORS.warningBg, target: 'SalesSiteVisits', params: { initialTab: 'scheduled' } },
     { group: 'Site Visits & Closures', label: 'SV Done', value: _svDone,             color: COLORS.success, bg: COLORS.successBg, target: 'SalesSiteVisits', params: { initialTab: 'completed' } },
     { group: 'Site Visits & Closures', label: 'Closures',     value: stats?.closures               ?? '—', color: COLORS.purple,  bg: COLORS.purpleBg,  target: 'ClosureProjects', params: { initialView: 'mybookings' } },
-    { group: 'Site Visits & Closures', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg },
+    { group: 'Site Visits & Closures', label: 'Pending from Accounts', value: _accPending, color: COLORS.warning, bg: COLORS.warningBg, target: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'accounts', initialScope: 'visible' } },
     { group: 'Conversion Rates', label: 'SQL → SV Ratio',      value: _sqlToSv,      color: BLUE,          bg: COLORS.linkBg },
     { group: 'Conversion Rates', label: 'SQL → Closure Ratio', value: _sqlToClosure, color: COLORS.purple, bg: COLORS.purpleBg },
     { group: 'Calling Activity', label: 'Follow-up Calls', value: _fuCalls, color: COLORS.purple, bg: COLORS.purpleBg, target: 'SalesFollowUps' },
