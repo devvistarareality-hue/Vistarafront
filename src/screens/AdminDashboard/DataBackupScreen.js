@@ -63,7 +63,8 @@ export default function DataBackupScreen({ navigation }) {
     Alert.alert('Delete everything?',
       `This empties every module for ${company?.name || 'this company'} — leads, bookings, `
       + 'projects, plots, users, AR, tasks, Club 1000. Your own account is kept so you can sign '
-      + 'back in and restore from the backup. There is no undo.',
+      + 'back in and restore. Everyone else comes back without a password — set theirs in User '
+      + 'Management afterwards. There is no undo.',
       [{ text: 'Cancel', style: 'cancel' },
        { text: 'Delete everything', style: 'destructive', onPress: runReset }]);
   }
@@ -240,9 +241,10 @@ export default function DataBackupScreen({ navigation }) {
         <View style={[common.card, s.card, s.danger]}>
           <Text style={[s.title, s.dangerTitle]}>Delete everything in this company</Text>
           <Text style={s.sub}>
-            Empties every module back to nothing. Your own account is kept so you can sign back in
-            and restore. There is no undo except the backup above, which is why one is required
-            first.
+            Empties the modules below back to nothing. Your own account survives with its
+            password so you can sign back in and restore — everyone else comes back without one,
+            since hashes are never written to a backup file. Set theirs in User Management
+            afterwards.
           </Text>
 
           <ModuleChips all={resetInfo?.modules || []} picked={resetMods} onToggle={setResetMods}
