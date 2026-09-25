@@ -63,8 +63,8 @@ export default function DataBackupScreen({ navigation }) {
     Alert.alert('Delete everything?',
       `This empties every module for ${company?.name || 'this company'} — leads, bookings, `
       + 'projects, plots, users, AR, tasks, Club 1000. Your own account is kept so you can sign '
-      + 'back in and restore. Everyone else comes back without a password — set theirs in User '
-      + 'Management afterwards. There is no undo.',
+      + 'back in and restore, and everyone else comes back with the password they had. There is '
+      + 'no undo.',
       [{ text: 'Cancel', style: 'cancel' },
        { text: 'Delete everything', style: 'destructive', onPress: runReset }]);
   }
@@ -179,7 +179,7 @@ export default function DataBackupScreen({ navigation }) {
           <Text style={s.title}>Download as Excel</Text>
           <Text style={s.sub}>
             {company
-              ? `A sheet per module for ${company.name} — Sales, Channel Partner, HR, AR, Task Allocation and Club 1000, as they stand right now.`
+              ? `A sheet per module for ${company.name}, as it stands right now. Includes password hashes so restored accounts can sign in — keep the file somewhere private.`
               : 'Choose a company above — a backup is always of one company.'}
           </Text>
           <ModuleChips all={resetInfo?.modules || []} picked={backupMods} onToggle={setBackupMods}
@@ -241,10 +241,9 @@ export default function DataBackupScreen({ navigation }) {
         <View style={[common.card, s.card, s.danger]}>
           <Text style={[s.title, s.dangerTitle]}>Delete everything in this company</Text>
           <Text style={s.sub}>
-            Empties the modules below back to nothing. Your own account survives with its
-            password so you can sign back in and restore — everyone else comes back without one,
-            since hashes are never written to a backup file. Set theirs in User Management
-            afterwards.
+            Empties the modules below back to nothing. Your own account survives so you can sign
+            back in and restore, and everyone else comes back able to sign in with the password
+            they had.
           </Text>
 
           <ModuleChips all={resetInfo?.modules || []} picked={resetMods} onToggle={setResetMods}
