@@ -105,11 +105,11 @@ export default function DataBackupScreen({ navigation }) {
   function confirmRestore() {
     Alert.alert('Restore this backup?',
       `Put ${preview.total} record${preview.total === 1 ? '' : 's'} back into ${company?.name || 'this company'}? `
-      + 'This only fills data that has been cleared — it never overwrites what is there.',
+      + 'This only fills what is missing — it never overwrites what is already there.',
       [{ text: 'Cancel', style: 'cancel' }, { text: 'Restore', onPress: () => send(true) }]);
   }
 
-  const rows = (preview?.plan || []).filter((p) => p.rows > 0);
+  const rows = (preview?.plan || []).filter((p) => p.restore > 0);
 
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
@@ -150,10 +150,10 @@ export default function DataBackupScreen({ navigation }) {
         <View style={[common.card, s.card]}>
           <Text style={s.title}>Restore from Excel</Text>
           <Text style={s.sub}>
-            For after a Data Reset: this writes back the leads, follow-ups, site visits, bookings,
-            closures, distribution log, availability and notifications from the file, with their
-            original ids. It refuses if any of those records still exist, so it can only fill data
-            that has been cleared — never overwrite what is live.
+            Rebuilds this company from the workbook — every module, with the original ids, so
+            everything still points where it did. Records already there are left alone, so this
+            fills what is missing and never overwrites what is live. Restored user accounts come
+            back without a password, so set one for each before they sign in.
           </Text>
 
           <TouchableOpacity onPress={pickFile} style={s.file} activeOpacity={0.8} disabled={!!busy}>
@@ -166,11 +166,17 @@ export default function DataBackupScreen({ navigation }) {
               {rows.map((p) => (
                 <View style={s.planRow} key={p.table}>
                   <Text style={s.planLabel}>{p.table}</Text>
-                  <Text style={s.planValue}>{p.rows.toLocaleString('en-IN')}</Text>
+                  <Text style={s.planValue}>{p.restore.toLocaleString('en-IN')}</Text>
                 </View>
               ))}
+              {preview.already_there > 0 ? (
+                <View style={s.planRow}>
+                  <Text style={s.planLabel}>Already there, left alone</Text>
+                  <Text style={s.planValue}>{preview.already_there.toLocaleString('en-IN')}</Text>
+                </View>
+              ) : null}
               <View style={[s.planRow, s.planTotal]}>
-                <Text style={s.planTotalLabel}>Ready to restore</Text>
+                <Text style={s.planTotalLabel}>Will be restored</Text>
                 <Text style={s.planTotalValue}>{preview.total.toLocaleString('en-IN')}</Text>
               </View>
             </View>
