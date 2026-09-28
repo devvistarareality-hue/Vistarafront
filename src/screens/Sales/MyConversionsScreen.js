@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StatusBar, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, StatusBar, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +32,7 @@ export default function MyConversionsScreen({ navigation, route }) {
   const [closures, setClosures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
 
   const q = [companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '']
     .filter(Boolean).join('&');
@@ -54,8 +55,20 @@ export default function MyConversionsScreen({ navigation, route }) {
   const done = visits.filter((v) => v.status === 'completed');
   const upcoming = visits.filter((v) => v.status === 'scheduled')
     .sort((a, b) => new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0));
+  // The tab labels keep the real totals, so they do not move while a search
+  // narrows the list under them.
   const counts = { sv: done.length, upcoming: upcoming.length, closures: closures.length };
-  const rows = tab === 'sv' ? done : tab === 'upcoming' ? upcoming : closures;
+
+  // One box across every column a person would recognise a row by. Phone matters
+  // most here: it is what someone has in hand when a client rings back.
+  const needle = search.trim().toLowerCase();
+  const match = (r) => [
+    r.lead_name, r.lead_phone, r.project_name,
+    r.stm_name, r.referred_by_telecaller_name, r.unit_type, r.unit_no,
+  ].some((f) => String(f || '').toLowerCase().includes(needle));
+
+  const all = tab === 'sv' ? done : tab === 'upcoming' ? upcoming : closures;
+  const rows = needle ? all.filter(match) : all;
 
   const renderVisit = ({ item: v }) => (
     <View style={st.row}>
@@ -83,8 +96,10 @@ export default function MyConversionsScreen({ navigation, route }) {
     </View>
   );
 
-  const empty = tab === 'upcoming' ? 'No visits scheduled.'
-    : tab === 'sv' ? 'No site visits completed yet.' : 'No closures yet.';
+  const empty = needle
+    ? `Nothing matches "${search.trim()}" in this tab.`
+    : tab === 'upcoming' ? 'No visits scheduled.'
+      : tab === 'sv' ? 'No site visits completed yet.' : 'No closures yet.';
 
   return (
     <SafeAreaView style={st.screen} edges={['top']}>
@@ -109,6 +124,27 @@ export default function MyConversionsScreen({ navigation, route }) {
         ))}
       </View>
 
+      <View style={st.searchWrap}>
+        <Ionicons name="search" size={16} color={COLORS.textSecondary} />
+        <TextInput
+          style={st.searchInput}
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search lead, phone, project, STM…"
+          placeholderTextColor={COLORS.textTertiary}
+          autoCorrect={false}
+          autoCapitalize="none"
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {/* clearButtonMode is iOS-only, so Android gets a real button. */}
+        {!!search && (
+          <TouchableOpacity onPress={() => setSearch('')} style={st.searchClear} hitSlop={8}>
+            <Ionicons name="close-circle" size={17} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </View>
+
       {loading ? (
         <AppLoader size={0.7} style={st.loader} />
       ) : (
@@ -128,6 +164,11 @@ export default function MyConversionsScreen({ navigation, route }) {
 
 const st = StyleSheet.create({
   screen:   { flex: 1, backgroundColor: COLORS.screenBg },
+  searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16,
+                marginBottom: 10, paddingHorizontal: 12, height: 42, borderRadius: 14,
+                borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  searchInput: { flex: 1, fontSize: 13.5, color: COLORS.textPrimary, padding: 0 },
+  searchClear: { padding: 2 },
   header:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14 },
   back:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   flex:     { flex: 1 },
