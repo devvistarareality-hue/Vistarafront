@@ -86,7 +86,7 @@ export default function NotificationsScreen({ navigation }) {
         {loading ? <AppLoader style={{ marginTop: 24 }} /> : rows.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up <AppIcon name="party" size={15} /></Text></View>
         ) : rows.map((n) => {
-          const target = routeForNotifType(n.type);
+          const target = routeForNotifType(n.type, undefined, n.data);
           const st = styleFor(n.type);
           return (
           <TouchableOpacity key={n.id} activeOpacity={target ? 0.7 : 1} onPress={() => target && navigation.navigate(target.screen, target.params)}
