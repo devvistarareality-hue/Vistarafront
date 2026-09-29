@@ -97,6 +97,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [showTo,     setShowTo]     = useState(false);
   // Completion modal: remarks + optional next follow-up.
   const [done,       setDone]       = useState(null);
+  const [historyFu,  setHistoryFu]  = useState(null);   // the follow-up whose lead history is open
   const [outcome,    setOutcome]    = useState('');
   const [schedNext,  setSchedNext]  = useState(false);
   const [nextAt,     setNextAt]     = useState(null);   // Date | null
@@ -437,6 +438,10 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                     {!!fu.outcome && <Text style={{ fontSize: 12, color: COLORS.success, marginTop: 6 }}><Text style={{ fontWeight: '700' }}>Remarks: </Text>{fu.outcome}</Text>}
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                    {/* Every follow-up — done ones included — can open its lead's timeline. */}
+                    <TouchableOpacity onPress={() => setHistoryFu(fu)} style={fsv.histBtn}>
+                      <Text style={fsv.histBtnText}>History</Text>
+                    </TouchableOpacity>
                     {fu.status === 'pending' && (
                       <TouchableOpacity onPress={() => openDone(fu)}
                         style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -459,6 +464,20 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           }}
         />
       )}
+
+      {/* A follow-up's lead history — the same timeline as the Complete sheet's tab. */}
+      <Modal visible={!!historyFu} transparent animationType="slide" onRequestClose={() => setHistoryFu(null)}>
+        <View style={fsv.sheetWrap}>
+          <View style={fsv.sheet}>
+            <Text style={fsv.sheetTitle}>{historyFu?.lead_name || 'Lead'} · History</Text>
+            {!!historyFu?.lead_phone && <Text style={fsv.sheetSub}>{historyFu.lead_phone}</Text>}
+            {!!historyFu && <LeadHistory leadId={historyFu.lead} />}
+            <TouchableOpacity onPress={() => setHistoryFu(null)} style={fsv.close}>
+              <Text style={fsv.closeText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Complete follow-up: remarks + optional next follow-up */}
       <Modal visible={!!done} transparent animationType="slide" onRequestClose={() => !submitting && setDone(null)}>
@@ -644,4 +663,10 @@ const fsv = StyleSheet.create({
   tabTextOn: { color: COLORS.link },
   close: { marginTop: 12, borderRadius: 14, padding: 13, alignItems: 'center', backgroundColor: COLORS.surfaceAlt },
   closeText: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  histBtn: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  histBtnText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  sheetWrap: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' },
+  sheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 },
+  sheetTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  sheetSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2, marginBottom: 12 },
 });
