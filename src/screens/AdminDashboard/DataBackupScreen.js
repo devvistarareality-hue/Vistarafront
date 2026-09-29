@@ -36,7 +36,7 @@ export default function DataBackupScreen({ navigation }) {
   const companyId = isPlatformAdmin ? picked : null;
   const company = isPlatformAdmin
     ? (companies.find((c) => c.id === picked) || null)
-    : (me?.company_name ? { name: me.company_name } : null);
+    : (me?.company_name ? { name: me.company_name, code: me.company_code } : null);
   const ready = isPlatformAdmin ? !!picked : true;
 
   const [busy, setBusy] = useState('');       // 'download' | 'check' | 'restore'
@@ -44,6 +44,11 @@ export default function DataBackupScreen({ navigation }) {
   const [preview, setPreview] = useState(null);
   const [resetInfo, setResetInfo] = useState(null);
   const [resetKey, setResetKey] = useState('');
+  // The company's own code, typed out — the server refuses a reset without it.
+  const [resetCode, setResetCode] = useState('');
+  useEffect(() => { setResetCode(''); }, [picked]);
+  const codeMatches = !!resetCode.trim()
+    && (!company?.code || resetCode.trim().toUpperCase() === String(company.code).toUpperCase());
 
   useEffect(() => { if (isPlatformAdmin) dispatch(fetchCompanies()); }, [dispatch, isPlatformAdmin]);
   // A different company or a different file invalidates what was checked.
@@ -76,7 +81,7 @@ export default function DataBackupScreen({ navigation }) {
     try {
       // Refuse a wrong key straight away, before minutes of backup.
       const chk = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
-        method: 'POST', body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE', check_only: true }) });
+        method: 'POST', body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE', company_code: resetCode, check_only: true }) });
       if (!chk.ok) {
         const cd = await chk.json().catch(() => ({}));
         Alert.alert('Reset refused', cd.detail || 'Nothing was changed.');
@@ -108,7 +113,7 @@ export default function DataBackupScreen({ navigation }) {
       try {
         r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
           method: 'POST',
-          body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE' }) });
+          body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE', company_code: resetCode }) });
         d = await r.json().catch(() => ({}));
       } catch (e) { r = null; }
       // A big company can take longer to empty than the connection stays open; the
@@ -363,11 +368,15 @@ export default function DataBackupScreen({ navigation }) {
             placeholder="Reset key" placeholderTextColor={COLORS.textTertiary}
             secureTextEntry autoCapitalize="none"
             editable={!!resetInfo?.key_configured && !busy} />
+          <TextInput style={s.input} value={resetCode} onChangeText={setResetCode}
+            placeholder={company?.code ? `Type ${company.code}` : 'Company code'} placeholderTextColor={COLORS.textTertiary}
+            autoCapitalize="characters" autoCorrect={false}
+            editable={!!resetInfo?.key_configured && !busy} />
 
           <Button title={busy === 'reset' ? 'Deleting…' : busy === 'reset-backup' ? 'Backing up…' : 'Back up & reset this company'}
             variant="danger"
             onPress={confirmReset} loading={busy === 'reset' || busy === 'reset-backup'}
-            disabled={!resetInfo?.key_configured || !resetKey || !!busy}
+            disabled={!resetInfo?.key_configured || !resetKey || !codeMatches || !!busy}
             full />
         </View>
       </ScrollView>

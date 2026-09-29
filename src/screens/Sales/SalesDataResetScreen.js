@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, TextInput, Switch, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, TextInput, Switch, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
-import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { COLORS, CARD_SHADOW, withAlpha } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
@@ -36,6 +36,8 @@ export default function SalesDataResetScreen({ navigation }) {
   const [counts, setCounts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmText, setConfirmText] = useState('');
+  // The company's own code, typed out — the server refuses a reset without it.
+  const [companyCode, setCompanyCode] = useState('');
   // Held in the server environment, not in the app — being signed in as an admin
   // is not by itself enough to wipe the company's data.
   const [resetKey, setResetKey] = useState('');
@@ -54,6 +56,7 @@ export default function SalesDataResetScreen({ navigation }) {
   const CASCADE = ['site_visits', 'follow_ups', 'lead_history'];
   const implied = (k) => selected.has('leads') && CASCADE.includes(k);
   const nothingSelected = selected.size === 0;
+  const resetReady = confirmText === 'DELETE' && !!resetKey.trim() && !!companyCode.trim() && !busy && !nothingSelected;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,7 +73,7 @@ export default function SalesDataResetScreen({ navigation }) {
   const total = counts ? Object.entries(counts).reduce((a, [k, v]) => a + (willClear(k) ? v : 0), 0) : 0;
 
   function confirmReset() {
-    if (confirmText !== 'DELETE' || !resetKey.trim() || nothingSelected) return;
+    if (confirmText !== 'DELETE' || !resetKey.trim() || !companyCode.trim() || nothingSelected) return;
     Alert.alert(
       'Delete selected trial data?',
       'This permanently deletes the selected trial data for this company. This cannot be undone.',
@@ -83,7 +86,7 @@ export default function SalesDataResetScreen({ navigation }) {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.dataReset + cq('?'), {
         method: 'POST',
-        body: JSON.stringify({ confirm: 'DELETE', reset_key: resetKey, targets: [...selected], with_attendance: withAttendance, with_loi_files: withLoi }),
+        body: JSON.stringify({ confirm: 'DELETE', reset_key: resetKey, company_code: companyCode, targets: [...selected], with_attendance: withAttendance, with_loi_files: withLoi }),
       });
       const d = await res.json().catch(() => ({}));
       if (res.ok) { setMsg('✅ Trial data cleared. Your CRM is now a clean slate.'); setConfirmText(''); load(); }
@@ -166,16 +169,18 @@ export default function SalesDataResetScreen({ navigation }) {
         {/* Danger zone */}
         <View style={{ backgroundColor: COLORS.errorBg, borderWidth: 1.5, borderColor: RED, borderRadius: 18, padding: 16 }}>
           <Text style={{ fontSize: 14, fontWeight: '800', color: RED, marginBottom: 6 }}><AppIcon name="alert" size={14} /> Danger zone — cannot be undone</Text>
-          <Text style={{ fontSize: 13, color: COLORS.errorStrong, marginBottom: 12 }}>Take a database backup first. Then type DELETE and enter the reset key.</Text>
+          <Text style={sdr.note}>Take a database backup first. Then type DELETE, enter the reset key and this company's code.</Text>
           <TextInput value={confirmText} onChangeText={setConfirmText} placeholder="Type DELETE" autoCapitalize="characters"
             placeholderTextColor={COLORS.textTertiary}
             style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
           <TextInput value={resetKey} onChangeText={setResetKey} placeholder="Reset key"
             secureTextEntry autoCapitalize="none" placeholderTextColor={COLORS.textTertiary}
             style={{ backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: RED + '66', borderRadius: 22, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: TEXT, marginBottom: 12 }} />
-          <TouchableOpacity onPress={confirmReset} disabled={confirmText !== 'DELETE' || !resetKey.trim() || busy || nothingSelected}
-            style={{ backgroundColor: (confirmText === 'DELETE' && !!resetKey.trim() && !busy && !nothingSelected) ? RED : COLORS.error2, borderRadius: 14, paddingVertical: 13, alignItems: 'center' }}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>{nothingSelected ? 'Select at least one item' : !resetKey.trim() ? 'Enter the reset key' : `Permanently delete ${total} records`}</Text>}
+          <TextInput value={companyCode} onChangeText={setCompanyCode} placeholder="Company code"
+            autoCapitalize="characters" autoCorrect={false} placeholderTextColor={COLORS.textTertiary} style={sdr.input} />
+          <TouchableOpacity onPress={confirmReset} disabled={!resetReady}
+            style={[sdr.btn, resetReady ? sdr.btnOn : sdr.btnOff]}>
+            {busy ? <ActivityIndicator color={COLORS.white} /> : <Text style={sdr.btnText}>{nothingSelected ? 'Select at least one item' : !resetKey.trim() ? 'Enter the reset key' : !companyCode.trim() ? 'Enter the company code' : `Permanently delete ${total} records`}</Text>}
           </TouchableOpacity>
           {!!msg && <Text style={{ marginTop: 12, fontSize: 13, fontWeight: '600', color: msg[0] === '✅' ? COLORS.success : RED }}><AppIcon name={msg[0] === '✅' ? 'check-circle' : 'alert'} size={14} /> {msg.replace(/^[^A-Za-z0-9]+/, '')}</Text>}
         </View>
@@ -184,3 +189,14 @@ export default function SalesDataResetScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+// Danger-zone company-code box and delete button.
+const sdr = StyleSheet.create({
+  note: { fontSize: 13, color: COLORS.errorStrong, marginBottom: 12 },
+  input: { backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: withAlpha(COLORS.error, '66'), borderRadius: 22,
+           paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textPrimary, marginBottom: 12 },
+  btn: { borderRadius: 14, paddingVertical: 13, alignItems: 'center' },
+  btnOn: { backgroundColor: COLORS.error },
+  btnOff: { backgroundColor: COLORS.error2 },
+  btnText: { color: COLORS.white, fontWeight: '800', fontSize: 14 },
+});
