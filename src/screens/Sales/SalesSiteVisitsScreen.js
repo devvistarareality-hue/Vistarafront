@@ -10,6 +10,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { getCache, setCache, bustCache, key as cacheKey } from '../../utils/dataCache';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
+import { can } from '../../lib/roles';
 
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
@@ -62,6 +63,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const [proj,       setProj]       = useState('');                     // '' = every project
   const [outcomeFilter, setOutcomeFilter] = useState('');                // '' = every outcome
   const [svSearch, setSvSearch] = useState('');
+  const [tcPerson, setTcPerson] = useState('');
+  const [stmPerson, setStmPerson] = useState('');
   const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
   const DATE_PRESETS = [
@@ -280,12 +283,25 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const narrowed = dated || !!proj;
 
   const svQ = svSearch.trim().toLowerCase();
+  // Telecaller / STM pickers for manager-level viewers — the web's rule: anyone who
+  // isn't a telecaller, STM or CP. Options come from every visit, like projects.
+  const isAdminMgr = !can(user, 'sales.pipeline.telecalling') && !can(user, 'sales.pipeline.stm')
+    && !can(user, 'sales.pipeline.cp') && !can(user, 'sales.pipeline.cp_manager');
+  const peopleOf = (idKey, nameKey) => {
+    const m = new Map();
+    visits.forEach((v) => { if (v[idKey]) m.set(String(v[idKey]), v[nameKey] || `#${v[idKey]}`); });
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([value, label]) => ({ value, label }));
+  };
+  const tcOptions  = isAdminMgr ? peopleOf('referred_by_telecaller', 'referred_by_telecaller_name') : [];
+  const stmOptions = isAdminMgr ? peopleOf('stm', 'stm_name') : [];
   const visible = visits.filter((v) => {
     if (!inRange(v)) return false;
     // Search by name or phone, as on the web.
     if (svQ && !(v.lead_name || '').toLowerCase().includes(svQ) && !(v.lead_phone || '').toLowerCase().includes(svQ)) return false;
     if (proj && projName(v) !== proj) return false;
     if (outcomeFilter && v.outcome !== outcomeFilter) return false;
+    if (tcPerson && String(v.referred_by_telecaller || '') !== tcPerson) return false;
+    if (stmPerson && String(v.stm || '') !== stmPerson) return false;
     if (filter === 'all') return true;
     if (filter === 'today') {
       const at = new Date(v.scheduled_at);
@@ -346,6 +362,14 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         <FilterSelect label="Any outcome" value={outcomeFilter} onChange={setOutcomeFilter} style={fs.sel}
           options={[{ value: '', label: 'Any outcome' },
                     ...['hot', 'warm', 'cold', 'not_interested'].map((v) => ({ value: v, label: OUTCOME_LABEL[v] }))]} />
+        {tcOptions.length > 0 && (
+          <FilterSelect label="All Telecallers" value={tcPerson} onChange={setTcPerson} style={fs.sel}
+            options={[{ value: '', label: 'All Telecallers' }, ...tcOptions]} />
+        )}
+        {stmOptions.length > 0 && (
+          <FilterSelect label="All STMs" value={stmPerson} onChange={setStmPerson} style={fs.sel}
+            options={[{ value: '', label: 'All STMs' }, ...stmOptions]} />
+        )}
       </View>
 
       {loading ? (
