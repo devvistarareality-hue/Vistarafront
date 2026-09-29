@@ -334,7 +334,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       <Text style={SalesLeadsScreenS.nqTitle}>NOT QUALIFIED</Text>
       <Text style={lblS}>Reason <Text style={SalesLeadsScreenS.nqRequired}>*</Text></Text>
       <PickerDropdown
-        items={[['religion','Religion'],['caste','Caste'],['budget','Budget'],['other','Other']].map(([v, l]) => ({ value: v, label: l }))}
+        items={[['religion','Religion'],['caste','Caste'],['budget','Budget'],['not_enquired','Not Enquired'],['other','Other']].map(([v, l]) => ({ value: v, label: l }))}
         value={form.disqualify_reason} onChange={v => set('disqualify_reason', v)}
         placeholder="Select reason" title="Not Qualified Reason" />
       {form.disqualify_reason === 'other' && (
@@ -1199,7 +1199,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
         <DropdownPicker
           value={form.disqualify_reason}
           onChange={v => set('disqualify_reason', v)}
-          options={[{ value: '', label: '— Select reason —' }, { value: 'religion', label: 'Religion' }, { value: 'caste', label: 'Caste' }, { value: 'budget', label: 'Budget' }, { value: 'other', label: 'Other' }]}
+          options={[{ value: '', label: '— Select reason —' }, { value: 'religion', label: 'Religion' }, { value: 'caste', label: 'Caste' }, { value: 'budget', label: 'Budget' }, { value: 'not_enquired', label: 'Not Enquired' }, { value: 'other', label: 'Other' }]}
           placeholder="Select reason"
           triggerStyle={SalesLeadsScreenS.triggerNoMB}
         />
@@ -1737,6 +1737,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
                         { value: 'religion', label: 'Religion' },
                         { value: 'caste', label: 'Caste' },
                         { value: 'budget', label: 'Budget' },
+                        { value: 'not_enquired', label: 'Not Enquired' },
                         { value: 'other', label: 'Other' }]}
               placeholder="Any reason" />
           </View>
