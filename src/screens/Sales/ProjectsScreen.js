@@ -299,8 +299,13 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
     name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '',
     total_area: '', total_plots: '', price_range: '', possession: '', description: '',
     cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false,
+    is_locked: false, locked_blocks: [],
     floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }],
   });
+  // The blocks this project declares, read off its floor plans — the same place a
+  // unit's number prefix comes from. No floor plans, no blocks to lock.
+  const formBlocks = [...new Set((form.floor_plans || []).map((f) => f.block || '').filter(Boolean))].sort();
+
   // EOI standard unit types (pre-approval sizes) — [{type, plot_area, const_area}].
   const addEoiType    = () => setForm(f => ({ ...f, eoi_unit_types: [...(f.eoi_unit_types || []), { type: '', plot_area: '', const_area: '' }] }));
   const removeEoiType = (i) => setForm(f => ({ ...f, eoi_unit_types: f.eoi_unit_types.filter((_, idx) => idx !== i) }));
@@ -362,13 +367,15 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           master_plan_url: project.master_plan_url || '',
           is_active:       project.is_active !== undefined ? project.is_active : true,
           kiosk_enabled:   !!project.kiosk_enabled,
+          is_locked:       !!project.is_locked,
+          locked_blocks:   project.locked_blocks || [],
           floor_wise:      !!project.floor_wise,
           block_industrial: !!project.block_industrial,
           floor_plans:     (project.floor_plans?.length ? project.floor_plans : [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }]),
         });
         setEditableTypes((project.plot_type_plans || []).map(pt => ({ original: pt.name, current: pt.name })));
       } else {
-        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false, floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
+        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false, is_locked: false, locked_blocks: [], floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
         setHasTypes(false); setNoTypePlots(''); setPlotTypes([{ name: '', from: '1', to: '' }]);
         setEditableTypes([]);
       }
@@ -659,6 +666,44 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
               <Switch value={form.is_active} onValueChange={v => set('is_active', v)} trackColor={{ false: COLORS.border, true: NAVY }} />
             </View>
 
+            {/* Lock. Separate from Active: inactive means a project that is over,
+                locked means one that has not started. */}
+            <View style={ProjectsScreenS.lockCard}>
+              <View style={ProjectsScreenS.lockRow}>
+                <View style={ProjectsScreenS.lockText}>
+                  <Text style={ProjectsScreenS.lockTitle}>Lock this project</Text>
+                  <Text style={ProjectsScreenS.lockSub}>
+                    {form.is_locked
+                      ? 'Hidden from everyone but admins. It cannot be picked or booked against until you unlock it. Existing leads, visits and bookings are untouched.'
+                      : 'Visible to everyone in the company with Sales access.'}
+                  </Text>
+                </View>
+                <Switch value={!!form.is_locked} onValueChange={(v) => set('is_locked', v)}
+                  trackColor={{ false: COLORS.border, true: COLORS.warning2 }} />
+              </View>
+
+              {/* Blocks only exist on floor-wise projects that declare them. */}
+              {formBlocks.length > 0 && (
+                <View style={ProjectsScreenS.lockBlocks}>
+                  <Text style={ProjectsScreenS.lockBlocksHead}>Lock individual blocks</Text>
+                  <Text style={ProjectsScreenS.lockSub}>A locked block's units come off the unit map and cannot be booked.</Text>
+                  <View style={ProjectsScreenS.lockChips}>
+                    {formBlocks.map((b) => {
+                      const on = (form.locked_blocks || []).includes(b);
+                      return (
+                        <TouchableOpacity key={b} onPress={() => set('locked_blocks', on
+                          ? form.locked_blocks.filter((x) => x !== b)
+                          : [...(form.locked_blocks || []), b])}
+                          style={[ProjectsScreenS.lockChip, on && ProjectsScreenS.lockChipOn]}>
+                          <Text style={[ProjectsScreenS.lockChipText, on && ProjectsScreenS.lockChipTextOn]}>Block {b}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+            </View>
+
             {/* Kiosk self-booking toggle */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderRadius: 22, padding: 14, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 14 }}>
               <View style={{ flex: 1, paddingRight: 10 }}>
@@ -883,6 +928,20 @@ const metaChipTxt = { fontSize: 11, fontWeight: '600', color: COLORS.textSeconda
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ProjectsScreenS = StyleSheet.create({
+  lockCard:   { backgroundColor: COLORS.surface, borderRadius: 22, padding: 14, borderWidth: 1.5,
+                borderColor: COLORS.border, marginBottom: 14 },
+  lockRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  lockText:   { flex: 1, paddingRight: 10 },
+  lockTitle:  { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  lockSub:    { fontSize: 11, color: COLORS.textSecondary, lineHeight: 16, marginTop: 2 },
+  lockBlocks: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
+  lockBlocksHead: { fontSize: 12.5, fontWeight: '700', color: COLORS.textPrimary },
+  lockChips:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  lockChip:   { paddingHorizontal: 13, height: 32, justifyContent: 'center', borderRadius: 10,
+                borderWidth: 1.5, borderColor: COLORS.borderStrong, backgroundColor: COLORS.screenBg },
+  lockChipOn: { borderColor: COLORS.warning2, backgroundColor: COLORS.warningBg },
+  lockChipText:   { fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
+  lockChipTextOn: { color: COLORS.warning2 },
   btn: { marginTop: 12, paddingVertical: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
   header: { backgroundColor: 'transparent', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
   btn2: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
