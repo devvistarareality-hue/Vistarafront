@@ -12,6 +12,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { Badge } from '../../components/ui';
 import { STATUS_LABEL, PRIORITIES, PRIORITY_LABEL, withCompany, isOverdue } from './taskShared';
 import TaskDetailSheet from './TaskDetailSheet';
+import { onlyPresent } from '../../lib/presentOptions';
 
 // Dash's tone vocabulary (info/good/warn/bad/muted) → Badge's (info/success/warning/danger/neutral).
 const BADGE_TONE = { info: 'info', good: 'success', warn: 'warning', bad: 'danger', muted: 'neutral' };
@@ -28,6 +29,14 @@ export default function TaskListScreen({ route }) {
   const [listFilter, setListFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
+  // Only the values these rows hold (?facets=1), as on the web — see lib/presentOptions.
+  const [facets, setFacets] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    apiFetch(withCompany(TASK_ENDPOINTS.tasks, companyId, ['facets=1'])).then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d) setFacets(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, [companyId]);
+  const fx = (key) => facets?.[key] ?? null;
   const [overdueOnly, setOverdueOnly] = useState(!!route?.params?.overdue);
   const [tasks, setTasks] = useState(null);
   const [err, setErr] = useState('');
@@ -77,12 +86,12 @@ export default function TaskListScreen({ route }) {
       </View>
       <View style={s.filters}>
         <FilterSelect label="Task List" value={listFilter} onChange={setListFilter}
-          options={[{ value: '', label: 'All Task Lists' }, ...lists.map((l) => ({ value: String(l.id), label: l.name }))]} />
+          options={[{ value: '', label: 'All Task Lists' }, ...onlyPresent(lists.map((l) => ({ value: String(l.id), label: l.name })), fx('list_ids'), listFilter)]} />
         <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter}
-          options={[{ value: '', label: 'All Statuses' }, { value: 'todo', label: 'To Do' }, { value: 'in_progress', label: 'In Progress' },
-            { value: 'in_review', label: 'In Review' }, { value: 'done', label: 'Done' }, { value: 'blocked', label: 'Blocked' }]} />
+          options={[{ value: '', label: 'All Statuses' }, ...onlyPresent([{ value: 'todo', label: 'To Do' }, { value: 'in_progress', label: 'In Progress' },
+            { value: 'in_review', label: 'In Review' }, { value: 'done', label: 'Done' }, { value: 'blocked', label: 'Blocked' }], fx('statuses'), statusFilter)]} />
         <FilterSelect label="Priority" value={priorityFilter} onChange={setPriorityFilter}
-          options={[{ value: '', label: 'All Priorities' }, ...PRIORITIES.map((p) => ({ value: p.value, label: p.label }))]} />
+          options={[{ value: '', label: 'All Priorities' }, ...onlyPresent(PRIORITIES.map((p) => ({ value: p.value, label: p.label })), fx('priorities'), priorityFilter)]} />
         <TouchableOpacity onPress={() => setOverdueOnly((v) => !v)} style={[s.overdueChip, overdueOnly && s.overdueChipOn]}>
           <Text style={[s.overdueChipText, overdueOnly && s.overdueChipTextOn]}>Overdue only</Text>
         </TouchableOpacity>
