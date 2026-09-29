@@ -13,6 +13,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { onlyPresent } from '../../lib/presentOptions';
+import LeadNumberCheck from '../../components/LeadNumberCheck';
 import FormSheet from '../../components/FormSheet';
 import { Field, TextField } from '../../components/Field';
 import AppIcon from '../../components/AppIcon';
@@ -1173,6 +1174,18 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   const showStm = _isAdminMgr || _isStm || _isCp;
   const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '', disqualify_reason: '', disqualify_note: '', lead_date: '' };
   const [form, setForm] = useState(emptyForm);
+  // Step 1 is the number check (components/LeadNumberCheck), as on the web: every
+  // lead on this number, project by project. Back to it each time the sheet opens.
+  const [step, setStep] = useState('number');
+  useEffect(() => { if (visible) setStep('number'); }, [visible]);
+  const pickExisting = (row) => {
+    // Working on that lead: its project and name are set, so saving updates it
+    // (the server's same-phone-same-project path) rather than adding another.
+    setForm((f) => ({ ...f, phone: row.phone || f.phone, name: row.name || f.name,
+      project: row.project_id ? row.project_id : f.project }));
+    setStep('form');
+  };
+  const addNew = (phone) => { setForm((f) => ({ ...f, phone })); setStep('form'); };
   const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -1315,6 +1328,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Add Lead</Text>
             <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>Fill in the contact details below</Text>
           </View>
+          {step === 'number' ? <LeadNumberCheck initialPhone={form.phone} onPick={pickExisting} onNew={addNew} /> : (
           <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 20 }}>
             <TextField label="Full Name" required value={form.name} onChangeText={v => set('name', v)} placeholder="Lead name" />
             <TextField label="Phone" required value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" placeholder="10-digit mobile" />
@@ -1520,6 +1534,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <FollowUpScheduler fuForm={fuForm} setFuForm={setFuForm} canAssign={_isAdminMgr}
               hint="Optional — pick a date &amp; time and it's scheduled when you tap Add Lead." />
           </ScrollView>
+          )}
     </FormSheet>
   );
 }
