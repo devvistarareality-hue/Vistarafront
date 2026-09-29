@@ -7,6 +7,7 @@ import { can, canSee, isManagerRole } from '../lib/roles';
 // not My Conversions.
 const ROUTE_FOR_TYPE = {
   new_lead: { screen: 'SalesLeads' },
+  re_enquiry: { screen: 'SalesLeads' },
   followup: { screen: 'SalesFollowUps' },
   sv: { screen: 'SalesSiteVisits' },
   sv_done: { screen: 'SalesSiteVisits' },
@@ -48,7 +49,9 @@ const ROUTE_FOR_TYPE = {
 // someone who has it; a role without that screen (a telecaller has no Site Visits
 // or Booking, a non-manager no Approvals) goes to its own equivalent instead —
 // never to a screen its menu doesn't offer. Mirrors the website's bell.
-export function routeForNotifType(type, user = store.getState()?.auth?.user) {
+export function routeForNotifType(type, user = store.getState()?.auth?.user, data = null) {
+  // A repeat enquiry opens that very lead.
+  if (type === 're_enquiry' && data?.lead_id) return { screen: 'SalesLeads', params: { openLeadId: data.lead_id } };
   const route = ROUTE_FOR_TYPE[type] || null;
   if (!route || !user) return route;
   const admin = user.role === 'Admin' || user.is_staff || (user.admin_modules || []).includes('Sales');
@@ -110,7 +113,7 @@ function deepLink(route, attempt) {
 }
 
 export function navigateFromNotif(data) {
-  const route = routeForNotifType(data && data.type);
+  const route = routeForNotifType(data && data.type, undefined, data);
   if (!route) return;
   deepLink(route, 0);
 }

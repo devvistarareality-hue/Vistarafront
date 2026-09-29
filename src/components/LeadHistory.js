@@ -15,12 +15,13 @@ const LABEL = {
   telecaller_remarks: 'TC Remarks', stm_remarks: 'STM Remarks', telecaller: 'Telecaller Assigned',
   stm: 'STM Assigned', warm_transfer: 'Transferred to STM', site_visit: 'Site Visit', closure: 'Closure',
   follow_up: 'Follow-up Scheduled', follow_up_done: 'Follow-up Done', follow_up_missed: 'Follow-up Missed',
+  re_enquiry: 'Enquired Again',
 };
 const TONE = {
   status: COLORS.link, telecaller_status: COLORS.success, stm_status: COLORS.warningAlt,
   telecaller_remarks: COLORS.success, stm_remarks: COLORS.warningAlt, telecaller: COLORS.link, stm: COLORS.success,
   warm_transfer: COLORS.error, site_visit: COLORS.warningAlt, closure: COLORS.success,
-  follow_up: COLORS.link, follow_up_done: COLORS.success, follow_up_missed: COLORS.error,
+  follow_up: COLORS.link, follow_up_done: COLORS.success, follow_up_missed: COLORS.error, re_enquiry: COLORS.warningAlt,
 };
 const icon = (f) => (f === 'warm_transfer' ? 'flame' : f === 'telecaller' ? 'user' : f === 'stm' ? 'building'
   : f === 'site_visit' ? 'home' : f === 'closure' ? 'check-circle' : f.startsWith('follow_up') ? 'calendar'

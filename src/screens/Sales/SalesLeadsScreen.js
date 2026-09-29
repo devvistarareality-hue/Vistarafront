@@ -186,6 +186,7 @@ const HISTORY_LABEL = {
   follow_up:          'Follow-up Scheduled',
   follow_up_done:     'Follow-up Done',
   follow_up_missed:   'Follow-up Missed',
+  re_enquiry:         'Enquired Again',
 };
 const HISTORY_COLOR = {
   created:            COLORS.textSecondary,
@@ -202,6 +203,7 @@ const HISTORY_COLOR = {
   follow_up:          COLORS.link,
   follow_up_done:     COLORS.success,
   follow_up_missed:   COLORS.error,
+  re_enquiry:         COLORS.warningAlt,
 };
 const FU_STATUS_COLOR = { pending: COLORS.warningAlt, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
 
