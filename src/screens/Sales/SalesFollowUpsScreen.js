@@ -19,6 +19,7 @@ import LoadError from '../../components/LoadError';
 import common from '../../styles/common';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { onlyPresent } from '../../lib/presentOptions';
+import LeadHistory from '../../components/LeadHistory';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -109,6 +110,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [svOutcome, setSvOutcome] = useState('');
   const [svDate, setSvDate] = useState(new Date());
   const [svDatePickerOpen, setSvDatePickerOpen] = useState(false);
+  // The Complete sheet's tabs: 'complete' (the form) or 'history' (the lead's timeline).
+  const [doneTab, setDoneTab] = useState('complete');
   const [svRemarks, setSvRemarks] = useState('');
   const [svPickerOpen, setSvPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -144,6 +147,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     const cur = (fu.role_context === 'stm' ? fu.lead_stm_status : fu.lead_telecaller_status) || '';
     setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks(''); setNewStatus(cur);
     setSvAt(null); setSvRemarks(''); setSvOutcome(''); setSvDate(new Date());
+    setDoneTab('complete');
   }
 
   async function completeFollowUp() {
@@ -467,6 +471,23 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
               </Text>
             )}
 
+            {/* Complete: the form below. History: this lead's timeline, to read first. */}
+            <View style={fsv.tabs}>
+              {[['complete', 'Complete'], ['history', 'History']].map(([k, l]) => (
+                <TouchableOpacity key={k} onPress={() => setDoneTab(k)} style={[fsv.tab, doneTab === k && fsv.tabOn]}>
+                  <Text style={[fsv.tabText, doneTab === k && fsv.tabTextOn]}>{l}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {doneTab === 'history' && !!done ? (
+              <View>
+                <LeadHistory leadId={done.lead} />
+                <TouchableOpacity onPress={() => setDone(null)} style={fsv.close}>
+                  <Text style={fsv.closeText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (<>
+
             {/* Update the lead's status after this call (TC or STM, per the follow-up's role). */}
             <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6 }}>
               {done?.role_context === 'stm' ? 'Update STM Status' : 'Update TC Status'}
@@ -580,6 +601,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                 <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.btnTextSuccess }}>{submitting ? 'Saving…' : newStatus === 'closed' ? 'Record Closure →' : 'Mark Done'}</Text>
               </TouchableOpacity>
             </View>
+            </>)}
           </View>
         </View>
       </Modal>
@@ -615,4 +637,11 @@ const fsv = StyleSheet.create({
   date: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, padding: 10, backgroundColor: COLORS.surface },
   dateText: { fontSize: 13, color: COLORS.textPrimary },
   note: { fontSize: 11, color: COLORS.success, marginTop: 8 },
+  tabs: { flexDirection: 'row', gap: 6, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  tab: { paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabOn: { borderBottomColor: COLORS.link },
+  tabText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  tabTextOn: { color: COLORS.link },
+  close: { marginTop: 12, borderRadius: 14, padding: 13, alignItems: 'center', backgroundColor: COLORS.surfaceAlt },
+  closeText: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
 });
