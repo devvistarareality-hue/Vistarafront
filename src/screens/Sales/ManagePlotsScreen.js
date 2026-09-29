@@ -26,12 +26,16 @@ import SheetHandle from '../../components/SheetHandle';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
+// What a unit shows as: Hold when its booking is submitted and awaiting approval.
+const plotState = (plot) => (plot.pending_booking_id ? 'pending' : plot.status);
 const STATUS_CFG = {
   available: { label: 'Available', color: COLORS.success, bg: COLORS.successBg, border: COLORS.success, zone: COLORS.successAlt },
-  // Covers both a soft pick (auto-expires in 10 min) and a hard hold backed by
-  // a pending-approval booking — "Hold" read as one deliberate state and
-  // confused which of the two it was. "In Progress" reads correctly for both.
+  // Someone is filling the booking form for this unit (a soft pick, a saved draft,
+  // or an admin's manual hold).
   hold:      { label: 'In Progress', color: COLORS.inProgress, bg: COLORS.inProgressBg, border: COLORS.inProgress, zone: COLORS.inProgressAlt },
+  // Booking submitted and waiting for approval — same plot.status='hold', told apart
+  // by the pending booking the server reports (as on the web).
+  pending:   { label: 'Hold', color: COLORS.warning, bg: COLORS.warningBg, border: COLORS.warning, zone: COLORS.warningSolid },
   sold:      { label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg, border: COLORS.error, zone: COLORS.error },
   // A previously-sold unit put back on the market — bookable exactly like
   // Available, just purple instead of green so it reads as "resold", not new.
@@ -257,7 +261,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
    PLOT CARD
 ──────────────────────────────────────────────── */
 const PlotCard = React.memo(function PlotCard({ plot, onStatusChange, onEdit }) {
-  const cfg    = STATUS_CFG[plot.status] || STATUS_CFG.available;
+  const cfg    = STATUS_CFG[plotState(plot)] || STATUS_CFG.available;
   const [saving, setSaving] = useState(false);
 
   // Strip cluster_type prefix from displayed number (Ananda1 → 1)
@@ -836,7 +840,7 @@ function SiteMapEditor({ project, plots, onProjectUpdate, zonesOverride, onZones
   function getZoneColor(plotNumber) {
     const pl = plots.find(p => String(p.number) === String(plotNumber));
     if (!pl) return COLORS.goldDark;
-    return STATUS_CFG[pl.status]?.zone || COLORS.goldDark;
+    return STATUS_CFG[plotState(pl)]?.zone || COLORS.goldDark;
   }
 
   /* Convert percent coords to pixel for SVG (viewBox=0 0 100 100 preserveAspectRatio=none) */
@@ -1306,8 +1310,8 @@ export default function ManagePlotsScreen({ route, navigation }) {
     (floorF === '' || Number(p.floor) === Number(floorF))), [indexed, blockF, floorF]);
 
   const counts = useMemo(() => {
-    const c = { all: scopedIdx.length, available: 0, hold: 0, sold: 0 };
-    for (const { p } of scopedIdx) if (c[p.status] !== undefined) c[p.status] += 1;
+    const c = { all: scopedIdx.length, available: 0, hold: 0, pending: 0, sold: 0 };
+    for (const { p } of scopedIdx) if (c[plotState(p)] !== undefined) c[plotState(p)] += 1;
     return c;
   }, [scopedIdx]);
 
@@ -1315,7 +1319,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
     ? Math.round(plots.reduce((n, p) => n + (p.status === 'sold' ? 1 : 0), 0) / plots.length * 100)
     : 0), [plots]);
 
-  const filtered = useMemo(() => (filter === 'all' ? scopedIdx : scopedIdx.filter(({ p }) => p.status === filter))
+  const filtered = useMemo(() => (filter === 'all' ? scopedIdx : scopedIdx.filter(({ p }) => plotState(p) === filter))
     .slice()
     // Block first, then floor, then unit number — otherwise every block's "1" sorts
     // together and A/B/C interleave down the list.
@@ -1376,6 +1380,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
                 { label: 'Total',     val: plots.length,   color: TEXT },
                 { label: 'Available', val: counts.available, color: COLORS.success },
                 { label: 'In Progress', val: counts.hold,    color: COLORS.inProgress },
+                { label: 'Hold',      val: counts.pending,   color: COLORS.warning },
                 { label: 'Sold',      val: counts.sold,      color: COLORS.error },
               ].map(s => (
                 <View key={s.label} style={[CARD, { flex: 1, padding: 10, alignItems: 'center' }]}>
@@ -1449,6 +1454,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
                   { key: 'all',       label: 'All',       color: TEXT,      bg: COLORS.screenBg },
                   { key: 'available', label: 'Available', color: COLORS.success, bg: COLORS.successBg },
                   { key: 'hold',      label: 'In Progress', color: COLORS.inProgress, bg: COLORS.inProgressBg },
+                  { key: 'pending',   label: 'Hold',      color: COLORS.warning, bg: COLORS.warningBg },
                   { key: 'sold',      label: 'Sold',      color: COLORS.error, bg: COLORS.errorBg },
                 ].map(({ key, label, color, bg }) => (
                   <TouchableOpacity key={key} onPress={() => setFilter(key)}
