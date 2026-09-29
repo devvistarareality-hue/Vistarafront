@@ -1,4 +1,6 @@
 import { navigationRef } from './navigationRef';
+import store from '../redux/store';
+import { can, canSee, isManagerRole } from '../lib/roles';
 
 // Maps a notification `type` to the screen (+ params) it should open.
 // booking_approved/rejected go to the booker's My Bookings (Booking → My Bookings),
@@ -42,8 +44,31 @@ const ROUTE_FOR_TYPE = {
   task_due_soon: { screen: 'TaskList', params: { tab: 'my_tasks' } },
 };
 
-export function routeForNotifType(type) {
-  return ROUTE_FOR_TYPE[type] || null;
+// Where a notification opens for THIS person. ROUTE_FOR_TYPE is the screen for
+// someone who has it; a role without that screen (a telecaller has no Site Visits
+// or Booking, a non-manager no Approvals) goes to its own equivalent instead —
+// never to a screen its menu doesn't offer. Mirrors the website's bell.
+export function routeForNotifType(type, user = store.getState()?.auth?.user) {
+  const route = ROUTE_FOR_TYPE[type] || null;
+  if (!route || !user) return route;
+  const admin = user.role === 'Admin' || user.is_staff || (user.admin_modules || []).includes('Sales');
+  const manager = admin || isManagerRole(user);
+  const stmSide = manager || can(user, 'sales.pipeline.stm') || can(user, 'sales.pipeline.cp');
+  const conversions = canSee(user, 'sales.screen.conversions')
+    && (admin || can(user, 'sales.pipeline.telecalling') || stmSide);
+  const visits = stmSide && canSee(user, 'sales.screen.sitevisits');
+  const booking = stmSide && canSee(user, 'sales.screen.booking');
+  const approvals = manager && canSee(user, 'sales.screen.approvals');
+  const conv = (tab) => ({ screen: 'MyConversions', params: { initialTab: tab } });
+  if (['sv', 'sv_overdue'].includes(type)) return visits ? route : conversions ? conv('upcoming') : null;
+  if (type === 'sv_done') return visits ? route : conversions ? conv('sv') : null;
+  if (type === 'closure') return conversions ? conv('closures') : booking ? route : null;
+  if (route.screen === 'BookingApprovals') {
+    return approvals ? route : booking ? { screen: 'ClosureProjects', params: { initialView: 'mybookings' } }
+      : conversions ? conv('closures') : null;
+  }
+  if (route.screen === 'ClosureProjects') return booking ? route : conversions ? conv('closures') : null;
+  return route;
 }
 
 // Navigate from outside the React tree (OneSignal push click). Handles both the
