@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, RefreshControl, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, RefreshControl, Alert, TextInput, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { apiFetch } from '../../utils/apiFetch';
@@ -13,6 +13,7 @@ import ExportBookings from '../../components/ExportBookings';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import FilterSelect from '../../components/FilterSelect';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { isManagerRole } from '../../lib/roles';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -135,7 +136,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
   // The Closures card opens this already filtered to Approved.
   const [tab, setTab] = useState(TABS.some(([k]) => k === initialTab) ? initialTab : '');
   const [q, setQ] = useState('');
-  const [proj, setProj] = useState('');
+  const [proj, setProj] = useState([]);   // project names; empty = all
   const [who, setWho] = useState('');     // 'booked by' — a user id, '' for everyone
   // Whose bookings the server sends: this person's own desk, or everything they
   // may see. The default is the desk — that is what My Bookings means — but the
@@ -239,7 +240,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
   // on Approved they then summed to the full 244 next to a list of 229 — a filter
   // that misreports its own result is worse than one that moves.
   const preWho = rows.filter((b) => inTab(b, tab) && matches(b)
-    && (!proj || projName(b) === proj));
+    && (!proj.length || proj.includes(projName(b))));
 
   // 'Booked by' — a manager's list holds their whole reporting subtree, so let them
   // narrow it to one person. Picking a manager keeps that manager's own reports in
@@ -364,18 +365,9 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
           borderColor: COLORS.border, backgroundColor: COLORS.surface, fontSize: 13,
           color: TEXT, marginBottom: 10 }} />
       {projOptions.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {['', ...projOptions].map((p) => (
-              <TouchableOpacity key={p || 'all'} onPress={() => { setProj(p); setOpen({}); }}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5,
-                  borderColor: proj === p ? BLUE : COLORS.border,
-                  backgroundColor: proj === p ? COLORS.linkBg : COLORS.surface }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: proj === p ? BLUE : MUTED }}>{p || 'All Projects'}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+        <MultiFilterSelect label="All Projects" noun="projects" value={proj} style={mb.projPick}
+          options={projOptions.map((p) => ({ value: p, label: p }))}
+          onChange={(v) => { setProj(v); setOpen({}); }} />
       )}
       {/* Only for someone who sees past their own desk — for everyone else the two
           options are the same list. */}
@@ -552,3 +544,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
 }
 const btn = { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 };
 const btnT = { color: '#fff', fontWeight: '700', fontSize: 13 };
+
+const mb = StyleSheet.create({
+  projPick: { alignSelf: 'flex-start', marginBottom: 12 },
+});

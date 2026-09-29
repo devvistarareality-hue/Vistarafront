@@ -18,6 +18,7 @@ import ExportBookings from '../../components/ExportBookings';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import LeadTransfersPanel from './LeadTransfersPanel';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -137,8 +138,10 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // Booking-date range. Presets only on mobile — a phone has no room for the web's
   // month/quarter/FY dropdowns, and these are the ranges an approver actually asks for.
   const [range, setRange] = useState({ from: '', to: '' });
-  const [stm, setStm] = useState('');     // '' = every STM
-  const [proj, setProj] = useState('');   // '' = every project
+  const [stmSel, setStmSel] = useState([]);   // [] = every STM
+  const stm = stmSel.join(', ');   // the picks, for the labels below
+  const [projSel, setProjSel] = useState([]);   // [] = every project
+  const proj = projSel.join(', ');   // the picks, for the labels below
   const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
   const DATE_PRESETS = [
@@ -266,7 +269,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const narrowed = !!ql || dated || !!stm || !!proj || resale;
   const resaleCount = rows.filter((b) => b.is_resale).length;
   const visible = rows.filter((b) => matches(b) && inRange(b)
-    && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj)
+    && (!stmSel.length || stmSel.includes(stmName(b))) && (!projSel.length || projSel.includes(projName(b)))
     && (!resale || b.is_resale));
 
   // Project-wise grouping (same shape as the Accounts & Finance bookings view), but
@@ -399,12 +402,12 @@ export default function BookingApprovalsScreen({ navigation, route }) {
         {(projOptions.length > 1 || stmOptions.length > 1) && (
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
             {projOptions.length > 1 && (
-              <FilterSelect label="All Projects" value={proj} onChange={(v) => { setProj(v); setOpenGroup({}); }}
-                options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
+              <MultiFilterSelect label="All Projects" noun="projects" value={projSel} onChange={(v) => { setProjSel(v); setOpenGroup({}); }}
+                options={[...projOptions.map((n) => ({ value: n, label: n }))]} />
             )}
             {stmOptions.length > 1 && (
-              <FilterSelect label="All STMs" value={stm} onChange={(v) => { setStm(v); setOpenGroup({}); }}
-                options={[{ value: '', label: 'All STMs' }, ...stmOptions.map((n) => ({ value: n, label: n }))]} />
+              <MultiFilterSelect label="All STMs" noun="STMs" value={stmSel} onChange={(v) => { setStmSel(v); setOpenGroup({}); }}
+                options={[...stmOptions.map((n) => ({ value: n, label: n }))]} />
             )}
             {/* Only offered when this tab actually holds one — a filter that can only
                 ever return nothing is a way to waste a tap. */}

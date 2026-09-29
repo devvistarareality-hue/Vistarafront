@@ -10,6 +10,7 @@ import common from '../../styles/common';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import FilterSelect from '../../components/FilterSelect';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { Badge } from '../../components/ui';
 import { inrShort, AGE_LABELS, ISSUES, hasIssue, worstBucket, today, withCompany } from './arShared';
 
@@ -37,7 +38,8 @@ export default function ARRegisterScreen({ navigation, route }) {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [project, setProject] = useState(p.project || '');
+  // Project ids; empty = all (a list from the dashboard, or one id from older links).
+  const [project, setProject] = useState(() => (Array.isArray(p.project) ? p.project : (p.project ? [String(p.project)] : [])));
   const [show, setShow] = useState(p.issue || (p.overdue ? 'overdue' : ''));
   const [q, setQ] = useState('');
   const [plotQ, setPlotQ] = useState('');
@@ -68,7 +70,7 @@ export default function ARRegisterScreen({ navigation, route }) {
     const needle = q.trim().toLowerCase();
     const issue = ISSUES.find((i) => i.value === show);
     return (rows || []).filter((r) =>
-      (!project || String(r.project_id) === String(project))
+      (!project.length || project.includes(String(r.project_id)))
       && (!show || (show === 'overdue' ? r.overdue > 0 : show === 'any' ? hasIssue(r) : issue?.test(r)))
       && (!needle || r.client_name.toLowerCase().includes(needle) || (r.phone || '').includes(needle)
         || String(r.plots).toLowerCase().includes(needle))
@@ -94,8 +96,8 @@ export default function ARRegisterScreen({ navigation, route }) {
         </View>
       </View>
       <View style={s.filters}>
-        <FilterSelect label="Project" value={project} onChange={setProject}
-          options={[{ value: '', label: 'All projects' }, ...projects.map(([id, name]) => ({ value: id, label: name }))]} />
+        <MultiFilterSelect label="All projects" noun="projects" value={project} onChange={setProject}
+          options={projects.map(([id, name]) => ({ value: id, label: name }))} />
         <FilterSelect label="Show" value={show} onChange={setShow} options={SHOW} />
         <TouchableOpacity onPress={() => setShowAgeing((v) => !v)} activeOpacity={0.8} style={[s.toggle, showAgeing && s.toggleOn]}>
           <Ionicons name={showAgeing ? 'checkbox' : 'square-outline'} size={15} color={showAgeing ? COLORS.link : COLORS.textSecondary} />

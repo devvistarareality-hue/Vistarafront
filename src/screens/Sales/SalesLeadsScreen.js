@@ -954,6 +954,52 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
   );
 }
 
+/* ── Multi-select Dropdown Picker ── DropdownPicker's look and the same kind of
+   bottom pop-up (proven to open cleanly from inside the filter sheet), but ticks
+   several. `value` is an array; empty means "all". Mirrors the web MultiSelect. */
+function MultiDropdownPicker({ value = [], onChange, options, placeholder, noun = 'selected' }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState([]);
+  useEffect(() => { if (open) setDraft((value || []).map(String)); }, [open]);
+  const picked = (value || []).map(String);
+  const text = picked.length === 0 ? placeholder
+    : picked.length === 1 ? (options.find((o) => String(o.value) === picked[0])?.label ?? `1 ${noun}`)
+    : `${picked.length} ${noun}`;
+  const toggle = (v) => setDraft((d) => (d.includes(String(v)) ? d.filter((x) => x !== String(v)) : [...d, String(v)]));
+  return (
+    <>
+      <TouchableOpacity onPress={() => setOpen(true)} style={mdp.trigger}>
+        <Text style={picked.length ? mdp.triggerTextOn : mdp.triggerText} numberOfLines={1}>{text}</Text>
+        <Ionicons name="chevron-down" size={16} color={MUTED} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={mdp.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <TouchableOpacity activeOpacity={1} style={mdp.sheet}>
+            <View style={mdp.head}>
+              <Text style={mdp.title}>{placeholder}</Text>
+              <TouchableOpacity onPress={() => setDraft([])}><Text style={mdp.clear}>Clear</Text></TouchableOpacity>
+            </View>
+            <ScrollView>
+              {options.map((o) => {
+                const on = draft.includes(String(o.value));
+                return (
+                  <TouchableOpacity key={String(o.value)} onPress={() => toggle(o.value)} style={mdp.row}>
+                    <View style={[mdp.box, on && mdp.boxOn]}>{on && <Ionicons name="checkmark" size={14} color={COLORS.white} />}</View>
+                    <Text style={on ? mdp.rowTextOn : mdp.rowText}>{o.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <TouchableOpacity style={mdp.done} onPress={() => { onChange(draft); setOpen(false); }}>
+              <Text style={mdp.doneText}>{draft.length ? `Use ${draft.length} selected` : `Use ${placeholder.toLowerCase()}`}</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
 /* ── Reusable Dropdown Picker ── */
 function DropdownPicker({ value, onChange, options, placeholder, triggerStyle }) {
   const [open, setOpen] = useState(false);
@@ -1516,7 +1562,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   );
 }
 
-const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', campaign: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
+const EMPTY_FILTERS = { status: '', project_id: [], source_id: '', campaign: '', telecaller_id: [], stm_id: [], tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
+// Project / telecaller / STM filters hold several ids; older callers may pass one.
+const asList = (v) => (Array.isArray(v) ? v : (v === '' || v == null ? [] : [String(v)]));
+// A filter counts as set when it has a value — an empty list is not one.
+const isSet = (v) => (Array.isArray(v) ? v.length > 0 : !!v && v !== false && v !== '');
 const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback','not_qualified'];
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'];
 
@@ -1528,7 +1578,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
   const localDate = (d) => d.toISOString().slice(0, 10);
   const today = localDate(new Date());
   const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
-  const activeCount = Object.entries(filters).filter(([k, v]) => v && v !== false && v !== '').length;
+  const activeCount = Object.entries(filters).filter(([, v]) => isSet(v)).length;
   // Custom date range — the Today/Week/Month buttons cover common cases, but a manager
   // often needs an arbitrary range (e.g. "leads from the 3rd to the 9th").
   const [showFromPicker, setShowFromPicker] = useState(false);
@@ -1626,8 +1676,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           {/* Project */}
           <View>
             <Text style={fsLbl}>PROJECT</Text>
-            <DropdownPicker value={local.project_id} onChange={v => set('project_id', v)}
-              options={[{ value: '', label: 'All Projects' }, { value: 'none', label: '— No Project —' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))]}
+            <MultiDropdownPicker value={asList(local.project_id)} onChange={v => set('project_id', v)} noun="projects"
+              options={[{ value: 'none', label: 'No project' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))]}
               placeholder="All Projects" />
           </View>
 
@@ -1650,8 +1700,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           {showAssignees && (
           <View>
             <Text style={fsLbl}>TELECALLER</Text>
-            <DropdownPicker value={local.telecaller_id} onChange={v => set('telecaller_id', v)}
-              options={[{ value: '', label: 'All Telecallers' }, ...telecallers.map(u => ({ value: String(u.id), label: u.name }))]}
+            <MultiDropdownPicker value={asList(local.telecaller_id)} onChange={v => set('telecaller_id', v)} noun="telecallers"
+              options={telecallers.map(u => ({ value: String(u.id), label: u.name }))}
               placeholder="All Telecallers" />
           </View>
           )}
@@ -1659,8 +1709,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           {showAssignees && (
           <View>
             <Text style={fsLbl}>STM</Text>
-            <DropdownPicker value={local.stm_id} onChange={v => set('stm_id', v)}
-              options={[{ value: '', label: 'All STMs' }, ...stms.map(u => ({ value: String(u.id), label: u.name }))]}
+            <MultiDropdownPicker value={asList(local.stm_id)} onChange={v => set('stm_id', v)} noun="STMs"
+              options={stms.map(u => ({ value: String(u.id), label: u.name }))}
               placeholder="All STMs" />
           </View>
           )}
@@ -1824,7 +1874,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [workTab, setWorkTab] = useState(['called', 'all'].includes(route?.params?.initialWorkTab) ? route.params.initialWorkTab : 'pending'); // 'pending' | 'called' | 'all' (callers only)
   const [total,   setTotal]   = useState(0); // backend count for the current filter
 
-  const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
+  const activeFilterCount = Object.entries(filters).filter(([, v]) => isSet(v)).length;
 
   const lastLeadIdRef    = useRef(null);
   const loadingMoreRef   = useRef(false);
@@ -1879,11 +1929,12 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (companyId)             url += `&company_id=${companyId}`;
     if (search)                url += `&search=${encodeURIComponent(search)}`;
     if (filters.status)        url += `&status=${filters.status}`;
-    if (filters.project_id)    url += `&project_id=${filters.project_id}`;
+    // Several ids at once from the multi-selects — the server reads them comma-separated.
+    if (asList(filters.project_id).length)    url += `&project_id=${asList(filters.project_id).join(',')}`;
     if (filters.source_id)     url += `&source_id=${filters.source_id}`;
     if (filters.campaign?.trim()) url += `&campaign=${encodeURIComponent(filters.campaign.trim())}`;
-    if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
-    if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
+    if (asList(filters.telecaller_id).length) url += `&telecaller_id=${asList(filters.telecaller_id).join(',')}`;
+    if (asList(filters.stm_id).length)        url += `&stm_id=${asList(filters.stm_id).join(',')}`;
     if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
     if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
     if (filters.date_from)     url += `&date_from=${filters.date_from}`;
@@ -2253,4 +2304,27 @@ const SalesLeadsScreenS = StyleSheet.create({
 const lcf = StyleSheet.create({
   input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12,
            fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.surface },
+});
+
+// MultiDropdownPicker (project / telecaller / STM in the filter sheet).
+const mdp = StyleSheet.create({
+  trigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface,
+             borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 },
+  triggerText: { flex: 1, fontSize: 14, color: COLORS.textSecondary, fontWeight: '400' },
+  triggerTextOn: { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' },
+  overlay: { flex: 1, backgroundColor: COLORS.overlay },
+  sheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface,
+           borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%' },
+  head: { padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row',
+          justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  clear: { fontSize: 14, fontWeight: '700', color: COLORS.link },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14,
+         borderBottomWidth: 1, borderBottomColor: COLORS.screenBg },
+  box: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: COLORS.borderStrong, alignItems: 'center', justifyContent: 'center' },
+  boxOn: { backgroundColor: COLORS.panel, borderColor: COLORS.panel },
+  rowText: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
+  rowTextOn: { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '700' },
+  done: { margin: 12, paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: COLORS.panel },
+  doneText: { fontSize: 15, fontWeight: '800', color: COLORS.white },
 });

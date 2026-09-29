@@ -17,6 +17,7 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import common from '../../styles/common';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -66,11 +67,11 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const showTcStatus = isAdminMgr || isTelecaller;
   const showStmStatus = isAdminMgr || isStmRole || isCpRole;
   const [searchText, setSearchText] = useState('');
-  const [projFilter, setProjFilter] = useState('');
+  const [projFilter, setProjFilter] = useState([]);   // [] = every project
   const [tcStatusFilter, setTcStatusFilter] = useState('');
   const [stmStatusFilter, setStmStatusFilter] = useState('');
-  const [tcPerson, setTcPerson] = useState('');
-  const [stmPerson, setStmPerson] = useState('');
+  const [tcPerson, setTcPerson] = useState([]);    // [] = everyone
+  const [stmPerson, setStmPerson] = useState([]);   // [] = everyone
   const [projects, setProjects] = useState([]);
   useEffect(() => {
     apiFetch(SALES_ENDPOINTS.projects + (companyId ? `?company_id=${companyId}` : ''))
@@ -211,22 +212,24 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const q = searchText.trim().toLowerCase();
   const matchesFilters = (fu) => {
     if (q && !(fu.lead_name || '').toLowerCase().includes(q) && !(fu.lead_phone || '').toLowerCase().includes(q)) return false;
-    if (projFilter && String(fu.lead_project || '') !== String(projFilter)) return false;
+    if (projFilter.length && !projFilter.includes(String(fu.lead_project || ''))) return false;
     if (tcStatusFilter && (fu.lead_telecaller_status || '') !== tcStatusFilter) return false;
     if (stmStatusFilter && (fu.lead_stm_status || '') !== stmStatusFilter) return false;
-    if (tcPerson && String(fu.assigned_to || '') !== String(tcPerson)) return false;
-    if (stmPerson && String(fu.assigned_to || '') !== String(stmPerson)) return false;
+    // Both pickers name who the follow-up is assigned to, so together they are one
+    // list of people: a follow-up shows if it belongs to any of them (as on the web).
+    const picked = [...tcPerson, ...stmPerson];
+    if (picked.length && !picked.includes(String(fu.assigned_to || ''))) return false;
     return true;
   };
   const dateItems = items.filter((fu) => inDateRange(fu) && matchesFilters(fu));
   // Telecaller / STM pickers list the people these follow-ups are assigned to.
   const people = (role) => {
     const m = new Map();
-    items.forEach((fu) => { if (fu.assigned_to && ((fu.role_context === 'telecaller') === (role === 'telecaller'))) m.set(fu.assigned_to, fu.assigned_to_name || `#${fu.assigned_to}`); });
+    items.forEach((fu) => { if (fu.assigned_to && ((fu.role_context === 'telecaller') === (role === 'telecaller'))) m.set(String(fu.assigned_to), fu.assigned_to_name || `#${fu.assigned_to}`); });
     return [...m.entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1]))).map(([value, label]) => ({ value, label }));
   };
-  const anyFilter = !!(q || projFilter || tcStatusFilter || stmStatusFilter || tcPerson || stmPerson);
-  const clearFilters = () => { setSearchText(''); setProjFilter(''); setTcStatusFilter(''); setStmStatusFilter(''); setTcPerson(''); setStmPerson(''); };
+  const anyFilter = !!(q || projFilter.length || tcStatusFilter || stmStatusFilter || tcPerson.length || stmPerson.length);
+  const clearFilters = () => { setSearchText(''); setProjFilter([]); setTcStatusFilter(''); setStmStatusFilter(''); setTcPerson([]); setStmPerson([]); };
 
   // Status-wise counts for the selected date range (independent of the tab).
   const counts = {
@@ -288,8 +291,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           placeholder="Search name, phone…" placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
         <View style={fuf.row}>
           {projects.length > 0 && (
-            <FilterSelect label="All Projects" value={projFilter} onChange={setProjFilter} style={fuf.sel}
-              options={[{ value: '', label: 'All Projects' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]} />
+            <MultiFilterSelect label="All Projects" noun="projects" value={projFilter} onChange={setProjFilter} style={fuf.sel}
+              options={[...projects.map((p) => ({ value: String(p.id), label: p.name }))]} />
           )}
           {showTcStatus && (
             <FilterSelect label="TC Status" value={tcStatusFilter} onChange={setTcStatusFilter} style={fuf.sel}
@@ -300,12 +303,12 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
               options={[{ value: '', label: 'STM Status' }, ...STM_FILTER_STATUSES.map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
           )}
           {isAdminMgr && (
-            <FilterSelect label="All Telecallers" value={tcPerson} onChange={setTcPerson} style={fuf.sel}
-              options={[{ value: '', label: 'All Telecallers' }, ...people('telecaller')]} />
+            <MultiFilterSelect label="All Telecallers" noun="telecallers" value={tcPerson} onChange={setTcPerson} style={fuf.sel}
+              options={[...people('telecaller')]} />
           )}
           {isAdminMgr && (
-            <FilterSelect label="All STMs" value={stmPerson} onChange={setStmPerson} style={fuf.sel}
-              options={[{ value: '', label: 'All STMs' }, ...people('stm')]} />
+            <MultiFilterSelect label="All STMs" noun="STMs" value={stmPerson} onChange={setStmPerson} style={fuf.sel}
+              options={[...people('stm')]} />
           )}
           {anyFilter && (
             <TouchableOpacity onPress={clearFilters} style={fuf.clear}>
