@@ -1201,7 +1201,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
       try {
         const [projRes, plotsRes] = await Promise.all([
           apiFetch(SALES_ENDPOINTS.project(projectId)),
-          apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`),
+          apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}&include_locked=1`),
         ]);
         if (projRes.ok) {
           const proj = await projRes.json();
@@ -1235,7 +1235,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
         method: 'POST',
         body: JSON.stringify({ project_id: projectId, plots: toCreate.map((u) => ({ number: u.number, floor: u.floor })) }),
       });
-      const fresh = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then((r) => r.json());
+      const fresh = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}&include_locked=1`).then((r) => r.json());
       setPlots(Array.isArray(fresh) ? fresh : (fresh.results || []));
     } catch (e) { Alert.alert('Could not create units', e.message); }
     setGenBusy(false);
