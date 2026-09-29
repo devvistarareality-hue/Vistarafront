@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -105,6 +105,10 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [newStatus,  setNewStatus]  = useState('');    // optional lead status to set on completion
   // Completing with sv_scheduled schedules the visit inline, the same way the lead modal does.
   const [svAt, setSvAt] = useState(null);
+  // SV Done needs the visit itself: its outcome and date go with the status (as on the web).
+  const [svOutcome, setSvOutcome] = useState('');
+  const [svDate, setSvDate] = useState(new Date());
+  const [svDatePickerOpen, setSvDatePickerOpen] = useState(false);
   const [svRemarks, setSvRemarks] = useState('');
   const [svPickerOpen, setSvPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -139,12 +143,17 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     // Pre-select the lead's current TC/STM status so the caller sees where it stands.
     const cur = (fu.role_context === 'stm' ? fu.lead_stm_status : fu.lead_telecaller_status) || '';
     setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks(''); setNewStatus(cur);
-    setSvAt(null); setSvRemarks('');
+    setSvAt(null); setSvRemarks(''); setSvOutcome(''); setSvDate(new Date());
   }
 
   async function completeFollowUp() {
     if (!done) return;
     if (schedNext && !(nextAt instanceof Date)) return;
+    const origStm = (done.role_context === 'stm' ? done.lead_stm_status : done.lead_telecaller_status) || '';
+    const markingSvDone = newStatus === 'sv_done' && origStm !== 'sv_done';
+    if (markingSvDone && (!svOutcome || !outcome.trim())) {
+      Alert.alert('Required', 'Pick the visit outcome and add remarks to mark SV Done.'); return;
+    }
     setSubmitting(true);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.followUp(done.id), {
@@ -156,9 +165,19 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       const origStatus = (done.role_context === 'stm' ? done.lead_stm_status : done.lead_telecaller_status) || '';
       if (newStatus && newStatus !== origStatus && done.lead) {
         const field = done.role_context === 'stm' ? 'stm_status' : 'telecaller_status';
-        await apiFetch(SALES_ENDPOINTS.lead(done.lead), {
-          method: 'PATCH', body: JSON.stringify({ [field]: newStatus }),
+        // SV Done carries its visit — the server records it in the same save.
+        const d = svDate;
+        const extra = markingSvDone ? {
+          sv_outcome: svOutcome, sv_remarks: outcome.trim(),
+          sv_visited_at: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+        } : {};
+        const lr = await apiFetch(SALES_ENDPOINTS.lead(done.lead), {
+          method: 'PATCH', body: JSON.stringify({ [field]: newStatus, ...extra }),
         });
+        if (!lr.ok) {
+          const e = await lr.json().catch(() => ({}));
+          Alert.alert('Status not saved', e.detail || 'The lead status could not be saved.');
+        }
       }
       // STM set sv_scheduled -> create the site visit, matching the lead modal.
       if (newStatus === 'sv_scheduled' && svAt instanceof Date && done.lead) {
@@ -486,6 +505,28 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                 ) : null}
               </View>
             ) : null}
+            {newStatus === 'sv_done' && (done?.lead_stm_status || '') !== 'sv_done' ? (
+              <View style={fsv.box}>
+                <Text style={fsv.title}>SITE VISIT DONE</Text>
+                <Text style={fsv.label}>Outcome *</Text>
+                <View style={fsv.chips}>
+                  {[['hot', 'Hot'], ['warm', 'Warm'], ['cold', 'Cold'], ['not_interested', 'Not Interested']].map(([v, l]) => (
+                    <TouchableOpacity key={v} onPress={() => setSvOutcome(v)} style={[fsv.chip, svOutcome === v && fsv.chipOn]}>
+                      <Text style={[fsv.chipText, svOutcome === v && fsv.chipTextOn]}>{l}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={fsv.label}>Visit date *</Text>
+                <TouchableOpacity onPress={() => setSvDatePickerOpen(true)} style={fsv.date}>
+                  <Text style={fsv.dateText}>{svDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                </TouchableOpacity>
+                <Text style={fsv.note}>The visit is recorded with this status, using your remarks below.</Text>
+                {svDatePickerOpen ? (
+                  <DateTimePicker value={svDate} mode="date" display="default" maximumDate={new Date()}
+                    onChange={(e, d) => { setSvDatePickerOpen(false); if (e.type !== 'dismissed' && d) setSvDate(d); }} />
+                ) : null}
+              </View>
+            ) : null}
             {newStatus === 'closed' ? (
               <View style={{ backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.success2, borderRadius: 16, padding: 12, marginTop: 10 }}>
                 <Text style={{ fontSize: 12, color: COLORS.success, fontWeight: '600' }}>
@@ -559,4 +600,19 @@ const fuf = StyleSheet.create({
   sel:       { minWidth: 140, marginRight: 8, marginBottom: 8 },
   clear:     { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 8 },
   clearText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
+});
+
+// Follow-up done at SV Done: the visit's outcome and date (saved with the status).
+const fsv = StyleSheet.create({
+  box: { backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.success2, borderRadius: 16, padding: 12, marginTop: 10 },
+  title: { fontSize: 12, fontWeight: '800', color: COLORS.success, letterSpacing: 0.4, marginBottom: 4 },
+  label: { fontSize: 12, fontWeight: '700', color: COLORS.success, marginTop: 8, marginBottom: 6 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  chipOn: { backgroundColor: COLORS.panel, borderColor: COLORS.panel },
+  chipText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  chipTextOn: { color: COLORS.white },
+  date: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, padding: 10, backgroundColor: COLORS.surface },
+  dateText: { fontSize: 13, color: COLORS.textPrimary },
+  note: { fontSize: 11, color: COLORS.success, marginTop: 8 },
 });

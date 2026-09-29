@@ -21,6 +21,12 @@ import AppLoader from '../../components/AppLoader';
 import common from '../../styles/common';
 import { can } from '../../lib/roles';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+// A picked visit date as YYYY-MM-DD in the phone's own day (toISOString would
+// shift it to UTC and can land on the day before).
+const ymdLocal = (d) => { const x = d instanceof Date ? d : new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+// SV Done carries its visit: the server records it in the same save, and refuses
+// SV Done with no visit on record (mirrors the web).
+const svDoneFields = (outcome, date, remarks) => ({ sv_outcome: outcome, sv_visited_at: ymdLocal(date), sv_remarks: remarks || '' });
 // Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface, marginBottom: 8 };
 const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 3, letterSpacing: 0.4 };
@@ -362,6 +368,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       if (body.stm_status === 'closed') delete body.stm_status;
       if (!isNotQualified) { body.disqualify_reason = ''; body.disqualify_note = ''; }
       else if (body.disqualify_reason !== 'other') { body.disqualify_note = ''; }
+      if (form.stm_status === 'sv_done' && lead.stm_status !== 'sv_done') Object.assign(body, svDoneFields(svOutcome, svVisitedDate, form.stm_remarks));
       const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
@@ -403,35 +410,6 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
           } catch (_) {}
         }
 
-        // STM marked sv_done → complete the latest pending visit (or create a completed one)
-        if (stmStatusChanged && form.stm_status === 'sv_done') {
-          try {
-            const svRes = await apiFetch(`${SALES_ENDPOINTS.siteVisits}?lead_id=${lead.id}`);
-            const list = svRes.ok ? await svRes.json() : [];
-            const pending = (Array.isArray(list) ? list : []).filter(v => v.status === 'scheduled')
-              .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))[0];
-            // Keeps the current time-of-day but lets the date itself be backdated
-            // to when the visit actually happened.
-            const visitedAt = new Date(svVisitedDate);
-            const timeNow = new Date();
-            visitedAt.setHours(timeNow.getHours(), timeNow.getMinutes(), timeNow.getSeconds(), 0);
-            const visitedIso = visitedAt.toISOString();
-            if (pending) {
-              await apiFetch(SALES_ENDPOINTS.siteVisit(pending.id), { method: 'PATCH', body: JSON.stringify({ status: 'completed', visited_at: visitedIso, outcome: svOutcome, remarks: form.stm_remarks || '' }) });
-            } else {
-              await apiFetch(SALES_ENDPOINTS.siteVisits, {
-                method: 'POST',
-                body: JSON.stringify({
-                  lead: lead.id, project: form.project || null,
-                  scheduled_at: visitedIso, visited_at: visitedIso, status: 'completed',
-                  stm: form.stm || user?.id, referred_by_telecaller: form.telecaller || null,
-                  outcome: svOutcome, remarks: form.stm_remarks || '',
-                }),
-              });
-            }
-          } catch (_) {}
-        }
-
         // STM marked closed → save the lead, then jump into the booking flow with
         // this lead prefilled (pick plot(s) on the unit map → record the booking).
         if (form.stm_status === 'closed') {
@@ -445,7 +423,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
         onUpdated(updated); onClose();
       }
-      else { Alert.alert('Error', 'Could not save lead.'); }
+      else { const e = await res.json().catch(() => ({})); Alert.alert('Not saved', e.detail || 'Could not save lead.'); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
   }
@@ -1286,35 +1264,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     }
     setSaving(true);
     try {
-      const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
+      const body = showStm && form.stm_status === 'sv_done'
+        ? { ...form, ...svDoneFields(svOutcome, svVisitedDate, form.stm_remarks) } : form;
+      const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(body) });
       if (res.ok) {
         const lead = await res.json();
-        // A lead created directly at STM Status = sv_done needs the visit itself on
-        // record too — same as marking a scheduled visit done, just with no prior
-        // "scheduled" row to complete. Best-effort: the lead is already saved.
-        if (showStm && form.stm_status === 'sv_done' && lead?.id && svOutcome) {
-          const now = new Date();
-          const visitedAt = new Date(svVisitedDate);
-          visitedAt.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), 0);
-          const visitedIso = visitedAt.toISOString();
-          try {
-            await apiFetch(SALES_ENDPOINTS.siteVisits, {
-              method: 'POST',
-              body: JSON.stringify({
-                lead: lead.id, project: form.project || null,
-                scheduled_at: visitedIso, visited_at: visitedIso, status: 'completed',
-                stm: form.stm || user?.id,
-                // lead.telecaller (not form.telecaller) — when this Add Lead call
-                // merged into an existing telecaller-held lead (same phone+project),
-                // the returned record carries that telecaller, and their work should
-                // be credited with this visit even though this form never showed a
-                // Telecaller field.
-                referred_by_telecaller: lead.telecaller || null,
-                outcome: svOutcome, remarks: form.stm_remarks || '',
-              }),
-            });
-          } catch (_) {}
-        }
         // Best-effort: the lead is already saved, so a failure here must not read
         // back to the user as "lead not added".
         if (fuForm.scheduled_at instanceof Date && lead?.id) {
@@ -1334,7 +1288,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
         onCreated(lead); onClose(); setForm(emptyForm); setFuForm(emptyFu); setCityOther(false);
         setSvOutcome(''); setSvVisitedDate(new Date());
       }
-      else { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); }
+      else { const e = await res.json().catch(() => ({})); Alert.alert('Not added', e.detail || JSON.stringify(e)); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
   }
