@@ -182,6 +182,9 @@ const HISTORY_LABEL = {
   warm_transfer:      'Transferred to STM',
   site_visit:         'Site Visit',
   closure:            'Closure',
+  follow_up:          'Follow-up Scheduled',
+  follow_up_done:     'Follow-up Done',
+  follow_up_missed:   'Follow-up Missed',
 };
 const HISTORY_COLOR = {
   created:            COLORS.textSecondary,
@@ -195,6 +198,9 @@ const HISTORY_COLOR = {
   warm_transfer:      COLORS.error,
   site_visit:         COLORS.warningAlt,
   closure:           COLORS.success,
+  follow_up:          COLORS.link,
+  follow_up_done:     COLORS.success,
+  follow_up_missed:   COLORS.error,
 };
 const FU_STATUS_COLOR = { pending: COLORS.warningAlt, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
 
@@ -852,6 +858,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                              : h.field_changed === 'stm'           ? 'building'
                              : h.field_changed === 'site_visit'    ? 'home'
                              : h.field_changed === 'closure'       ? 'check-circle'
+                             : h.field_changed.startsWith('follow_up') ? 'calendar'
                              : h.field_changed.includes('remarks') ? 'note'
                              : 'refresh';
                 const singleValue = ['created', 'warm_transfer', 'closure', 'telecaller_remarks', 'stm_remarks'].includes(h.field_changed) || !h.old_value;
