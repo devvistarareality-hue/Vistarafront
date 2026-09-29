@@ -12,6 +12,7 @@ import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { onlyPresent } from '../../lib/presentOptions';
 import FormSheet from '../../components/FormSheet';
 import { Field, TextField } from '../../components/Field';
 import AppIcon from '../../components/AppIcon';
@@ -1571,7 +1572,9 @@ const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback',
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'];
 
 /* ── Filter Bottom Sheet ── */
-function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false }) {
+function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, facets = null, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false }) {
+  // Only what occurs in the leads this person can see (?facets=1), as on the web.
+  const fx = (key) => facets?.[key] ?? null;
   const [local, setLocal] = useState(filters);
   useEffect(() => { if (visible) setLocal(filters); }, [visible]);
   const set = (k, v) => setLocal(f => ({ ...f, [k]: v }));
@@ -1677,7 +1680,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>PROJECT</Text>
             <MultiDropdownPicker value={asList(local.project_id)} onChange={v => set('project_id', v)} noun="projects"
-              options={[{ value: 'none', label: 'No project' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))]}
+              options={onlyPresent([{ value: 'none', label: 'No project' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))],
+                facets && [...facets.project_ids, ...(facets.has_no_project ? ['none'] : [])], local.project_id)}
               placeholder="All Projects" />
           </View>
 
@@ -1685,7 +1689,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>SOURCE</Text>
             <DropdownPicker value={local.source_id} onChange={v => set('source_id', v)}
-              options={[{ value: '', label: 'All Sources' }, ...sources.map(s => ({ value: String(s.id), label: s.name }))]}
+              options={[{ value: '', label: 'All Sources' }, ...onlyPresent(sources.map(s => ({ value: String(s.id), label: s.name })), fx('source_ids'), local.source_id)]}
               placeholder="All Sources" />
           </View>
 
@@ -1701,7 +1705,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>TELECALLER</Text>
             <MultiDropdownPicker value={asList(local.telecaller_id)} onChange={v => set('telecaller_id', v)} noun="telecallers"
-              options={telecallers.map(u => ({ value: String(u.id), label: u.name }))}
+              options={onlyPresent(telecallers.map(u => ({ value: String(u.id), label: u.name })), fx('telecaller_ids'), local.telecaller_id)}
               placeholder="All Telecallers" />
           </View>
           )}
@@ -1710,7 +1714,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>STM</Text>
             <MultiDropdownPicker value={asList(local.stm_id)} onChange={v => set('stm_id', v)} noun="STMs"
-              options={stms.map(u => ({ value: String(u.id), label: u.name }))}
+              options={onlyPresent(stms.map(u => ({ value: String(u.id), label: u.name })), fx('stm_ids'), local.stm_id)}
               placeholder="All STMs" />
           </View>
           )}
@@ -1720,7 +1724,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>OVERALL STATUS</Text>
             <DropdownPicker value={local.status || ''} onChange={v => set('status', v)}
-              options={[{ value: '', label: 'All Statuses' }, ...STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))]}
+              options={[{ value: '', label: 'All Statuses' }, ...onlyPresent(STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label })), fx('statuses'), local.status)]}
               placeholder="All Statuses" />
           </View>
           )}
@@ -1730,7 +1734,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>TC STATUS</Text>
             <DropdownPicker value={local.tc_status} onChange={v => set('tc_status', v)}
-              options={[{ value: '', label: 'All TC Statuses' }, ...TC_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              options={[{ value: '', label: 'All TC Statuses' }, ...onlyPresent(TC_STATUSES, fx('telecaller_statuses'), local.tc_status).map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
               placeholder="All TC Statuses" />
           </View>
           )}
@@ -1740,7 +1744,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>{isCp ? 'CP STATUS' : 'STM STATUS'}</Text>
             <DropdownPicker value={local.stm_status} onChange={v => set('stm_status', v)}
-              options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...onlyPresent(STM_STATUSES, fx('stm_statuses'), local.stm_status).map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
               placeholder={isCp ? 'All CP Statuses' : 'All STM Statuses'} />
           </View>
           )}
@@ -1854,6 +1858,16 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
+  // Which projects, people, sources and statuses occur in the leads this person
+  // can see — the filter sheet offers only those (see FilterSheet).
+  const [facets, setFacets] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const q = ['facets=1', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : ''].filter(Boolean).join('&');
+    apiFetch(`${SALES_ENDPOINTS.leads}?${q}`).then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d) setFacets(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, [companyId, adminView]);
 
   // Telecaller / STM portals get a "To Call" vs "Called" split so they can tell
   // which of their assigned leads are still pending vs already actioned.
@@ -2203,7 +2217,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters}
-        projects={projects} sources={sources} telecallers={telecallers} stms={stms}
+        projects={projects} sources={sources} telecallers={telecallers} stms={stms} facets={facets}
         showTcStatus={showTcStatus} showStmStatus={showStmStatus} showAssignees={showAssignees} isCp={isCpAny} />
 
       {loading ? (

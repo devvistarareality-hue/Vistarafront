@@ -18,6 +18,7 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import common from '../../styles/common';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
+import { onlyPresent } from '../../lib/presentOptions';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -228,6 +229,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     items.forEach((fu) => { if (fu.assigned_to && ((fu.role_context === 'telecaller') === (role === 'telecaller'))) m.set(String(fu.assigned_to), fu.assigned_to_name || `#${fu.assigned_to}`); });
     return [...m.entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1]))).map(([value, label]) => ({ value, label }));
   };
+  // Projects and statuses, like the people above, list only what these follow-ups hold.
+  const seen = (key) => (loading ? null : items.map((f) => f[key]));
   const anyFilter = !!(q || projFilter.length || tcStatusFilter || stmStatusFilter || tcPerson.length || stmPerson.length);
   const clearFilters = () => { setSearchText(''); setProjFilter([]); setTcStatusFilter(''); setStmStatusFilter(''); setTcPerson([]); setStmPerson([]); };
 
@@ -292,15 +295,15 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
         <View style={fuf.row}>
           {projects.length > 0 && (
             <MultiFilterSelect label="All Projects" noun="projects" value={projFilter} onChange={setProjFilter} style={fuf.sel}
-              options={[...projects.map((p) => ({ value: String(p.id), label: p.name }))]} />
+              options={onlyPresent(projects.map((p) => ({ value: String(p.id), label: p.name })), seen('lead_project'), projFilter)} />
           )}
           {showTcStatus && (
             <FilterSelect label="TC Status" value={tcStatusFilter} onChange={setTcStatusFilter} style={fuf.sel}
-              options={[{ value: '', label: 'TC Status' }, ...TC_FILTER_STATUSES.map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
+              options={[{ value: '', label: 'TC Status' }, ...onlyPresent(TC_FILTER_STATUSES, seen('lead_telecaller_status'), tcStatusFilter).map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
           )}
           {showStmStatus && (
             <FilterSelect label="STM Status" value={stmStatusFilter} onChange={setStmStatusFilter} style={fuf.sel}
-              options={[{ value: '', label: 'STM Status' }, ...STM_FILTER_STATUSES.map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
+              options={[{ value: '', label: 'STM Status' }, ...onlyPresent(STM_FILTER_STATUSES, seen('lead_stm_status'), stmStatusFilter).map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
           )}
           {isAdminMgr && (
             <MultiFilterSelect label="All Telecallers" noun="telecallers" value={tcPerson} onChange={setTcPerson} style={fuf.sel}
