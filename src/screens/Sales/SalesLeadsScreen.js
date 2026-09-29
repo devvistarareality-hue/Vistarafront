@@ -1516,7 +1516,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   );
 }
 
-const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', campaign: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
+const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', campaign: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
 const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback','not_qualified'];
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'];
 
@@ -1692,6 +1692,22 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
             <DropdownPicker value={local.stm_status} onChange={v => set('stm_status', v)}
               options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
               placeholder={isCp ? 'All CP Statuses' : 'All STM Statuses'} />
+          </View>
+          )}
+
+          {/* Why they were disqualified — only meaningful once a status above says
+              Not Qualified, so it appears with it rather than sitting there empty.
+              One reason per lead whichever stage set it, so one picker serves both. */}
+          {(local.tc_status === 'not_qualified' || local.stm_status === 'not_qualified') && (
+          <View>
+            <Text style={fsLbl}>DISQUALIFY REASON</Text>
+            <DropdownPicker value={local.disqualify_reason} onChange={v => set('disqualify_reason', v)}
+              options={[{ value: '', label: 'Any reason' },
+                        { value: 'religion', label: 'Religion' },
+                        { value: 'caste', label: 'Caste' },
+                        { value: 'budget', label: 'Budget' },
+                        { value: 'other', label: 'Other' }]}
+              placeholder="Any reason" />
           </View>
           )}
 
@@ -1886,6 +1902,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
     if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
     if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
+    if (filters.disqualify_reason) url += `&disqualify_reason=${filters.disqualify_reason}`;
     if (filters.date_from)     url += `&date_from=${filters.date_from}`;
     if (filters.date_to)       url += `&date_to=${filters.date_to}`;
     if (filters.is_duplicate)  url += `&is_duplicate=true`;
