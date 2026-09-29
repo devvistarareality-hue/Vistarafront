@@ -27,7 +27,10 @@ const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; 
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 // What a unit shows as: Hold when its booking is submitted and awaiting approval.
-const plotState = (plot) => (plot.pending_booking_id ? 'pending' : plot.status);
+// An admin's manual Hold (the card's Hold button) reads Hold too; someone's live
+// pick (held_by) never does.
+const plotState = (plot) => ((plot.pending_booking_id
+  || (plot.status === 'hold' && plot.manual_hold && !plot.held_by_name)) ? 'pending' : plot.status);
 const STATUS_CFG = {
   available: { label: 'Available', color: COLORS.success, bg: COLORS.successBg, border: COLORS.success, zone: COLORS.successAlt },
   // Someone is filling the booking form for this unit (a soft pick, a saved draft,
@@ -272,8 +275,8 @@ const PlotCard = React.memo(function PlotCard({ plot, onStatusChange, onEdit }) 
   // The three status buttons sit under the unit number in a tight grid, so a
   // mis-tap while scrolling used to silently mark a unit sold. Confirm first.
   async function setStatus(s) {
-    if (plot.status === s || saving) return;
-    const from = (STATUS_CFG[plot.status] || {}).label || plot.status;
+    if (plotState(plot) === s || saving) return;
+    const from = (STATUS_CFG[plotState(plot)] || {}).label || plot.status;
     const to = (STATUS_CFG[s] || {}).label || s;
     Alert.alert(
       `Change #${displayNum} to ${to}?`,
@@ -330,15 +333,13 @@ const PlotCard = React.memo(function PlotCard({ plot, onStatusChange, onEdit }) 
       {/* Status buttons — Resale isn't a generic toggle here (it only ever makes
           sense starting from Sold), so it gets its own conditional button below
           instead of joining this fixed 3-way row. */}
-      <View style={{ flexDirection: 'row', padding: 8, gap: 4 }}>
-        {['available', 'hold', 'sold'].map((s) => {
-          const c = STATUS_CFG[s];
+      <View style={pst.row}>
+        {['available', 'hold', 'pending', 'sold'].map((s) => {
+          const on = plotState(plot) === s;
           return (
-            <TouchableOpacity key={s} onPress={() => setStatus(s)} disabled={plot.status === s || saving}
-              style={{ flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center',
-                backgroundColor: plot.status === s ? c.bg : COLORS.surface,
-                borderWidth: 1.5, borderColor: plot.status === s ? withAlpha(c.border, '80') : COLORS.border }}>
-              <Text style={{ fontSize: 9, fontWeight: '700', color: plot.status === s ? c.color : MUTED }}>{c.label}</Text>
+            <TouchableOpacity key={s} onPress={() => setStatus(s)} disabled={on || saving}
+              style={[pst.btn, on && PST_ON[s]]}>
+              <Text style={[pst.text, on && PST_TEXT[s]]}>{STATUS_CFG[s].label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -1245,11 +1246,13 @@ export default function ManagePlotsScreen({ route, navigation }) {
     setGenBusy(false);
   }, [projectId]);
 
+  // 'pending' is the card's Hold button: held, and marked a deliberate Hold rather
+  // than someone mid-form (In Progress).
   const handleStatusChange = useCallback(async (plotId, newStatus) => {
-    const res = await apiFetch(SALES_ENDPOINTS.plot(plotId), {
-      method: 'PATCH', body: JSON.stringify({ status: newStatus }),
-    });
+    const body = newStatus === 'pending' ? { status: 'hold', manual_hold: true } : { status: newStatus, manual_hold: false };
+    const res = await apiFetch(SALES_ENDPOINTS.plot(plotId), { method: 'PATCH', body: JSON.stringify(body) });
     if (res.ok) { const u = await res.json(); setPlots(prev => prev.map(p => p.id === plotId ? u : p)); }
+    else { const d = await res.json().catch(() => ({})); Alert.alert('Not changed', d.detail || 'The unit could not be changed.'); }
   }, []);
 
   const openEdit = useCallback((plot) => { setEditPlot(plot); setEditModalVisible(true); }, []);
@@ -1546,3 +1549,20 @@ const ManagePlotsScreenS = StyleSheet.create({
   btnDim: { opacity: 0.6 },
   box2: { fontSize: 13, fontWeight: '700', color: COLORS.btnText },
 });
+
+// Plot card status buttons: Available / In Progress / Hold / Sold.
+const pst = StyleSheet.create({
+  row: { flexDirection: 'row', padding: 8, gap: 4 },
+  btn: { flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center', backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border },
+  text: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary },
+  on_available: { backgroundColor: STATUS_CFG.available.bg, borderColor: withAlpha(STATUS_CFG.available.border, '80') },
+  on_hold: { backgroundColor: STATUS_CFG.hold.bg, borderColor: withAlpha(STATUS_CFG.hold.border, '80') },
+  on_pending: { backgroundColor: STATUS_CFG.pending.bg, borderColor: withAlpha(STATUS_CFG.pending.border, '80') },
+  on_sold: { backgroundColor: STATUS_CFG.sold.bg, borderColor: withAlpha(STATUS_CFG.sold.border, '80') },
+  text_available: { color: STATUS_CFG.available.color },
+  text_hold: { color: STATUS_CFG.hold.color },
+  text_pending: { color: STATUS_CFG.pending.color },
+  text_sold: { color: STATUS_CFG.sold.color },
+});
+const PST_ON = { available: pst.on_available, hold: pst.on_hold, pending: pst.on_pending, sold: pst.on_sold };
+const PST_TEXT = { available: pst.text_available, hold: pst.text_hold, pending: pst.text_pending, sold: pst.text_sold };
