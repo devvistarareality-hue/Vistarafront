@@ -334,15 +334,9 @@ const PlotCard = React.memo(function PlotCard({ plot, onStatusChange, onEdit }) 
           sense starting from Sold), so it gets its own conditional button below
           instead of joining this fixed 3-way row. */}
       <View style={pst.row}>
-        {['available', 'hold', 'pending', 'sold'].map((s) => {
-          const on = plotState(plot) === s;
-          return (
-            <TouchableOpacity key={s} onPress={() => setStatus(s)} disabled={on || saving}
-              style={[pst.btn, on && PST_ON[s]]}>
-              <Text style={[pst.text, on && PST_TEXT[s]]}>{STATUS_CFG[s].label}</Text>
-            </TouchableOpacity>
-          );
-        })}
+        <FilterSelect label="Status" value={plotState(plot)} onChange={(v) => { if (!saving) setStatus(v); }} style={pst.select}
+          options={['available', 'hold', 'pending', 'sold', ...(plot.status === 'resale' ? ['resale'] : [])]
+            .map((s) => ({ value: s, label: STATUS_CFG[s].label }))} />
       </View>
       {/* Already-sold units can be put back on the market for resale —
           bookable again, shown purple instead of green so it reads as
@@ -1550,19 +1544,8 @@ const ManagePlotsScreenS = StyleSheet.create({
   box2: { fontSize: 13, fontWeight: '700', color: COLORS.btnText },
 });
 
-// Plot card status buttons: Available / In Progress / Hold / Sold.
+// Plot card status: one dropdown (Available / In Progress / Hold / Sold).
 const pst = StyleSheet.create({
-  row: { flexDirection: 'row', padding: 8, gap: 4 },
-  btn: { flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center', backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border },
-  text: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary },
-  on_available: { backgroundColor: STATUS_CFG.available.bg, borderColor: withAlpha(STATUS_CFG.available.border, '80') },
-  on_hold: { backgroundColor: STATUS_CFG.hold.bg, borderColor: withAlpha(STATUS_CFG.hold.border, '80') },
-  on_pending: { backgroundColor: STATUS_CFG.pending.bg, borderColor: withAlpha(STATUS_CFG.pending.border, '80') },
-  on_sold: { backgroundColor: STATUS_CFG.sold.bg, borderColor: withAlpha(STATUS_CFG.sold.border, '80') },
-  text_available: { color: STATUS_CFG.available.color },
-  text_hold: { color: STATUS_CFG.hold.color },
-  text_pending: { color: STATUS_CFG.pending.color },
-  text_sold: { color: STATUS_CFG.sold.color },
+  row: { paddingHorizontal: 8, paddingVertical: 8 },
+  select: { alignSelf: 'stretch', justifyContent: 'space-between' },
 });
-const PST_ON = { available: pst.on_available, hold: pst.on_hold, pending: pst.on_pending, sold: pst.on_sold };
-const PST_TEXT = { available: pst.text_available, hold: pst.text_hold, pending: pst.text_pending, sold: pst.text_sold };
