@@ -12,6 +12,8 @@ import { useSelector } from 'react-redux';
 import { SALES_ENDPOINTS } from '../../constants/api';
 
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import { onlyPresent } from '../../lib/presentOptions';
+import LeadNumberCheck from '../../components/LeadNumberCheck';
 import FormSheet from '../../components/FormSheet';
 import { Field, TextField } from '../../components/Field';
 import AppIcon from '../../components/AppIcon';
@@ -20,6 +22,12 @@ import AppLoader from '../../components/AppLoader';
 import common from '../../styles/common';
 import { can } from '../../lib/roles';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
+// A picked visit date as YYYY-MM-DD in the phone's own day (toISOString would
+// shift it to UTC and can land on the day before).
+const ymdLocal = (d) => { const x = d instanceof Date ? d : new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+// SV Done carries its visit: the server records it in the same save, and refuses
+// SV Done with no visit on record (mirrors the web).
+const svDoneFields = (outcome, date, remarks) => ({ sv_outcome: outcome, sv_visited_at: ymdLocal(date), sv_remarks: remarks || '' });
 // Shared by the Lead Detail modal, Add Lead and FollowUpScheduler.
 const inpS = { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: TEXT, backgroundColor: COLORS.surface, marginBottom: 8 };
 const lblS = { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', marginBottom: 3, letterSpacing: 0.4 };
@@ -175,6 +183,9 @@ const HISTORY_LABEL = {
   warm_transfer:      'Transferred to STM',
   site_visit:         'Site Visit',
   closure:            'Closure',
+  follow_up:          'Follow-up Scheduled',
+  follow_up_done:     'Follow-up Done',
+  follow_up_missed:   'Follow-up Missed',
 };
 const HISTORY_COLOR = {
   created:            COLORS.textSecondary,
@@ -188,6 +199,9 @@ const HISTORY_COLOR = {
   warm_transfer:      COLORS.error,
   site_visit:         COLORS.warningAlt,
   closure:           COLORS.success,
+  follow_up:          COLORS.link,
+  follow_up_done:     COLORS.success,
+  follow_up_missed:   COLORS.error,
 };
 const FU_STATUS_COLOR = { pending: COLORS.warningAlt, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
 
@@ -361,6 +375,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
       if (body.stm_status === 'closed') delete body.stm_status;
       if (!isNotQualified) { body.disqualify_reason = ''; body.disqualify_note = ''; }
       else if (body.disqualify_reason !== 'other') { body.disqualify_note = ''; }
+      if (form.stm_status === 'sv_done' && lead.stm_status !== 'sv_done') Object.assign(body, svDoneFields(svOutcome, svVisitedDate, form.stm_remarks));
       const res = await apiFetch(SALES_ENDPOINTS.lead(lead.id), { method: 'PATCH', body: JSON.stringify(body) });
       if (res.ok) {
         const updated = await res.json();
@@ -402,35 +417,6 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
           } catch (_) {}
         }
 
-        // STM marked sv_done → complete the latest pending visit (or create a completed one)
-        if (stmStatusChanged && form.stm_status === 'sv_done') {
-          try {
-            const svRes = await apiFetch(`${SALES_ENDPOINTS.siteVisits}?lead_id=${lead.id}`);
-            const list = svRes.ok ? await svRes.json() : [];
-            const pending = (Array.isArray(list) ? list : []).filter(v => v.status === 'scheduled')
-              .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))[0];
-            // Keeps the current time-of-day but lets the date itself be backdated
-            // to when the visit actually happened.
-            const visitedAt = new Date(svVisitedDate);
-            const timeNow = new Date();
-            visitedAt.setHours(timeNow.getHours(), timeNow.getMinutes(), timeNow.getSeconds(), 0);
-            const visitedIso = visitedAt.toISOString();
-            if (pending) {
-              await apiFetch(SALES_ENDPOINTS.siteVisit(pending.id), { method: 'PATCH', body: JSON.stringify({ status: 'completed', visited_at: visitedIso, outcome: svOutcome, remarks: form.stm_remarks || '' }) });
-            } else {
-              await apiFetch(SALES_ENDPOINTS.siteVisits, {
-                method: 'POST',
-                body: JSON.stringify({
-                  lead: lead.id, project: form.project || null,
-                  scheduled_at: visitedIso, visited_at: visitedIso, status: 'completed',
-                  stm: form.stm || user?.id, referred_by_telecaller: form.telecaller || null,
-                  outcome: svOutcome, remarks: form.stm_remarks || '',
-                }),
-              });
-            }
-          } catch (_) {}
-        }
-
         // STM marked closed → save the lead, then jump into the booking flow with
         // this lead prefilled (pick plot(s) on the unit map → record the booking).
         if (form.stm_status === 'closed') {
@@ -444,7 +430,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
         onUpdated(updated); onClose();
       }
-      else { Alert.alert('Error', 'Could not save lead.'); }
+      else { const e = await res.json().catch(() => ({})); Alert.alert('Not saved', e.detail || 'Could not save lead.'); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
   }
@@ -873,6 +859,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                              : h.field_changed === 'stm'           ? 'building'
                              : h.field_changed === 'site_visit'    ? 'home'
                              : h.field_changed === 'closure'       ? 'check-circle'
+                             : h.field_changed.startsWith('follow_up') ? 'calendar'
                              : h.field_changed.includes('remarks') ? 'note'
                              : 'refresh';
                 const singleValue = ['created', 'warm_transfer', 'closure', 'telecaller_remarks', 'stm_remarks'].includes(h.field_changed) || !h.old_value;
@@ -951,6 +938,52 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             <View style={{ height: 20 }} />
           </ScrollView>
     </FormSheet>
+  );
+}
+
+/* ── Multi-select Dropdown Picker ── DropdownPicker's look and the same kind of
+   bottom pop-up (proven to open cleanly from inside the filter sheet), but ticks
+   several. `value` is an array; empty means "all". Mirrors the web MultiSelect. */
+function MultiDropdownPicker({ value = [], onChange, options, placeholder, noun = 'selected' }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState([]);
+  useEffect(() => { if (open) setDraft((value || []).map(String)); }, [open]);
+  const picked = (value || []).map(String);
+  const text = picked.length === 0 ? placeholder
+    : picked.length === 1 ? (options.find((o) => String(o.value) === picked[0])?.label ?? `1 ${noun}`)
+    : `${picked.length} ${noun}`;
+  const toggle = (v) => setDraft((d) => (d.includes(String(v)) ? d.filter((x) => x !== String(v)) : [...d, String(v)]));
+  return (
+    <>
+      <TouchableOpacity onPress={() => setOpen(true)} style={mdp.trigger}>
+        <Text style={picked.length ? mdp.triggerTextOn : mdp.triggerText} numberOfLines={1}>{text}</Text>
+        <Ionicons name="chevron-down" size={16} color={MUTED} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={mdp.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <TouchableOpacity activeOpacity={1} style={mdp.sheet}>
+            <View style={mdp.head}>
+              <Text style={mdp.title}>{placeholder}</Text>
+              <TouchableOpacity onPress={() => setDraft([])}><Text style={mdp.clear}>Clear</Text></TouchableOpacity>
+            </View>
+            <ScrollView>
+              {options.map((o) => {
+                const on = draft.includes(String(o.value));
+                return (
+                  <TouchableOpacity key={String(o.value)} onPress={() => toggle(o.value)} style={mdp.row}>
+                    <View style={[mdp.box, on && mdp.boxOn]}>{on && <Ionicons name="checkmark" size={14} color={COLORS.white} />}</View>
+                    <Text style={on ? mdp.rowTextOn : mdp.rowText}>{o.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <TouchableOpacity style={mdp.done} onPress={() => { onChange(draft); setOpen(false); }}>
+              <Text style={mdp.doneText}>{draft.length ? `Use ${draft.length} selected` : `Use ${placeholder.toLowerCase()}`}</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 }
 
@@ -1141,6 +1174,18 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   const showStm = _isAdminMgr || _isStm || _isCp;
   const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '', disqualify_reason: '', disqualify_note: '', lead_date: '' };
   const [form, setForm] = useState(emptyForm);
+  // Step 1 is the number check (components/LeadNumberCheck), as on the web: every
+  // lead on this number, project by project. Back to it each time the sheet opens.
+  const [step, setStep] = useState('number');
+  useEffect(() => { if (visible) setStep('number'); }, [visible]);
+  const pickExisting = (row) => {
+    // Working on that lead: its project and name are set, so saving updates it
+    // (the server's same-phone-same-project path) rather than adding another.
+    setForm((f) => ({ ...f, phone: row.phone || f.phone, name: row.name || f.name,
+      project: row.project_id ? row.project_id : f.project }));
+    setStep('form');
+  };
+  const addNew = (phone) => { setForm((f) => ({ ...f, phone })); setStep('form'); };
   const [cityOther, setCityOther] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -1239,35 +1284,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     }
     setSaving(true);
     try {
-      const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(form) });
+      const body = showStm && form.stm_status === 'sv_done'
+        ? { ...form, ...svDoneFields(svOutcome, svVisitedDate, form.stm_remarks) } : form;
+      const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(body) });
       if (res.ok) {
         const lead = await res.json();
-        // A lead created directly at STM Status = sv_done needs the visit itself on
-        // record too — same as marking a scheduled visit done, just with no prior
-        // "scheduled" row to complete. Best-effort: the lead is already saved.
-        if (showStm && form.stm_status === 'sv_done' && lead?.id && svOutcome) {
-          const now = new Date();
-          const visitedAt = new Date(svVisitedDate);
-          visitedAt.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), 0);
-          const visitedIso = visitedAt.toISOString();
-          try {
-            await apiFetch(SALES_ENDPOINTS.siteVisits, {
-              method: 'POST',
-              body: JSON.stringify({
-                lead: lead.id, project: form.project || null,
-                scheduled_at: visitedIso, visited_at: visitedIso, status: 'completed',
-                stm: form.stm || user?.id,
-                // lead.telecaller (not form.telecaller) — when this Add Lead call
-                // merged into an existing telecaller-held lead (same phone+project),
-                // the returned record carries that telecaller, and their work should
-                // be credited with this visit even though this form never showed a
-                // Telecaller field.
-                referred_by_telecaller: lead.telecaller || null,
-                outcome: svOutcome, remarks: form.stm_remarks || '',
-              }),
-            });
-          } catch (_) {}
-        }
         // Best-effort: the lead is already saved, so a failure here must not read
         // back to the user as "lead not added".
         if (fuForm.scheduled_at instanceof Date && lead?.id) {
@@ -1287,7 +1308,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
         onCreated(lead); onClose(); setForm(emptyForm); setFuForm(emptyFu); setCityOther(false);
         setSvOutcome(''); setSvVisitedDate(new Date());
       }
-      else { const e = await res.json(); Alert.alert('Error', JSON.stringify(e)); }
+      else { const e = await res.json().catch(() => ({})); Alert.alert('Not added', e.detail || JSON.stringify(e)); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
   }
@@ -1307,7 +1328,18 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Add Lead</Text>
             <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>Fill in the contact details below</Text>
           </View>
+          {step === 'number' ? <LeadNumberCheck initialPhone={form.phone} onPick={pickExisting} onNew={addNew} /> : (
           <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 20 }}>
+            {/* Shown first: whether this number is already a lead. */}
+            {dupMatch && (
+              <View style={SalesLeadsScreenS.dupInfoBox}>
+                {dupMatch.sameProject ? (
+                  <Text style={SalesLeadsScreenS.dupInfoText}>Already a lead here: <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.name}</Text> · {dupMatch.status}{dupMatch.telecaller_name ? ` · TC: ${dupMatch.telecaller_name}` : ''}{dupMatch.stm_name ? ` · ${dupMatch.is_cp ? 'CP' : 'STM'}: ${dupMatch.stm_name}` : ''}. Adding this will update that lead, not create a new one.</Text>
+                ) : (
+                  <Text style={SalesLeadsScreenS.dupInfoText}>This number already has a lead in <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.project_name || 'another project'}</Text>{dupMatch.telecaller_name || dupMatch.stm_name ? ` (${dupMatch.telecaller_name || dupMatch.stm_name})` : ''}. A separate lead will be created for this project instead.</Text>
+                )}
+              </View>
+            )}
             <TextField label="Full Name" required value={form.name} onChangeText={v => set('name', v)} placeholder="Lead name" />
             <TextField label="Phone" required value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" placeholder="10-digit mobile" />
             <TextField label="Alt Phone" value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" placeholder="Optional" />
@@ -1402,15 +1434,6 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
               />
             </Field>
 
-            {dupMatch && (
-              <View style={SalesLeadsScreenS.dupInfoBox}>
-                {dupMatch.sameProject ? (
-                  <Text style={SalesLeadsScreenS.dupInfoText}>Already a lead here: <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.name}</Text> · {dupMatch.status}{dupMatch.telecaller_name ? ` · TC: ${dupMatch.telecaller_name}` : ''}{dupMatch.stm_name ? ` · ${dupMatch.is_cp ? 'CP' : 'STM'}: ${dupMatch.stm_name}` : ''}. Adding this will update that lead, not create a new one.</Text>
-                ) : (
-                  <Text style={SalesLeadsScreenS.dupInfoText}>This number already has a lead in <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.project_name || 'another project'}</Text>{dupMatch.telecaller_name || dupMatch.stm_name ? ` (${dupMatch.telecaller_name || dupMatch.stm_name})` : ''}. A separate lead will be created for this project instead.</Text>
-                )}
-              </View>
-            )}
 
             {showTC && (
               <>
@@ -1512,23 +1535,30 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
             <FollowUpScheduler fuForm={fuForm} setFuForm={setFuForm} canAssign={_isAdminMgr}
               hint="Optional — pick a date &amp; time and it's scheduled when you tap Add Lead." />
           </ScrollView>
+          )}
     </FormSheet>
   );
 }
 
-const EMPTY_FILTERS = { status: '', project_id: '', source_id: '', campaign: '', telecaller_id: '', stm_id: '', tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
+const EMPTY_FILTERS = { status: '', project_id: [], source_id: '', campaign: '', telecaller_id: [], stm_id: [], tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
+// Project / telecaller / STM filters hold several ids; older callers may pass one.
+const asList = (v) => (Array.isArray(v) ? v : (v === '' || v == null ? [] : [String(v)]));
+// A filter counts as set when it has a value — an empty list is not one.
+const isSet = (v) => (Array.isArray(v) ? v.length > 0 : !!v && v !== false && v !== '');
 const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback','not_qualified'];
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'];
 
 /* ── Filter Bottom Sheet ── */
-function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false }) {
+function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, facets = null, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false }) {
+  // Only what occurs in the leads this person can see (?facets=1), as on the web.
+  const fx = (key) => facets?.[key] ?? null;
   const [local, setLocal] = useState(filters);
   useEffect(() => { if (visible) setLocal(filters); }, [visible]);
   const set = (k, v) => setLocal(f => ({ ...f, [k]: v }));
   const localDate = (d) => d.toISOString().slice(0, 10);
   const today = localDate(new Date());
   const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
-  const activeCount = Object.entries(filters).filter(([k, v]) => v && v !== false && v !== '').length;
+  const activeCount = Object.entries(filters).filter(([, v]) => isSet(v)).length;
   // Custom date range — the Today/Week/Month buttons cover common cases, but a manager
   // often needs an arbitrary range (e.g. "leads from the 3rd to the 9th").
   const [showFromPicker, setShowFromPicker] = useState(false);
@@ -1626,8 +1656,9 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           {/* Project */}
           <View>
             <Text style={fsLbl}>PROJECT</Text>
-            <DropdownPicker value={local.project_id} onChange={v => set('project_id', v)}
-              options={[{ value: '', label: 'All Projects' }, { value: 'none', label: '— No Project —' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))]}
+            <MultiDropdownPicker value={asList(local.project_id)} onChange={v => set('project_id', v)} noun="projects"
+              options={onlyPresent([{ value: 'none', label: 'No project' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))],
+                facets && [...(facets.project_ids || []), ...(facets.has_no_project ? ['none'] : [])], local.project_id)}
               placeholder="All Projects" />
           </View>
 
@@ -1635,7 +1666,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>SOURCE</Text>
             <DropdownPicker value={local.source_id} onChange={v => set('source_id', v)}
-              options={[{ value: '', label: 'All Sources' }, ...sources.map(s => ({ value: String(s.id), label: s.name }))]}
+              options={[{ value: '', label: 'All Sources' }, ...onlyPresent(sources.map(s => ({ value: String(s.id), label: s.name })), fx('source_ids'), local.source_id)]}
               placeholder="All Sources" />
           </View>
 
@@ -1650,8 +1681,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           {showAssignees && (
           <View>
             <Text style={fsLbl}>TELECALLER</Text>
-            <DropdownPicker value={local.telecaller_id} onChange={v => set('telecaller_id', v)}
-              options={[{ value: '', label: 'All Telecallers' }, ...telecallers.map(u => ({ value: String(u.id), label: u.name }))]}
+            <MultiDropdownPicker value={asList(local.telecaller_id)} onChange={v => set('telecaller_id', v)} noun="telecallers"
+              options={onlyPresent(telecallers.map(u => ({ value: String(u.id), label: u.name })), fx('telecaller_ids'), local.telecaller_id)}
               placeholder="All Telecallers" />
           </View>
           )}
@@ -1659,8 +1690,8 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           {showAssignees && (
           <View>
             <Text style={fsLbl}>STM</Text>
-            <DropdownPicker value={local.stm_id} onChange={v => set('stm_id', v)}
-              options={[{ value: '', label: 'All STMs' }, ...stms.map(u => ({ value: String(u.id), label: u.name }))]}
+            <MultiDropdownPicker value={asList(local.stm_id)} onChange={v => set('stm_id', v)} noun="STMs"
+              options={onlyPresent(stms.map(u => ({ value: String(u.id), label: u.name })), fx('stm_ids'), local.stm_id)}
               placeholder="All STMs" />
           </View>
           )}
@@ -1670,7 +1701,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>OVERALL STATUS</Text>
             <DropdownPicker value={local.status || ''} onChange={v => set('status', v)}
-              options={[{ value: '', label: 'All Statuses' }, ...STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))]}
+              options={[{ value: '', label: 'All Statuses' }, ...onlyPresent(STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label })), fx('statuses'), local.status)]}
               placeholder="All Statuses" />
           </View>
           )}
@@ -1680,7 +1711,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>TC STATUS</Text>
             <DropdownPicker value={local.tc_status} onChange={v => set('tc_status', v)}
-              options={[{ value: '', label: 'All TC Statuses' }, ...TC_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              options={[{ value: '', label: 'All TC Statuses' }, ...onlyPresent(TC_STATUSES, fx('telecaller_statuses'), local.tc_status).map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
               placeholder="All TC Statuses" />
           </View>
           )}
@@ -1690,7 +1721,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>{isCp ? 'CP STATUS' : 'STM STATUS'}</Text>
             <DropdownPicker value={local.stm_status} onChange={v => set('stm_status', v)}
-              options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...STM_STATUSES.map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...onlyPresent(STM_STATUSES, fx('stm_statuses'), local.stm_status).map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
               placeholder={isCp ? 'All CP Statuses' : 'All STM Statuses'} />
           </View>
           )}
@@ -1820,6 +1851,17 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
+  // Which projects, people, sources and statuses occur in the leads this person
+  // can see — the filter sheet offers only those (see FilterSheet).
+  const [facets, setFacets] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const q = ['facets=1', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : ''].filter(Boolean).join('&');
+    apiFetch(`${SALES_ENDPOINTS.leads}?${q}`).then((r) => (r.ok ? r.json() : null))
+      // Only a real facets answer counts (a server without ?facets=1 replies with the list).
+      .then((d) => { if (alive && Array.isArray(d?.project_ids)) setFacets(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, [companyId, adminView]);
 
   // Telecaller / STM portals get a "To Call" vs "Called" split so they can tell
   // which of their assigned leads are still pending vs already actioned.
@@ -1840,7 +1882,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [workTab, setWorkTab] = useState(['called', 'all'].includes(route?.params?.initialWorkTab) ? route.params.initialWorkTab : 'pending'); // 'pending' | 'called' | 'all' (callers only)
   const [total,   setTotal]   = useState(0); // backend count for the current filter
 
-  const activeFilterCount = Object.entries(filters).filter(([, v]) => v && v !== false && v !== '').length;
+  const activeFilterCount = Object.entries(filters).filter(([, v]) => isSet(v)).length;
 
   const lastLeadIdRef    = useRef(null);
   const loadingMoreRef   = useRef(false);
@@ -1895,11 +1937,12 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (companyId)             url += `&company_id=${companyId}`;
     if (search)                url += `&search=${encodeURIComponent(search)}`;
     if (filters.status)        url += `&status=${filters.status}`;
-    if (filters.project_id)    url += `&project_id=${filters.project_id}`;
+    // Several ids at once from the multi-selects — the server reads them comma-separated.
+    if (asList(filters.project_id).length)    url += `&project_id=${asList(filters.project_id).join(',')}`;
     if (filters.source_id)     url += `&source_id=${filters.source_id}`;
     if (filters.campaign?.trim()) url += `&campaign=${encodeURIComponent(filters.campaign.trim())}`;
-    if (filters.telecaller_id) url += `&telecaller_id=${filters.telecaller_id}`;
-    if (filters.stm_id)        url += `&stm_id=${filters.stm_id}`;
+    if (asList(filters.telecaller_id).length) url += `&telecaller_id=${asList(filters.telecaller_id).join(',')}`;
+    if (asList(filters.stm_id).length)        url += `&stm_id=${asList(filters.stm_id).join(',')}`;
     if (filters.tc_status)     url += `&telecaller_status=${filters.tc_status}`;
     if (filters.stm_status)    url += `&stm_status=${filters.stm_status}`;
     if (filters.disqualify_reason) url += `&disqualify_reason=${filters.disqualify_reason}`;
@@ -2169,7 +2212,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters}
-        projects={projects} sources={sources} telecallers={telecallers} stms={stms}
+        projects={projects} sources={sources} telecallers={telecallers} stms={stms} facets={facets}
         showTcStatus={showTcStatus} showStmStatus={showStmStatus} showAssignees={showAssignees} isCp={isCpAny} />
 
       {loading ? (
@@ -2270,4 +2313,27 @@ const SalesLeadsScreenS = StyleSheet.create({
 const lcf = StyleSheet.create({
   input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12,
            fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.surface },
+});
+
+// MultiDropdownPicker (project / telecaller / STM in the filter sheet).
+const mdp = StyleSheet.create({
+  trigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface,
+             borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10 },
+  triggerText: { flex: 1, fontSize: 14, color: COLORS.textSecondary, fontWeight: '400' },
+  triggerTextOn: { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' },
+  overlay: { flex: 1, backgroundColor: COLORS.overlay },
+  sheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface,
+           borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%' },
+  head: { padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row',
+          justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  clear: { fontSize: 14, fontWeight: '700', color: COLORS.link },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14,
+         borderBottomWidth: 1, borderBottomColor: COLORS.screenBg },
+  box: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: COLORS.borderStrong, alignItems: 'center', justifyContent: 'center' },
+  boxOn: { backgroundColor: COLORS.panel, borderColor: COLORS.panel },
+  rowText: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
+  rowTextOn: { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '700' },
+  done: { margin: 12, paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: COLORS.panel },
+  doneText: { fontSize: 15, fontWeight: '800', color: COLORS.white },
 });

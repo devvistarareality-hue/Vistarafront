@@ -15,6 +15,7 @@ import BookingDetails from '../../components/BookingDetails';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const TEAL = COLORS.success;
@@ -42,8 +43,10 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const [detailsOpen, setDetailsOpen] = useState({});
   // Same three filters as the Sales approvals screen: booking date, project, STM.
   const [range, setRange] = useState({ from: '', to: '' });
-  const [proj, setProj] = useState('');   // '' = every project
-  const [stm, setStm] = useState('');     // '' = every STM
+  const [projSel, setProjSel] = useState([]);   // [] = every project
+  const proj = projSel.join(', ');   // the picks, for the labels below
+  const [stmSel, setStmSel] = useState([]);   // [] = every STM
+  const stm = stmSel.join(', ');   // the picks, for the labels below
   const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
   const DATE_PRESETS = [
@@ -136,7 +139,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
 
   const groups = {};
   approved
-    .filter((b) => inRange(b) && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj))
+    .filter((b) => inRange(b) && (!stmSel.length || stmSel.includes(stmName(b))) && (!projSel.length || projSel.includes(projName(b))))
     .forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
   projectNames.forEach((pn) => groups[pn].sort((a, b) => String(b.booking_date || '').localeCompare(String(a.booking_date || ''))));
@@ -186,12 +189,12 @@ export default function ModuleBookingsScreen({ navigation, route }) {
               {(projOptions.length > 1 || stmOptions.length > 1) && (
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
                   {projOptions.length > 1 && (
-                    <FilterSelect label="All Projects" value={proj} onChange={(v) => { setProj(v); setOpen({}); }}
-                      options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
+                    <MultiFilterSelect label="All Projects" noun="projects" value={projSel} onChange={(v) => { setProjSel(v); setOpen({}); }}
+                      options={[...projOptions.map((n) => ({ value: n, label: n }))]} />
                   )}
                   {stmOptions.length > 1 && (
-                    <FilterSelect label="All STMs" value={stm} onChange={(v) => { setStm(v); setOpen({}); }}
-                      options={[{ value: '', label: 'All STMs' }, ...stmOptions.map((n) => ({ value: n, label: n }))]} />
+                    <MultiFilterSelect label="All STMs" noun="STMs" value={stmSel} onChange={(v) => { setStmSel(v); setOpen({}); }}
+                      options={[...stmOptions.map((n) => ({ value: n, label: n }))]} />
                   )}
                 </View>
               )}

@@ -21,6 +21,7 @@ import { buildInvestorLOIHtml } from '../../lib/investorLOIHtml';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
+import { onlyPresent } from '../../lib/presentOptions';
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -1147,6 +1148,13 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
+  // Only the values these rows hold (?facets=1), as on the web — see lib/presentOptions.
+  const [facets, setFacets] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    apiFetch(`${CLUB1000_ENDPOINTS.investors}?facets=1&approval_status=approved`).then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d) setFacets(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const [showAdd,    setShowAdd]    = useState(false);
   const [revising,   setRevising]   = useState(null);
   const [renewing,   setRenewing]   = useState(null);
@@ -1264,7 +1272,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, gap: 8, alignItems: 'center' }}>
-        {[{ key: '', label: 'All' }, { key: 'active', label: 'Active' }, { key: 'matured', label: 'Matured' }, { key: 'redeemed', label: 'Redeemed' }, { key: 'premature_redeemed', label: 'Premature' }].map((f) => (
+        {[{ key: '', label: 'All' }, ...onlyPresent([{ value: 'active', label: 'Active' }, { value: 'matured', label: 'Matured' }, { value: 'redeemed', label: 'Redeemed' }, { value: 'premature_redeemed', label: 'Premature' }], facets?.statuses ?? null, statusFilter).map((o) => ({ key: o.value, label: o.label }))].map((f) => (
           <TouchableOpacity key={f.key} onPress={() => setStatusFilter(f.key)}
             style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: statusFilter === f.key ? NAVY : COLORS.surface, borderWidth: 1, borderColor: statusFilter === f.key ? NAVY : COLORS.border }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: statusFilter === f.key ? COLORS.white : MUTED }}>{f.label}</Text>

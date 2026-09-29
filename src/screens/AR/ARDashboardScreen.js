@@ -13,7 +13,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import common from '../../styles/common';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
-import FilterSelect from '../../components/FilterSelect';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { inrShort, AGE_LABELS, ISSUES, today, withCompany, DateField } from './arShared';
 
 const ISSUE_TEXT = {
@@ -31,7 +31,7 @@ export default function ARDashboardScreen({ navigation }) {
   const _isAdmin = me?.role === 'Admin' || me?.is_staff;
   const [_preview, _setPreview] = useState('');
   const [_dashOptions, _setDashOptions] = useState([]);
-  const [project, setProject] = useState('');
+  const [project, setProject] = useState([]);   // project ids; empty = all
   const [asOf, setAsOf] = useState(today());
   const [data, setData] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -51,7 +51,7 @@ export default function ARDashboardScreen({ navigation }) {
     setErr('');
     try {
       const extra = [`as_of=${asOf}`];
-      if (project) extra.push(`project=${project}`);
+      if (project.length) extra.push(`project=${project.join(',')}`);
       const r = await apiFetch(withCompany(AR_ENDPOINTS.dashboard, companyId, extra));
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(d.detail || 'Could not load the dashboard.'); return; }
@@ -94,14 +94,14 @@ export default function ARDashboardScreen({ navigation }) {
       <ScrollView contentContainerStyle={common.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.link} />}>
         <View style={s.toolbar}>
-          <FilterSelect label="Project" value={project} onChange={setProject}
-            options={[{ value: '', label: 'All projects' }, ...projects.map((p) => ({ value: String(p.id), label: p.name }))]} />
+          <MultiFilterSelect label="All projects" noun="projects" value={project} onChange={setProject}
+            options={projects.map((p) => ({ value: String(p.id), label: p.name }))} />
           <DateField compact maxToday value={asOf} onChange={(d) => setAsOf(d || today())} style={s.asOf} />
         </View>
         <View style={s.quick}>
           {canSee(me, 'ar.screen.collections') ? <Quick icon="notifications-outline" label="Collections" onPress={() => go('ARCollections', { project })} /> : null}
           {canSee(me, 'ar.screen.register') ? <Quick icon="book-outline" label="Register" onPress={() => go('ARRegister', { project })} /> : null}
-          {canSee(me, 'ar.screen.import') ? <Quick icon="cloud-upload-outline" label="Import receipts" onPress={() => go('ARImport', { project })} /> : null}
+          {canSee(me, 'ar.screen.import') ? <Quick icon="cloud-upload-outline" label="Import receipts" onPress={() => go('ARImport', { project: project.length === 1 ? project[0] : '' })} /> : null}
           {canSee(me, 'ar.screen.myteam') && (isManagerRole(me) || me?.role === 'Admin' || me?.is_staff)
             ? <Quick icon="people-circle-outline" label="My Team" onPress={() => go('MyTeam', { module: 'AR', title: 'My Team · AR' })} /> : null}
         </View>

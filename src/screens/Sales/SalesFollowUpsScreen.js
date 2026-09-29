@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Switch, Platform, Linking, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,9 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import common from '../../styles/common';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
+import { onlyPresent } from '../../lib/presentOptions';
+import LeadHistory from '../../components/LeadHistory';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -66,11 +69,11 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const showTcStatus = isAdminMgr || isTelecaller;
   const showStmStatus = isAdminMgr || isStmRole || isCpRole;
   const [searchText, setSearchText] = useState('');
-  const [projFilter, setProjFilter] = useState('');
+  const [projFilter, setProjFilter] = useState([]);   // [] = every project
   const [tcStatusFilter, setTcStatusFilter] = useState('');
   const [stmStatusFilter, setStmStatusFilter] = useState('');
-  const [tcPerson, setTcPerson] = useState('');
-  const [stmPerson, setStmPerson] = useState('');
+  const [tcPerson, setTcPerson] = useState([]);    // [] = everyone
+  const [stmPerson, setStmPerson] = useState([]);   // [] = everyone
   const [projects, setProjects] = useState([]);
   useEffect(() => {
     apiFetch(SALES_ENDPOINTS.projects + (companyId ? `?company_id=${companyId}` : ''))
@@ -94,6 +97,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [showTo,     setShowTo]     = useState(false);
   // Completion modal: remarks + optional next follow-up.
   const [done,       setDone]       = useState(null);
+  const [historyFu,  setHistoryFu]  = useState(null);   // the follow-up whose lead history is open
   const [outcome,    setOutcome]    = useState('');
   const [schedNext,  setSchedNext]  = useState(false);
   const [nextAt,     setNextAt]     = useState(null);   // Date | null
@@ -103,6 +107,12 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const [newStatus,  setNewStatus]  = useState('');    // optional lead status to set on completion
   // Completing with sv_scheduled schedules the visit inline, the same way the lead modal does.
   const [svAt, setSvAt] = useState(null);
+  // SV Done needs the visit itself: its outcome and date go with the status (as on the web).
+  const [svOutcome, setSvOutcome] = useState('');
+  const [svDate, setSvDate] = useState(new Date());
+  const [svDatePickerOpen, setSvDatePickerOpen] = useState(false);
+  // The Complete sheet's tabs: 'complete' (the form) or 'history' (the lead's timeline).
+  const [doneTab, setDoneTab] = useState('complete');
   const [svRemarks, setSvRemarks] = useState('');
   const [svPickerOpen, setSvPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -137,12 +147,18 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     // Pre-select the lead's current TC/STM status so the caller sees where it stands.
     const cur = (fu.role_context === 'stm' ? fu.lead_stm_status : fu.lead_telecaller_status) || '';
     setDone(fu); setOutcome(''); setSchedNext(false); setNextAt(null); setNextRemarks(''); setNewStatus(cur);
-    setSvAt(null); setSvRemarks('');
+    setSvAt(null); setSvRemarks(''); setSvOutcome(''); setSvDate(new Date());
+    setDoneTab('complete');
   }
 
   async function completeFollowUp() {
     if (!done) return;
     if (schedNext && !(nextAt instanceof Date)) return;
+    const origStm = (done.role_context === 'stm' ? done.lead_stm_status : done.lead_telecaller_status) || '';
+    const markingSvDone = newStatus === 'sv_done' && origStm !== 'sv_done';
+    if (markingSvDone && (!svOutcome || !outcome.trim())) {
+      Alert.alert('Required', 'Pick the visit outcome and add remarks to mark SV Done.'); return;
+    }
     setSubmitting(true);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.followUp(done.id), {
@@ -154,9 +170,19 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       const origStatus = (done.role_context === 'stm' ? done.lead_stm_status : done.lead_telecaller_status) || '';
       if (newStatus && newStatus !== origStatus && done.lead) {
         const field = done.role_context === 'stm' ? 'stm_status' : 'telecaller_status';
-        await apiFetch(SALES_ENDPOINTS.lead(done.lead), {
-          method: 'PATCH', body: JSON.stringify({ [field]: newStatus }),
+        // SV Done carries its visit — the server records it in the same save.
+        const d = svDate;
+        const extra = markingSvDone ? {
+          sv_outcome: svOutcome, sv_remarks: outcome.trim(),
+          sv_visited_at: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+        } : {};
+        const lr = await apiFetch(SALES_ENDPOINTS.lead(done.lead), {
+          method: 'PATCH', body: JSON.stringify({ [field]: newStatus, ...extra }),
         });
+        if (!lr.ok) {
+          const e = await lr.json().catch(() => ({}));
+          Alert.alert('Status not saved', e.detail || 'The lead status could not be saved.');
+        }
       }
       // STM set sv_scheduled -> create the site visit, matching the lead modal.
       if (newStatus === 'sv_scheduled' && svAt instanceof Date && done.lead) {
@@ -211,22 +237,26 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   const q = searchText.trim().toLowerCase();
   const matchesFilters = (fu) => {
     if (q && !(fu.lead_name || '').toLowerCase().includes(q) && !(fu.lead_phone || '').toLowerCase().includes(q)) return false;
-    if (projFilter && String(fu.lead_project || '') !== String(projFilter)) return false;
+    if (projFilter.length && !projFilter.includes(String(fu.lead_project || ''))) return false;
     if (tcStatusFilter && (fu.lead_telecaller_status || '') !== tcStatusFilter) return false;
     if (stmStatusFilter && (fu.lead_stm_status || '') !== stmStatusFilter) return false;
-    if (tcPerson && String(fu.assigned_to || '') !== String(tcPerson)) return false;
-    if (stmPerson && String(fu.assigned_to || '') !== String(stmPerson)) return false;
+    // Both pickers name who the follow-up is assigned to, so together they are one
+    // list of people: a follow-up shows if it belongs to any of them (as on the web).
+    const picked = [...tcPerson, ...stmPerson];
+    if (picked.length && !picked.includes(String(fu.assigned_to || ''))) return false;
     return true;
   };
   const dateItems = items.filter((fu) => inDateRange(fu) && matchesFilters(fu));
   // Telecaller / STM pickers list the people these follow-ups are assigned to.
   const people = (role) => {
     const m = new Map();
-    items.forEach((fu) => { if (fu.assigned_to && ((fu.role_context === 'telecaller') === (role === 'telecaller'))) m.set(fu.assigned_to, fu.assigned_to_name || `#${fu.assigned_to}`); });
+    items.forEach((fu) => { if (fu.assigned_to && ((fu.role_context === 'telecaller') === (role === 'telecaller'))) m.set(String(fu.assigned_to), fu.assigned_to_name || `#${fu.assigned_to}`); });
     return [...m.entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1]))).map(([value, label]) => ({ value, label }));
   };
-  const anyFilter = !!(q || projFilter || tcStatusFilter || stmStatusFilter || tcPerson || stmPerson);
-  const clearFilters = () => { setSearchText(''); setProjFilter(''); setTcStatusFilter(''); setStmStatusFilter(''); setTcPerson(''); setStmPerson(''); };
+  // Projects and statuses, like the people above, list only what these follow-ups hold.
+  const seen = (key) => (loading ? null : items.map((f) => f[key]));
+  const anyFilter = !!(q || projFilter.length || tcStatusFilter || stmStatusFilter || tcPerson.length || stmPerson.length);
+  const clearFilters = () => { setSearchText(''); setProjFilter([]); setTcStatusFilter(''); setStmStatusFilter(''); setTcPerson([]); setStmPerson([]); };
 
   // Status-wise counts for the selected date range (independent of the tab).
   const counts = {
@@ -288,24 +318,24 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           placeholder="Search name, phone…" placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
         <View style={fuf.row}>
           {projects.length > 0 && (
-            <FilterSelect label="All Projects" value={projFilter} onChange={setProjFilter} style={fuf.sel}
-              options={[{ value: '', label: 'All Projects' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]} />
+            <MultiFilterSelect label="All Projects" noun="projects" value={projFilter} onChange={setProjFilter} style={fuf.sel}
+              options={onlyPresent(projects.map((p) => ({ value: String(p.id), label: p.name })), seen('lead_project'), projFilter)} />
           )}
           {showTcStatus && (
             <FilterSelect label="TC Status" value={tcStatusFilter} onChange={setTcStatusFilter} style={fuf.sel}
-              options={[{ value: '', label: 'TC Status' }, ...TC_FILTER_STATUSES.map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
+              options={[{ value: '', label: 'TC Status' }, ...onlyPresent(TC_FILTER_STATUSES, seen('lead_telecaller_status'), tcStatusFilter).map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
           )}
           {showStmStatus && (
             <FilterSelect label="STM Status" value={stmStatusFilter} onChange={setStmStatusFilter} style={fuf.sel}
-              options={[{ value: '', label: 'STM Status' }, ...STM_FILTER_STATUSES.map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
+              options={[{ value: '', label: 'STM Status' }, ...onlyPresent(STM_FILTER_STATUSES, seen('lead_stm_status'), stmStatusFilter).map((v) => ({ value: v, label: v.replace(/_/g, ' ') }))]} />
           )}
           {isAdminMgr && (
-            <FilterSelect label="All Telecallers" value={tcPerson} onChange={setTcPerson} style={fuf.sel}
-              options={[{ value: '', label: 'All Telecallers' }, ...people('telecaller')]} />
+            <MultiFilterSelect label="All Telecallers" noun="telecallers" value={tcPerson} onChange={setTcPerson} style={fuf.sel}
+              options={[...people('telecaller')]} />
           )}
           {isAdminMgr && (
-            <FilterSelect label="All STMs" value={stmPerson} onChange={setStmPerson} style={fuf.sel}
-              options={[{ value: '', label: 'All STMs' }, ...people('stm')]} />
+            <MultiFilterSelect label="All STMs" noun="STMs" value={stmPerson} onChange={setStmPerson} style={fuf.sel}
+              options={[...people('stm')]} />
           )}
           {anyFilter && (
             <TouchableOpacity onPress={clearFilters} style={fuf.clear}>
@@ -408,6 +438,10 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                     {!!fu.outcome && <Text style={{ fontSize: 12, color: COLORS.success, marginTop: 6 }}><Text style={{ fontWeight: '700' }}>Remarks: </Text>{fu.outcome}</Text>}
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                    {/* Every follow-up — done ones included — can open its lead's timeline. */}
+                    <TouchableOpacity onPress={() => setHistoryFu(fu)} style={fsv.histBtn}>
+                      <Text style={fsv.histBtnText}>History</Text>
+                    </TouchableOpacity>
                     {fu.status === 'pending' && (
                       <TouchableOpacity onPress={() => openDone(fu)}
                         style={{ borderWidth: 1.5, borderColor: COLORS.success, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -431,6 +465,20 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
         />
       )}
 
+      {/* A follow-up's lead history — the same timeline as the Complete sheet's tab. */}
+      <Modal visible={!!historyFu} transparent animationType="slide" onRequestClose={() => setHistoryFu(null)}>
+        <View style={fsv.sheetWrap}>
+          <View style={fsv.sheet}>
+            <Text style={fsv.sheetTitle}>{historyFu?.lead_name || 'Lead'} · History</Text>
+            {!!historyFu?.lead_phone && <Text style={fsv.sheetSub}>{historyFu.lead_phone}</Text>}
+            {!!historyFu && <LeadHistory leadId={historyFu.lead} />}
+            <TouchableOpacity onPress={() => setHistoryFu(null)} style={fsv.close}>
+              <Text style={fsv.closeText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Complete follow-up: remarks + optional next follow-up */}
       <Modal visible={!!done} transparent animationType="slide" onRequestClose={() => !submitting && setDone(null)}>
         <View style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'flex-end' }}>
@@ -441,6 +489,23 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                 {done.lead_name}{!!done.lead_phone && ` · ${done.lead_phone}`} · {fmtDateTime(done.scheduled_at)}
               </Text>
             )}
+
+            {/* Complete: the form below. History: this lead's timeline, to read first. */}
+            <View style={fsv.tabs}>
+              {[['complete', 'Complete'], ['history', 'History']].map(([k, l]) => (
+                <TouchableOpacity key={k} onPress={() => setDoneTab(k)} style={[fsv.tab, doneTab === k && fsv.tabOn]}>
+                  <Text style={[fsv.tabText, doneTab === k && fsv.tabTextOn]}>{l}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {doneTab === 'history' && !!done ? (
+              <View>
+                <LeadHistory leadId={done.lead} />
+                <TouchableOpacity onPress={() => setDone(null)} style={fsv.close}>
+                  <Text style={fsv.closeText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (<>
 
             {/* Update the lead's status after this call (TC or STM, per the follow-up's role). */}
             <Text style={{ fontSize: 12, fontWeight: '700', color: MUTED, marginBottom: 6 }}>
@@ -477,6 +542,28 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                   style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, padding: 10, fontSize: 13, marginTop: 8, color: TEXT, backgroundColor: COLORS.surface }} />
                 {!(svAt instanceof Date) ? (
                   <Text style={{ fontSize: 11, color: COLORS.success, marginTop: 8 }}>Set a date &amp; time to create the site visit automatically.</Text>
+                ) : null}
+              </View>
+            ) : null}
+            {newStatus === 'sv_done' && (done?.lead_stm_status || '') !== 'sv_done' ? (
+              <View style={fsv.box}>
+                <Text style={fsv.title}>SITE VISIT DONE</Text>
+                <Text style={fsv.label}>Outcome *</Text>
+                <View style={fsv.chips}>
+                  {[['hot', 'Hot'], ['warm', 'Warm'], ['cold', 'Cold'], ['not_interested', 'Not Interested']].map(([v, l]) => (
+                    <TouchableOpacity key={v} onPress={() => setSvOutcome(v)} style={[fsv.chip, svOutcome === v && fsv.chipOn]}>
+                      <Text style={[fsv.chipText, svOutcome === v && fsv.chipTextOn]}>{l}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={fsv.label}>Visit date *</Text>
+                <TouchableOpacity onPress={() => setSvDatePickerOpen(true)} style={fsv.date}>
+                  <Text style={fsv.dateText}>{svDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                </TouchableOpacity>
+                <Text style={fsv.note}>The visit is recorded with this status, using your remarks below.</Text>
+                {svDatePickerOpen ? (
+                  <DateTimePicker value={svDate} mode="date" display="default" maximumDate={new Date()}
+                    onChange={(e, d) => { setSvDatePickerOpen(false); if (e.type !== 'dismissed' && d) setSvDate(d); }} />
                 ) : null}
               </View>
             ) : null}
@@ -533,6 +620,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
                 <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.btnTextSuccess }}>{submitting ? 'Saving…' : newStatus === 'closed' ? 'Record Closure →' : 'Mark Done'}</Text>
               </TouchableOpacity>
             </View>
+            </>)}
           </View>
         </View>
       </Modal>
@@ -553,4 +641,32 @@ const fuf = StyleSheet.create({
   sel:       { minWidth: 140, marginRight: 8, marginBottom: 8 },
   clear:     { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: 8 },
   clearText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
+});
+
+// Follow-up done at SV Done: the visit's outcome and date (saved with the status).
+const fsv = StyleSheet.create({
+  box: { backgroundColor: COLORS.surface2, borderWidth: 1, borderColor: COLORS.success2, borderRadius: 16, padding: 12, marginTop: 10 },
+  title: { fontSize: 12, fontWeight: '800', color: COLORS.success, letterSpacing: 0.4, marginBottom: 4 },
+  label: { fontSize: 12, fontWeight: '700', color: COLORS.success, marginTop: 8, marginBottom: 6 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  chipOn: { backgroundColor: COLORS.panel, borderColor: COLORS.panel },
+  chipText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  chipTextOn: { color: COLORS.white },
+  date: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, padding: 10, backgroundColor: COLORS.surface },
+  dateText: { fontSize: 13, color: COLORS.textPrimary },
+  note: { fontSize: 11, color: COLORS.success, marginTop: 8 },
+  tabs: { flexDirection: 'row', gap: 6, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  tab: { paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabOn: { borderBottomColor: COLORS.link },
+  tabText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  tabTextOn: { color: COLORS.link },
+  close: { marginTop: 12, borderRadius: 14, padding: 13, alignItems: 'center', backgroundColor: COLORS.surfaceAlt },
+  closeText: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  histBtn: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  histBtnText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  sheetWrap: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' },
+  sheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 },
+  sheetTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  sheetSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2, marginBottom: 12 },
 });

@@ -14,6 +14,7 @@ import { TextField, Field, inputStyle } from '../../components/Field';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import { onlyPresent } from '../../lib/presentOptions';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -88,7 +89,8 @@ function DropdownPicker({ value, onChange, options, placeholder, triggerStyle })
 const fsLbl = { fontSize: 10, fontWeight: '700', color: MUTED, letterSpacing: 0.8, marginBottom: 8 };
 
 /* ── Filter Bottom Sheet ── */
-function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees, showAssignees }) {
+function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees, showAssignees, facets = null }) {
+  const fx = (key) => facets?.[key] ?? null;
   const [local, setLocal] = useState(filters);
   useEffect(() => { if (visible) setLocal(filters); }, [visible]);
   const set = (k, v) => setLocal((f) => ({ ...f, [k]: v }));
@@ -123,21 +125,21 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
         <View>
           <Text style={fsLbl}>STATUS</Text>
           <DropdownPicker value={local.status} onChange={(v) => set('status', v)}
-            options={[{ value: '', label: 'All Statuses' }, ...STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace(/_/g, ' ') }))]}
+            options={[{ value: '', label: 'All Statuses' }, ...onlyPresent(STATUS_OPTIONS, fx('statuses'), local.status).map((s) => ({ value: s, label: s.replace(/_/g, ' ') }))]}
             placeholder="All Statuses" />
         </View>
 
         <View>
           <Text style={fsLbl}>SOURCE</Text>
           <DropdownPicker value={local.source} onChange={(v) => set('source', v)}
-            options={[{ value: '', label: 'All Sources' }, ...Object.entries(SOURCE_LABELS).map(([v, l]) => ({ value: v, label: l }))]}
+            options={[{ value: '', label: 'All Sources' }, ...onlyPresent(Object.keys(SOURCE_LABELS), fx('sources'), local.source).map((v) => ({ value: v, label: SOURCE_LABELS[v] }))]}
             placeholder="All Sources" />
         </View>
 
         <View>
           <Text style={fsLbl}>SCHEME</Text>
           <DropdownPicker value={local.scheme_interest} onChange={(v) => set('scheme_interest', v)}
-            options={[{ value: '', label: 'All Schemes' }, ...schemes.map((s) => ({ value: String(s.id), label: s.name }))]}
+            options={[{ value: '', label: 'All Schemes' }, ...onlyPresent(schemes.map((s) => ({ value: String(s.id), label: s.name })), fx('scheme_ids'), local.scheme_interest)]}
             placeholder="All Schemes" />
         </View>
 
@@ -145,7 +147,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, schemes, assignees
           <View>
             <Text style={fsLbl}>ASSIGNED TO</Text>
             <DropdownPicker value={local.assigned_to} onChange={(v) => set('assigned_to', v)}
-              options={[{ value: '', label: 'All Assignees' }, ...assignees.map((u) => ({ value: String(u.id), label: u.name }))]}
+              options={[{ value: '', label: 'All Assignees' }, ...onlyPresent(assignees.map((u) => ({ value: String(u.id), label: u.name })), fx('assignee_ids'), local.assigned_to)]}
               placeholder="All Assignees" />
           </View>
         )}
@@ -548,6 +550,13 @@ export default function Club1000LeadsScreen({ navigation }) {
   const [leads,     setLeads]     = useState([]);
   const [schemes,   setSchemes]   = useState([]);
   const [assignees, setAssignees] = useState([]);
+  // Only the values these rows hold (?facets=1), as on the web — see lib/presentOptions.
+  const [facets, setFacets] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    apiFetch(`${CLUB1000_ENDPOINTS.leads}?facets=1`).then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d) setFacets(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const [loading,   setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -644,7 +653,7 @@ export default function Club1000LeadsScreen({ navigation }) {
       <AddLeadSheet visible={showAdd} onClose={() => setShowAdd(false)} onSaved={() => load()} schemes={schemes} assignees={assignees} manager={manager} />
       <LeadDetailSheet lead={selected} assignees={assignees} manager={manager} onClose={() => setSelected(null)} onStatusChange={changeStatus} onConvert={convert} onScheduleFollowUp={scheduleFollowUp} onAssigneeChange={changeAssignee} />
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
-        filters={filters} setFilters={setFilters} schemes={schemes} assignees={assignees} showAssignees={manager} />
+        filters={filters} setFilters={setFilters} schemes={schemes} assignees={assignees} showAssignees={manager} facets={facets} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>

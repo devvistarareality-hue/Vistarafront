@@ -10,7 +10,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import common from '../../styles/common';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
-import FilterSelect from '../../components/FilterSelect';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { Badge, Button } from '../../components/ui';
 import { DashKpi, DashKpiGrid } from '../../components/Dash';
 import { fmtWhen } from '../../components/ActivityHistory';
@@ -29,7 +29,8 @@ export default function ARCollectionsScreen({ navigation, route }) {
   const me = useSelector((st) => st.auth.user);
   const [tab, setTab] = useState(route?.params?.tab || 'overdue');
   const [days, setDays] = useState(30);
-  const [project, setProject] = useState(route?.params?.project || '');
+  // Project ids; empty = all. The dashboard hands its pick over (a list, or one id from older links).
+  const [project, setProject] = useState(() => (Array.isArray(route?.params?.project) ? route?.params?.project : (route?.params?.project ? [String(route?.params?.project)] : [])));
   const [q, setQ] = useState('');
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
@@ -44,7 +45,7 @@ export default function ARCollectionsScreen({ navigation, route }) {
     setErr('');
     try {
       const extra = [`view=${view}`, `days=${days}`, `as_of=${today()}`];
-      if (project) extra.push(`project=${project}`);
+      if (project.length) extra.push(`project=${project.join(',')}`);
       const r = await apiFetch(withCompany(AR_ENDPOINTS.collections, companyId, extra));
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(d.detail || 'Could not load collections.'); return; }
@@ -100,8 +101,8 @@ export default function ARCollectionsScreen({ navigation, route }) {
             </View>
           </View>
           <View style={s.filters}>
-            <FilterSelect label="Project" value={project} onChange={setProject}
-              options={[{ value: '', label: 'All projects' }, ...(data?.projects || []).map((p) => ({ value: String(p.id), label: p.name }))]} />
+            <MultiFilterSelect label="All projects" noun="projects" value={project} onChange={setProject}
+              options={(data?.projects || []).map((p) => ({ value: String(p.id), label: p.name }))} />
             {tab === 'upcoming' ? WINDOWS.map((w) => (
               <TouchableOpacity key={w} onPress={() => setDays(w)} style={[s.chip, days === w && s.chipOn]}>
                 <Text style={[s.chipText, days === w && s.chipTextOn]}>{windowLabel(w)}</Text>

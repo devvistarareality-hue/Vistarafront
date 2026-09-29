@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 
 // My Conversions — mirrors web/src/app/sales/my-conversions. The site visits and
 // closures that came from the leads this person handled or referred.
@@ -33,6 +34,8 @@ export default function MyConversionsScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [projF, setProjF] = useState([]);   // project names; empty = all
+  const [stmF, setStmF] = useState([]);     // STM names; empty = all
 
   const q = [companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '']
     .filter(Boolean).join('&');
@@ -68,7 +71,16 @@ export default function MyConversionsScreen({ navigation, route }) {
   ].some((f) => String(f || '').toLowerCase().includes(needle));
 
   const all = tab === 'sv' ? done : tab === 'upcoming' ? upcoming : closures;
-  const rows = needle ? all.filter(match) : all;
+  const rows = all.filter((r) => (!needle || match(r))
+    && (!projF.length || projF.includes(r.project_name || '—'))
+    && (!stmF.length || stmF.includes(r.stm_name || '—')));
+  const filtered = !!(needle || projF.length || stmF.length);
+
+  // The pickers offer only what this tab's rows hold (as on the web); a pick made
+  // on another tab stays listed so it can be seen and cleared.
+  const present = (key, picked, none) => [...new Set([...all.map((r) => r[key] || '—'), ...picked])]
+    .sort((a, b) => (a === '—') - (b === '—') || a.localeCompare(b))
+    .map((n) => ({ value: n, label: n === '—' ? none : n }));
 
   const renderVisit = ({ item: v }) => (
     <View style={st.row}>
@@ -96,8 +108,8 @@ export default function MyConversionsScreen({ navigation, route }) {
     </View>
   );
 
-  const empty = needle
-    ? `Nothing matches "${search.trim()}" in this tab.`
+  const empty = filtered
+    ? (needle ? `Nothing matches "${search.trim()}" in this tab.` : 'Nothing matches these filters in this tab.')
     : tab === 'upcoming' ? 'No visits scheduled.'
       : tab === 'sv' ? 'No site visits completed yet.' : 'No closures yet.';
 
@@ -145,6 +157,13 @@ export default function MyConversionsScreen({ navigation, route }) {
         )}
       </View>
 
+      <View style={st.filters}>
+        <MultiFilterSelect label="All Projects" noun="projects" value={projF} onChange={setProjF}
+          options={present('project_name', projF, 'No project')} />
+        <MultiFilterSelect label="All STMs" noun="STMs" value={stmF} onChange={setStmF}
+          options={present('stm_name', stmF, 'No STM')} />
+      </View>
+
       {loading ? (
         <AppLoader size={0.7} style={st.loader} />
       ) : (
@@ -169,6 +188,7 @@ const st = StyleSheet.create({
                 borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   searchInput: { flex: 1, fontSize: 13.5, color: COLORS.textPrimary, padding: 0 },
   searchClear: { padding: 2 },
+  filters:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 6 },
   header:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14 },
   back:     { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   flex:     { flex: 1 },

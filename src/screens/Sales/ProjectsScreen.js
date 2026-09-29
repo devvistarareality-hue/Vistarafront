@@ -53,7 +53,7 @@ async function pickAndUpload(folder, setUploading) {
 /* ─── Plot Stats Bar ─── */
 function PlotStats({ counts }) {
   if (!counts || !counts.total) return null;
-  const { sold = 0, hold = 0, available = 0, total = 0 } = counts;
+  const { sold = 0, hold = 0, pending = 0, available = 0, total = 0 } = counts;
   const soldPct = Math.round((sold / total) * 100);
   return (
     <View style={{ marginTop: 10 }}>
@@ -62,6 +62,7 @@ function PlotStats({ counts }) {
           { label: 'Total',     val: total,     color: TEXT },
           { label: 'Available', val: available,  color: COLORS.success },
           { label: 'In Progress', val: hold,     color: COLORS.inProgress },
+          { label: 'Hold',      val: pending,    color: COLORS.warning },
           { label: 'Sold',      val: sold,       color: COLORS.error },
         ].map(s => (
           <View key={s.label} style={{ alignItems: 'center' }}>

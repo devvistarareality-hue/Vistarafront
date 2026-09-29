@@ -17,6 +17,7 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import common from '../../styles/common';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -60,11 +61,12 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [filter,     setFilter]     = useState(route?.params?.initialTab || 'today');
   const [range,      setRange]      = useState({ from: '', to: '' });   // visit date
-  const [proj,       setProj]       = useState('');                     // '' = every project
+  const [projSel, setProjSel] = useState([]);   // [] = every project
+  const proj = projSel.join(', ');
   const [outcomeFilter, setOutcomeFilter] = useState('');                // '' = every outcome
   const [svSearch, setSvSearch] = useState('');
-  const [tcPerson, setTcPerson] = useState('');
-  const [stmPerson, setStmPerson] = useState('');
+  const [tcPerson, setTcPerson] = useState([]);   // [] = every telecaller
+  const [stmPerson, setStmPerson] = useState([]);  // [] = every STM
   const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
   const DATE_PRESETS = [
@@ -214,10 +216,9 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         }),
       });
       if (res.ok) {
-        // The lead's pipeline stage stays "sv done" — the outcome is recorded on
-        // the SiteVisit itself (and rolls up into the SV Hot/Warm/Cold dashboard
-        // tiles), but it does not overwrite the lead's own STM Status.
-        await apiFetch(SALES_ENDPOINTS.lead(doneSv.lead), { method: 'PATCH', body: JSON.stringify({ stm_status: 'sv_done' }) }).catch(() => {});
+        // The server moves the lead to SV Done itself when a visit completes (and
+        // leaves a lead that has already moved on, e.g. booked, where it is). The
+        // outcome stays on the SiteVisit, not in the lead's own STM Status.
         const updated = await res.json();
         bustCache('visits');
         setVisits((list) => list.map((v) => (v.id === updated.id ? updated : v)));
@@ -298,10 +299,10 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
     if (!inRange(v)) return false;
     // Search by name or phone, as on the web.
     if (svQ && !(v.lead_name || '').toLowerCase().includes(svQ) && !(v.lead_phone || '').toLowerCase().includes(svQ)) return false;
-    if (proj && projName(v) !== proj) return false;
+    if (projSel.length && !projSel.includes(projName(v))) return false;
     if (outcomeFilter && v.outcome !== outcomeFilter) return false;
-    if (tcPerson && String(v.referred_by_telecaller || '') !== tcPerson) return false;
-    if (stmPerson && String(v.stm || '') !== stmPerson) return false;
+    if (tcPerson.length && !tcPerson.includes(String(v.referred_by_telecaller || ''))) return false;
+    if (stmPerson.length && !stmPerson.includes(String(v.stm || ''))) return false;
     if (filter === 'all') return true;
     if (filter === 'today') {
       const at = new Date(v.scheduled_at);
@@ -356,19 +357,19 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         <FilterSelect label="Any date" value={datePreset === 'All' ? '' : datePreset} onChange={pickDatePreset} style={fs.sel}
           options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any date' : l }))} />
         {projOptions.length > 1 && (
-          <FilterSelect label="All Projects" value={proj} onChange={setProj} style={fs.sel}
-            options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
+          <MultiFilterSelect label="All Projects" noun="projects" value={projSel} onChange={setProjSel} style={fs.sel}
+            options={[...projOptions.map((n) => ({ value: n, label: n === '—' ? 'No project' : n }))]} />
         )}
         <FilterSelect label="Any outcome" value={outcomeFilter} onChange={setOutcomeFilter} style={fs.sel}
           options={[{ value: '', label: 'Any outcome' },
                     ...['hot', 'warm', 'cold', 'not_interested'].map((v) => ({ value: v, label: OUTCOME_LABEL[v] }))]} />
         {tcOptions.length > 0 && (
-          <FilterSelect label="All Telecallers" value={tcPerson} onChange={setTcPerson} style={fs.sel}
-            options={[{ value: '', label: 'All Telecallers' }, ...tcOptions]} />
+          <MultiFilterSelect label="All Telecallers" noun="telecallers" value={tcPerson} onChange={setTcPerson} style={fs.sel}
+            options={[...tcOptions]} />
         )}
         {stmOptions.length > 0 && (
-          <FilterSelect label="All STMs" value={stmPerson} onChange={setStmPerson} style={fs.sel}
-            options={[{ value: '', label: 'All STMs' }, ...stmOptions]} />
+          <MultiFilterSelect label="All STMs" noun="STMs" value={stmPerson} onChange={setStmPerson} style={fs.sel}
+            options={[...stmOptions]} />
         )}
       </View>
 

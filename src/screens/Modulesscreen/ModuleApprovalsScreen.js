@@ -15,6 +15,7 @@ import { unitLabel } from '../../lib/bookingUnit';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 const TEAL = COLORS.success;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -131,8 +132,10 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const [toReject, setToReject] = useState(null);
   const [toCancel, setToCancel] = useState(null);  // approved booking awaiting cancel confirmation
   const [q, setQ] = useState('');
-  const [proj, setProj] = useState('');
-  const [stm, setStm] = useState('');
+  const [projSel, setProjSel] = useState([]);   // [] = every project
+  const proj = projSel.join(', ');   // the picks, for the labels below
+  const [stmSel, setStmSel] = useState([]);   // [] = every STM
+  const stm = stmSel.join(', ');   // the picks, for the labels below
   const [open, setOpen] = useState({});
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
   const [detailsOpen, setDetailsOpen] = useState({});
@@ -218,7 +221,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
 
   const groups = {};
   tabRows
-    .filter((b) => matches(b) && (!stm || stmName(b) === stm) && (!proj || projName(b) === proj))
+    .filter((b) => matches(b) && (!stmSel.length || stmSel.includes(stmName(b))) && (!projSel.length || projSel.includes(projName(b))))
     .forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
   // Rejected and Approved sort by when that Accounts action happened; the two awaiting
@@ -269,12 +272,12 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
         {(projOptions.length > 1 || stmOptions.length > 1) && (
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
             {projOptions.length > 1 && (
-              <FilterSelect label="All Projects" value={proj} onChange={(v) => { setProj(v); setOpen({}); }}
-                options={[{ value: '', label: 'All Projects' }, ...projOptions.map((n) => ({ value: n, label: n }))]} />
+              <MultiFilterSelect label="All Projects" noun="projects" value={projSel} onChange={(v) => { setProjSel(v); setOpen({}); }}
+                options={[...projOptions.map((n) => ({ value: n, label: n }))]} />
             )}
             {stmOptions.length > 1 && (
-              <FilterSelect label="All STMs" value={stm} onChange={(v) => { setStm(v); setOpen({}); }}
-                options={[{ value: '', label: 'All STMs' }, ...stmOptions.map((n) => ({ value: n, label: n }))]} />
+              <MultiFilterSelect label="All STMs" noun="STMs" value={stmSel} onChange={(v) => { setStmSel(v); setOpen({}); }}
+                options={[...stmOptions.map((n) => ({ value: n, label: n }))]} />
             )}
           </View>
         )}

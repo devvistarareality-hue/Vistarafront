@@ -333,8 +333,12 @@ export default function SalesReportsScreen({ navigation }) {
 
   // Telecaller conversion tiles open My Conversions where the menu has it — as on
   // the web — and the real screens otherwise.
+  // …and the fallback screen only for a role that has it: a plain telecaller has no
+  // Site Visits / Booking, so for them the tile stays view-only (no target).
+  const _stmSide = user?.role === 'Admin' || user?.is_staff || isManagerRole(user)
+    || can(user, 'sales.pipeline.stm') || can(user, 'sales.pipeline.cp');
   const convTarget = (tab, target, params) => (canSee(user, 'sales.screen.conversions')
-    ? { target: 'MyConversions', params: { initialTab: tab } } : { target, params });
+    ? { target: 'MyConversions', params: { initialTab: tab } } : _stmSide ? { target, params } : {});
   const _today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
 
   const TELECALLER_CARDS = [
