@@ -1330,6 +1330,16 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
           </View>
           {step === 'number' ? <LeadNumberCheck initialPhone={form.phone} onPick={pickExisting} onNew={addNew} /> : (
           <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 20 }}>
+            {/* Shown first: whether this number is already a lead. */}
+            {dupMatch && (
+              <View style={SalesLeadsScreenS.dupInfoBox}>
+                {dupMatch.sameProject ? (
+                  <Text style={SalesLeadsScreenS.dupInfoText}>Already a lead here: <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.name}</Text> · {dupMatch.status}{dupMatch.telecaller_name ? ` · TC: ${dupMatch.telecaller_name}` : ''}{dupMatch.stm_name ? ` · ${dupMatch.is_cp ? 'CP' : 'STM'}: ${dupMatch.stm_name}` : ''}. Adding this will update that lead, not create a new one.</Text>
+                ) : (
+                  <Text style={SalesLeadsScreenS.dupInfoText}>This number already has a lead in <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.project_name || 'another project'}</Text>{dupMatch.telecaller_name || dupMatch.stm_name ? ` (${dupMatch.telecaller_name || dupMatch.stm_name})` : ''}. A separate lead will be created for this project instead.</Text>
+                )}
+              </View>
+            )}
             <TextField label="Full Name" required value={form.name} onChangeText={v => set('name', v)} placeholder="Lead name" />
             <TextField label="Phone" required value={form.phone} onChangeText={v => set('phone', v)} keyboardType="phone-pad" placeholder="10-digit mobile" />
             <TextField label="Alt Phone" value={form.alt_phone} onChangeText={v => set('alt_phone', v)} keyboardType="phone-pad" placeholder="Optional" />
@@ -1424,15 +1434,6 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
               />
             </Field>
 
-            {dupMatch && (
-              <View style={SalesLeadsScreenS.dupInfoBox}>
-                {dupMatch.sameProject ? (
-                  <Text style={SalesLeadsScreenS.dupInfoText}>Already a lead here: <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.name}</Text> · {dupMatch.status}{dupMatch.telecaller_name ? ` · TC: ${dupMatch.telecaller_name}` : ''}{dupMatch.stm_name ? ` · ${dupMatch.is_cp ? 'CP' : 'STM'}: ${dupMatch.stm_name}` : ''}. Adding this will update that lead, not create a new one.</Text>
-                ) : (
-                  <Text style={SalesLeadsScreenS.dupInfoText}>This number already has a lead in <Text style={SalesLeadsScreenS.dupInfoBold}>{dupMatch.project_name || 'another project'}</Text>{dupMatch.telecaller_name || dupMatch.stm_name ? ` (${dupMatch.telecaller_name || dupMatch.stm_name})` : ''}. A separate lead will be created for this project instead.</Text>
-                )}
-              </View>
-            )}
 
             {showTC && (
               <>
