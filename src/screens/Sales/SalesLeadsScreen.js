@@ -1657,7 +1657,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
             <Text style={fsLbl}>PROJECT</Text>
             <MultiDropdownPicker value={asList(local.project_id)} onChange={v => set('project_id', v)} noun="projects"
               options={onlyPresent([{ value: 'none', label: 'No project' }, ...projects.map(p => ({ value: String(p.id), label: p.name }))],
-                facets && [...facets.project_ids, ...(facets.has_no_project ? ['none'] : [])], local.project_id)}
+                facets && [...(facets.project_ids || []), ...(facets.has_no_project ? ['none'] : [])], local.project_id)}
               placeholder="All Projects" />
           </View>
 
@@ -1841,7 +1841,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
     let alive = true;
     const q = ['facets=1', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : ''].filter(Boolean).join('&');
     apiFetch(`${SALES_ENDPOINTS.leads}?${q}`).then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive && d) setFacets(d); }).catch(() => {});
+      // Only a real facets answer counts (a server without ?facets=1 replies with the list).
+      .then((d) => { if (alive && Array.isArray(d?.project_ids)) setFacets(d); }).catch(() => {});
     return () => { alive = false; };
   }, [companyId, adminView]);
 

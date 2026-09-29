@@ -10,7 +10,8 @@ import AppLoader from './AppLoader';
 // each stands. Picking one works on THAT lead (the form opens on its project and
 // saving updates it); "Add in another project", or a number nobody has, opens the
 // empty form. Mirrors vistaraweb/src/components/LeadNumberCheck.js.
-const pretty = (s) => (s ? s.replace(/_/g, ' ') : '');
+// 'sv_done' → 'SV done', 'not_reachable' → 'Not reachable'.
+const pretty = (s) => (s ? s.replace(/_/g, ' ').replace(/^sv\b/i, 'SV').replace(/^./, (c) => c.toUpperCase()) : '');
 
 export default function LeadNumberCheck({ initialPhone = '', onPick, onNew }) {
   const [phone, setPhone] = useState(initialPhone);
@@ -87,9 +88,9 @@ const st = StyleSheet.create({
   rowClosed: { opacity: 0.75 },
   proj: { fontSize: 13, fontWeight: '800', color: COLORS.link },
   name: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
-  side: { fontSize: 12, color: COLORS.textSecondary, textTransform: 'capitalize' },
+  side: { fontSize: 12, color: COLORS.textSecondary },
   sideKey: { fontWeight: '700', color: COLORS.textPrimary },
-  status: { fontSize: 11, color: COLORS.textTertiary, textTransform: 'capitalize', marginTop: 2 },
+  status: { fontSize: 11, color: COLORS.textTertiary, marginTop: 2 },
   primary: { borderRadius: 14, padding: 12, alignItems: 'center', backgroundColor: COLORS.panel },
   primaryText: { fontSize: 14, fontWeight: '700', color: COLORS.white },
   secondary: { marginTop: 4, borderRadius: 14, padding: 12, alignItems: 'center', backgroundColor: COLORS.surfaceAlt },
