@@ -327,7 +327,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const [existingNumbers, setExistingNumbers] = useState(() => new Set());
   useEffect(() => {
     if (!editing) return;
-    apiFetch(`${SALES_ENDPOINTS.plots}?project=${project.id}`)
+    apiFetch(`${SALES_ENDPOINTS.plots}?project=${project.id}&include_locked=1`)
       .then(r => r.ok ? r.json() : [])
       .then(arr => {
         const list = Array.isArray(arr) ? arr : [];

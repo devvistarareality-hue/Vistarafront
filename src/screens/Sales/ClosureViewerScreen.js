@@ -150,7 +150,11 @@ export default function ClosureViewerScreen({ navigation, route }) {
   // so pick the block first, then the floor within it.
   const blocks = useMemo(() => {
     const seen = [];
-    allFloors.forEach(f => { const b = f.block || ''; if (!seen.includes(b)) seen.push(b); });
+    // A locked block is not for sale, so it is not offered here — for anyone,
+    // admins included. The server returns none of its units and refuses a booking
+    // naming one, so listing the block would only be a dead end.
+    const locked = new Set((project?.locked_blocks || []).map(b => String(b).trim()).filter(Boolean));
+    allFloors.forEach(f => { const b = f.block || ''; if (locked.has(b)) return; if (!seen.includes(b)) seen.push(b); });
     return seen.length ? seen : [''];
   }, [allFloors]);
   // A block's height is quoted the way the trade quotes it — "G+12", ground plus the
