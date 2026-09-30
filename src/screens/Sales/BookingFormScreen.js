@@ -855,7 +855,11 @@ export default function BookingFormScreen({ navigation, route }) {
         // identical duplicate booking (confirmed in production).
         submittedRef.current = true;
         Alert.alert('Booking submitted', 'Your booking has been submitted and sent for approval.', [
-          { text: 'OK', onPress: () => navigation.navigate(kioskCtx ? 'Kiosk' : 'ClosureProjects') },
+          // popTo, not navigate: in React Navigation 7 navigate pushes a fresh copy on
+          // top, which left this form underneath with its "Submitting booking…" overlay
+          // still up — Back landed on it and the overlay swallowed every further Back.
+          // merge keeps the list's own params (e.g. the Channel Partner module's cpOnly).
+          { text: 'OK', onPress: () => navigation.popTo(kioskCtx ? 'Kiosk' : 'ClosureProjects', undefined, { merge: true }) },
         ]);
         return;
       }
