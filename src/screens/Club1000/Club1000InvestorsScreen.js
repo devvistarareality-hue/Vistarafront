@@ -153,7 +153,7 @@ const INTEREST_PAYOUT_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', mat
 const SOURCE_LABELS = { referral: 'Referral', walk_in: 'Walk-in', website: 'Website', other: 'Other' };
 
 // ── Add Investor sheet ──────────────────────────────────────────────────────
-function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
+export function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead, draft }) {
   const [form, setForm] = useState(null);
   const [documentFile, setDocumentFile] = useState(null);
   const [schedule, setSchedule] = useState([]);
@@ -171,21 +171,34 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
   // (Re)initialise the form whenever the sheet is opened.
   useEffect(() => {
     if (visible) {
-      const s = prefillLead?.scheme_interest
-        ? schemes.find((sc) => String(sc.id) === String(prefillLead.scheme_interest)) || schemes[0]
-        : schemes[0];
+      // Reopening a saved draft: it wins over the lead prefill, because the
+      // draft IS what was last typed.
+      const s = draft?.scheme
+        ? schemes.find((sc) => String(sc.id) === String(draft.scheme)) || schemes[0]
+        : prefillLead?.scheme_interest
+          ? schemes.find((sc) => String(sc.id) === String(prefillLead.scheme_interest)) || schemes[0]
+          : schemes[0];
       setForm({
         scheme: s?.id || '',
-        source: 'referral',
-        reference_name: prefillLead?.reference_name || '', reference_phone: prefillLead?.reference_phone || '',
-        name: prefillLead?.name || '', phone: prefillLead?.phone || '', email: prefillLead?.email || '', pan: '',
-        amount_invested: prefillLead?.amount_interested ? String(prefillLead.amount_interested) : '', investment_date: new Date(),
-        interest_payout: s?.interest_payout_options?.[0] || 'maturity',
+        source: draft?.source || 'referral',
+        reference_name: draft?.reference_name || prefillLead?.reference_name || '',
+        reference_phone: draft?.reference_phone || prefillLead?.reference_phone || '',
+        name: draft?.name || prefillLead?.name || '',
+        phone: draft?.phone || prefillLead?.phone || '',
+        email: draft?.email || prefillLead?.email || '',
+        pan: draft?.pan || '',
+        // A draft's amount may legitimately be 0 — that is "not said yet", so the
+        // field reads empty rather than showing a figure nobody typed.
+        amount_invested: (draft && Number(draft.amount_invested) > 0) ? String(draft.amount_invested)
+          : prefillLead?.amount_interested ? String(prefillLead.amount_interested) : '',
+        investment_date: draft?.investment_date ? new Date(draft.investment_date) : new Date(),
+        interest_payout: draft?.interest_payout || s?.interest_payout_options?.[0] || 'maturity',
         // The lead's negotiated rate wins over the scheme's rate for the
         // default frequency, if one was set.
-        total_return_pct: prefillLead?.total_return_pct != null ? String(prefillLead.total_return_pct)
+        total_return_pct: (draft && Number(draft.total_return_pct) > 0) ? String(draft.total_return_pct)
+          : prefillLead?.total_return_pct != null ? String(prefillLead.total_return_pct)
           : s?.payout_rates?.[s?.interest_payout_options?.[0] || 'maturity'] != null ? String(s.payout_rates[s.interest_payout_options[0] || 'maturity']) : '',
-        notes: '', security: '',
+        notes: draft?.notes || '', security: draft?.security || '',
       });
       apiFetch(CLUB1000_ENDPOINTS.investorReferences)
         .then((r) => (r.ok ? r.json() : []))
@@ -321,6 +334,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
   // row it writes is the one submitting later promotes, so saving twice never
   // leaves two investors behind.
   const [draftId, setDraftId] = useState(null);
+  useEffect(() => { if (visible) setDraftId(draft?.id || null); }, [visible, draft]);
   const [savingDraft, setSavingDraft] = useState(false);
 
   async function saveDraft() {
@@ -402,7 +416,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
   return (
     <FormSheet visible={visible} onClose={onClose}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: TEXT }}>Add Investor</Text>
+        <Text style={ClubInvestorsScreenS.sheetTitle}>{draft ? 'Edit Draft Investor' : 'Add Investor'}</Text>
         <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
         </TouchableOpacity>
@@ -1405,6 +1419,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubInvestorsScreenS = StyleSheet.create({
+  sheetTitle: { flex: 1, fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
   // Save Draft sits above Submit and reads as the quieter of the two: it is the
   // fallback, not the goal.
   draftBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

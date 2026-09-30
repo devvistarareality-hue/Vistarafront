@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, Linking, RefreshControl } from 'react-native';
+import { AddInvestorSheet } from './Club1000InvestorsScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -35,6 +36,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(null);
+  // A draft is edited from here, because it deliberately does not appear in the
+  // Investors list — there is nowhere else to open it from.
+  const [editDraft, setEditDraft] = useState(null);
   const [managers, setManagers] = useState([]);
   const [schemes, setSchemes] = useState([]);
   const [cfgOpen, setCfgOpen] = useState(false);
@@ -262,9 +266,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   ? (!!inv.pending_loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, { backgroundColor: isRenewal ? COLORS.warningBg : COLORS.accentSoft }]}><Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)
                   : (!!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: COLORS.link, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> Signed LOI</Text></TouchableOpacity>)}
                 {inv.approval_status === 'draft' && (
-                  <Text style={draftHint}>
-                    Yours — open it from Investors to finish and submit
-                  </Text>
+                  <TouchableOpacity onPress={() => setEditDraft(inv)} style={[btn, btnDraft]}>
+                    <Text style={draftBtnText}><AppIcon name="pencil" size={13} /> Edit & Submit</Text>
+                  </TouchableOpacity>
                 )}
                 {inv.approval_status === 'pending' && (
                   canApprove(inv) ? (
@@ -279,6 +283,14 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
           );
         })}
       </ScrollView>
+
+      <AddInvestorSheet
+        visible={!!editDraft}
+        draft={editDraft}
+        schemes={schemes}
+        onClose={() => setEditDraft(null)}
+        onSaved={() => { setEditDraft(null); load(); }}
+      />
     </SafeAreaView>
   );
 }
@@ -288,6 +300,8 @@ const btnOk  = { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderC
 const btnBad = { backgroundColor: COLORS.btnTintDanger, borderWidth: 1, borderColor: COLORS.btnBorderDanger };
 // Stands in for the Approve/Reject buttons on a draft row, which has neither.
 const draftHint = { fontSize: 11, color: COLORS.textSecondary, marginTop: 8 };
+const btnDraft = { backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.link };
+const draftBtnText = { color: COLORS.link, fontWeight: '700', fontSize: 13 };
 const btnT   = { color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 13 };
 const btnTOk  = { ...btnT, color: COLORS.btnTextSuccess };
 const btnTBad = { ...btnT, color: COLORS.btnTextDanger };
