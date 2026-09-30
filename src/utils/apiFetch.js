@@ -8,15 +8,20 @@ import { clearAllCache } from './dataCache';
 // for ever with nothing to retry. Field staff are on 4G, so give every call a
 // hard ceiling and surface a normal network error instead.
 export const REQUEST_TIMEOUT_MS = 25000;
+// For calls that do heavy work before replying (building a whole-company backup,
+// emptying a company) — pass as `timeout`. The web has no ceiling on these.
+export const LONG_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
 function fetchWithTimeout(url, options, ms = REQUEST_TIMEOUT_MS) {
   // AbortController exists in RN's fetch; the timer is cleared either way.
   const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timer = setTimeout(() => ctrl?.abort(), options?.timeout || ms);
-  return fetch(url, { ...options, signal: ctrl?.signal })
+  const { timeout, ...rest } = options || {};
+  const timer = setTimeout(() => ctrl?.abort(), timeout || ms);
+  return fetch(url, { ...rest, signal: ctrl?.signal })
     .catch((err) => {
       // An abort reads as a network failure to the caller, which is what it is.
-      if (err?.name === 'AbortError') {
+      // expo's fetch reports it as "Fetch request has been canceled", not AbortError.
+      if (err?.name === 'AbortError' || /canceled|cancelled|aborted/i.test(err?.message || '')) {
         const e = new Error('Request timed out. Check your connection and try again.');
         e.name = 'TimeoutError';
         throw e;

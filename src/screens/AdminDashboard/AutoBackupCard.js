@@ -4,7 +4,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { COLORS } from '../../constants/theme';
 import { SALES_ENDPOINTS } from '../../constants/api';
-import { apiFetch } from '../../utils/apiFetch';
+import { apiFetch, LONG_REQUEST_TIMEOUT_MS } from '../../utils/apiFetch';
 import common from '../../styles/common';
 import { Button } from '../../components/ui';
 
@@ -70,7 +70,8 @@ export default function AutoBackupCard({ companyId, company, ready }) {
   async function takeNow() {
     setBusy('take');
     try {
-      const r = await apiFetch(SALES_ENDPOINTS.backupSchedule(companyId), { method: 'POST' });
+      // Building the workbook for a big company takes well over the usual 25s.
+      const r = await apiFetch(SALES_ENDPOINTS.backupSchedule(companyId), { method: 'POST', timeout: LONG_REQUEST_TIMEOUT_MS });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { Alert.alert('Backup not taken', d.detail || 'Try again.'); setBusy(''); return; }
       setSched(d);

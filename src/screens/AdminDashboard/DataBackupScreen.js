@@ -9,7 +9,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { COLORS } from '../../constants/theme';
 import { SALES_ENDPOINTS } from '../../constants/api';
-import { apiFetch } from '../../utils/apiFetch';
+import { apiFetch, LONG_REQUEST_TIMEOUT_MS } from '../../utils/apiFetch';
 import { fetchCompanies } from '../../redux/actions/companiesActions';
 import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import common from '../../styles/common';
@@ -87,7 +87,7 @@ export default function DataBackupScreen({ navigation }) {
         Alert.alert('Reset refused', cd.detail || 'Nothing was changed.');
         setBusy(''); return;
       }
-      const b = await apiFetch(SALES_ENDPOINTS.backupSchedule(companyId), { method: 'POST' });
+      const b = await apiFetch(SALES_ENDPOINTS.backupSchedule(companyId), { method: 'POST', timeout: LONG_REQUEST_TIMEOUT_MS });
       const bd = await b.json().catch(() => ({}));
       const latest = (bd.history || [])[0];
       if (!b.ok || !latest?.id) {
@@ -112,7 +112,7 @@ export default function DataBackupScreen({ navigation }) {
       let r = null, d = {};
       try {
         r = await apiFetch(SALES_ENDPOINTS.backupReset(companyId), {
-          method: 'POST',
+          method: 'POST', timeout: LONG_REQUEST_TIMEOUT_MS,
           body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE', company_code: resetCode }) });
         d = await r.json().catch(() => ({}));
       } catch (e) { r = null; }
