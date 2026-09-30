@@ -276,7 +276,7 @@ export default function BookingFormScreen({ navigation, route }) {
 
   const formulaSet = project?.formula_set || 'kalrav';
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
-  // PLC defaults for a new booking (as on the web): tick Corner / Club House Facing
+  // PLC defaults for a new booking (as on the web): tick Corner / Common Plot Facing
   // when a picked plot is marked so, charged at the Rate Master price per such plot.
   const plcSeeded = useRef(false);
   useEffect(() => {
@@ -1145,7 +1145,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
           {flags.hasConstructionAgreement && <Fld l="Construction Agreement (₹)" val={f.const_agreement} on={(t) => set('const_agreement', t)} kb="numeric" />}
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
-          {/* PLC: ticked from the plot's Corner / Club House Facing marks; the amount
+          {/* PLC: ticked from the plot's Corner / Common Plot Facing marks; the amount
               comes from the Rate Master and can be changed (or typed when there is none). */}
           {flags.hasPlcFixed && PLC_KINDS.map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
             <View key={k}>
@@ -1218,7 +1218,7 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasConstructionFields && <Tot l="Construction Amount" sub="Construction Area × Construction Rate" sub2={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
           {flags.hasConstructionFields && formulaSet === 'ankhol' && v.premiumLocation > 0 && <Tot l="Premium Location Charge" val={v.premiumLocation} />}
           {flags.hasPlcFixed && v.plcCorner > 0 && <Tot l="PLC — Corner Plot" val={v.plcCorner} />}
-          {flags.hasPlcFixed && v.plcClubhouse > 0 && <Tot l="PLC — Club House Facing" val={v.plcClubhouse} />}
+          {flags.hasPlcFixed && v.plcClubhouse > 0 && <Tot l="PLC — Common Plot Facing" val={v.plcClubhouse} />}
           {flags.hasConstructionFields && <Tot
             l="Total Basic Amount"
             sub={formulaSet === 'ankhol' ? 'Plot Basic + Plot Dev + Construction + Premium'
@@ -1392,7 +1392,7 @@ const Sec = ({ title, children }) => (
   </View>
 );
 // Kalrav PLC kinds: [key used in plc_<key>, label].
-const PLC_KINDS = [['corner', 'Corner Plot'], ['clubhouse', 'Club House Facing']];
+const PLC_KINDS = [['corner', 'Corner Plot'], ['clubhouse', 'Common Plot Facing']];
 const plcS = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   box: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: COLORS.borderStrong, alignItems: 'center', justifyContent: 'center' },

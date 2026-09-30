@@ -224,7 +224,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
                 <Switch value={isCorner} onValueChange={setIsCorner} trackColor={{ false: COLORS.border, true: BLUE }} />
               </View>
               <View style={plcS.markRow}>
-                <Text style={plcS.markLabel}>Club House Facing</Text>
+                <Text style={plcS.markLabel}>Common Plot Facing</Text>
                 <Switch value={isClub} onValueChange={setIsClub} trackColor={{ false: COLORS.border, true: BLUE }} />
               </View>
             </View>
@@ -341,7 +341,7 @@ const PlotCard = React.memo(function PlotCard({ plot, onStatusChange, onEdit }) 
       {(plot.is_corner || plot.is_clubhouse_facing) ? (
         <View style={plcS.tags}>
           {plot.is_corner ? <Text style={plcS.tag}>Corner</Text> : null}
-          {plot.is_clubhouse_facing ? <Text style={plcS.tag}>Club House Facing</Text> : null}
+          {plot.is_clubhouse_facing ? <Text style={plcS.tag}>Common Plot Facing</Text> : null}
         </View>
       ) : null}
       {/* Size row — always rendered. A terrace is charged on top of the flat and only
@@ -1140,9 +1140,9 @@ function rateMasterFields(formulaSet) {
     { key: 'land_rate', label: 'Land Rate', unit: flags.areaUnit },
     flags.hasConstructionFields && { key: 'dev_rate', label: 'Development Rate', unit: flags.areaUnit },
     flags.hasConstructionFields && { key: 'const_rate', label: 'Construction Rate', unit: flags.areaUnit },
-    // Kalrav PLC: a fixed amount per plot for a Corner / Club House Facing plot.
+    // Kalrav PLC: a fixed amount per plot for a Corner / Common Plot Facing plot.
     flags.hasPlcFixed && { key: 'plc_corner_price', label: 'PLC — Corner Plot', unit: null },
-    flags.hasPlcFixed && { key: 'plc_clubhouse_price', label: 'PLC — Club House Facing', unit: null },
+    flags.hasPlcFixed && { key: 'plc_clubhouse_price', label: 'PLC — Common Plot Facing', unit: null },
     flags.hasSaleDeedRate && { key: 'sale_deed_rate', label: 'Sale Deed Rate', unit: 'sq.ft' },
     flags.hasDevAgreement && { key: 'dev_agreement_rate', label: 'Dev Agreement Rate', unit: 'sq.ft' },
     { key: 'maint_rate', label: 'Maintenance Rate', unit: flags.areaUnit },
