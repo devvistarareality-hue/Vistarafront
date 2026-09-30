@@ -316,6 +316,39 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
     }
   }
 
+  // Saved but not submitted. None of submit()'s completeness checks apply — the
+  // whole point is never to lose a long form because one field is missing. The
+  // row it writes is the one submitting later promotes, so saving twice never
+  // leaves two investors behind.
+  const [draftId, setDraftId] = useState(null);
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  async function saveDraft() {
+    if (!form.scheme) { Alert.alert('Pick a scheme', 'A draft needs a scheme — the maturity date comes from it.'); return; }
+    setSavingDraft(true);
+    try {
+      const payload = {
+        ...(draftId ? { id: draftId } : {}),
+        scheme: form.scheme, source: form.source,
+        reference_name: form.reference_name.trim(), reference_phone: form.reference_phone.trim(),
+        name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(),
+        pan: form.pan.trim(), amount_invested: form.amount_invested,
+        investment_date: toISODate(form.investment_date),
+        interest_payout: form.interest_payout, total_return_pct: form.total_return_pct,
+        notes: form.notes.trim(), security: (form.security || '').trim(),
+      };
+      if (payload.source !== 'referral') { delete payload.reference_name; delete payload.reference_phone; }
+      const res = await apiFetch(CLUB1000_ENDPOINTS.investorDraft, { method: 'POST', body: JSON.stringify(payload) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { Alert.alert('Could not save the draft', d?.detail || 'Please try again.'); return; }
+      setDraftId(d.id);
+      onSaved(d);
+      onClose();
+    } finally {
+      setSavingDraft(false);
+    }
+  }
+
   async function submit() {
     if (!form.name.trim() || !form.phone.trim() || !form.amount_invested || !scheme) {
       Alert.alert('Missing fields', 'Scheme, Name, Mobile Number and Amount Invested are required.');
@@ -347,6 +380,7 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
         notes: form.notes.trim(),
         security: (form.security || '').trim(),
         loi_file: loiFile,
+        ...(draftId ? { draft_id: draftId } : {}),
       };
       if (payload.source !== 'referral') { delete payload.reference_name; delete payload.reference_phone; }
       if (documentFile) payload.document_file = documentFile;
@@ -564,6 +598,15 @@ function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLead }) {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Enabled without the signed LOI on purpose — saving a draft is what
+            you do BEFORE you have one. */}
+        <TouchableOpacity onPress={saveDraft} disabled={saving || savingDraft}
+          style={ClubInvestorsScreenS.draftBtn}>
+          {savingDraft ? <ActivityIndicator color={COLORS.link} />
+                       : <Ionicons name="bookmark-outline" size={17} color={COLORS.link} />}
+          <Text style={ClubInvestorsScreenS.draftBtnText}>{draftId ? 'Update Draft' : 'Save Draft'}</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
           style={[ClubInvestorsScreenS.btn, (saving || !loiFile) && ClubInvestorsScreenS.box2]}>
@@ -1362,6 +1405,12 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubInvestorsScreenS = StyleSheet.create({
+  // Save Draft sits above Submit and reads as the quieter of the two: it is the
+  // fallback, not the goal.
+  draftBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              borderWidth: 1.5, borderColor: COLORS.link, borderRadius: 16,
+              paddingVertical: 13, marginTop: 14, backgroundColor: COLORS.surface },
+  draftBtnText: { fontSize: 14, fontWeight: '800', color: COLORS.link },
   btn: { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
   box2: { opacity: 0.5 },
   box: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
