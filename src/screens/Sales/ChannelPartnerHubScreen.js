@@ -11,15 +11,17 @@ const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
-// The Channel Partner module — the same eight destinations the web nav lists, each
-// one an existing Sales screen asked for the partner-sourced slice (cpOnly), plus the
-// partner directory, which is the module's own record and has no Sales counterpart.
+// The Channel Partner module — the same destinations the web nav lists, each one an
+// existing Sales screen asked for the partner-sourced slice (cpOnly). All Leads also
+// carries the partner directory (its CP Details tab).
 //
 // "Booking" is the record-a-closure flow; "Approvals" is the Drafts/Pending/Approved
 // list. They are separate items here for the same reason they are on the web: sharing
 // one entry only ever opened the approvals list.
 const TILES = [
-  { screen: 'cp.screen.leads', key: 'ChannelPartners',    label: 'All Partners',  desc: 'The CP directory',            icon: 'people-outline',        color: COLORS.link,    bg: COLORS.linkBg,    params: {} },
+  // All Leads = partner-sourced leads plus the partner directory, as two tabs (CP
+  // Leads / CP Details) — the web module's All Leads page.
+  { screen: 'cp.screen.leads', key: 'SalesLeads',         label: 'All Leads',     desc: 'CP leads and partner details', icon: 'people-outline',       color: COLORS.link,    bg: COLORS.linkBg,    params: { cpOnly: true, adminView: true } },
   { screen: 'cp.screen.sitevisits', key: 'SalesSiteVisits',    label: 'Site Visits',   desc: 'Partner-sourced visits',      icon: 'location-outline',      color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, adminView: true } },
   { screen: 'cp.screen.followups', key: 'SalesFollowUps',     label: 'Follow-Ups',    desc: 'Partner-sourced follow-ups',  icon: 'calendar-outline',      color: COLORS.warning, bg: COLORS.warningBg, params: { cpOnly: true, adminView: true } },
   { screen: 'cp.screen.booking', key: 'ClosureProjects',    label: 'Booking',       desc: 'Record a CP booking',         icon: 'document-text-outline', color: COLORS.link,    bg: COLORS.linkBg,    params: { cpOnly: true } },

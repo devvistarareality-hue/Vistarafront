@@ -21,6 +21,8 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import common from '../../styles/common';
 import { can } from '../../lib/roles';
+import { Segmented } from '../../components/ui';
+import { ChannelPartnerDirectory } from './ChannelPartnersScreen';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 // A picked visit date as YYYY-MM-DD in the phone's own day (toISOString would
 // shift it to UTC and can land on the day before).
@@ -1164,7 +1166,7 @@ function FollowUpScheduler({ fuForm, setFuForm, canAssign, hint }) {
 }
 
 /* ── Create Lead Modal ── */
-function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps = [], visible, onClose, onCreated }) {
+function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps = [], cpOnly = false, channelPartners = [], visible, onClose, onCreated }) {
   const user = useSelector((s) => s.auth.user);
   const _desig = (user?.designation || '').toLowerCase();
   const _isTelecaller = can(user, 'sales.pipeline.telecalling');
@@ -1172,14 +1174,18 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   const _isCpHead = _desig.includes('cp cluster head');
   const _isCp  = can(user, 'sales.pipeline.cp') || _isCpHead;
   const _isAdminMgr = !(_isTelecaller || _isStm || _isCp);
-  const showTC  = _isAdminMgr || _isTelecaller;
+  // A Channel Partner lead skips telecalling and goes straight into the STM pipeline,
+  // sourced "Channel Partner" and tied to a partner — as the web's CP module adds it.
+  const showTC  = (_isAdminMgr || _isTelecaller) && !cpOnly;
   const showStm = _isAdminMgr || _isStm || _isCp;
-  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '', disqualify_reason: '', disqualify_note: '', lead_date: '' };
+  const cpSource = cpOnly ? sources.find((x) => (x.name || '').toLowerCase() === 'channel partner') : null;
+  const emptyForm = { name: '', phone: '', alt_phone: '', email: '', project: '', source: '', channel_partner: '', status: 'new', city: '', address: '', purpose: [], budget_bucket: '', telecaller: '', stm: '', telecaller_status: '', telecaller_remarks: '', stm_status: '', stm_remarks: '', disqualify_reason: '', disqualify_note: '', lead_date: '' };
   const [form, setForm] = useState(emptyForm);
   // Step 1 is the number check (components/LeadNumberCheck), as on the web: every
   // lead on this number, project by project. Back to it each time the sheet opens.
   const [step, setStep] = useState('number');
   useEffect(() => { if (visible) setStep('number'); }, [visible]);
+  useEffect(() => { if (visible && cpSource && !form.source) setForm((f) => ({ ...f, source: cpSource.id })); }, [visible, cpSource]); // eslint-disable-line react-hooks/exhaustive-deps
   const pickExisting = (row) => {
     // Working on that lead: its project and name are set, so saving updates it
     // (the server's same-phone-same-project path) rather than adding another.
@@ -1262,6 +1268,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
     if (!form.project) { Alert.alert('Required', 'Project is required.'); return; }
     if (!form.source)  { Alert.alert('Required', 'Source is required.'); return; }
+    if (cpOnly && !form.channel_partner) { Alert.alert('Required', 'Channel Partner is required.'); return; }
     // A rep logging a lead by hand has just spoken to them, so the disposition and
     // the note are the point of the record. Required for the rep's own section only;
     // an admin entering someone else's lead has no call to write up.
@@ -1287,7 +1294,11 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     setSaving(true);
     try {
       const body = showStm && form.stm_status === 'sv_done'
-        ? { ...form, ...svDoneFields(svOutcome, svVisitedDate, form.stm_remarks) } : form;
+        ? { ...form, ...svDoneFields(svOutcome, svVisitedDate, form.stm_remarks) } : { ...form };
+      if (!body.channel_partner) delete body.channel_partner;
+      // A CP lead is owned by whoever adds it, unless a CP Cluster Head hands it
+      // straight to one of their CP Executives (same rule as the web).
+      if (cpOnly) { body.stm = (_isCpHead && form.stm) ? form.stm : user?.id; body.telecaller = ''; }
       const res = await apiFetch(SALES_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(body) });
       if (res.ok) {
         const lead = await res.json();
@@ -1422,6 +1433,19 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 triggerStyle={{ marginBottom: 0 }}
               />
             </Field>
+            {cpOnly ? (
+              <>
+                <Field label="Source" required>
+                  <Text style={SalesLeadsScreenS.fixedSource}>Channel Partner</Text>
+                </Field>
+                <Field label="Channel Partner Name" required>
+                  <PickerDropdown
+                    items={channelPartners.map((cp) => ({ value: cp.id, label: cp.name, sublabel: cp.firm_name || cp.contact_no }))}
+                    value={form.channel_partner} onChange={(v) => set('channel_partner', v)}
+                    placeholder="Select channel partner" title="Channel Partner" />
+                </Field>
+              </>
+            ) : (
             <Field label="Source" required>
               <DropdownPicker
                 value={form.source}
@@ -1435,6 +1459,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
                 triggerStyle={{ marginBottom: 0 }}
               />
             </Field>
+            )}
 
 
             {showTC && (
@@ -1460,7 +1485,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
 
             {showStm && (
               <>
-                {_isAdminMgr && (
+                {_isAdminMgr && !cpOnly && (
                   <Field label="Assign STM">
                     <UserPickerDropdown users={stms} value={form.stm} onChange={v => set('stm', v)} placeholder="— None —" title="Assign STM" />
                   </Field>
@@ -1854,17 +1879,28 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const user      = useSelector((s) => s.auth.user);
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
+  // Opened from the Channel Partner module: partner-sourced leads only, with the
+  // partner directory as a second tab — the web module's All Leads page.
+  const cpOnly = !!route?.params?.cpOnly;
+  const cpQ = cpOnly ? '&cp_only=true' : '';
+  const [cpTab, setCpTab] = useState('leads');   // 'leads' | 'details'
+  const [channelPartners, setChannelPartners] = useState([]);
+  useEffect(() => {
+    if (!cpOnly) return;
+    apiFetch(SALES_ENDPOINTS.channelPartners + (companyId ? `?company_id=${companyId}` : ''))
+      .then((r) => (r.ok ? r.json() : [])).then((d) => setChannelPartners(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [cpOnly, companyId]);
   // Which projects, people, sources and statuses occur in the leads this person
   // can see — the filter sheet offers only those (see FilterSheet).
   const [facets, setFacets] = useState(null);
   useEffect(() => {
     let alive = true;
-    const q = ['facets=1', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : ''].filter(Boolean).join('&');
+    const q = ['facets=1', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : ''].filter(Boolean).join('&');
     apiFetch(`${SALES_ENDPOINTS.leads}?${q}`).then((r) => (r.ok ? r.json() : null))
       // Only a real facets answer counts (a server without ?facets=1 replies with the list).
       .then((d) => { if (alive && Array.isArray(d?.project_ids)) setFacets(d); }).catch(() => {});
     return () => { alive = false; };
-  }, [companyId, adminView]);
+  }, [companyId, adminView, cpOnly]);
 
   // Telecaller / STM portals get a "To Call" vs "Called" split so they can tell
   // which of their assigned leads are still pending vs already actioned.
@@ -1908,7 +1944,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (lastLeadIdRef.current === null) return;
     (async () => {
       try {
-        const res  = await apiFetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=5`);
+        const res  = await apiFetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=5${cpQ}`);
         if (!res.ok) return;
         const d       = await res.json();
         const results = Array.isArray(d) ? d : (d.results || []);
@@ -1954,6 +1990,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (filters.is_duplicate)  url += `&is_duplicate=true`;
     if (filters.unassigned)    url += `&unassigned=true`;
     if (adminView)             url += `&admin_view=1`;
+    url += cpQ;
     return url;
   }
 
@@ -1961,7 +1998,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
   // Used in caller mode where the visible list is ordered oldest-first (FIFO).
   async function syncNewestBaseline() {
     try {
-      const res = await apiFetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=1&ordering=-created_at`);
+      const res = await apiFetch(`${SALES_ENDPOINTS.leads}?page=1&page_size=1&ordering=-created_at${cpQ}`);
       if (!res.ok) return;
       const d = await res.json();
       const results = Array.isArray(d) ? d : (d.results || []);
@@ -2112,6 +2149,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
                 {item.project_name    ? <Text style={{ fontSize: 11, color: MUTED }}><AppIcon name="folder" size={11} /> {item.project_name}</Text>    : null}
                 {item.source_name     ? <Text style={{ fontSize: 11, color: MUTED }}>• {item.source_name}</Text>      : null}
                 {item.telecaller_name ? <Text style={{ fontSize: 11, color: MUTED }}><AppIcon name="user" size={11} /> {item.telecaller_name}</Text> : null}
+                {cpOnly && item.channel_partner_name ? <Text style={SalesLeadsScreenS.cpName}>• CP: {item.channel_partner_name}</Text> : null}
               </View>
               {!!dateStr && (
                 <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
@@ -2135,7 +2173,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
         </View>
       </TouchableOpacity>
     );
-  }, [isStm, pendingXfers]);
+  }, [isStm, pendingXfers, cpOnly]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
@@ -2152,12 +2190,21 @@ export default function SalesLeadsScreen({ navigation, route }) {
             {total.toLocaleString()} {isCaller ? (workTab === 'pending' ? 'to call' : workTab === 'called' ? 'called' : 'in your pipeline') : (activeFilterCount > 0 ? 'matching' : 'total')} lead{total === 1 ? '' : 's'}
           </Text>
         </View>
+        {cpTab === 'leads' && (
         <TouchableOpacity onPress={() => setCreateModal(true)}
           style={SalesLeadsScreenS.btn4}>
           <Ionicons name="add" size={16} color={COLORS.btnText} />
           <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 12 }}>Add</Text>
         </TouchableOpacity>
+        )}
       </View>
+
+      {cpOnly && (
+        <Segmented options={[{ value: 'leads', label: 'CP Leads' }, { value: 'details', label: 'CP Details' }]}
+          value={cpTab} onChange={setCpTab} style={SalesLeadsScreenS.cpTabs} />
+      )}
+
+      {cpOnly && cpTab === 'details' ? <ChannelPartnerDirectory companyId={companyId} /> : (<>
 
       {/* To Call / Called split — telecaller & STM portals only */}
       {isCaller && (
@@ -2245,10 +2292,12 @@ export default function SalesLeadsScreen({ navigation, route }) {
           }
         />
       )}
+      </>)}
 
       <LeadDetailModal lead={selectedLead} projects={projects} sources={sources} telecallers={telecallers} stms={stms}
         visible={detailModal} onClose={() => setDetailModal(false)} onUpdated={onLeadUpdated} navigation={navigation} />
       <CreateLeadModal projects={projects} sources={sources} telecallers={telecallers} stms={stms} cps={cps}
+        cpOnly={cpOnly} channelPartners={channelPartners}
         visible={createModal} onClose={() => setCreateModal(false)} onCreated={l => setLeads(prev => [l, ...prev])} />
 
       {/* Transfer sheet, opened straight from a lead card */}
@@ -2310,6 +2359,10 @@ const SalesLeadsScreenS = StyleSheet.create({
   dupInfoBox:  { backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warningAlt, borderRadius: 14, padding: 12, marginBottom: 16 },
   dupInfoText: { fontSize: 12.5, color: COLORS.textPrimary, lineHeight: 18 },
   dupInfoBold: { fontWeight: '800', color: COLORS.warningAlt },
+  fixedSource: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 12,
+                 backgroundColor: COLORS.surfaceAlt, fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  cpTabs:      { marginHorizontal: 16, marginBottom: 6 },
+  cpName:      { fontSize: 11, color: COLORS.textSecondary },
 });
 
 // Campaign text field in the filter sheet.

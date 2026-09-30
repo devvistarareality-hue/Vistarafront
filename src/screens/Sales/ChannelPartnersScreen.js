@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar,
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, ScrollView, FlatList, TouchableOpacity, TextInput, StatusBar,
          ActivityIndicator, RefreshControl, Modal, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -170,9 +170,12 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
 }
 
 // The Channel Partner directory — the partner firms themselves, not their leads.
-// Mirrors the web module's "All Leads" page, which is this same directory.
-export default function ChannelPartnersScreen({ navigation }) {
-  const companyId = useSelector((s) => s.adminFilter?.companyId);
+// On the web it is the "CP Details" tab of the module's All Leads page; the app shows
+// it there too (SalesLeadsScreen in cpOnly mode) and as this stand-alone screen.
+//
+// A FlatList, not a ScrollView of every card: a company's directory runs to hundreds
+// of partners, and drawing them all at once froze the phone.
+export function ChannelPartnerDirectory({ companyId }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -203,78 +206,94 @@ export default function ChannelPartnersScreen({ navigation }) {
   }
 
   const needle = q.trim().toLowerCase();
-  const visible = rows.filter((cp) =>
+  const visible = useMemo(() => rows.filter((cp) =>
     (!category || cp.category === category)
     && (!needle || [cp.name, cp.contact_no, cp.firm_name]
-        .some((v) => String(v || '').toLowerCase().includes(needle))));
+        .some((v) => String(v || '').toLowerCase().includes(needle)))), [rows, category, needle]);
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12,
-                     backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} /></TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Channel Partners</Text>
-          <Text style={{ fontSize: 12, color: MUTED }}>{rows.length} in the directory</Text>
-        </View>
-        <TouchableOpacity onPress={() => { setEditing(null); setFormOpen(true); }}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: BLUE }}>
-          <Ionicons name="add" size={16} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Add</Text>
+  const renderItem = useCallback(({ item: cp }) => (
+    <View style={[CARD, st.card]}>
+      <View style={st.row}>
+        <Text style={st.name}>{cp.name}</Text>
+        <Badge category={cp.category} />
+        {cp.is_active === false && (
+          <View style={st.inactive}><Text style={st.inactiveText}>Inactive</Text></View>
+        )}
+      </View>
+      <Text style={st.line1}>{[cp.contact_no, cp.firm_name].filter(Boolean).join(' · ') || '—'}</Text>
+      <Text style={st.line2}>
+        {[SEGMENT_OPTIONS.find((o) => o.value === cp.segment)?.label, cp.city, cp.area]
+          .filter((v) => v && v !== '— Select —').join(' · ') || '—'}
+      </Text>
+      <View style={st.actions}>
+        <TouchableOpacity onPress={() => { setEditing(cp); setFormOpen(true); }} style={st.editBtn}>
+          <Text style={st.editText}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => remove(cp)} style={st.removeBtn}>
+          <Text style={st.removeText}>Remove</Text>
         </TouchableOpacity>
       </View>
+    </View>
+  ), [companyId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
-        <TextInput value={q} onChangeText={setQ} placeholder="Search name, contact no or firm name…"
-          placeholderTextColor={MUTED}
-          style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border,
-                   backgroundColor: COLORS.surface, color: TEXT, fontSize: 14, marginBottom: 10 }} />
-        <FilterSelect label="All categories" value={category} onChange={setCategory}
-          options={[{ value: '', label: 'All categories' }, ...CATEGORY_OPTIONS]}
-          style={{ alignSelf: 'flex-start', marginBottom: 12 }} />
+  const header = (
+    <View>
+      <View style={st.topRow}>
+        <Text style={st.count}>{rows.length} in the directory</Text>
+        <TouchableOpacity onPress={() => { setEditing(null); setFormOpen(true); }} style={st.addBtn}>
+          <Ionicons name="add" size={16} color={COLORS.white} />
+          <Text style={st.addText}>Add</Text>
+        </TouchableOpacity>
+      </View>
+      <TextInput value={q} onChangeText={setQ} placeholder="Search name, contact no or firm name…"
+        placeholderTextColor={MUTED} style={st.search} />
+      <FilterSelect label="All categories" value={category} onChange={setCategory}
+        options={[{ value: '', label: 'All categories' }, ...CATEGORY_OPTIONS]} style={st.filter} />
+    </View>
+  );
 
-        {loading ? <AppLoader style={{ marginTop: 24 }} />
-          : !visible.length ? (
-            <Text style={{ textAlign: 'center', color: MUTED, marginTop: 40 }}>
+  return (
+    <View style={st.flex}>
+      {loading ? (
+        <View style={st.pad}>{header}<AppLoader style={st.loader} /></View>
+      ) : (
+        <FlatList
+          data={visible}
+          keyExtractor={(cp) => String(cp.id)}
+          renderItem={renderItem}
+          ListHeaderComponent={header}
+          ListEmptyComponent={
+            <Text style={st.empty}>
               {rows.length ? 'No partner matches that search.' : 'No channel partners yet. Add the first one.'}
             </Text>
-          ) : visible.map((cp) => (
-            <View key={cp.id} style={[CARD, { marginBottom: 10 }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ flex: 1, fontSize: 15, fontWeight: '800', color: TEXT }}>{cp.name}</Text>
-                <Badge category={cp.category} />
-                {cp.is_active === false && (
-                  <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: COLORS.surfaceAlt }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED }}>Inactive</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={{ fontSize: 13, color: MUTED, marginTop: 3 }}>
-                {[cp.contact_no, cp.firm_name].filter(Boolean).join(' · ') || '—'}
-              </Text>
-              <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-                {[SEGMENT_OPTIONS.find((o) => o.value === cp.segment)?.label, cp.city, cp.area]
-                  .filter((v) => v && v !== '— Select —').join(' · ') || '—'}
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                <TouchableOpacity onPress={() => { setEditing(cp); setFormOpen(true); }}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: TEXT }}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => remove(cp)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.error2, backgroundColor: COLORS.errorBg }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.error }}>Remove</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-      </ScrollView>
+          }
+          contentContainerStyle={st.pad}
+          keyboardShouldPersistTaps="handled"
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={7}
+          removeClippedSubviews
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+        />
+      )}
 
       <PartnerForm visible={formOpen} initial={editing} companyId={companyId}
         onClose={() => setFormOpen(false)}
         onSaved={() => { setFormOpen(false); setEditing(null); load(); }} />
+    </View>
+  );
+}
+
+export default function ChannelPartnersScreen({ navigation }) {
+  const companyId = useSelector((s) => s.adminFilter?.companyId);
+  return (
+    <SafeAreaView style={st.screen} edges={['top']}>
+      <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
+      <View style={st.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} /></TouchableOpacity>
+        <Text style={st.title}>Channel Partners</Text>
+      </View>
+      <ChannelPartnerDirectory companyId={companyId} />
     </SafeAreaView>
   );
 }
@@ -284,4 +303,33 @@ const ChannelPartnersScreenS = StyleSheet.create({
   btn: { backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, borderRadius: 14, paddingVertical: 13, alignItems: 'center', opacity: 1 },
   btnDim: { opacity: 0.7 },
   box: { color: COLORS.btnText, fontSize: 14, fontWeight: '800' },
+});
+
+const st = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: 'transparent' },
+  flex: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12 },
+  title: { flex: 1, fontSize: 18, fontWeight: '800', color: TEXT },
+  pad: { padding: 16, paddingBottom: 40 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  count: { fontSize: 12, color: MUTED },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: BLUE },
+  addText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
+  search: { height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border,
+            backgroundColor: COLORS.surface, color: TEXT, fontSize: 14, marginBottom: 10 },
+  filter: { alignSelf: 'flex-start', marginBottom: 12 },
+  loader: { marginTop: 24 },
+  empty: { textAlign: 'center', color: MUTED, marginTop: 40 },
+  card: { marginBottom: 10 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  name: { flex: 1, fontSize: 15, fontWeight: '800', color: TEXT },
+  inactive: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: COLORS.surfaceAlt },
+  inactiveText: { fontSize: 11, fontWeight: '700', color: MUTED },
+  line1: { fontSize: 13, color: MUTED, marginTop: 3 },
+  line2: { fontSize: 12, color: MUTED, marginTop: 2 },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  editBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border },
+  editText: { fontSize: 13, fontWeight: '700', color: TEXT },
+  removeBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.error2, backgroundColor: COLORS.errorBg },
+  removeText: { fontSize: 13, fontWeight: '700', color: COLORS.error },
 });
