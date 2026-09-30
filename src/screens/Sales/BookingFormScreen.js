@@ -76,6 +76,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const [eoiUnits, setEoiUnits] = useState('1'); // no. of units — multiplies the standard area
 
   const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
+  const [plcCounts, setPlcCounts] = useState(null);   // { corner, club } picked plots with each PLC mark
   const [plotNo, setPlotNo] = useState(p.plotNumber || '');
   const [sources, setSources] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -103,6 +104,8 @@ export default function BookingFormScreen({ navigation, route }) {
     land_rate: '', dev_rate: '', const_rate: '', sale_deed_rate: '', dev_agreement_rate: '',
     sale_deed_pct: '60', sale_deed_amount: '',
     land_sale_deed: '', const_agreement: '', premium_location: '',
+    // Kalrav PLC: whether each applies and the amount charged (as on the web).
+    plc_corner_on: false, plc_corner: '', plc_clubhouse_on: false, plc_clubhouse: '',
     discount: '0', legal_charges: '', maint_rate: '', maint_months: '',
     apply_reg_fee: 'Yes', apply_page_fee: 'Yes', apply_stamp_duty: 'Yes', apply_gst: 'Yes',
     booking_date: new Date().toISOString().slice(0, 10), cp_name: '',
@@ -143,6 +146,8 @@ export default function BookingFormScreen({ navigation, route }) {
         // Pratishtha prices from each unit's fixed price book, not the form's rates.
         setPriceBooks(picked.map((x) => x.price_book).filter((b) => b && Object.keys(b).length));
         setPlotNo(picked.map((x) => stripPlotPrefix(x.number)).join(', '));
+        // How many picked plots carry each Kalrav PLC mark (seeds the PLC rows below).
+        setPlcCounts({ corner: picked.filter((x) => x.is_corner).length, club: picked.filter((x) => x.is_clubhouse_facing).length });
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
         // Auto-map construction area from the plot definition(s) into the booking.
         const sumConst = picked.reduce((a, x) => a + (parseFloat((x.construction_area || '').replace(/[^\d.]/g, '')) || 0), 0);
@@ -185,7 +190,7 @@ export default function BookingFormScreen({ navigation, route }) {
         land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         sale_deed_amount: b.sale_deed_amount ? String(b.sale_deed_amount) : '',
-        land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
+        land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
@@ -227,7 +232,7 @@ export default function BookingFormScreen({ navigation, route }) {
         land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         sale_deed_amount: b.sale_deed_amount ? String(b.sale_deed_amount) : '',
-        land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
+        land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
@@ -257,7 +262,7 @@ export default function BookingFormScreen({ navigation, route }) {
         area_unit: b.area_unit || s.area_unit, const_area: b.const_area || '', villa_type: b.villa_type || '',
         land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
-        land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location),
+        land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
@@ -271,6 +276,21 @@ export default function BookingFormScreen({ navigation, route }) {
 
   const formulaSet = project?.formula_set || 'kalrav';
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
+  // PLC defaults for a new booking (as on the web): tick Corner / Club House Facing
+  // when a picked plot is marked so, charged at the Rate Master price per such plot.
+  const plcSeeded = useRef(false);
+  useEffect(() => {
+    if (!flags.hasPlcFixed || plcSeeded.current || reviseId || draftId || convertEoiId) return;
+    if (!plcCounts || !project?.rate_master) return;
+    plcSeeded.current = true;
+    const rm = project.rate_master;
+    const amt = (price, n) => (n && parseFloat(price) > 0 ? String(parseFloat(price) * n) : '');
+    setF((s) => ({
+      ...s,
+      plc_corner_on: plcCounts.corner > 0, plc_corner: s.plc_corner || amt(rm.plc_corner_price, plcCounts.corner),
+      plc_clubhouse_on: plcCounts.club > 0, plc_clubhouse: s.plc_clubhouse || amt(rm.plc_clubhouse_price, plcCounts.club),
+    }));
+  }, [flags.hasPlcFixed, plcCounts, project, reviseId, draftId, convertEoiId]);
   // All pricing sets share the sale-deed % split (Unit Price + Additional Extra Work Amount).
   // Which pricing sections apply depends on the project's formula set and, for a unit
   // booking, on that unit's price book — the latter isn't known on the first paint.
@@ -454,6 +474,7 @@ export default function BookingFormScreen({ navigation, route }) {
     discount: f.discount, legalCharges: f.legal_charges, maintRate: f.maint_rate, maintMonths: f.maint_months,
     gender: f.gender, landSaleDeed: f.land_sale_deed, constAgreement: f.const_agreement,
     premiumLocation: f.premium_location, saleDeedRate: f.sale_deed_rate, devAgreementRate: f.dev_agreement_rate,
+    plcCorner: f.plc_corner_on ? f.plc_corner : 0, plcClubhouse: f.plc_clubhouse_on ? f.plc_clubhouse : 0,
     saleDeedPct: f.sale_deed_pct, saleDeedAmount: f.sale_deed_amount,
     applyRegFee: f.apply_reg_fee, applyPageFee: f.apply_page_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
     extraWorkAmt: reviseId ? ew.amt : 0, extraWorkDesc: ew.desc,
@@ -788,7 +809,8 @@ export default function BookingFormScreen({ navigation, route }) {
       land_sale_deed: f.land_sale_deed || 0, const_agreement: f.const_agreement || 0,
       stamp_duty: Math.round(v.stampDuty), reg_fees: Math.round(v.regFees), gst: Math.round(v.gst),
       maintenance: Math.round(v.maint), maint_deposit: Math.round(v.maintDeposit), maint_advance: Math.round(v.maintAdvance),
-      legal_charges: f.legal_charges || 0, premium_location: f.premium_location || 0,
+      legal_charges: f.legal_charges || 0, premium_location: flags.hasPlcFixed ? Math.round(v.premiumLocation) : (f.premium_location || 0),
+      plc_corner: Math.round(v.plcCorner || 0), plc_clubhouse: Math.round(v.plcClubhouse || 0),
       total_extra: Math.round(prat ? pratExtraTotal : v.totalExtra), discount: f.discount || 0,
       final_amount: Math.round(prat ? pratTotal : v.finalAmt),
       apply_reg_fee: f.apply_reg_fee, apply_page_fee: f.apply_page_fee, apply_stamp_duty: f.apply_stamp_duty, apply_gst: f.apply_gst,
@@ -1123,6 +1145,19 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
           {flags.hasConstructionAgreement && <Fld l="Construction Agreement (₹)" val={f.const_agreement} on={(t) => set('const_agreement', t)} kb="numeric" />}
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
+          {/* PLC: ticked from the plot's Corner / Club House Facing marks; the amount
+              comes from the Rate Master and can be changed (or typed when there is none). */}
+          {flags.hasPlcFixed && PLC_KINDS.map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
+            <View key={k}>
+              <TouchableOpacity onPress={() => set(`plc_${k}_on`, !on)} style={plcS.row}>
+                <View style={on ? plcS.boxOn : plcS.box}>
+                  {on ? <Ionicons name="checkmark" size={14} color={COLORS.white} /> : null}
+                </View>
+                <Text style={plcS.label}>PLC — {label}</Text>
+              </TouchableOpacity>
+              {on ? <Fld l={`PLC — ${label} (₹)`} val={f[`plc_${k}`]} on={(t) => set(`plc_${k}`, t)} kb="numeric" ph="Amount" /> : null}
+            </View>
+          ); })}
           {formulaSet === 'kalrav' && (
             <>
               {/* Kalrav: Unit Price = Land Sale Deed + Construction Agreement; % derived — both read-only. */}
@@ -1182,10 +1217,13 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${formulaSet === 'ankhol' ? 'Construction' : 'Plot'} Area × Dev Rate`} sub2={`${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)}`} val={v.plotDev} />}
           {flags.hasConstructionFields && <Tot l="Construction Amount" sub="Construction Area × Construction Rate" sub2={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
           {flags.hasConstructionFields && formulaSet === 'ankhol' && v.premiumLocation > 0 && <Tot l="Premium Location Charge" val={v.premiumLocation} />}
+          {flags.hasPlcFixed && v.plcCorner > 0 && <Tot l="PLC — Corner Plot" val={v.plcCorner} />}
+          {flags.hasPlcFixed && v.plcClubhouse > 0 && <Tot l="PLC — Club House Facing" val={v.plcClubhouse} />}
           {flags.hasConstructionFields && <Tot
             l="Total Basic Amount"
-            sub={formulaSet === 'ankhol' ? 'Plot Basic + Plot Dev + Construction + Premium' : 'Plot Basic + Plot Dev + Construction'}
-            val={formulaSet === 'ankhol' ? v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation : v.plotBasic + v.plotDev + v.constAmt}
+            sub={formulaSet === 'ankhol' ? 'Plot Basic + Plot Dev + Construction + Premium'
+              : v.premiumLocation > 0 ? 'Plot Basic + Plot Dev + Construction + PLC' : 'Plot Basic + Plot Dev + Construction'}
+            val={v.plotBasic + v.plotDev + v.constAmt + v.premiumLocation}
             subtotal />}
           {flags.hasSaleDeed && formulaSet !== 'ankhol' && !hasSaleDeedSplit && <Tot l="Sale Deed" sub={saleDeedSub} sub2={saleDeedSub2} val={v.saleDeed} />}
           {hasSaleDeedSplit && <>
@@ -1353,6 +1391,15 @@ const Sec = ({ title, children }) => (
     {children}
   </View>
 );
+// Kalrav PLC kinds: [key used in plc_<key>, label].
+const PLC_KINDS = [['corner', 'Corner Plot'], ['clubhouse', 'Club House Facing']];
+const plcS = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  box: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: COLORS.borderStrong, alignItems: 'center', justifyContent: 'center' },
+  boxOn: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.panel, borderColor: COLORS.panel },
+  label: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+});
+
 const Fld = ({ l, val, on, kb, ph, invalid }) => (
   <View style={{ marginBottom: 10 }}>
     <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>{l}</Text>

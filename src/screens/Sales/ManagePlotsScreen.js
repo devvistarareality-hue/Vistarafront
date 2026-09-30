@@ -87,7 +87,7 @@ function zoneCenter(zone) {
 /* ────────────────────────────────────────────────
    PLOT EDIT MODAL
 ──────────────────────────────────────────────── */
-function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], floorWise = false }) {
+function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], floorWise = false, plcMarks = false }) {
   const [plotNo,   setPlotNo]   = useState('');
   const [sizeVal,  setSizeVal]  = useState('');
   const [unit,     setUnit]     = useState('sqft');
@@ -101,6 +101,9 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
   const [facing, setFacing] = useState('');
   const [hasTerrace, setHasTerrace] = useState(false);
   const [terraceArea, setTerraceArea] = useState('');
+  // Kalrav PLC marks: where the plot sits (each adds that PLC to a booking of it).
+  const [isCorner, setIsCorner] = useState(false);
+  const [isClub, setIsClub] = useState(false);
 
   useEffect(() => {
     if (plot) {
@@ -117,6 +120,8 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
       setFacing(plot.facing || '');
       setHasTerrace(!!(plot.terrace_area || '').trim());
       setTerraceArea(plot.terrace_area || '');
+      setIsCorner(!!plot.is_corner);
+      setIsClub(!!plot.is_clubhouse_facing);
     }
   }, [plot, visible]);
 
@@ -133,6 +138,7 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
           // Clearing the terrace toggle wipes the stored area, so a unit can't keep a
           // stale terrace charge after being switched back.
           ...(floorWise ? { facing, terrace_area: hasTerrace ? (terraceArea || '').trim() : '' } : {}),
+          ...(plcMarks ? { is_corner: isCorner, is_clubhouse_facing: isClub } : {}),
         }),
       });
       if (res.ok) { onSaved(await res.json()); onClose(); }
@@ -208,6 +214,20 @@ function PlotEditModal({ plot, visible, onClose, onSaved, clusterTypes = [], flo
                   placeholderTextColor={COLORS.textTertiary} keyboardType="numeric" style={[inpS, { marginBottom: 14 }]} />
               )}
             </>
+          )}
+
+          {plcMarks && (
+            <View style={plcS.marks}>
+              <Text style={plcS.marksTitle}>PLC (PREMIUM LOCATION)</Text>
+              <View style={plcS.markRow}>
+                <Text style={plcS.markLabel}>Corner Plot</Text>
+                <Switch value={isCorner} onValueChange={setIsCorner} trackColor={{ false: COLORS.border, true: BLUE }} />
+              </View>
+              <View style={plcS.markRow}>
+                <Text style={plcS.markLabel}>Club House Facing</Text>
+                <Switch value={isClub} onValueChange={setIsClub} trackColor={{ false: COLORS.border, true: BLUE }} />
+              </View>
+            </View>
           )}
 
           {/* Cluster/Type + Number */}
@@ -318,6 +338,12 @@ const PlotCard = React.memo(function PlotCard({ plot, onStatusChange, onEdit }) 
         </View>
       </View>
 
+      {(plot.is_corner || plot.is_clubhouse_facing) ? (
+        <View style={plcS.tags}>
+          {plot.is_corner ? <Text style={plcS.tag}>Corner</Text> : null}
+          {plot.is_clubhouse_facing ? <Text style={plcS.tag}>Club House Facing</Text> : null}
+        </View>
+      ) : null}
       {/* Size row — always rendered. A terrace is charged on top of the flat and only
           half the flats have one, so it is called out here rather than hidden behind
           the edit sheet. */}
@@ -1114,6 +1140,9 @@ function rateMasterFields(formulaSet) {
     { key: 'land_rate', label: 'Land Rate', unit: flags.areaUnit },
     flags.hasConstructionFields && { key: 'dev_rate', label: 'Development Rate', unit: flags.areaUnit },
     flags.hasConstructionFields && { key: 'const_rate', label: 'Construction Rate', unit: flags.areaUnit },
+    // Kalrav PLC: a fixed amount per plot for a Corner / Club House Facing plot.
+    flags.hasPlcFixed && { key: 'plc_corner_price', label: 'PLC — Corner Plot', unit: null },
+    flags.hasPlcFixed && { key: 'plc_clubhouse_price', label: 'PLC — Club House Facing', unit: null },
     flags.hasSaleDeedRate && { key: 'sale_deed_rate', label: 'Sale Deed Rate', unit: 'sq.ft' },
     flags.hasDevAgreement && { key: 'dev_agreement_rate', label: 'Dev Agreement Rate', unit: 'sq.ft' },
     { key: 'maint_rate', label: 'Maintenance Rate', unit: flags.areaUnit },
@@ -1159,7 +1188,7 @@ function RateMasterEditor({ project, onProjectUpdate }) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
         {fields.map((f) => (
           <View key={f.key} style={{ width: '47%' }}>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: MUTED, marginBottom: 4 }}>{f.label} (₹/{f.unit})</Text>
+            <Text style={plcS.rmLabel}>{f.label} ({f.unit ? `₹/${f.unit}` : '₹ per plot'})</Text>
             <TextInput value={String(form[f.key] ?? '')} onChangeText={(v) => setForm((s) => ({ ...s, [f.key]: v }))}
               keyboardType="numeric" placeholder="Not set" placeholderTextColor={COLORS.textTertiary}
               style={{ height: 38, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border, fontSize: 13, color: TEXT, backgroundColor: COLORS.surface }} />
@@ -1526,6 +1555,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
         // so block-wise industrial projects don't get this section even though they
         // also set floor_wise=True to reuse the block/floor-plan machinery.
         floorWise={!!project?.floor_wise && !project?.block_industrial}
+        plcMarks={project?.formula_set === 'kalrav'}
       />
     </SafeAreaView>
   );
@@ -1548,4 +1578,16 @@ const ManagePlotsScreenS = StyleSheet.create({
 const pst = StyleSheet.create({
   row: { paddingHorizontal: 8, paddingVertical: 8 },
   select: { alignSelf: 'stretch', justifyContent: 'space-between' },
+});
+
+// Kalrav PLC: Rate Master label, plot-editor marks and card tags.
+const plcS = StyleSheet.create({
+  rmLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 4 },
+  marks: { padding: 12, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, marginBottom: 14 },
+  marksTitle: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 0.4, marginBottom: 6 },
+  markRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
+  markLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingHorizontal: 10, paddingTop: 4 },
+  tag: { fontSize: 10, fontWeight: '700', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, overflow: 'hidden',
+         color: COLORS.warningDeep || COLORS.warning, backgroundColor: COLORS.warningBg },
 });
