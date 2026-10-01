@@ -988,11 +988,13 @@ export default function BookingFormScreen({ navigation, route }) {
                             fontSize: 14, marginBottom: 10, color: TEXT, backgroundColor: COLORS.surface }} />
                       </>)}
                       <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Flat Price (Rs.)</Text>
-                      <TextInput editable={dp} keyboardType="numeric"
-                        value={dp ? String(e.flatPrice ?? '') : String(pb.flat_price)}
+                      {/* Rate or Flat Price, on either plan: enter one and setFlatEdit works
+                          out the other, so a negotiated total (say 40 lakh) needs no rate
+                          back-calculated by hand. */}
+                      <TextInput keyboardType="numeric"
+                        value={String(e.flatPrice ?? '')}
                         onChangeText={(t) => setFlatEdit(pb, { flatPrice: t })}
-                        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
-                          fontSize: 14, marginBottom: 10, color: dp ? TEXT : MUTED, backgroundColor: dp ? COLORS.surface : lock.backgroundColor }} />
+                        style={BookingFormScreenS.flatPriceInput} />
                       {/* No token on a Down Payment plan — there is no loan, and the section
                           that used to quote it is gone. */}
                       {!dp ? (
@@ -1006,7 +1008,7 @@ export default function BookingFormScreen({ navigation, route }) {
                       <Text style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
                         {dp
                           ? `${rupee(pb.flat_price)} / ${pb.flat_area} sq.yd = ${rupee(pb.flat_rate)} per sq.yd${pb.terrace_area ? ` · terrace ${pb.terrace_area} sq.yd @ ${rupee(pb.terrace_rate)} = ${rupee(pb.terrace_price)}` : ''}`
-                          : 'Regular plan — priced from the approved price book. Switch to Down Payment to change the rate or token.'}
+                          : 'Regular plan — enter the Rate or the Flat Price and the other follows. Switch to Down Payment to change the token.'}
                       </Text>
                     </View>
                   );
@@ -1487,6 +1489,8 @@ const Tot = ({ l, sub, sub2, val, valFmt, big, subtotal }) => (
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const BookingFormScreenS = StyleSheet.create({
+  flatPriceInput: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+                    fontSize: 14, marginBottom: 10, color: COLORS.textPrimary, backgroundColor: COLORS.surface },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
   btnDim: { opacity: 0.4 },
 
