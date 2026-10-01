@@ -15,7 +15,7 @@ import { openLoi } from '../../utils/openLoi';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { stripPlotPrefix } from '../../lib/plotNumber';
-import { computeFormulas, fieldFlags, installmentBase, rupee } from '../../lib/bookingFormulas';
+import { computeFormulas, fieldFlags, installmentBase, plcAmounts, rupee } from '../../lib/bookingFormulas';
 import { buildLOIHtml } from '../../lib/bookingLOIHtml';
 import { computeShop, impliedUnitPct } from '../../lib/pratishthaShop';
 import { computeFlat } from '../../lib/pratishthaFlat';
@@ -76,7 +76,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const [eoiUnits, setEoiUnits] = useState('1'); // no. of units — multiplies the standard area
 
   const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
-  const [plcCounts, setPlcCounts] = useState(null);   // { corner, club } picked plots with each PLC mark
+  const [plcPlots, setPlcPlots] = useState(null);   // picked plots' Corner / Common Plot Facing marks
   const [plotNo, setPlotNo] = useState(p.plotNumber || '');
   const [sources, setSources] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -147,7 +147,7 @@ export default function BookingFormScreen({ navigation, route }) {
         setPriceBooks(picked.map((x) => x.price_book).filter((b) => b && Object.keys(b).length));
         setPlotNo(picked.map((x) => stripPlotPrefix(x.number)).join(', '));
         // How many picked plots carry each Kalrav PLC mark (seeds the PLC rows below).
-        setPlcCounts({ corner: picked.filter((x) => x.is_corner).length, club: picked.filter((x) => x.is_clubhouse_facing).length });
+        setPlcPlots(picked.map((x) => ({ is_corner: !!x.is_corner, is_clubhouse_facing: !!x.is_clubhouse_facing })));
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
         // Auto-map construction area from the plot definition(s) into the booking.
         const sumConst = picked.reduce((a, x) => a + (parseFloat((x.construction_area || '').replace(/[^\d.]/g, '')) || 0), 0);
@@ -276,21 +276,21 @@ export default function BookingFormScreen({ navigation, route }) {
 
   const formulaSet = project?.formula_set || 'kalrav';
   const flags = useMemo(() => fieldFlags(formulaSet), [formulaSet]);
-  // PLC defaults for a new booking (as on the web): tick Corner / Common Plot Facing
-  // when a picked plot is marked so, charged at the Rate Master price per such plot.
+  // PLC defaults for a new booking (as on the web): Corner / Common Plot Facing are
+  // ticked from the picked plots' own marks (Manage Plots) — never by hand — and priced
+  // from the Rate Master (see plcAmounts: a plot that is both gets the combined price).
   const plcSeeded = useRef(false);
   useEffect(() => {
     if (!flags.hasPlcFixed || plcSeeded.current || reviseId || draftId || convertEoiId) return;
-    if (!plcCounts || !project?.rate_master) return;
+    if (!plcPlots || !project?.rate_master) return;
     plcSeeded.current = true;
-    const rm = project.rate_master;
-    const amt = (price, n) => (n && parseFloat(price) > 0 ? String(parseFloat(price) * n) : '');
+    const p = plcAmounts(plcPlots, project.rate_master);
     setF((s) => ({
       ...s,
-      plc_corner_on: plcCounts.corner > 0, plc_corner: s.plc_corner || amt(rm.plc_corner_price, plcCounts.corner),
-      plc_clubhouse_on: plcCounts.club > 0, plc_clubhouse: s.plc_clubhouse || amt(rm.plc_clubhouse_price, plcCounts.club),
+      plc_corner_on: p.cornerOn, plc_corner: s.plc_corner || (p.corner ? String(p.corner) : ''),
+      plc_clubhouse_on: p.clubOn, plc_clubhouse: s.plc_clubhouse || (p.club ? String(p.club) : ''),
     }));
-  }, [flags.hasPlcFixed, plcCounts, project, reviseId, draftId, convertEoiId]);
+  }, [flags.hasPlcFixed, plcPlots, project, reviseId, draftId, convertEoiId]);
   // All pricing sets share the sale-deed % split (Unit Price + Additional Extra Work Amount).
   // Which pricing sections apply depends on the project's formula set and, for a unit
   // booking, on that unit's price book — the latter isn't known on the first paint.
@@ -1151,16 +1151,17 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
           {flags.hasConstructionAgreement && <Fld l="Construction Agreement (₹)" val={f.const_agreement} on={(t) => set('const_agreement', t)} kb="numeric" />}
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
-          {/* PLC: ticked from the plot's Corner / Common Plot Facing marks; the amount
-              comes from the Rate Master and can be changed (or typed when there is none). */}
+          {/* PLC: ticked from the plot's Corner / Common Plot Facing marks in Manage
+              Plots — read-only here, so a charge can't be added to or dropped from a plot
+              that isn't marked. The amount comes from the Rate Master and can be changed. */}
           {flags.hasPlcFixed && PLC_KINDS.map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
             <View key={k}>
-              <TouchableOpacity onPress={() => set(`plc_${k}_on`, !on)} style={plcS.row}>
+              <View style={plcS.row}>
                 <View style={on ? plcS.boxOn : plcS.box}>
                   {on ? <Ionicons name="checkmark" size={14} color={COLORS.white} /> : null}
                 </View>
                 <Text style={plcS.label}>PLC — {label}</Text>
-              </TouchableOpacity>
+              </View>
               {on ? <Fld l={`PLC — ${label} (₹)`} val={f[`plc_${k}`]} on={(t) => set(`plc_${k}`, t)} kb="numeric" ph="Amount" /> : null}
             </View>
           ); })}

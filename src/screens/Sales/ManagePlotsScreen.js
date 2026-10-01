@@ -1143,6 +1143,8 @@ function rateMasterFields(formulaSet) {
     // Kalrav PLC: a fixed amount per plot for a Corner / Common Plot Facing plot.
     flags.hasPlcFixed && { key: 'plc_corner_price', label: 'PLC — Corner Plot', unit: null },
     flags.hasPlcFixed && { key: 'plc_clubhouse_price', label: 'PLC — Common Plot Facing', unit: null },
+    // A plot that is both is charged this one combined price, not the two added up.
+    flags.hasPlcFixed && { key: 'plc_both_price', label: 'PLC — Corner + Common Plot Facing', unit: null },
     flags.hasSaleDeedRate && { key: 'sale_deed_rate', label: 'Sale Deed Rate', unit: 'sq.ft' },
     flags.hasDevAgreement && { key: 'dev_agreement_rate', label: 'Dev Agreement Rate', unit: 'sq.ft' },
     { key: 'maint_rate', label: 'Maintenance Rate', unit: flags.areaUnit },
