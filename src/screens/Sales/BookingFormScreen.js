@@ -280,6 +280,15 @@ export default function BookingFormScreen({ navigation, route }) {
   // ticked from the picked plots' own marks (Manage Plots) — never by hand — and priced
   // from the Rate Master (see plcAmounts: a plot that is both gets the combined price).
   const plcSeeded = useRef(false);
+  // Every picked plot is both Corner and Common Plot Facing -> one combined PLC line
+  // (as on the web). Still saved as the two amounts, split evenly.
+  const plcBothOnly = !!plcPlots?.length && plcPlots.every((x) => x.is_corner && x.is_clubhouse_facing);
+  const plcBothVal = (f.plc_corner_on ? Number(f.plc_corner) || 0 : 0) + (f.plc_clubhouse_on ? Number(f.plc_clubhouse) || 0 : 0);
+  const setPlcBoth = (t) => {
+    const x = Math.round(Number(t) || 0); const half = Math.round(x / 2);
+    setF((s) => ({ ...s, plc_corner_on: true, plc_clubhouse_on: true,
+      plc_corner: t === '' ? '' : String(half), plc_clubhouse: t === '' ? '' : String(x - half) }));
+  };
   useEffect(() => {
     if (!flags.hasPlcFixed || plcSeeded.current || reviseId || draftId || convertEoiId) return;
     if (!plcPlots || !project?.rate_master) return;
@@ -1154,7 +1163,16 @@ export default function BookingFormScreen({ navigation, route }) {
           {/* PLC: ticked from the plot's Corner / Common Plot Facing marks in Manage
               Plots — read-only here, so a charge can't be added to or dropped from a plot
               that isn't marked. The amount comes from the Rate Master and can be changed. */}
-          {flags.hasPlcFixed && PLC_KINDS.map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
+          {flags.hasPlcFixed && plcBothOnly ? (
+            <View>
+              <View style={plcS.row}>
+                <View style={plcS.boxOn}><Ionicons name="checkmark" size={14} color={COLORS.white} /></View>
+                <Text style={plcS.label}>PLC — Corner + Common Plot Facing</Text>
+              </View>
+              <Fld l="PLC — Corner + Common Plot Facing (₹)" val={plcBothVal ? String(plcBothVal) : ''} on={setPlcBoth} kb="numeric" ph="Amount" />
+            </View>
+          ) : null}
+          {flags.hasPlcFixed && !plcBothOnly && PLC_KINDS.map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
             <View key={k}>
               <View style={plcS.row}>
                 <View style={on ? plcS.boxOn : plcS.box}>
@@ -1224,8 +1242,9 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasConstructionFields && <Tot l="Plot Development Amount" sub={`${formulaSet === 'ankhol' ? 'Construction' : 'Plot'} Area × Dev Rate`} sub2={`${inr(formulaSet === 'ankhol' ? v.constArea : v.area)} × ${inr(v.devRate)}`} val={v.plotDev} />}
           {flags.hasConstructionFields && <Tot l="Construction Amount" sub="Construction Area × Construction Rate" sub2={`${inr(v.constArea)} × ${inr(v.constRate)}`} val={v.constAmt} />}
           {flags.hasConstructionFields && formulaSet === 'ankhol' && v.premiumLocation > 0 && <Tot l="Premium Location Charge" val={v.premiumLocation} />}
-          {flags.hasPlcFixed && v.plcCorner > 0 && <Tot l="PLC — Corner Plot" val={v.plcCorner} />}
-          {flags.hasPlcFixed && v.plcClubhouse > 0 && <Tot l="PLC — Common Plot Facing" val={v.plcClubhouse} />}
+          {flags.hasPlcFixed && plcBothOnly && v.plcCorner + v.plcClubhouse > 0 && <Tot l="PLC — Corner + Common Plot Facing" val={v.plcCorner + v.plcClubhouse} />}
+          {flags.hasPlcFixed && !plcBothOnly && v.plcCorner > 0 && <Tot l="PLC — Corner Plot" val={v.plcCorner} />}
+          {flags.hasPlcFixed && !plcBothOnly && v.plcClubhouse > 0 && <Tot l="PLC — Common Plot Facing" val={v.plcClubhouse} />}
           {flags.hasConstructionFields && <Tot
             l="Total Basic Amount"
             sub={formulaSet === 'ankhol' ? 'Plot Basic + Plot Dev + Construction + Premium'
