@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, Linking, RefreshControl } from 'react-native';
+import { AddInvestorSheet } from './Club1000InvestorsScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -18,8 +19,11 @@ function fmtMoney(n) {
   return `₹${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 }
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
-const TABS = [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']];
+// Drafts first because that is the step before Pending. The server only ever
+// returns your own, so this tab is personal even though the screen is shared.
+const TABS = [['draft', 'Drafts'], ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']];
 const APPROVAL_BADGE_COLOR = {
+  draft: { bg: COLORS.surfaceAlt, fg: COLORS.textSecondary },
   pending: { bg: COLORS.warningBg, fg: COLORS.warning },
   approved: { bg: COLORS.successBg, fg: COLORS.success },
   rejected: { bg: COLORS.errorBg, fg: COLORS.error },
@@ -32,6 +36,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(null);
+  // A draft is edited from here, because it deliberately does not appear in the
+  // Investors list — there is nowhere else to open it from.
+  const [editDraft, setEditDraft] = useState(null);
   const [managers, setManagers] = useState([]);
   const [schemes, setSchemes] = useState([]);
   const [cfgOpen, setCfgOpen] = useState(false);
@@ -258,6 +265,11 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                 {isRevision
                   ? (!!inv.pending_loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, { backgroundColor: isRenewal ? COLORS.warningBg : COLORS.accentSoft }]}><Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)
                   : (!!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: COLORS.link, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> Signed LOI</Text></TouchableOpacity>)}
+                {inv.approval_status === 'draft' && (
+                  <TouchableOpacity onPress={() => setEditDraft(inv)} style={[btn, btnDraft]}>
+                    <Text style={draftBtnText}><AppIcon name="pencil" size={13} /> Edit & Submit</Text>
+                  </TouchableOpacity>
+                )}
                 {inv.approval_status === 'pending' && (
                   canApprove(inv) ? (
                     <>
@@ -271,6 +283,14 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
           );
         })}
       </ScrollView>
+
+      <AddInvestorSheet
+        visible={!!editDraft}
+        draft={editDraft}
+        schemes={schemes}
+        onClose={() => setEditDraft(null)}
+        onSaved={() => { setEditDraft(null); load(); }}
+      />
     </SafeAreaView>
   );
 }
@@ -278,6 +298,10 @@ const btn = { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 };
 // Approve / Reject: tinted glass, like every other button in the app.
 const btnOk  = { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess };
 const btnBad = { backgroundColor: COLORS.btnTintDanger, borderWidth: 1, borderColor: COLORS.btnBorderDanger };
+// Stands in for the Approve/Reject buttons on a draft row, which has neither.
+const draftHint = { fontSize: 11, color: COLORS.textSecondary, marginTop: 8 };
+const btnDraft = { backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.link };
+const draftBtnText = { color: COLORS.link, fontWeight: '700', fontSize: 13 };
 const btnT   = { color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 13 };
 const btnTOk  = { ...btnT, color: COLORS.btnTextSuccess };
 const btnTBad = { ...btnT, color: COLORS.btnTextDanger };
