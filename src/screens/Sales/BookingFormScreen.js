@@ -284,11 +284,6 @@ export default function BookingFormScreen({ navigation, route }) {
   // (as on the web). Still saved as the two amounts, split evenly.
   const plcBothOnly = !!plcPlots?.length && plcPlots.every((x) => x.is_corner && x.is_clubhouse_facing);
   const plcBothVal = (f.plc_corner_on ? Number(f.plc_corner) || 0 : 0) + (f.plc_clubhouse_on ? Number(f.plc_clubhouse) || 0 : 0);
-  const setPlcBoth = (t) => {
-    const x = Math.round(Number(t) || 0); const half = Math.round(x / 2);
-    setF((s) => ({ ...s, plc_corner_on: true, plc_clubhouse_on: true,
-      plc_corner: t === '' ? '' : String(half), plc_clubhouse: t === '' ? '' : String(x - half) }));
-  };
   useEffect(() => {
     if (!flags.hasPlcFixed || plcSeeded.current || reviseId || draftId || convertEoiId) return;
     if (!plcPlots || !project?.rate_master) return;
@@ -1162,14 +1157,15 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
           {/* PLC: ticked from the plot's Corner / Common Plot Facing marks in Manage
               Plots — read-only here, so a charge can't be added to or dropped from a plot
-              that isn't marked. The amount comes from the Rate Master and can be changed. */}
+              that isn't marked. The amount comes from the project's Rate Master, also
+              read-only here. */}
           {flags.hasPlcFixed && plcBothOnly ? (
             <View>
               <View style={plcS.row}>
                 <View style={plcS.boxOn}><Ionicons name="checkmark" size={14} color={COLORS.white} /></View>
                 <Text style={plcS.label}>PLC — Corner + Common Plot Facing</Text>
               </View>
-              <Fld l="PLC — Corner + Common Plot Facing (₹)" val={plcBothVal ? String(plcBothVal) : ''} on={setPlcBoth} kb="numeric" ph="Amount" />
+              <Text style={plcS.amount}>{plcBothVal ? rupee(plcBothVal) : 'Set in the Rate Master'}</Text>
             </View>
           ) : null}
           {flags.hasPlcFixed && !plcBothOnly && PLC_KINDS.map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
@@ -1180,7 +1176,7 @@ export default function BookingFormScreen({ navigation, route }) {
                 </View>
                 <Text style={plcS.label}>PLC — {label}</Text>
               </View>
-              {on ? <Fld l={`PLC — ${label} (₹)`} val={f[`plc_${k}`]} on={(t) => set(`plc_${k}`, t)} kb="numeric" ph="Amount" /> : null}
+              {on ? <Text style={plcS.amount}>{Number(f[`plc_${k}`]) ? rupee(f[`plc_${k}`]) : 'Set in the Rate Master'}</Text> : null}
             </View>
           ); })}
           {formulaSet === 'kalrav' && (
@@ -1424,6 +1420,9 @@ const plcS = StyleSheet.create({
   box: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: COLORS.borderStrong, alignItems: 'center', justifyContent: 'center' },
   boxOn: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.panel, borderColor: COLORS.panel },
   label: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  // Read-only: PLC amounts come from the project's Rate Master, not typed per booking.
+  amount: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+            fontSize: 14, color: COLORS.textSecondary, backgroundColor: COLORS.surface2, marginBottom: 10 },
 });
 
 const Fld = ({ l, val, on, kb, ph, invalid }) => (
