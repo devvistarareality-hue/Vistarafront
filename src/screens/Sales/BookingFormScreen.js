@@ -113,6 +113,9 @@ export default function BookingFormScreen({ navigation, route }) {
   const [errs, setErrs] = useState({});   // required-field highlight on Generate/Submit
   const set = (k, v) => { setF((s) => ({ ...s, [k]: v })); setErrs((e) => (e[k] ? { ...e, [k]: false } : e)); };
   const [deedAmtStr, setDeedAmtStr] = useState('');
+  // Kalrav's Sale Deed % / Unit Price box being typed in, so it shows what was typed
+  // until it loses focus (as on the web). { k: 'pct' | 'up', t } or null.
+  const [kalEdit, setKalEdit] = useState(null);
   const editingAmtRef = useRef(false);
 
   useEffect(() => {
@@ -483,6 +486,17 @@ export default function BookingFormScreen({ navigation, route }) {
     applyRegFee: f.apply_reg_fee, applyPageFee: f.apply_page_fee, applyStampDuty: f.apply_stamp_duty, applyGst: f.apply_gst,
     extraWorkAmt: reviseId ? ew.amt : 0, extraWorkDesc: ew.desc,
   }), [f, formulaSet, project, ew, reviseId]);
+  // Kalrav: what Sale Deed % is a percentage of, and setting the Unit Price from either
+  // box — keep the Land Sale Deed, put the rest on the Construction Agreement (or, if
+  // the price is below the LSD, all of it on the LSD). Same as the web.
+  const kalBase = (v.plotBasic || 0) + (v.plotDev || 0) + (v.constAmt || 0) + (v.premiumLocation || 0);
+  const setKalravUnitPrice = (up) => setF((s) => {
+    const total = Math.max(0, Math.round(up));
+    const lsd = Math.round(Number(s.land_sale_deed) || 0);
+    return lsd <= total
+      ? { ...s, const_agreement: String(total - lsd) }
+      : { ...s, land_sale_deed: String(total), const_agreement: '0' };
+  });
   useEffect(() => {
     if (!editingAmtRef.current) setDeedAmtStr(String(Math.round(v.saleDeed) || ''));
   }, [v.saleDeed]);
@@ -1182,14 +1196,24 @@ export default function BookingFormScreen({ navigation, route }) {
           ); })}
           {formulaSet === 'kalrav' && (
             <>
-              {/* Kalrav: Unit Price = Land Sale Deed + Construction Agreement; % derived — both read-only. */}
-              <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Sale Deed %</Text>
-                <TextInput value={v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '0'} editable={false} style={[inpS, { backgroundColor: COLORS.surface2, color: MUTED }]} />
+              {/* Kalrav: Unit Price = Land Sale Deed + Construction Agreement, and Sale Deed % =
+                  Unit Price / (Plot Basic + Dev + Construction + PLC). Type either: it keeps the
+                  Land Sale Deed and moves the Construction Agreement, so all three agree. */}
+              <View style={BookingFormScreenS.kalField}>
+                <Text style={BookingFormScreenS.kalLabel}>Sale Deed %</Text>
+                <TextInput keyboardType="numeric" style={inpS}
+                  value={kalEdit?.k === 'pct' ? kalEdit.t : (v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '0')}
+                  onFocus={() => setKalEdit({ k: 'pct', t: v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '' })}
+                  onBlur={() => setKalEdit(null)}
+                  onChangeText={(t) => { setKalEdit({ k: 'pct', t }); setKalravUnitPrice((Number(t) || 0) / 100 * kalBase); }} />
               </View>
-              <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Unit Price (₹)</Text>
-                <TextInput value={String(Math.round(v.saleDeed) || 0)} editable={false} style={[inpS, { backgroundColor: COLORS.surface2, color: MUTED }]} />
+              <View style={BookingFormScreenS.kalField}>
+                <Text style={BookingFormScreenS.kalLabel}>Unit Price (₹)</Text>
+                <TextInput keyboardType="numeric" style={inpS}
+                  value={kalEdit?.k === 'up' ? kalEdit.t : String(Math.round(v.saleDeed) || 0)}
+                  onFocus={() => setKalEdit({ k: 'up', t: String(Math.round(v.saleDeed) || '') })}
+                  onBlur={() => setKalEdit(null)}
+                  onChangeText={(t) => { setKalEdit({ k: 'up', t }); setKalravUnitPrice(Number(t) || 0); }} />
               </View>
             </>
           )}
@@ -1509,6 +1533,8 @@ const Tot = ({ l, sub, sub2, val, valFmt, big, subtotal }) => (
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const BookingFormScreenS = StyleSheet.create({
+  kalField: { marginBottom: 10 },
+  kalLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 },
   flatPriceInput: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
                     fontSize: 14, marginBottom: 10, color: COLORS.textPrimary, backgroundColor: COLORS.surface },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
