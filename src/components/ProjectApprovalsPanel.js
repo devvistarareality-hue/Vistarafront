@@ -144,8 +144,7 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
         const open = openId === p.id;
         return (
           <View key={p.id} style={pa.row}>
-            <TouchableOpacity onPress={() => setOpenId(open ? null : p.id)} style={pa.rowHead}>
-              <Text style={pa.rowCaret}>{open ? '▾' : '▸'}</Text>
+            <View style={pa.rowHead}>
               <Text style={pa.rowName}>{p.name}</Text>
               <View style={[pa.badge, st === 'pending' ? pa.badgePending
                 : st === 'rejected' ? pa.badgeRejected : pa.badgeApproved]}>
@@ -154,12 +153,25 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
                   {st.toUpperCase()}
                 </Text>
               </View>
-            </TouchableOpacity>
+            </View>
             <Text style={pa.rowMeta}>
               {(p.location || '—')} · {p.project_type}
-              {p.created_by_name ? ` · added by ${p.created_by_name}` : ''}
-              {st === 'rejected' && p.rejected_reason ? ` · ${p.rejected_reason}` : ''}
+              {p.total_plots ? ` · ${p.total_plots} units` : ''}
             </Text>
+            <Text style={pa.rowMeta2}>
+              Added by {p.created_by_name || '—'}
+            </Text>
+            {st === 'rejected' && p.rejected_reason ? (
+              <View style={pa.reason}>
+                <Text style={pa.reasonTitle}>
+                  Rejected{p.approved_by_name ? ` · ${p.approved_by_name}` : ''}
+                </Text>
+                <Text style={pa.reasonBody}>{p.rejected_reason}</Text>
+              </View>
+            ) : null}
+            {st === 'approved' && p.approved_by_name ? (
+              <Text style={pa.decided}>Approved by {p.approved_by_name}</Text>
+            ) : null}
 
             {open && (
               <View style={pa.detail}>
@@ -185,8 +197,11 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
                 ))}
               </View>
             )}
-            {st === 'pending' && (
-              <View style={pa.actions}>
+            <View style={pa.actions}>
+              <TouchableOpacity onPress={() => setOpenId(open ? null : p.id)} style={[pa.btn, pa.btnLink]}>
+                <Text style={pa.btnLinkText}>{open ? '▴ Hide Details' : '▾ View Details'}</Text>
+              </TouchableOpacity>
+              {st === 'pending' && (<>
                 <TouchableOpacity onPress={() => act(p, 'approve')} disabled={busy === p.id}
                   style={[pa.btn, pa.btnOk]}>
                   {busy === p.id ? <ActivityIndicator color={COLORS.btnTextSuccess} />
@@ -196,8 +211,8 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
                   style={[pa.btn, pa.btnBad]}>
                   <Text style={pa.btnBadText}>Reject</Text>
                 </TouchableOpacity>
-              </View>
-            )}
+              </>)}
+            </View>
           </View>
         );
       })}
@@ -247,7 +262,6 @@ const pa = StyleSheet.create({
 
   row: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 14, marginBottom: 10, ...CARD_SHADOW },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  rowCaret: { fontSize: 11, color: COLORS.textSecondary },
   detail: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
   field: { marginBottom: 10 },
   fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase',
@@ -255,6 +269,15 @@ const pa = StyleSheet.create({
   fieldValue: { fontSize: 13, color: COLORS.textPrimary, marginTop: 2, lineHeight: 18 },
   rowName: { flex: 1, fontSize: 14, fontWeight: '800', color: COLORS.textPrimary },
   rowMeta: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 4, lineHeight: 17 },
+  rowMeta2: { fontSize: 11.5, color: COLORS.textTertiary, marginTop: 3 },
+  decided: { fontSize: 11.5, color: COLORS.success, marginTop: 4, fontWeight: '600' },
+  reason: { marginTop: 10, backgroundColor: COLORS.errorBg, borderWidth: 1,
+            borderColor: COLORS.error, borderRadius: 14, padding: 10 },
+  reasonTitle: { fontSize: 10.5, fontWeight: '800', color: COLORS.error,
+                 textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 },
+  reasonBody: { fontSize: 12.5, color: COLORS.textPrimary },
+  btnLink: { backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border },
+  btnLinkText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: 13 },
   badge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
   badgeText: { fontSize: 10, fontWeight: '800' },
   badgePending: { backgroundColor: COLORS.warningBg },
