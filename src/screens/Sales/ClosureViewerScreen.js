@@ -23,6 +23,8 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW 
 
 // Stored as 'road' / 'garden'; shown in full wherever a unit is surfaced.
 const FACING_LABEL = { road: 'Road Facing', garden: 'Garden Facing' };
+// Corner / Common Plot Facing (each carries a PLC charge), or both.
+const plcLabel = (p) => [p.is_corner && 'Corner Plot', p.is_clubhouse_facing && 'Common Plot Facing'].filter(Boolean).join(' · ');
 
 const STATUS = {
   available: { label: 'Available', dot: COLORS.success, bg: COLORS.successBg },
@@ -593,6 +595,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       {!!plot.size && <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: isSel ? COLORS.accentSoft : MUTED }}>{plot.size}</Text>}
                       {!!plot.facing && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? COLORS.accentSoft : MUTED }}>{FACING_LABEL[plot.facing] || plot.facing}</Text>}
                       {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? COLORS.accentSoft : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
+                      {!!plcLabel(plot) && <Text style={[cvS.chipPlc, isSel && cvS.chipPlcSel]}>{plcLabel(plot)}</Text>}
                       {/* Who is on a booked unit, so the team can see it without opening the plot. */}
                       {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? COLORS.accentSoft : MUTED }}>{plot.status === 'hold' ? 'In progress by' : 'Sold by'} {plot.agent_name}</Text>}
                     </TouchableOpacity>
@@ -808,6 +811,8 @@ function UnitModal({ plot, project, sv, user, sources = [], onClose, onClosed, o
                   stored as 'road'/'garden', which reads poorly raw. */}
               {!!plot.facing && <InfoBox label="Facing" value={FACING_LABEL[plot.facing] || plot.facing} />}
               {!!(plot.terrace_area || '').trim() && <InfoBox label="Terrace" value={`${plot.terrace_area} sq.yd`} />}
+              {/* Corner / Common Plot Facing carry a PLC charge — same line as the web's hover card. */}
+              {!!plcLabel(plot) && <InfoBox label="Location" value={plcLabel(plot)} />}
               {!!plot.price  && <InfoBox label="Price" value={plot.price} />}
               {!!plot.agent_name && <InfoBox label={plot.status === 'hold' ? 'In Progress By' : 'Sold By'} value={plot.agent_name} />}
             </View>
@@ -971,4 +976,9 @@ const ClosureViewerScreenS = StyleSheet.create({
   btn3: { paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, alignItems: 'center', opacity: 1 },
   btn3Dim: { opacity: 0.7 },
   box2: { color: COLORS.btnText, fontWeight: '700', fontSize: 14 },
+});
+
+const cvS = StyleSheet.create({
+  chipPlc: { fontSize: 10, fontWeight: '700', color: COLORS.warning },
+  chipPlcSel: { color: COLORS.accentSoft },
 });
