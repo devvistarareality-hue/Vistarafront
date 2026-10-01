@@ -14,6 +14,7 @@ import { isManagerRole } from '../../lib/roles';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 import ExportBookings from '../../components/ExportBookings';
+import ProjectApprovalsPanel from '../../components/ProjectApprovalsPanel';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
@@ -322,12 +323,19 @@ export default function BookingApprovalsScreen({ navigation, route }) {
             {xfers.length > 0 ? `Lead Transfers · ${xfers.length}` : 'Lead Transfers'}
           </Text>
         </TouchableOpacity>
+        {/* A new project is invisible to everyone until it is approved, so the
+            queue for that lives alongside the other two. */}
+        <TouchableOpacity onPress={() => pickSection('projects')} style={[s.sectionTab, section === 'projects' && s.sectionTabOn]}>
+          <Text style={[s.sectionTabText, section === 'projects' && s.sectionTabTextOn]} numberOfLines={1}>Projects</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}>
         {section === 'transfers' && (
           <LeadTransfersPanel companyId={companyId} cpOnly={cpOnly} pendingCount={xfers.length} onChanged={loadTransfers} refreshKey={refreshing} />
         )}
+
+        {section === 'projects' && <ProjectApprovalsPanel isAdmin={isAdmin} refreshKey={refreshing} />}
 
         {section === 'bookings' && (<>
         {isAdmin && (
