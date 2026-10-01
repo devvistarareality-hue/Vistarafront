@@ -1168,7 +1168,8 @@ export default function BookingFormScreen({ navigation, route }) {
               <Text style={plcS.amount}>{plcBothVal ? rupee(plcBothVal) : 'Set in the Rate Master'}</Text>
             </View>
           ) : null}
-          {flags.hasPlcFixed && !plcBothOnly && PLC_KINDS.map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
+          {/* Only the PLC that applies to the plot is shown — no unticked line for the other. */}
+          {flags.hasPlcFixed && !plcBothOnly && PLC_KINDS.filter(([k]) => f[`plc_${k}_on`]).map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
             <View key={k}>
               <View style={plcS.row}>
                 <View style={on ? plcS.boxOn : plcS.box}>
