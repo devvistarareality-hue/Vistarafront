@@ -104,13 +104,11 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   }, [companyId]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // Accounts view shows ONLY bookings approved by an approver — pending / revision-pending,
-  // rejected and cancelled are all excluded (money is only real once approved).
-  const isApproved = (b) => {
-    const a = String(b.approval_status || '').toUpperCase();
-    if (a.includes('REJECT') || a.includes('CANCEL') || a.includes('PENDING')) return false;
-    return a.includes('APPROVED') || b.status === 'sold';
-  };
+  // Accounts view shows ONLY bookings that are sold AND signed off at the Accounts
+  // stage — same rule as the web. Sales' own approval is not enough: a unit Sales
+  // approved but Accounts has not yet passed (shown as Hold on the unit map) used to
+  // be counted here, so e.g. Pratishtha read 95 instead of 86.
+  const isApproved = (b) => b.status === 'sold' && b.accounts_status === 'approved' && !isCancelled(b);
   // A cancelled booking keeps its signed LOI, and Accounts reconciles against it —
   // a deal that was on the books and came off has to be explainable, not a gap. Kept
   // on its own tab so it can never be mistaken for revenue.
