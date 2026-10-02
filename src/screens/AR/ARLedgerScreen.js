@@ -15,6 +15,7 @@ import FormSheet from '../../components/FormSheet';
 import BookingDetails from '../../components/BookingDetails';
 import ActivityHistory from '../../components/ActivityHistory';
 import FollowUpSheet from './FollowUpSheet';
+import CancelSheet from './CancelSheet';
 import { Badge, Button, Segmented } from '../../components/ui';
 import { rupee, MODES, recordModes, cleanAmount, groupINR, balanceAfter, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
 
@@ -61,6 +62,7 @@ export default function ARLedgerScreen({ navigation, route }) {
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   // Bank Master: a Loan payment names the bank it was received into (as on the web).
+  const [cancelOpen, setCancelOpen] = useState(false);
   const [banks, setBanks] = useState([]);
   useEffect(() => {
     apiFetch(withCompany(AR_ENDPOINTS.banks, companyId))
@@ -170,6 +172,7 @@ export default function ARLedgerScreen({ navigation, route }) {
           <Button title={`View ${isEoi ? 'EOI' : 'LOI'}`} icon="file" size="sm" variant="secondary" onPress={openLoi} style={s.flex} />
         </View>
         <Button title="Follow-ups" icon="bell" size="sm" variant="secondary" full onPress={() => setFollowUps(true)} style={s.recordBtn} />
+        {!frozen && can(me, 'ar.cancel.request') && <Button title="Cancel plot" variant="danger" size="sm" full onPress={() => setCancelOpen(true)} style={s.recordBtn} />}
         {!frozen && can(me, 'ar.receipt.record') && <Button title="Record payment" icon="check-circle" variant="primary" full onPress={openNew} style={s.recordBtn} />}
 
         {frozen && <Note tone="warn" text="This booking was cancelled, so its account is frozen. Receipts and history are kept; no new payments can be recorded." />}
@@ -275,6 +278,9 @@ export default function ARLedgerScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
+      <CancelSheet row={cancelOpen ? { id: data.id, client_name: data.client_name, project: data.project, plots: data.plots } : null}
+        companyId={companyId} onClose={() => setCancelOpen(false)}
+        onDone={() => Alert.alert('Sent for approval', 'The cancellation is waiting for an approver — see Cancellations.')} />
       <FollowUpSheet row={followUps ? data : null} visible={followUps} onClose={() => setFollowUps(false)} />
 
       <FormSheet visible={!!form} onClose={() => !saving && setForm(null)}>

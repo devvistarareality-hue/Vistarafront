@@ -62,7 +62,7 @@ export default function ARBanksScreen({ navigation }) {
   }
 
   function remove(b) {
-    const used = b.received > 0;
+    const used = (b.received > 0 || b.paid_out > 0);
     Alert.alert(used ? 'Retire bank?' : 'Remove bank?',
       used ? `${b.name} has payments recorded against it, so it will be retired (kept for history, not offered for new payments).`
            : `Remove ${b.name}? It has no payments recorded against it.`,
@@ -109,14 +109,15 @@ export default function ARBanksScreen({ navigation }) {
               {b.account_no ? <Text style={s.sub}>A/c {b.account_no}</Text> : null}
               <View style={s.nums}>
                 <View style={s.flex}><Text style={s.numLabel}>Opening</Text><Text style={s.numValue}>{rupee(b.opening_balance)}</Text></View>
-                <View style={s.flex}><Text style={s.numLabel}>Loan payments</Text><Text style={s.numValue}>{rupee(b.received)}</Text></View>
+                <View style={s.flex}><Text style={s.numLabel}>Received</Text><Text style={s.numValue}>{rupee(b.received)}</Text></View>
+                {b.paid_out ? <View style={s.flex}><Text style={s.numLabel}>Refunds</Text><Text style={[s.numValue, s.out]}>−{rupee(b.paid_out)}</Text></View> : null}
                 <View style={s.flex}><Text style={s.numLabel}>Balance</Text><Text style={[s.numValue, s.balance]}>{rupee(b.balance)}</Text></View>
               </View>
               {canManage ? (
                 <View style={s.actions}>
                   <Button title="Edit" size="sm" variant="secondary" onPress={() => openEdit(b)} style={s.flex} />
                   {b.is_active
-                    ? <Button title={b.received > 0 ? 'Retire' : 'Remove'} size="sm" variant="danger" onPress={() => remove(b)} style={s.flex} />
+                    ? <Button title={(b.received > 0 || b.paid_out > 0) ? 'Retire' : 'Remove'} size="sm" variant="danger" onPress={() => remove(b)} style={s.flex} />
                     : <Button title="Reactivate" size="sm" variant="secondary" onPress={() => reactivate(b)} style={s.flex} />}
                 </View>
               ) : null}
@@ -171,6 +172,7 @@ const s = StyleSheet.create({
   numLabel: { fontSize: 11, color: COLORS.textSecondary },
   numValue: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginTop: 2 },
   balance: { color: COLORS.success },
+  out: { color: COLORS.error },
   stmtLink: { fontSize: 13, fontWeight: '700', color: COLORS.link },
   actions: { flexDirection: 'row', gap: 10, marginTop: 14 },
   sheetScroll: { flexShrink: 1 },

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StatusBar, RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, StatusBar, RefreshControl, ScrollView, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { can } from '../../lib/roles';
@@ -16,6 +16,7 @@ import { DashKpi, DashKpiGrid } from '../../components/Dash';
 import { fmtWhen } from '../../components/ActivityHistory';
 import { rupee, inrShort, today, withCompany } from './arShared';
 import FollowUpSheet from './FollowUpSheet';
+import CancelSheet from './CancelSheet';
 
 const dmy = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
 const WINDOWS = [0, 7, 30, 60, 90];   // 0 = due today
@@ -36,6 +37,7 @@ export default function ARCollectionsScreen({ navigation, route }) {
   const [err, setErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [open, setOpen] = useState(null);
+  const [cancelRow, setCancelRow] = useState(null);   // account being sent for cancellation
   const [fuScope, setFuScope] = useState('mine');
   const [fuWhen, setFuWhen] = useState('open');
   const [fus, setFus] = useState(null);
@@ -161,15 +163,18 @@ export default function ARCollectionsScreen({ navigation, route }) {
           )}
           renderItem={({ item }) => (tab === 'followups'
             ? <FollowUpCard f={item} onPress={() => setOpen(byId[item.account_id] || { ...item.account, overdue: 0 })} />
-            : <AccountCard r={item} tab={tab} onFollowUp={can(me, 'ar.followup.manage') ? () => setOpen(item) : null} onLedger={() => navigation.navigate('ARLedger', { id: item.id })} />)}
+            : <AccountCard r={item} tab={tab} onFollowUp={can(me, 'ar.followup.manage') ? () => setOpen(item) : null} onLedger={() => navigation.navigate('ARLedger', { id: item.id })}
+                onCancel={tab === 'overdue' && can(me, 'ar.cancel.request') ? () => setCancelRow(item) : null} />)}
         />
       )}
       <FollowUpSheet row={open} visible={!!open} onClose={() => setOpen(null)} onChanged={changed} />
+      <CancelSheet row={cancelRow} companyId={companyId} onClose={() => setCancelRow(null)}
+        onDone={() => Alert.alert('Sent for approval', 'The cancellation is waiting for an approver — see Cancellations.')} />
     </SafeAreaView>
   );
 }
 
-function AccountCard({ r, tab, onFollowUp, onLedger }) {
+function AccountCard({ r, tab, onFollowUp, onLedger, onCancel }) {
   return (
     <View style={[common.card, s.card]}>
       <TouchableOpacity activeOpacity={0.8} onPress={onLedger} style={s.cardTop}>
@@ -205,6 +210,7 @@ function AccountCard({ r, tab, onFollowUp, onLedger }) {
       <View style={s.actions}>
         <Button title="Ledger" variant="secondary" size="sm" onPress={onLedger} />
         {onFollowUp ? <Button title="Follow up" icon="notifications-outline" size="sm" onPress={onFollowUp} /> : null}
+        {onCancel ? <Button title="Cancel plot" variant="danger" size="sm" onPress={onCancel} /> : null}
       </View>
     </View>
   );

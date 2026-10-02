@@ -141,3 +141,21 @@ const s = StyleSheet.create({
   text: { flexShrink: 1, fontSize: 14.5, color: COLORS.textPrimary, fontWeight: '600' },
   placeholder: { color: COLORS.textTertiary, fontWeight: '500' },
 });
+
+// The cancellation letter (with its statement) as a PDF to share — same template the
+// web prints, rendered on the phone like the account statement above.
+export async function shareCancellationLetter(cancellationId, companyId, fileLabel) {
+  try {
+    const r = await apiFetch(withCompany(AR_ENDPOINTS.cancellationLetter(cancellationId), companyId));
+    if (!r.ok) return 'Could not prepare the letter.';
+    const html = await r.text();
+    const { uri } = await Print.printToFileAsync({ html });
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: `Cancellation letter · ${fileLabel}` });
+    }
+    return '';
+  } catch (e) {
+    return 'Could not prepare the letter. Check your connection.';
+  }
+}
+

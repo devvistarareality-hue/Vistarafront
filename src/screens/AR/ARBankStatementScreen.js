@@ -93,7 +93,9 @@ export default function ARBankStatementScreen({ navigation, route }) {
           <View style={s.heroSplit}>
             <View><Text style={s.heroK}>{ranged && from ? 'Brought fwd' : 'Opening'}</Text><Text style={s.heroV}>{data && !err ? rupee(data.brought_forward) : '—'}</Text></View>
             <View><Text style={s.heroK}>Received</Text><Text style={[s.heroV, s.heroIn]}>+{data && !err ? rupee(data.total_in) : '—'}</Text></View>
-            <View><Text style={s.heroK}>Payments</Text><Text style={s.heroV}>{rows.length}</Text></View>
+            {data?.total_out > 0
+              ? <View><Text style={s.heroK}>Refunds</Text><Text style={[s.heroV, s.heroOut]}>−{rupee(data.total_out)}</Text></View>
+              : <View><Text style={s.heroK}>Entries</Text><Text style={s.heroV}>{rows.length}</Text></View>}
           </View>
         </LinearGradient>
 
@@ -121,7 +123,7 @@ export default function ARBankStatementScreen({ navigation, route }) {
             {rows.length === 0 ? (
               <View style={s.empty}>
                 <Ionicons name="file-tray-outline" size={34} color={COLORS.textTertiary} />
-                <Text style={s.emptyTitle}>No Loan payments{ranged ? ' in this period' : ' yet'}</Text>
+                <Text style={s.emptyTitle}>No entries{ranged ? ' in this period' : ' yet'}</Text>
                 <Text style={s.emptySub}>Record a payment with mode Loan and pick this bank — it shows up here.</Text>
               </View>
             ) : rows.map((r) => {
@@ -141,7 +143,9 @@ export default function ARBankStatementScreen({ navigation, route }) {
                     {r.remarks ? <Text style={s.remarks} numberOfLines={1}>{r.remarks}</Text> : null}
                   </View>
                   <View style={s.right}>
-                    <View style={s.amtPill}><Text style={s.amtText}>+{rupee(r.amount)}</Text></View>
+                    <View style={[s.amtPill, r.kind === 'out' && s.amtPillOut]}>
+                      <Text style={[s.amtText, r.kind === 'out' && s.amtTextOut]}>{r.kind === 'out' ? '−' : '+'}{rupee(r.amount)}</Text>
+                    </View>
                     <Text style={s.runBal}>{rupee(r.balance)}</Text>
                   </View>
                 </TouchableOpacity>
@@ -174,6 +178,9 @@ const s = StyleSheet.create({
   heroK: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
   heroV: { fontSize: 15, fontWeight: '800', color: COLORS.white, marginTop: 2 },
   heroIn: { color: '#9BE8BC' },
+  heroOut: { color: '#FFB4AE' },
+  amtPillOut: { backgroundColor: COLORS.errorBg },
+  amtTextOut: { color: COLORS.error },
   chips: { gap: 8, paddingBottom: 10 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   chipOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
