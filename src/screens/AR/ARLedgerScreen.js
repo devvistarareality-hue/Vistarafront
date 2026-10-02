@@ -16,7 +16,7 @@ import BookingDetails from '../../components/BookingDetails';
 import ActivityHistory from '../../components/ActivityHistory';
 import FollowUpSheet from './FollowUpSheet';
 import { Badge, Button, Segmented } from '../../components/ui';
-import { rupee, MODES, recordModes, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
+import { rupee, MODES, recordModes, cleanAmount, groupINR, balanceAfter, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
 
 const confirm = (title, message, okText, destructive) => new Promise((resolve) => {
   Alert.alert(title, message, [
@@ -71,7 +71,8 @@ export default function ARLedgerScreen({ navigation, route }) {
   const bankName = (bid) => banks.find((b) => String(b.id) === String(bid))?.name || '';
 
   const openNew = () => { setFormErr({}); setForm({ paid_on: today(), amount: '', mode: 'loan', bank: '', remarks: '' }); };
-  const openEdit = (rc) => { setFormErr({}); setForm({ id: rc.id, paid_on: rc.paid_on, amount: String(rc.amount), mode: rc.mode, bank: rc.bank ? String(rc.bank) : '', remarks: rc.remarks }); };
+  const openEdit = (rc) => { setFormErr({}); setForm({ id: rc.id, paid_on: rc.paid_on, amount: String(rc.amount), mode: rc.mode, bank: rc.bank ? String(rc.bank) : '', remarks: rc.remarks,
+    orig_bank: rc.bank ? String(rc.bank) : '', orig_amount: rc.amount }); };
 
   async function saveReceipt() {
     const ok = await confirm(form.id ? 'Update receipt?' : 'Record payment?',
@@ -286,9 +287,9 @@ export default function ARLedgerScreen({ navigation, route }) {
             <DateField value={form.paid_on} maxToday onChange={(d) => setForm({ ...form, paid_on: d })} />
             {formErr.paid_on ? <Text style={s.fieldErr}>{formErr.paid_on}</Text> : null}
             <Text style={[common.label, s.gapTop]}>Amount (₹)</Text>
-            <TextInput style={common.input} value={form.amount} onChangeText={(v) => setForm({ ...form, amount: v.replace(/[^0-9.]/g, '') })}
+            {/* Shown with Indian grouping (50,00,000) as it is typed; the raw number is saved. */}
+            <TextInput style={common.input} value={groupINR(form.amount)} onChangeText={(v) => setForm({ ...form, amount: cleanAmount(v) })}
               keyboardType="decimal-pad" placeholder="0" placeholderTextColor={COLORS.textTertiary} />
-            {form.amount ? <Text style={s.hint}>{rupee(form.amount)}</Text> : null}
             {formErr.amount ? <Text style={s.fieldErr}>{formErr.amount}</Text> : null}
             <Text style={[common.label, s.gapTop]}>Mode</Text>
             <Segmented options={recordModes(form.mode)} value={form.mode} onChange={(m) => setForm({ ...form, mode: m, bank: m === 'loan' ? form.bank : '' })} />
@@ -300,13 +301,32 @@ export default function ARLedgerScreen({ navigation, route }) {
                   return (
                     <TouchableOpacity key={b.id} onPress={() => setForm({ ...form, bank: String(b.id) })} style={[s.bankRow, on && s.bankRowOn]} activeOpacity={0.8}>
                       <Ionicons name={on ? 'radio-button-on' : 'radio-button-off'} size={18} color={on ? COLORS.link : COLORS.textTertiary} />
-                      <View style={s.flex}>
-                        <Text style={s.bankName}>{b.name}{b.account_no ? ` · ${b.account_no}` : ''}</Text>
-                        <Text style={s.bankBal}>Balance {rupee(b.balance)}</Text>
-                      </View>
+                      <Text style={[s.bankName, s.flex]} numberOfLines={1}>{b.name}{b.account_no ? ` · ${b.account_no}` : ''}</Text>
+                      <Text style={[s.bankBal, on && s.bankBalOn]}>{rupee(b.balance)}</Text>
                     </TouchableOpacity>
                   );
                 }) : <Note tone="warn" text="No banks yet — add one in Bank Master first." />}
+                {(() => {
+                  const b = banks.find((x) => String(x.id) === String(form.bank));
+                  if (!b) return null;
+                  return (
+                    <View style={s.pick}>
+                      <View style={s.flex}>
+                        <Text style={s.pickLabel}>CURRENT BALANCE</Text>
+                        <Text style={s.pickNow}>{rupee(b.balance)}</Text>
+                      </View>
+                      {Number(form.amount) > 0 ? (
+                        <>
+                          <Ionicons name="arrow-forward" size={18} color={COLORS.textSecondary} />
+                          <View style={[s.flex, s.pickRight]}>
+                            <Text style={s.pickLabel}>AFTER THIS PAYMENT</Text>
+                            <Text style={s.pickAfter}>{rupee(balanceAfter(b, form))}</Text>
+                          </View>
+                        </>
+                      ) : null}
+                    </View>
+                  );
+                })()}
                 {formErr.bank ? <Text style={s.fieldErr}>{formErr.bank}</Text> : null}
               </>
             ) : null}
@@ -407,7 +427,14 @@ const s = StyleSheet.create({
              borderColor: COLORS.border, backgroundColor: COLORS.surface, marginTop: 8 },
   bankRowOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
   bankName: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
-  bankBal: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  bankBal: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  bankBalOn: { color: COLORS.success },
+  pick: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, padding: 12, borderRadius: 12,
+          backgroundColor: COLORS.successBg, borderWidth: 1, borderColor: COLORS.success },
+  pickRight: { alignItems: 'flex-end' },
+  pickLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
+  pickNow: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
+  pickAfter: { fontSize: 17, fontWeight: '800', color: COLORS.success, marginTop: 2 },
   flex: { flex: 1 },
   bold: { fontWeight: '800' },
   good: { color: COLORS.success },

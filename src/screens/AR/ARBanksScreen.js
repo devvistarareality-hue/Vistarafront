@@ -11,7 +11,7 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import FormSheet from '../../components/FormSheet';
 import { Button } from '../../components/ui';
-import { rupee, withCompany } from './arShared';
+import { rupee, withCompany, cleanAmount, groupINR } from './arShared';
 
 // Bank Master — mirrors the web page (web/src/app/m/[module]/banks). A Loan payment is
 // recorded into one of these banks; its balance = opening balance + those payments,
@@ -138,9 +138,8 @@ export default function ARBanksScreen({ navigation }) {
             <TextInput style={common.input} value={form.account_no} onChangeText={(v) => setForm({ ...form, account_no: v })}
               placeholderTextColor={COLORS.textTertiary} />
             <Text style={[common.label, s.gapTop]}>Opening balance (₹)</Text>
-            <TextInput style={common.input} value={form.opening_balance} keyboardType="decimal-pad" placeholder="0"
-              onChangeText={(v) => setForm({ ...form, opening_balance: v.replace(/[^0-9.]/g, '') })} placeholderTextColor={COLORS.textTertiary} />
-            {form.opening_balance ? <Text style={s.hint}>{rupee(form.opening_balance)}</Text> : null}
+            <TextInput style={common.input} value={groupINR(form.opening_balance)} keyboardType="decimal-pad" placeholder="0"
+              onChangeText={(v) => setForm({ ...form, opening_balance: cleanAmount(v) })} placeholderTextColor={COLORS.textTertiary} />
             {formErr.opening_balance ? <Text style={s.fieldErr}>{formErr.opening_balance}</Text> : null}
             <View style={s.sheetFoot}>
               <Button title="Cancel" variant="secondary" onPress={() => setForm(null)} disabled={saving} style={s.flex} />
