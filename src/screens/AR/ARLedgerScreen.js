@@ -16,7 +16,7 @@ import BookingDetails from '../../components/BookingDetails';
 import ActivityHistory from '../../components/ActivityHistory';
 import FollowUpSheet from './FollowUpSheet';
 import { Badge, Button, Segmented } from '../../components/ui';
-import { rupee, MODES, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
+import { rupee, MODES, recordModes, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
 
 const confirm = (title, message, okText, destructive) => new Promise((resolve) => {
   Alert.alert(title, message, [
@@ -60,7 +60,7 @@ export default function ARLedgerScreen({ navigation, route }) {
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const openNew = () => { setFormErr({}); setForm({ paid_on: today(), amount: '', mode: 'bank', remarks: '' }); };
+  const openNew = () => { setFormErr({}); setForm({ paid_on: today(), amount: '', mode: 'loan', remarks: '' }); };
   const openEdit = (rc) => { setFormErr({}); setForm({ id: rc.id, paid_on: rc.paid_on, amount: String(rc.amount), mode: rc.mode, remarks: rc.remarks }); };
 
   async function saveReceipt() {
@@ -280,7 +280,7 @@ export default function ARLedgerScreen({ navigation, route }) {
             {form.amount ? <Text style={s.hint}>{rupee(form.amount)}</Text> : null}
             {formErr.amount ? <Text style={s.fieldErr}>{formErr.amount}</Text> : null}
             <Text style={[common.label, s.gapTop]}>Mode</Text>
-            <Segmented options={MODES} value={form.mode} onChange={(m) => setForm({ ...form, mode: m })} />
+            <Segmented options={recordModes(form.mode)} value={form.mode} onChange={(m) => setForm({ ...form, mode: m })} />
             <Text style={[common.label, s.gapTop]}>Remarks</Text>
             <TextInput style={common.input} value={form.remarks} onChangeText={(v) => setForm({ ...form, remarks: v })}
               placeholder="e.g. REC IN VISTARA HDFC" placeholderTextColor={COLORS.textTertiary} />
