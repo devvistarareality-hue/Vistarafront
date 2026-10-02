@@ -35,6 +35,7 @@ import ARDashboardScreen from '../screens/AR/ARDashboardScreen';
 import ARRegisterScreen from '../screens/AR/ARRegisterScreen';
 import ARLedgerScreen from '../screens/AR/ARLedgerScreen';
 import ARImportScreen from '../screens/AR/ARImportScreen';
+import ARBanksScreen from '../screens/AR/ARBanksScreen';
 import ARCollectionsScreen from '../screens/AR/ARCollectionsScreen';
 import TaskDashboardScreen from '../screens/Tasks/TaskDashboardScreen';
 import TaskListScreen from '../screens/Tasks/TaskListScreen';
@@ -78,6 +79,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="ARRegister" component={ARRegisterScreen} />
       <ModulesStack.Screen name="ARLedger" component={ARLedgerScreen} />
       <ModulesStack.Screen name="ARImport" component={ARImportScreen} />
+      <ModulesStack.Screen name="ARBanks" component={ARBanksScreen} />
       <ModulesStack.Screen name="ARCollections" component={ARCollectionsScreen} />
       <ModulesStack.Screen name="TaskDashboard" component={TaskDashboardScreen} />
       <ModulesStack.Screen name="TaskList" component={TaskListScreen} />

@@ -60,19 +60,30 @@ export default function ARLedgerScreen({ navigation, route }) {
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const openNew = () => { setFormErr({}); setForm({ paid_on: today(), amount: '', mode: 'loan', remarks: '' }); };
-  const openEdit = (rc) => { setFormErr({}); setForm({ id: rc.id, paid_on: rc.paid_on, amount: String(rc.amount), mode: rc.mode, remarks: rc.remarks }); };
+  // Bank Master: a Loan payment names the bank it was received into (as on the web).
+  const [banks, setBanks] = useState([]);
+  useEffect(() => {
+    apiFetch(withCompany(AR_ENDPOINTS.banks, companyId))
+      .then((r) => (r.ok ? r.json() : { results: [] })).then((d) => setBanks(d.results || [])).catch(() => {});
+  }, [companyId]);
+  // Active banks, plus a retired one this receipt already uses so an edit can keep it.
+  const bankOptions = (current) => banks.filter((b) => b.is_active || String(b.id) === String(current));
+  const bankName = (bid) => banks.find((b) => String(b.id) === String(bid))?.name || '';
+
+  const openNew = () => { setFormErr({}); setForm({ paid_on: today(), amount: '', mode: 'loan', bank: '', remarks: '' }); };
+  const openEdit = (rc) => { setFormErr({}); setForm({ id: rc.id, paid_on: rc.paid_on, amount: String(rc.amount), mode: rc.mode, bank: rc.bank ? String(rc.bank) : '', remarks: rc.remarks }); };
 
   async function saveReceipt() {
     const ok = await confirm(form.id ? 'Update receipt?' : 'Record payment?',
-      `${form.id ? 'Update this receipt to' : 'Record'} ${rupee(form.amount)} from ${data.client_name || 'this client'} on ${formatDMY(form.paid_on)} (${MODE_LABEL[form.mode]})?`,
+      `${form.id ? 'Update this receipt to' : 'Record'} ${rupee(form.amount)} from ${data.client_name || 'this client'} on ${formatDMY(form.paid_on)} (${MODE_LABEL[form.mode]}${form.mode === 'loan' && form.bank ? ` · ${bankName(form.bank)}` : ''})?`,
       form.id ? 'Update' : 'Record');
     if (!ok) return;
     setSaving(true); setFormErr({});
     try {
       const r = await apiFetch(withCompany(form.id ? AR_ENDPOINTS.receipt(form.id) : AR_ENDPOINTS.receipts(id), companyId), {
         method: form.id ? 'PATCH' : 'POST',
-        body: JSON.stringify({ paid_on: form.paid_on, amount: form.amount, mode: form.mode, remarks: form.remarks }),
+        body: JSON.stringify({ paid_on: form.paid_on, amount: form.amount, mode: form.mode,
+          bank: form.mode === 'loan' ? (form.bank || null) : null, remarks: form.remarks }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setFormErr(d.detail ? { _: d.detail } : d); setSaving(false); return; }
@@ -222,7 +233,7 @@ export default function ARLedgerScreen({ navigation, route }) {
             <View key={rc.id} style={s.item}>
               <View style={s.itemTop}>
                 <Text style={s.receiptAmt}>{rupee(rc.amount)}</Text>
-                <Text style={s.itemSub}>{formatDMY(rc.paid_on)} · {rc.mode_label}</Text>
+                <Text style={s.itemSub}>{formatDMY(rc.paid_on)} · {rc.mode_label}{rc.bank_name ? ` · ${rc.bank_name}` : ''}</Text>
               </View>
               {rc.remarks ? <Text style={s.remarks}>{rc.remarks}</Text> : null}
               <View style={s.itemFoot}>
@@ -280,14 +291,32 @@ export default function ARLedgerScreen({ navigation, route }) {
             {form.amount ? <Text style={s.hint}>{rupee(form.amount)}</Text> : null}
             {formErr.amount ? <Text style={s.fieldErr}>{formErr.amount}</Text> : null}
             <Text style={[common.label, s.gapTop]}>Mode</Text>
-            <Segmented options={recordModes(form.mode)} value={form.mode} onChange={(m) => setForm({ ...form, mode: m })} />
+            <Segmented options={recordModes(form.mode)} value={form.mode} onChange={(m) => setForm({ ...form, mode: m, bank: m === 'loan' ? form.bank : '' })} />
+            {form.mode === 'loan' ? (
+              <>
+                <Text style={[common.label, s.gapTop]}>Bank</Text>
+                {bankOptions(form.bank).length ? bankOptions(form.bank).map((b) => {
+                  const on = String(form.bank) === String(b.id);
+                  return (
+                    <TouchableOpacity key={b.id} onPress={() => setForm({ ...form, bank: String(b.id) })} style={[s.bankRow, on && s.bankRowOn]} activeOpacity={0.8}>
+                      <Ionicons name={on ? 'radio-button-on' : 'radio-button-off'} size={18} color={on ? COLORS.link : COLORS.textTertiary} />
+                      <View style={s.flex}>
+                        <Text style={s.bankName}>{b.name}{b.account_no ? ` · ${b.account_no}` : ''}</Text>
+                        <Text style={s.bankBal}>Balance {rupee(b.balance)}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                }) : <Note tone="warn" text="No banks yet — add one in Bank Master first." />}
+                {formErr.bank ? <Text style={s.fieldErr}>{formErr.bank}</Text> : null}
+              </>
+            ) : null}
             <Text style={[common.label, s.gapTop]}>Remarks</Text>
             <TextInput style={common.input} value={form.remarks} onChangeText={(v) => setForm({ ...form, remarks: v })}
               placeholder="e.g. REC IN VISTARA HDFC" placeholderTextColor={COLORS.textTertiary} />
             <View style={s.sheetFoot}>
               <Button title="Cancel" variant="secondary" onPress={() => setForm(null)} disabled={saving} style={s.flex} />
               <Button title={form.id ? 'Update' : 'Record'} variant="primary" loading={saving} style={s.flex}
-                disabled={!form.paid_on || !(Number(form.amount) > 0)} onPress={saveReceipt} />
+                disabled={!form.paid_on || !(Number(form.amount) > 0) || (form.mode === 'loan' && !form.bank)} onPress={saveReceipt} />
             </View>
           </ScrollView>
         )}
@@ -315,8 +344,8 @@ export default function ARLedgerScreen({ navigation, route }) {
             {audit.rows === null ? <AppLoader label="Loading…" /> : audit.rows.map((a, i) => (
               <View key={i} style={s.auditItem}>
                 <Text style={s.auditMeta}>{{ create: 'Created', update: 'Edited', delete: 'Deleted' }[a.action]} by {a.changed_by || '—'} · {new Date(a.changed_at).toLocaleString('en-IN')}</Text>
-                {a.before ? <Text style={s.auditText}>Before: {rupee(a.before.amount)} · {formatDMY(a.before.paid_on)} · {MODE_LABEL[a.before.mode] || a.before.mode}{a.before.remarks ? ` · ${a.before.remarks}` : ''}</Text> : null}
-                {a.after ? <Text style={s.auditText}>After: {rupee(a.after.amount)} · {formatDMY(a.after.paid_on)} · {MODE_LABEL[a.after.mode] || a.after.mode}{a.after.remarks ? ` · ${a.after.remarks}` : ''}</Text> : null}
+                {a.before ? <Text style={s.auditText}>Before: {rupee(a.before.amount)} · {formatDMY(a.before.paid_on)} · {MODE_LABEL[a.before.mode] || a.before.mode}{a.before.bank ? ` · ${a.before.bank}` : ''}{a.before.remarks ? ` · ${a.before.remarks}` : ''}</Text> : null}
+                {a.after ? <Text style={s.auditText}>After: {rupee(a.after.amount)} · {formatDMY(a.after.paid_on)} · {MODE_LABEL[a.after.mode] || a.after.mode}{a.after.bank ? ` · ${a.after.bank}` : ''}{a.after.remarks ? ` · ${a.after.remarks}` : ''}</Text> : null}
               </View>
             ))}
             <Button title="Close" variant="secondary" onPress={() => setAudit(null)} full style={s.gapTop} />
@@ -374,6 +403,11 @@ function IconBtn({ icon, label, onPress, danger }) {
 }
 
 const s = StyleSheet.create({
+  bankRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1.5,
+             borderColor: COLORS.border, backgroundColor: COLORS.surface, marginTop: 8 },
+  bankRowOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
+  bankName: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  bankBal: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   flex: { flex: 1 },
   bold: { fontWeight: '800' },
   good: { color: COLORS.success },
