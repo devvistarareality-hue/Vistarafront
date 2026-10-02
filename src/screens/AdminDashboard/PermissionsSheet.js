@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { GROUPS } from '../../lib/moduleGroups';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS } from '../../constants/theme';
@@ -10,6 +11,11 @@ import FilterSelect from '../../components/FilterSelect';
 
 // Every module the system knows, and the short name the capability vocabulary
 // uses for AR. Mirrors the web editor, so the two offer the same list.
+// Departments that hold modules, and each module's display name (lib/moduleGroups).
+const DEPTS = GROUPS.filter((g) => g.parts.some((p) => p.module));
+const deptModules = (g) => g.parts.filter((p) => p.module).map((p) => p.module);
+const MODULE_TITLE = Object.fromEntries(GROUPS.flatMap((g) => g.parts.filter((p) => p.module).map((p) => [p.module, p.title])));
+
 const ALL_MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
                      'Task Allocation', 'Purchase', 'Land', 'Club 1000'];
 const ALIAS_MODULE = { 'Accounts Receivable': 'AR' };
@@ -181,7 +187,7 @@ export default function PermissionsSheet({ designation, others, visible, onClose
               return (
                 <View key={module} style={s.card}>
                   <View style={s.cardHead}>
-                    <Text style={s.cardTitle}>{module.toUpperCase()}</Text>
+                    <Text style={s.cardTitle}>{(MODULE_TITLE[module] || module).toUpperCase()}</Text>
                     <Text style={s.count}>{on} of {items.length}</Text>
                     <Pressable style={s.all} onPress={() => setCaps((prev) => (allOn
                       ? prev.filter((k) => !items.some((c) => c.key === k))
@@ -218,21 +224,28 @@ export default function PermissionsSheet({ designation, others, visible, onClose
                 <Text style={s.cardTitle}>WHICH MODULES THIS MENU ANSWERS FOR</Text>
                 <Text style={s.count}>{mine.length}</Text>
               </View>
-              <View style={s.chips}>
-                <View style={[s.chip, s.chipOn]}>
-                  <Ionicons name="checkmark" size={13} color={COLORS.link} />
-                  <Text style={[s.chipText, s.chipTextOn]}>{own}</Text>
-                </View>
-                {otherModules.map((m) => {
-                  const on = extra.includes(m);
-                  return (
-                    <Pressable key={m} style={[s.chip, on && s.chipOn]} onPress={() => toggleModule(m)}>
-                      {on ? <Ionicons name="checkmark" size={13} color={COLORS.link} /> : null}
-                      <Text style={[s.chipText, on && s.chipTextOn]}>{m}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              {/* Grouped by department (lib/moduleGroups), as on the home screen. */}
+              {DEPTS.map((g) => {
+                const mods = deptModules(g).filter((m) => m === own || otherModules.includes(m));
+                if (!mods.length) return null;
+                return (
+                  <View key={g.key} style={s.dept}>
+                    <Text style={s.deptName}>{g.title.toUpperCase()}</Text>
+                    <View style={s.chips}>
+                      {mods.map((m) => {
+                        const on = m === own || extra.includes(m);
+                        return (
+                          <Pressable key={m} disabled={m === own} onPress={() => toggleModule(m)}
+                            style={StyleSheet.compose(s.chip, on && s.chipOn)}>
+                            {on ? <Ionicons name="checkmark" size={13} color={COLORS.link} /> : null}
+                            <Text style={StyleSheet.compose(s.chipText, on && s.chipTextOn)}>{MODULE_TITLE[m] || m}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
               <Text style={s.note}>
                 A module not chosen here keeps its default menu for anyone holding it.
                 Choose one and its tabs appear below, all on — untick the ones this
@@ -242,7 +255,7 @@ export default function PermissionsSheet({ designation, others, visible, onClose
             {screensByModule.map(({ module, items }) => (
               <View key={module} style={s.card}>
                 <View style={s.cardHead}>
-                  <Text style={s.cardTitle}>{module.toUpperCase()}</Text>
+                  <Text style={s.cardTitle}>{(MODULE_TITLE[module] || module).toUpperCase()}</Text>
                   <Text style={s.count}>{items.filter((c) => screens.includes(c.key)).length} of {items.length}</Text>
                 </View>
                 <View style={s.chips}>
@@ -372,6 +385,8 @@ const s = StyleSheet.create({
   knob: { width: 17, height: 17, borderRadius: 999, backgroundColor: COLORS.surface },
   knobOn: { transform: [{ translateX: 17 }], backgroundColor: COLORS.textInverse },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  dept: { marginBottom: 10 },
+  deptName: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, color: COLORS.textSecondary, marginBottom: 6 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8,
           borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   chipOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },

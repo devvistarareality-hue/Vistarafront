@@ -107,7 +107,8 @@ export default function ARDashboardScreen({ navigation }) {
           {canSee(me, 'ar.screen.register') ? <Quick icon="book-outline" label="Register" onPress={() => go('ARRegister', { project })} /> : null}
           {canSee(me, 'ar.screen.import') ? <Quick icon="cloud-upload-outline" label="Import receipts" onPress={() => go('ARImport', { project: project.length === 1 ? project[0] : '' })} /> : null}
           {canSee(me, 'ar.screen.cancellations') ? <Quick icon="close-circle-outline" label="Cancellations" onPress={() => go('ARCancellations')} /> : null}
-          {canSee(me, 'ar.screen.banks') ? <Quick icon="business-outline" label="Bank Master" onPress={() => go('ARBanks')} /> : null}
+          {/* Bank Master belongs to the Accounts & Finance department, open to all of it. */}
+          <Quick icon="business-outline" label="Bank Master" onPress={() => go('ARBanks')} />
           {canSee(me, 'ar.screen.myteam') && (isManagerRole(me) || me?.role === 'Admin' || me?.is_staff)
             ? <Quick icon="people-circle-outline" label="My Team" onPress={() => go('MyTeam', { module: 'AR', title: 'My Team · AR' })} /> : null}
         </View>
