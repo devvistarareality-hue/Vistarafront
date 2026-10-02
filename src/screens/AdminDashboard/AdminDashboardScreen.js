@@ -13,23 +13,9 @@ import FilterSelect from '../../components/FilterSelect';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import ThemeToggle from '../../components/ThemeToggle';
 import { useImpersonating } from '../../lib/useImpersonating';
+import { groupsFor, openGroup } from '../../lib/moduleGroups';
+import { DepartmentCard } from '../../components/Departments';
 
-const ADMIN_MODULES = [
-  { name: 'User Management',    icon: 'account-cog-outline',  color: COLORS.navy, iconBg: COLORS.linkBg, screen: 'UserManagement',     params: undefined },
-  { name: 'Company Management', icon: 'domain',               color: COLORS.info, iconBg: COLORS.infoBg, screen: 'CompanyManagement',  params: undefined },
-  { name: 'Designation Master', icon: 'tag-multiple-outline', color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'DesignationMaster',  params: undefined },
-  { name: 'Activity Log',       icon: 'history',              color: COLORS.link, iconBg: COLORS.linkBg, screen: 'ActivityLog',        params: undefined },
-  { name: 'Data Backup',        icon: 'database-export',      color: COLORS.info, iconBg: COLORS.infoBg, screen: 'DataBackup',         params: undefined },
-  { name: 'Sales',              icon: 'storefront-outline',   color: COLORS.warningAlt, iconBg: COLORS.warningBg, screen: 'SalesCRM',           params: undefined },
-  { name: 'Channel Partner',    icon: 'handshake-outline',    color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'ChannelPartnerHub', params: undefined },
-  { name: 'HR',                 icon: 'account-group-outline',color: COLORS.link, iconBg: COLORS.linkBg, screen: 'ModuleHome',  params: { module: 'HR', name: 'HR' } },
-  { name: 'Accounts & Finance', icon: 'wallet-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ModuleHome',  params: { module: 'Accounts & Finance', name: 'Accounts & Finance' } },
-  { name: 'Accounts Receivable', icon: 'cash-multiple',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'ARDashboard', params: undefined },
-  { name: 'Task Allocation',    icon: 'wrench-outline',       color: COLORS.success, iconBg: COLORS.successBg, screen: 'TaskDashboard', params: undefined },
-  { name: 'Purchase',           icon: 'cart-outline',         color: COLORS.warning, iconBg: COLORS.warningBg, screen: 'ModuleHome',  params: { module: 'Purchase', name: 'Purchase' } },
-  { name: 'Land',               icon: 'terrain',              color: COLORS.purple, iconBg: COLORS.purpleBg, screen: 'ModuleHome',  params: { module: 'Land', name: 'Land' } },
-  { name: 'Club 1000',          icon: 'trending-up',          color: COLORS.success, iconBg: COLORS.green, screen: 'Club1000Hub', params: undefined },
-];
 
 export default function AdminDashboardScreen({ navigation }) {
   const viewingAs = useImpersonating();   // hide Logout while viewing as someone
@@ -38,6 +24,8 @@ export default function AdminDashboardScreen({ navigation }) {
   const { companies } = useSelector((s) => s.companies);
   const companyId = useSelector((s) => s.adminFilter.companyId);
   const isVRLAdmin = user?.role === 'Admin' && user?.company_code === 'VRL';
+  // Home shows departments (lib/moduleGroups) rather than every module.
+  const groups = groupsFor(user, true);
 
   useEffect(() => { if (isVRLAdmin) dispatch(fetchCompanies()); }, [isVRLAdmin]);
 
@@ -88,22 +76,10 @@ export default function AdminDashboardScreen({ navigation }) {
             />
           </View>
         )}
-        <Text style={s.sectionTitle}>ALL MODULES</Text>
-        <View style={s.grid}>
-          {ADMIN_MODULES.map((mod) => (
-            <TouchableOpacity
-              key={mod.name}
-              style={s.card}
-              onPress={() => navigation.navigate(mod.screen, mod.params)}
-              activeOpacity={0.8}
-            >
-              <View style={[s.iconBg, { backgroundColor: mod.iconBg }]}>
-                <MaterialCommunityIcons name={mod.icon} size={24} color={mod.color} />
-              </View>
-              <Text style={s.cardName} numberOfLines={2}>{mod.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={s.sectionTitle}>DEPARTMENTS</Text>
+        {groups.map((g) => (
+          <DepartmentCard key={g.key} group={g} onPress={() => openGroup(navigation, g, true)} />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );

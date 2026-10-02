@@ -71,6 +71,7 @@ import ARImportScreen    from '../screens/AR/ARImportScreen';
 import ARBanksScreen from '../screens/AR/ARBanksScreen';
 import ARBankStatementScreen from '../screens/AR/ARBankStatementScreen';
 import ARCancellationsScreen from '../screens/AR/ARCancellationsScreen';
+import DepartmentScreen from '../screens/Modulesscreen/DepartmentScreen';
 import ARCollectionsScreen from '../screens/AR/ARCollectionsScreen';
 
 // Task Allocation
@@ -180,6 +181,7 @@ const AppNavigator = () => {
             <Stack.Screen name="ARBanks" component={ARBanksScreen} />
             <Stack.Screen name="ARBankStatement" component={ARBankStatementScreen} />
             <Stack.Screen name="ARCancellations" component={ARCancellationsScreen} />
+            <Stack.Screen name="Department" component={DepartmentScreen} />
             <Stack.Screen name="ARCollections"       component={ARCollectionsScreen} />
             <Stack.Screen name="TaskDashboard"       component={TaskDashboardScreen} />
             <Stack.Screen name="TaskList"            component={TaskListScreen} />

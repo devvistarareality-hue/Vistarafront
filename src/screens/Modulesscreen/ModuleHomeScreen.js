@@ -42,6 +42,10 @@ export default function ModuleHomeScreen({ navigation, route }) {
     // be done from a desktop.
     ...(isAccounts && canSee(user, 'accounts.screen.approvals') ? [{ key: 'ModuleApprovals', label: 'Approvals', desc: 'Sign off bookings — the Accounts gate', icon: 'checkmark-done-outline',
       color: COLORS.success, bg: COLORS.success2, params: { module, name } }] : []),
+    // Bank Master belongs to the Accounts & Finance department (Receivables now,
+    // Payables next) — see lib/moduleGroups.
+    ...(isAccounts ? [{ key: 'ARBanks', label: 'Bank Master', desc: 'Your banks, balances and statements', icon: 'business-outline',
+      color: COLORS.info, bg: COLORS.infoBg }] : []),
     // Who changed what in this module, and when — real admins only.
     ...(isLogAdmin ? [{ key: 'ActivityLog', label: 'Log', desc: 'Who changed what, and when', icon: 'time-outline',
       color: COLORS.link, bg: COLORS.linkBg, params: { modules: [module], title: `${name} Log` } }] : []),

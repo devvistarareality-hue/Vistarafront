@@ -9,6 +9,8 @@ import { COLORS, SHADOWS, withAlpha } from '../../constants/theme';
 import ThemeToggle from '../../components/ThemeToggle';
 import AppLoader from '../../components/AppLoader';
 import { FadeInUp } from '../../components/ui';
+import { groupsFor, openGroup } from '../../lib/moduleGroups';
+import { DepartmentCard } from '../../components/Departments';
 
 // Each module's card — same titles, descriptions and tones as the website portal.
 const MODULE_CONFIG = {
@@ -49,22 +51,24 @@ const ModulesScreen = () => {
     .filter((m) => MODULE_CONFIG[m])
     .map((m) => ({ key: m, ...MODULE_CONFIG[m] }));
 
-  // Single-module users (e.g. Sales-only) skip this list and go straight to their
-  // module. useFocusEffect (not useEffect) so it re-fires every time the screen is
+  // Home shows departments (lib/moduleGroups): Sales, Accounts & Finance, HR… each
+  // holding its modules. Single-module users (e.g. Sales-only) skip this list and go
+  // straight to their module.
+  const groups = groupsFor(user, false);
+  const onlyPart = groups.length === 1 && groups[0].modules.length === 1 ? groups[0].modules[0] : null;
+  // useFocusEffect (not useEffect) so it re-fires every time the screen is
   // focused — including when navigating BACK to it — instead of leaving a blank
   // screen because the mount-only effect never re-ran.
   useFocusEffect(
     useCallback(() => {
-      if (userModules.length === 1) {
-        navigation.replace(userModules[0].screen, userModules[0].getParams(user));
-      }
-    }, [userModules.length])
+      if (onlyPart) navigation.replace(onlyPart.screen, onlyPart.params);
+    }, [onlyPart?.key])
   );
 
   const today = useMemo(() => new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }), []);
 
   // Never render blank: show a brief loader while the redirect above runs.
-  if (userModules.length === 1) {
+  if (onlyPart) {
     return (
       <SafeAreaView style={s.center}>
         <AppLoader size={0.7} />
@@ -98,33 +102,21 @@ const ModulesScreen = () => {
         </LinearGradient>
 
         <View style={s.sectionHead}>
-          <Text style={s.sectionTitle}>Your modules</Text>
+          <Text style={s.sectionTitle}>Your departments</Text>
           <Text style={s.sectionSub}>Pick where you want to work</Text>
         </View>
 
-        {userModules.length === 0 ? (
+        {groups.length === 0 ? (
           <View style={s.empty}>
             <View style={s.emptyIcon}><Ionicons name="cube-outline" size={30} color={COLORS.textSecondary} /></View>
             <Text style={s.emptyTitle}>No modules assigned yet</Text>
             <Text style={s.emptyText}>Ask your administrator to give you access to a module.</Text>
           </View>
-        ) : userModules.map((mod, idx) => {
-          const t = TONES[mod.tone];
-          return (
-            <FadeInUp key={mod.key} index={idx}>
-              <TouchableOpacity activeOpacity={0.85} style={s.card} onPress={() => navigation.navigate(mod.screen, mod.getParams(user))}>
-                <View style={[s.icon, { backgroundColor: t.bg, borderColor: withAlpha(t.fg, '30') }]}>{/* inline-ok: module tone */}
-                  <Ionicons name={mod.icon} size={24} color={t.fg} />
-                </View>
-                <View style={s.cardBody}>
-                  <Text style={s.cardTitle} numberOfLines={1}>{mod.title}</Text>
-                  <Text style={s.cardDesc} numberOfLines={2}>{mod.desc}</Text>
-                </View>
-                <View style={s.go}><Ionicons name="arrow-forward" size={17} color={t.fg} /></View>
-              </TouchableOpacity>
-            </FadeInUp>
-          );
-        })}
+        ) : groups.map((g, idx) => (
+          <FadeInUp key={g.key} index={idx}>
+            <DepartmentCard group={g} onPress={() => openGroup(navigation, g, false)} />
+          </FadeInUp>
+        ))}
 
         {mayBackUp ? (
           <>
