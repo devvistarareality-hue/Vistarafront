@@ -404,16 +404,49 @@ export function PartnerActivitySheet({ visible, partner, companyId, onClose }) {
 
 /* --------------------------------------------- whole company: a tab panel */
 
+// Mirrors the CP Leads half of each screen one-for-one, using this side's own
+// statuses. "Today's" and "Overdue" are derived from scheduled_at rather than
+// stored, exactly as they are over there.
+const PANEL_TABS = {
+  fu: [
+    { key: 'today', label: "Today's" },
+    { key: 'overdue', label: 'Overdue' },
+    { key: 'pending', label: 'All Pending' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'all', label: 'All' },
+  ],
+  sv: [
+    { key: 'today', label: "Today's" },
+    { key: 'scheduled', label: 'Scheduled' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'no_show', label: 'No Show' },
+    { key: 'cancelled', label: 'Cancelled' },
+    { key: 'all', label: 'All' },
+  ],
+};
+
+const dayOf = (v) => {
+  if (!v) return '';
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? String(v).slice(0, 10) : d.toLocaleDateString('en-CA');
+};
+
 /**
- * `kind` is 'fu' or 'sv'. This is the CP Details half of the Follow-Ups and Site
- * Visits screens — the partners themselves, where the CP Leads half shows the
- * work against their leads.
+ * `kind` is 'fu' or 'sv'. The CP Details half of the Follow-Ups and Site Visits
+ * screens — the partners themselves, where the CP Leads half shows the work
+ * against their leads.
+ *
+ * Laid out to match that half: same status tab strip, same search box, same
+ * card list. The one thing missing is the outcome filter — a partner has no
+ * hot/warm/cold.
  */
 export function PartnerActivityPanel({ kind, companyId }) {
   const { rows, loading, reload } = useActivity({ kind, companyId });
   const [partners, setPartners] = useState([]);
   const [adding, setAdding] = useState(false);
-  const [status, setStatus] = useState('');
+  const [tab, setTab] = useState(kind === 'fu' ? 'pending' : 'scheduled');
+  const [q, setQ] = useState('');
+  const [proj, setProj] = useState('');
 
   // Needed to schedule from here, where no partner is preselected.
   useEffect(() => {
@@ -429,23 +462,45 @@ export function PartnerActivityPanel({ kind, companyId }) {
     })();
   }, [companyId]);
 
-  const statuses = kind === 'fu' ? FU_STATUS : SV_STATUS;
-  const due = rows.filter((r) => r.status === OPEN_STATUS[kind]).length;
-  const shown = useMemo(
-    () => (status ? rows.filter((r) => r.status === status) : rows),
-    [rows, status],
-  );
+  // Options come from every row, not the filtered set, so picking one project
+  // never removes the others from the dropdown.
+  const projOptions = useMemo(() => {
+    if (kind !== 'sv') return [];
+    return [...new Set(rows.map((r) => r.project_name).filter(Boolean))].sort();
+  }, [rows, kind]);
+
+  const visible = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const today = new Date().toLocaleDateString('en-CA');
+    return rows.filter((r) => {
+      const day = dayOf(r.scheduled_at);
+      if (tab === 'today') { if (day !== today) return false; }
+      else if (tab === 'overdue') {
+        if (r.status !== OPEN_STATUS[kind] || !r.scheduled_at) return false;
+        if (new Date(r.scheduled_at) >= new Date()) return false;
+      } else if (tab === 'pending') { if (r.status !== OPEN_STATUS[kind]) return false; }
+      else if (tab !== 'all' && r.status !== tab) return false;
+
+      if (proj && r.project_name !== proj) return false;
+      if (needle && ![r.partner_name, r.partner_firm, r.project_name, r.remarks]
+        .some((v) => String(v || '').toLowerCase().includes(needle))) return false;
+      return true;
+    });
+  }, [rows, tab, q, proj, kind]);
+
+  const narrowed = !!(q.trim() || proj);
+  const noun = kind === 'fu' ? 'follow-up' : 'site visit';
   const done = () => { setAdding(false); reload(); };
 
   return (
-    <ScrollView contentContainerStyle={st.panel} keyboardShouldPersistTaps="handled">
+    <View style={st.flex1}>
       <View style={st.panelHead}>
         <View style={st.flex1}>
           <Text style={st.panelTitle}>
             {kind === 'fu' ? 'Partner Follow-Ups' : 'Partner Site Visits'}
           </Text>
           <Text style={st.panelSub}>
-            {rows.length} with the partners themselves{due ? ` · ${due} still open` : ''}
+            {visible.length} {noun}{visible.length === 1 ? '' : 's'}
           </Text>
         </View>
         {!adding && (
@@ -456,29 +511,59 @@ export function PartnerActivityPanel({ kind, companyId }) {
         )}
       </View>
 
-      {adding && (
-        <ScheduleForm kind={kind} partners={partners} companyId={companyId}
-          onDone={done} onCancel={() => setAdding(false)} />
-      )}
+      <View style={common.tabBarScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={st.tabStrip}>
+          {PANEL_TABS[kind].map((t) => {
+            const on = tab === t.key;
+            return (
+              <TouchableOpacity key={t.key} onPress={() => setTab(t.key)}
+                style={[st.panelTab, on && st.panelTabOn]}>
+                <Text style={[st.panelTabText, on && st.panelTabTextOn]}>{t.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
-      <FilterSelect label="All statuses" value={status} onChange={setStatus}
-        options={[{ value: '', label: 'All statuses' },
-                  ...Object.entries(statuses).map(([v, s]) => ({ value: v, label: s.label }))]}
-        style={st.select} />
+      <ScrollView contentContainerStyle={st.panel} keyboardShouldPersistTaps="handled">
+        {adding && (
+          <ScheduleForm kind={kind} partners={partners} companyId={companyId}
+            onDone={done} onCancel={() => setAdding(false)} />
+        )}
 
-      {loading ? (
-        <AppLoader style={st.loader} />
-      ) : rows.length === 0 ? (
-        <Text style={st.empty}>
-          Nothing scheduled with any partner yet. Use Schedule above, or open a
-          partner under CP Details on All Leads.
-        </Text>
-      ) : shown.length === 0 ? (
-        <Text style={st.empty}>Nothing matches that filter.</Text>
-      ) : shown.map((row) => (
-        <ActivityCard key={row.id} kind={kind} row={row} showPartner onChanged={reload} />
-      ))}
-    </ScrollView>
+        <TextInput value={q} onChangeText={setQ}
+          placeholder={kind === 'fu' ? 'Search partner, firm or remarks…' : 'Search partner, firm or project…'}
+          placeholderTextColor={COLORS.textTertiary}
+          style={[common.input, st.panelSearch]} />
+
+        {projOptions.length > 1 && (
+          <FilterSelect label="All Projects" value={proj} onChange={setProj}
+            options={[{ value: '', label: 'All Projects' },
+                      ...projOptions.map((n) => ({ value: n, label: n }))]}
+            style={st.select} />
+        )}
+
+        {loading ? (
+          <AppLoader style={st.loader} />
+        ) : visible.length === 0 ? (
+          <View style={st.blank}>
+            <Ionicons name={kind === 'fu' ? 'calendar-outline' : 'location-outline'}
+              size={40} color={COLORS.border} />
+            <Text style={st.blankTitle}>
+              {narrowed ? `No ${noun}s match these filters` : `No partner ${noun}s`}
+            </Text>
+            <Text style={st.blankSub}>
+              {narrowed
+                ? 'Try another tab or clear the search.'
+                : 'Schedule one above, or open a partner in the directory.'}
+            </Text>
+          </View>
+        ) : visible.map((row) => (
+          <ActivityCard key={row.id} kind={kind} row={row} showPartner onChanged={reload} />
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -535,7 +620,17 @@ const st = StyleSheet.create({
   tabTextOn: { color: COLORS.link },
 
   panel: { padding: 16, paddingBottom: 40 },
-  panelHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+  tabStrip: { paddingHorizontal: 8 },
+  panelTab: { paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  panelTabOn: { borderBottomColor: COLORS.link },
+  panelTabText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  panelTabTextOn: { color: COLORS.link },
+  panelSearch: { marginBottom: 12 },
+  blank: { alignItems: 'center', paddingVertical: 48 },
+  blankTitle: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary, marginTop: 12 },
+  blankSub: { fontSize: 13, color: COLORS.textTertiary, marginTop: 4, textAlign: 'center' },
+  panelHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+               paddingHorizontal: 16, paddingBottom: 12 },
   panelTitle: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
   panelSub: { fontSize: 12.5, color: COLORS.textSecondary, marginTop: 3 },
   scheduleBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14,
