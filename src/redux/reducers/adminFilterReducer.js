@@ -31,11 +31,17 @@ export const setAdminCompany = (companyId) => async (dispatch) => {
 };
 
 // Thunk: read persisted choice from AsyncStorage on app launch
-export const restoreAdminFilter = () => async (dispatch) => {
+export const restoreAdminFilter = () => async (dispatch, getState) => {
   try {
     const saved = await AsyncStorage.getItem(STORAGE_KEY);
-    if (saved !== null) {
-      dispatch({ type: SET_ADMIN_COMPANY, payload: parseInt(saved, 10) });
+    if (saved === null) return;
+    // The company list may already be loaded: a saved company not in it is stale
+    // (see companiesActions.dropMissingAdminCompany) — forget it, don't apply it.
+    const list = getState?.().companies?.companies;
+    if (Array.isArray(list) && list.length && !list.some((c) => String(c.id) === String(saved))) {
+      dispatch(setAdminCompany(null));
+      return;
     }
+    dispatch({ type: SET_ADMIN_COMPANY, payload: parseInt(saved, 10) });
   } catch {}
 };

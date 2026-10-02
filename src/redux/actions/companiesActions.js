@@ -1,5 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COMPANY_ENDPOINTS } from '../../constants/api';
+import { setAdminCompany } from '../reducers/adminFilterReducer';
+
+// A saved "Viewing company" that is not in the company list (deleted, or saved on
+// this device against a different database) filtered every screen down to nothing.
+// Once the real list is in, such a choice is dropped back to All Companies — as on
+// the web.
+export const dropMissingAdminCompany = () => (dispatch, getState) => {
+  const { companyId } = getState().adminFilter || {};
+  const list = getState().companies?.companies;
+  if (companyId == null || !Array.isArray(list) || !list.length) return;
+  if (!list.some((c) => String(c.id) === String(companyId))) dispatch(setAdminCompany(null));
+};
 import {
   COMPANIES_FETCH_REQUEST, COMPANIES_FETCH_SUCCESS, COMPANIES_FETCH_FAILURE,
   COMPANY_UPDATE_REQUEST, COMPANY_UPDATE_SUCCESS, COMPANY_UPDATE_FAILURE, COMPANY_UPDATE_RESET,
@@ -20,6 +32,7 @@ export const fetchCompanies = () => async (dispatch) => {
     const data    = await res.json();
     if (res.ok) {
       dispatch({ type: COMPANIES_FETCH_SUCCESS, payload: data });
+      dispatch(dropMissingAdminCompany());
     } else {
       dispatch({ type: COMPANIES_FETCH_FAILURE, payload: data.detail || 'Failed to load companies.' });
     }
