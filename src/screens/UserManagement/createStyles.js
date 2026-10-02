@@ -33,6 +33,7 @@ export default StyleSheet.create({
 
   /* Module pills */
   pillGrid:           { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  deptLabel:          { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: COLORS.textSecondary, marginTop: 10, marginBottom: 6 },
   modulePill:         { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 22, backgroundColor: COLORS.cardBg, borderWidth: 1.5, borderColor: COLORS.divider },
   modulePillActive:   { backgroundColor: COLORS.btnTint, borderColor: COLORS.btnBorder },
   modulePillText:     { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },

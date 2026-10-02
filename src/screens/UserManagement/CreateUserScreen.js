@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { GROUPS } from '../../lib/moduleGroups';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StatusBar, ActivityIndicator, Alert, Modal, FlatList,
+  StatusBar, ActivityIndicator, Alert, Modal, FlatList, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -74,6 +75,10 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
 }
 const MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
                  'Task Allocation', 'Purchase', 'Land', 'Club 1000'];
+// Departments that hold modules (lib/moduleGroups), and each module's display name.
+const DEPTS = GROUPS.filter((g) => g.parts.some((p) => p.module));
+const deptModules = (g) => g.parts.filter((p) => p.module).map((p) => p.module);
+const MODULE_TITLE = Object.fromEntries(GROUPS.flatMap((g) => g.parts.filter((p) => p.module).map((p) => [p.module, p.title])));
 
 const MODULE_ICONS = {
   'AR': 'cash-multiple',
@@ -428,17 +433,23 @@ export default function CreateUserScreen({ navigation, route }) {
 
         {/* Module Access */}
         <Text style={styles.label}>MODULE ACCESS</Text>
-        <View style={styles.pillGrid}>
-          {MODULES.map((mod) => {
-            const sel = modules.includes(mod);
-            return (
-              <TouchableOpacity key={mod} style={[styles.modulePill, sel && styles.modulePillActive]} onPress={() => toggleModule(mod)}>
-                <MaterialCommunityIcons name={MODULE_ICONS[mod] || 'circle'} size={13} color={sel ? COLORS.white : COLORS.textSecondary} />
-                <Text style={[styles.modulePillText, sel && styles.modulePillTextActive]}>{mod}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* Grouped by department (lib/moduleGroups); access is still per module. */}
+        {DEPTS.map((g) => (
+          <View key={g.key}>
+            <Text style={styles.deptLabel}>{g.title}</Text>
+            <View style={styles.pillGrid}>
+              {deptModules(g).map((mod) => {
+                const sel = modules.includes(mod);
+                return (
+                  <TouchableOpacity key={mod} style={StyleSheet.compose(styles.modulePill, sel && styles.modulePillActive)} onPress={() => toggleModule(mod)}>
+                    <MaterialCommunityIcons name={MODULE_ICONS[mod] || 'circle'} size={13} color={sel ? COLORS.white : COLORS.textSecondary} />
+                    <Text style={StyleSheet.compose(styles.modulePillText, sel && styles.modulePillTextActive)}>{MODULE_TITLE[mod] || mod}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        ))}
 
         {/* Designation — shown after module selection */}
         <Text style={styles.label}>DESIGNATION</Text>
@@ -520,17 +531,22 @@ export default function CreateUserScreen({ navigation, route }) {
           <>
             <Text style={styles.label}>ADMIN ACCESS</Text>
             <Text style={styles.managerSubtitle}>Grant admin-level control over selected modules</Text>
-            <View style={styles.pillGrid}>
-              {MODULES.map((mod) => {
-                const isAdmin = adminModules.includes(mod);
-                return (
-                  <TouchableOpacity key={mod} style={[styles.adminPill, isAdmin && styles.adminPillActive]} onPress={() => toggleAdmin(mod)}>
-                    <Ionicons name="shield-outline" size={13} color={isAdmin ? COLORS.white : COLORS.textSecondary} />
-                    <Text style={[styles.adminPillText, isAdmin && styles.adminPillTextActive]}>{mod}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {DEPTS.map((g) => (
+              <View key={g.key}>
+                <Text style={styles.deptLabel}>{g.title}</Text>
+                <View style={styles.pillGrid}>
+                  {deptModules(g).map((mod) => {
+                    const isAdmin = adminModules.includes(mod);
+                    return (
+                      <TouchableOpacity key={mod} style={StyleSheet.compose(styles.adminPill, isAdmin && styles.adminPillActive)} onPress={() => toggleAdmin(mod)}>
+                        <Ionicons name="shield-outline" size={13} color={isAdmin ? COLORS.white : COLORS.textSecondary} />
+                        <Text style={StyleSheet.compose(styles.adminPillText, isAdmin && styles.adminPillTextActive)}>{MODULE_TITLE[mod] || mod}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
           </>
         )}
 
