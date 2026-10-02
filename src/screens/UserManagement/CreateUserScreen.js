@@ -209,7 +209,6 @@ export default function CreateUserScreen({ navigation, route }) {
 
   const toggleModule  = (mod) => setModules((p) => p.includes(mod) ? p.filter((m) => m !== mod) : [...p, mod]);
   const toggleManager = (mod) => setManagerModules((p) => p.includes(mod) ? p.filter((m) => m !== mod) : [...p, mod]);
-  const toggleAdmin   = (mod) => setAdminModules((p) => p.includes(mod) ? p.filter((m) => m !== mod) : [...p, mod]);
 
   const handleSubmit = () => {
     if (!name.trim())                               return Alert.alert('Validation', 'Full name is required.');
@@ -526,29 +525,6 @@ export default function CreateUserScreen({ navigation, route }) {
           </>
         )}
 
-        {/* Admin Access — only for Managers */}
-        {isManagerRole({ role }) && (
-          <>
-            <Text style={styles.label}>ADMIN ACCESS</Text>
-            <Text style={styles.managerSubtitle}>Grant admin-level control over selected modules</Text>
-            {DEPTS.map((g) => (
-              <View key={g.key}>
-                <Text style={styles.deptLabel}>{g.title}</Text>
-                <View style={styles.pillGrid}>
-                  {deptModules(g).map((mod) => {
-                    const isAdmin = adminModules.includes(mod);
-                    return (
-                      <TouchableOpacity key={mod} style={StyleSheet.compose(styles.adminPill, isAdmin && styles.adminPillActive)} onPress={() => toggleAdmin(mod)}>
-                        <Ionicons name="shield-outline" size={13} color={isAdmin ? COLORS.white : COLORS.textSecondary} />
-                        <Text style={StyleSheet.compose(styles.adminPillText, isAdmin && styles.adminPillTextActive)}>{MODULE_TITLE[mod] || mod}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            ))}
-          </>
-        )}
 
         {/* Data Access — the Sales module's booking export: every approved deal in the
             company, Sales and CP together, with all its commercial figures. Kept apart
