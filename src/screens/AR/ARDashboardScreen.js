@@ -15,6 +15,7 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { inrShort, AGE_LABELS, ISSUES, today, withCompany, DateField } from './arShared';
+import { Segmented, Button } from '../../components/ui';
 
 const ISSUE_TEXT = {
   no_schedule: 'No installment schedule — Sales needs to add one',
@@ -37,6 +38,7 @@ export default function ARDashboardScreen({ navigation }) {
   const [projects, setProjects] = useState([]);
   const [err, setErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [view, setView] = useState('overall');   // 'overall' | 'projects' — as on the web
 
   useEffect(() => {
     apiFetch(`${BASE_URL}/api/auth/designations/capabilities/`)
@@ -98,6 +100,8 @@ export default function ARDashboardScreen({ navigation }) {
             options={projects.map((p) => ({ value: String(p.id), label: p.name }))} />
           <DateField compact maxToday value={asOf} onChange={(d) => setAsOf(d || today())} style={s.asOf} />
         </View>
+        <Segmented options={[{ value: 'overall', label: 'Overall' }, { value: 'projects', label: 'Project-wise' }]}
+          value={view} onChange={setView} style={s.viewSeg} />
         <View style={s.quick}>
           {canSee(me, 'ar.screen.collections') ? <Quick icon="notifications-outline" label="Collections" onPress={() => go('ARCollections', { project })} /> : null}
           {canSee(me, 'ar.screen.register') ? <Quick icon="book-outline" label="Register" onPress={() => go('ARRegister', { project })} /> : null}
@@ -108,7 +112,10 @@ export default function ARDashboardScreen({ navigation }) {
             ? <Quick icon="people-circle-outline" label="My Team" onPress={() => go('MyTeam', { module: 'AR', title: 'My Team · AR' })} /> : null}
         </View>
 
-        {data === null && !err ? <AppLoader label="Calculating the receivables book…" /> : err && !data ? <LoadError message={err} onRetry={load} /> : (
+        {data === null && !err ? <AppLoader label="Calculating the receivables book…" /> : err && !data ? <LoadError message={err} onRetry={load} /> : view === 'projects' ? (
+          <ProjectWise data={data} onOpen={(id) => { setProject([String(id)]); setView('overall'); }}
+            onRegister={(id) => go('ARRegister', { project: [String(id)] })} />
+        ) : (
           <>
             <LinearGradient colors={COLORS.heroScene} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
               <View style={s.heroGlow} />
@@ -264,7 +271,87 @@ function initials(name) {
   return ((parts[0]?.[0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '—';
 }
 
+// Project-wise: every project's receivables side by side (mirrors the web).
+function ProjectWise({ data, onOpen, onRegister }) {
+  const rows = data.by_project || [];
+  if (!rows.length) return <Text style={s.pwEmpty}>No active accounts.</Text>;
+  return (
+    <View>
+      {rows.map((p) => {
+        const age = p.ageing || {};
+        const worst = AGE_LABELS.map((k, i) => [k, i, age[k] || 0]).filter((x) => x[2] > 0).slice(-3).reverse();
+        return (
+          <View key={p.id} style={[common.card, s.pwCard]}>
+            <View style={s.pwHead}>
+              <View style={s.flex}>
+                <Text style={s.pwName} numberOfLines={1}>{p.name}</Text>
+                <Text style={s.pwSub}>{p.accounts} accounts · {p.overdue_accounts} overdue</Text>
+              </View>
+              <View style={s.pwTotal}>
+                <Text style={s.pwTotalLabel}>TOTAL RECEIVABLE</Text>
+                <Text style={s.pwTotalValue}>{inrShort(p.totals.os_with_interest)}</Text>
+              </View>
+            </View>
+            <View style={s.pwTrack}><View style={[s.pwFill, { width: `${Math.min(100, p.pct_realised)}%` }]} /></View>{/* inline-ok: collected % from data */}
+            <Text style={s.pwCollected}>{p.pct_realised}% collected · {inrShort(p.totals.received)} of {inrShort(p.totals.collectable)}</Text>
+            <View style={s.pwStats}>
+              <PwStat k="Overdue" v={inrShort(p.totals.overdue)} bad />
+              <PwStat k="Not yet due" v={inrShort(p.totals.not_due)} />
+              <PwStat k="Interest" v={inrShort(p.totals.net_interest)} />
+              <PwStat k=">180 days" v={age['>180'] ? inrShort(age['>180']) : '—'} bad={!!age['>180']} />
+            </View>
+            <View style={s.stack}>
+              {AGE_LABELS.map((a, i) => age[a] > 0 && <View key={a} style={[s.seg, { flex: age[a], backgroundColor: AGE_COLORS[i] }]} />)}{/* inline-ok: segment share and colour from data */}
+            </View>
+            <View style={s.pwLegend}>
+              {worst.length ? worst.map(([k, i, v]) => (
+                <View key={k} style={s.pwLegendItem}>
+                  <View style={[s.dot, { backgroundColor: AGE_COLORS[i] }]} />{/* inline-ok: bucket colour */}
+                  <Text style={s.pwLegendText}>{k} days · {inrShort(v)}</Text>
+                </View>
+              )) : <Text style={s.pwLegendText}>Nothing overdue</Text>}
+            </View>
+            <View style={s.pwActions}>
+              <Button title="Register" size="sm" variant="secondary" onPress={() => onRegister(p.id)} />
+              <Button title="Open dashboard" size="sm" variant="primary" onPress={() => onOpen(p.id)} />
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function PwStat({ k, v, bad }) {
+  return (
+    <View style={s.flex}>
+      <Text style={s.pwStatK}>{k}</Text>
+      <Text style={[s.pwStatV, bad && s.pwBad]} numberOfLines={1}>{v}</Text>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
+  viewSeg: { marginBottom: 12 },
+  pwEmpty: { textAlign: 'center', color: COLORS.textSecondary, marginTop: 30 },
+  pwCard: { padding: 16, marginBottom: 12 },
+  pwHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
+  pwName: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
+  pwSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  pwTotal: { alignItems: 'flex-end' },
+  pwTotalLabel: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.6, color: COLORS.textSecondary },
+  pwTotalValue: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
+  pwTrack: { height: 7, borderRadius: 999, backgroundColor: COLORS.surfaceAlt, overflow: 'hidden' },
+  pwFill: { height: '100%', borderRadius: 999, backgroundColor: COLORS.success },
+  pwCollected: { fontSize: 12, color: COLORS.textSecondary, marginTop: 5 },
+  pwStats: { flexDirection: 'row', gap: 8, paddingVertical: 12, marginVertical: 10, borderTopWidth: 1, borderBottomWidth: 1, borderColor: COLORS.surfaceAlt },
+  pwStatK: { fontSize: 10, fontWeight: '700', color: COLORS.textSecondary },
+  pwStatV: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary, marginTop: 3 },
+  pwBad: { color: COLORS.error },
+  pwLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  pwLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pwLegendText: { fontSize: 11.5, color: COLORS.textSecondary },
+  pwActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end', marginTop: 12 },
   flex: { flex: 1 },
   bad: { color: COLORS.error },
   warn: { color: COLORS.warning },
