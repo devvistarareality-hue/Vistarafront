@@ -101,10 +101,11 @@ export default function ARBanksScreen({ navigation }) {
             <Text style={s.empty}>No banks yet.{canManage ? ' Tap Add to enter your first bank with its opening balance.' : ''}</Text>
           ) : rows.map((b) => (
             <View key={b.id} style={[common.card, s.card, !b.is_active && s.retired]}>
-              <View style={s.row}>
+              <TouchableOpacity style={s.row} activeOpacity={0.7} onPress={() => navigation.navigate('ARBankStatement', { id: b.id, name: b.name })}>
                 <Text style={s.name} numberOfLines={1}>{b.name}</Text>
                 {!b.is_active ? <Text style={s.retiredTag}>Retired</Text> : null}
-              </View>
+                <Text style={s.stmtLink}>Statement ›</Text>
+              </TouchableOpacity>
               {b.account_no ? <Text style={s.sub}>A/c {b.account_no}</Text> : null}
               <View style={s.nums}>
                 <View style={s.flex}><Text style={s.numLabel}>Opening</Text><Text style={s.numValue}>{rupee(b.opening_balance)}</Text></View>
@@ -171,6 +172,7 @@ const s = StyleSheet.create({
   numLabel: { fontSize: 11, color: COLORS.textSecondary },
   numValue: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginTop: 2 },
   balance: { color: COLORS.success },
+  stmtLink: { fontSize: 13, fontWeight: '700', color: COLORS.link },
   actions: { flexDirection: 'row', gap: 10, marginTop: 14 },
   sheetScroll: { flexShrink: 1 },
   sheetBody: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
