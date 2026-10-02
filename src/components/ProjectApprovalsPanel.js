@@ -31,6 +31,9 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
   const [cfgOpen, setCfgOpen] = useState(false);
   const [approvers, setApprovers] = useState([]);
   const [people, setPeople] = useState([]);
+  // Tapping a row opens what is being approved. Approving a project you cannot
+  // see the details of is a rubber stamp, not a decision.
+  const [openId, setOpenId] = useState(null);
   const [rejecting, setRejecting] = useState(null);
   const [reason, setReason] = useState('');
 
@@ -138,6 +141,7 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
         </Text>
       ) : shown.map((p) => {
         const st = p.approval_status || 'approved';
+        const open = openId === p.id;
         return (
           <View key={p.id} style={pa.row}>
             <View style={pa.rowHead}>
@@ -152,10 +156,52 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
             </View>
             <Text style={pa.rowMeta}>
               {(p.location || '—')} · {p.project_type}
-              {st === 'rejected' && p.rejected_reason ? ` · ${p.rejected_reason}` : ''}
+              {p.total_plots ? ` · ${p.total_plots} units` : ''}
             </Text>
-            {st === 'pending' && (
-              <View style={pa.actions}>
+            <Text style={pa.rowMeta2}>
+              Added by {p.created_by_name || '—'}
+            </Text>
+            {st === 'rejected' && p.rejected_reason ? (
+              <View style={pa.reason}>
+                <Text style={pa.reasonTitle}>
+                  Rejected{p.approved_by_name ? ` · ${p.approved_by_name}` : ''}
+                </Text>
+                <Text style={pa.reasonBody}>{p.rejected_reason}</Text>
+              </View>
+            ) : null}
+            {st === 'approved' && p.approved_by_name ? (
+              <Text style={pa.decided}>Approved by {p.approved_by_name}</Text>
+            ) : null}
+
+            {open && (
+              <View style={pa.detail}>
+                {[
+                  ['Tagline', p.tagline],
+                  ['Pricing model', p.formula_set],
+                  ['Layout', p.floor_wise
+                    ? (p.block_industrial ? 'Block-wise industrial' : 'Floor-wise (tower)')
+                    : 'Plotted scheme'],
+                  ['RERA number', p.rera],
+                  ['Total area', p.total_area],
+                  ['Price range', p.price_range],
+                  ['Possession', p.possession],
+                  ['Units mapped', p.plot_counts ? String(p.plot_counts.total ?? 0) : '0'],
+                  ['Kiosk self-booking', p.kiosk_enabled ? 'Enabled' : 'Off'],
+                  ['Added by', p.created_by_name],
+                  ['Description', p.description],
+                ].map(([label, value]) => (
+                  <View key={label} style={pa.field}>
+                    <Text style={pa.fieldLabel}>{label}</Text>
+                    <Text style={pa.fieldValue}>{value || '—'}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            <View style={pa.actions}>
+              <TouchableOpacity onPress={() => setOpenId(open ? null : p.id)} style={[pa.btn, pa.btnLink]}>
+                <Text style={pa.btnLinkText}>{open ? '▴ Hide Details' : '▾ View Details'}</Text>
+              </TouchableOpacity>
+              {st === 'pending' && (<>
                 <TouchableOpacity onPress={() => act(p, 'approve')} disabled={busy === p.id}
                   style={[pa.btn, pa.btnOk]}>
                   {busy === p.id ? <ActivityIndicator color={COLORS.btnTextSuccess} />
@@ -165,8 +211,8 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
                   style={[pa.btn, pa.btnBad]}>
                   <Text style={pa.btnBadText}>Reject</Text>
                 </TouchableOpacity>
-              </View>
-            )}
+              </>)}
+            </View>
           </View>
         );
       })}
@@ -216,8 +262,22 @@ const pa = StyleSheet.create({
 
   row: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 14, marginBottom: 10, ...CARD_SHADOW },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  detail: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
+  field: { marginBottom: 10 },
+  fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase',
+                color: COLORS.textTertiary },
+  fieldValue: { fontSize: 13, color: COLORS.textPrimary, marginTop: 2, lineHeight: 18 },
   rowName: { flex: 1, fontSize: 14, fontWeight: '800', color: COLORS.textPrimary },
   rowMeta: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 4, lineHeight: 17 },
+  rowMeta2: { fontSize: 11.5, color: COLORS.textTertiary, marginTop: 3 },
+  decided: { fontSize: 11.5, color: COLORS.success, marginTop: 4, fontWeight: '600' },
+  reason: { marginTop: 10, backgroundColor: COLORS.errorBg, borderWidth: 1,
+            borderColor: COLORS.error, borderRadius: 14, padding: 10 },
+  reasonTitle: { fontSize: 10.5, fontWeight: '800', color: COLORS.error,
+                 textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 },
+  reasonBody: { fontSize: 12.5, color: COLORS.textPrimary },
+  btnLink: { backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.border },
+  btnLinkText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: 13 },
   badge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
   badgeText: { fontSize: 10, fontWeight: '800' },
   badgePending: { backgroundColor: COLORS.warningBg },
