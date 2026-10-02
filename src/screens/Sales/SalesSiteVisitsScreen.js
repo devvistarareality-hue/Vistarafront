@@ -18,6 +18,8 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import common from '../../styles/common';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
+import { PartnerActivityPanel } from '../../components/PartnerActivity';
+import CpTabs from '../../components/CpTabs';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -54,6 +56,9 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
   const cpOnly = !!route?.params?.cpOnly;
+  // Which half of the CP module this screen is showing: the partners' leads,
+  // or the partners themselves. Only ever visible when cpOnly.
+  const [cpTab, setCpTab] = useState('leads');
 
   const [visits,     setVisits]     = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -314,6 +319,31 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   const selLead = leads.find((l) => String(l.id) === String(sForm.lead));
   const selProject = projects.find((p) => String(p.id) === String(sForm.project));
 
+  // CP Details: the partners themselves, not their leads. A separate render
+  // rather than a branch inside the main one — the whole screen below (date
+  // range, project/STM filters, status tabs, the lead-visit list) is about
+  // leads, and none of it applies to a partner relationship.
+  if (cpOnly && cpTab === 'details') {
+    return (
+      <SafeAreaView style={common.screen} edges={['top']}>
+        <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
+        <View style={cpHead.bar}>
+          {navigation.canGoBack() && (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={cpHead.back}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          )}
+          <View style={cpHead.titleWrap}>
+            <Text style={cpHead.title}>Site Visits</Text>
+            <Text style={cpHead.sub}>Channel Partner</Text>
+          </View>
+        </View>
+        <CpTabs value={cpTab} onChange={setCpTab} />
+        <PartnerActivityPanel kind="sv" companyId={companyId} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
@@ -334,6 +364,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
           <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 12 }}>Schedule</Text>
         </TouchableOpacity>
       </View>
+
+      {cpOnly && <CpTabs value={cpTab} onChange={setCpTab} />}
 
       {/* Tabs */}
       <View style={common.tabBarScroll}>
@@ -699,4 +731,15 @@ const SalesSiteVisitsScreenS = StyleSheet.create({
   btn2: { marginTop: 12, backgroundColor: COLORS.btnTint, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9, alignSelf: 'flex-start', borderWidth: 1, borderColor: COLORS.btnBorder },
   btn3: { marginTop: 16, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
   btn3Dim: { opacity: 0.6 },
+});
+
+// Header for the CP Details branch above — the lead-side header carries counts
+// and a refresh that mean nothing for partner activity.
+const cpHead = StyleSheet.create({
+  bar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14 },
+  back: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg,
+          justifyContent: 'center', alignItems: 'center' },
+  titleWrap: { flex: 1 },
+  title: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary },
+  sub: { fontSize: 13, color: COLORS.textSecondary },
 });

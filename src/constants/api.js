@@ -80,6 +80,12 @@ export const SALES_ENDPOINTS = {
   get bookingsExport(){ return `${BASE_URL}/api/sales/bookings/export/`; },
   get channelPartners()  { return `${BASE_URL}/api/sales/channel-partners/`; },
   channelPartner: (id)   => `${BASE_URL}/api/sales/channel-partners/${id}/`,
+  // Activity with the partner themselves, not with their leads. One flat list
+  // each, filtered by ?channel_partner_id= for a single partner.
+  partnerFollowUps: (qs = '')   => `${BASE_URL}/api/sales/partner-follow-ups/${qs}`,
+  partnerFollowUp: (id)         => `${BASE_URL}/api/sales/partner-follow-ups/${id}/`,
+  partnerSiteVisits: (qs = '')  => `${BASE_URL}/api/sales/partner-site-visits/${qs}`,
+  partnerSiteVisit: (id)        => `${BASE_URL}/api/sales/partner-site-visits/${id}/`,
   bookingLoiUrl: (id) => `${BASE_URL}/api/sales/bookings/${id}/loi-url/`,
   get bookingDraft() { return `${BASE_URL}/api/sales/bookings/draft/`; },
   booking:        (id) => `${BASE_URL}/api/sales/bookings/${id}/`,

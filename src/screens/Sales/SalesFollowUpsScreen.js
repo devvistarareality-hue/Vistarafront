@@ -20,6 +20,8 @@ import common from '../../styles/common';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { onlyPresent } from '../../lib/presentOptions';
 import LeadHistory from '../../components/LeadHistory';
+import { PartnerActivityPanel } from '../../components/PartnerActivity';
+import CpTabs from '../../components/CpTabs';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -83,6 +85,9 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
   const cpOnly = !!route?.params?.cpOnly;
+  // Which half of the CP module this screen is showing: the partners' leads,
+  // or the partners themselves. Only ever visible when cpOnly.
+  const [cpTab, setCpTab] = useState('leads');
 
   const [items,      setItems]      = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -277,6 +282,31 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   });
   const fmtD = (d) => d instanceof Date ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : null;
 
+  // CP Details: the partners themselves, not their leads. A separate render
+  // rather than a branch inside the main one — the whole screen below (date
+  // range, project/STM filters, status tabs, the lead-visit list) is about
+  // leads, and none of it applies to a partner relationship.
+  if (cpOnly && cpTab === 'details') {
+    return (
+      <SafeAreaView style={common.screen} edges={['top']}>
+        <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
+        <View style={cpHead.bar}>
+          {navigation.canGoBack() && (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={cpHead.back}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          )}
+          <View style={cpHead.titleWrap}>
+            <Text style={cpHead.title}>Follow-Ups</Text>
+            <Text style={cpHead.sub}>Channel Partner</Text>
+          </View>
+        </View>
+        <CpTabs value={cpTab} onChange={setCpTab} />
+        <PartnerActivityPanel kind="fu" companyId={companyId} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
@@ -296,6 +326,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
       </View>
+
+      {cpOnly && <CpTabs value={cpTab} onChange={setCpTab} />}
 
       {/* Date range filter + status-wise counts */}
       <View style={SalesFollowUpsScreenS.header}>
@@ -669,4 +701,15 @@ const fsv = StyleSheet.create({
   sheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 },
   sheetTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
   sheetSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2, marginBottom: 12 },
+});
+
+// Header for the CP Details branch above — the lead-side header carries counts
+// and a refresh that mean nothing for partner activity.
+const cpHead = StyleSheet.create({
+  bar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14 },
+  back: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg,
+          justifyContent: 'center', alignItems: 'center' },
+  titleWrap: { flex: 1 },
+  title: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary },
+  sub: { fontSize: 13, color: COLORS.textSecondary },
 });
