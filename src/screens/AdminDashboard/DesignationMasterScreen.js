@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { GROUPS } from '../../lib/moduleGroups';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StatusBar, ActivityIndicator, Alert, StyleSheet, Modal,
@@ -16,6 +17,10 @@ import PermissionsSheet from './PermissionsSheet';
 
 const ALL_MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
                      'Task Allocation', 'Purchase', 'Land', 'Club 1000'];
+// Departments that hold modules (lib/moduleGroups), and each module's display name.
+const DEPTS = GROUPS.filter((g) => g.parts.some((p) => p.module));
+const deptModules = (g) => g.parts.filter((p) => p.module).map((p) => p.module);
+const MODULE_TITLE = Object.fromEntries(GROUPS.flatMap((g) => g.parts.filter((p) => p.module).map((p) => [p.module, p.title])));
 
 function ModuleDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -35,19 +40,23 @@ function ModuleDropdown({ value, onChange }) {
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingBottom: 36 }}>
             <SheetHandle onClose={() => setOpen(false)} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, paddingHorizontal: 16, paddingVertical: 12 }}>Select Module</Text>
-            {ALL_MODULES.map(m => {
-              const mt = MODULE_META[m] || FALLBACK_META;
-              return (
-                <TouchableOpacity key={m} onPress={() => { onChange(m); setOpen(false); }}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.screenBg }}>
-                  <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: mt.bg, justifyContent: 'center', alignItems: 'center' }}>
-                    <MaterialCommunityIcons name={mt.icon} size={18} color={mt.color} />
-                  </View>
-                  <Text style={{ flex: 1, fontSize: 14, color: m === value ? COLORS.secondary : COLORS.textPrimary, fontWeight: m === value ? '700' : '400' }}>{m}</Text>
-                  {m === value && <Ionicons name="checkmark" size={18} color={COLORS.secondary} />}
-                </TouchableOpacity>
-              );
-            })}
+            {DEPTS.map((g) => (
+              <View key={g.key}>
+                <Text style={s.pickHead}>{g.title.toUpperCase()}</Text>
+                {deptModules(g).map(m => {
+                  const mt = MODULE_META[m] || FALLBACK_META;
+                  return (
+                    <TouchableOpacity key={m} onPress={() => { onChange(m); setOpen(false); }} style={s.pickRow}>
+                      <View style={[s.pickIcon, { backgroundColor: mt.bg }]}>{/* inline-ok: module colour */}
+                        <MaterialCommunityIcons name={mt.icon} size={18} color={mt.color} />
+                      </View>
+                      <Text style={m === value ? s.pickNameOn : s.pickName}>{MODULE_TITLE[m] || m}</Text>
+                      {m === value && <Ionicons name="checkmark" size={18} color={COLORS.secondary} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -213,46 +222,53 @@ export default function DesignationMasterScreen({ navigation }) {
           <AppLoader style={{ marginTop: 24 }} />
         ) : (
           <View style={s.groupsWrap}>
-            {ALL_MODULES.map((mod) => {
-              const meta = MODULE_META[mod] || FALLBACK_META;
-              const list = grouped[mod] || [];
-              return (
-                <View key={mod} style={s.groupCard}>
-                  <View style={s.groupHeader}>
-                    <View style={[s.groupDot, { backgroundColor: meta.color }]} />
-                    <MaterialCommunityIcons name={meta.icon} size={14} color={meta.color} />
-                    <Text style={[s.groupName, { color: meta.color }]}>{mod}</Text>
-                    <View style={s.countBadge}>
-                      <Text style={s.countText}>{list.length}</Text>
-                    </View>
-                  </View>
-                  {list.length === 0 ? (
-                    <Text style={s.emptyHint}>No designations yet</Text>
-                  ) : (
-                    <View style={s.chipWrap}>
-                      {list.map((d) => (
-                        <View key={d.id} style={[s.chip, { backgroundColor: meta.bg }]}>
-                          <Text style={[s.chipText, { color: meta.color }]}>{d.name}</Text>
-                          <TouchableOpacity
-                            onPress={() => setPerms(d)}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                            accessibilityLabel={`Permissions for ${d.name}`}
-                          >
-                            <Ionicons name="shield-checkmark-outline" size={15} color={meta.color} style={s.chipIcon} />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => handleDelete(d)}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          >
-                            <Ionicons name="close-circle" size={15} color={meta.color} style={s.chipIcon} />
-                          </TouchableOpacity>
+            {/* By department (lib/moduleGroups), then module — designations still
+                belong to a module; departments only group them like the home screen. */}
+            {DEPTS.map((g) => (
+              <View key={g.key} style={s.dept}>
+                <Text style={s.deptHead}>{g.title.toUpperCase()}</Text>
+                {deptModules(g).map((mod) => {
+                  const meta = MODULE_META[mod] || FALLBACK_META;
+                  const list = grouped[mod] || [];
+                  return (
+                    <View key={mod} style={s.groupCard}>
+                      <View style={s.groupHeader}>
+                        <View style={[s.groupDot, { backgroundColor: meta.color }]} />{/* inline-ok: module colour */}
+                        <MaterialCommunityIcons name={meta.icon} size={14} color={meta.color} />
+                        <Text style={[s.groupName, { color: meta.color }]}>{MODULE_TITLE[mod] || mod}</Text>{/* inline-ok: module colour */}
+                        <View style={s.countBadge}>
+                          <Text style={s.countText}>{list.length}</Text>
                         </View>
-                      ))}
+                      </View>
+                      {list.length === 0 ? (
+                        <Text style={s.emptyHint}>No designations yet</Text>
+                      ) : (
+                        <View style={s.chipWrap}>
+                          {list.map((d) => (
+                            <View key={d.id} style={[s.chip, { backgroundColor: meta.bg }]}>{/* inline-ok: module colour */}
+                              <Text style={[s.chipText, { color: meta.color }]}>{d.name}</Text>{/* inline-ok: module colour */}
+                              <TouchableOpacity
+                                onPress={() => setPerms(d)}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                accessibilityLabel={`Permissions for ${d.name}`}
+                              >
+                                <Ionicons name="shield-checkmark-outline" size={15} color={meta.color} style={s.chipIcon} />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => handleDelete(d)}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              >
+                                <Ionicons name="close-circle" size={15} color={meta.color} style={s.chipIcon} />
+                              </TouchableOpacity>
+                            </View>
+                          ))}
+                        </View>
+                      )}
                     </View>
-                  )}
-                </View>
-              );
-            })}
+                  );
+                })}
+              </View>
+            ))}
           </View>
         )}
         </>
@@ -284,6 +300,13 @@ const s = StyleSheet.create({
   addBtnText:  { color: COLORS.btnText, fontWeight: '700', fontSize: 14 },
 
   groupsWrap:  { paddingHorizontal: 16, gap: 12 },
+  dept:        { gap: 12, marginBottom: 10 },
+  deptHead:    { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, color: COLORS.textSecondary, marginTop: 6, marginLeft: 2 },
+  pickRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.screenBg },
+  pickIcon:    { width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center' },
+  pickName:    { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '400' },
+  pickNameOn:  { flex: 1, fontSize: 14, color: COLORS.secondary, fontWeight: '700' },
+  pickHead:    { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8, color: COLORS.textSecondary, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
   groupCard:   { backgroundColor: COLORS.surface, borderRadius: 22, padding: 16, elevation: 1, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6 , borderWidth: 1, borderColor: COLORS.cardBorder },
   groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   groupDot:    { width: 7, height: 7, borderRadius: 4 },
