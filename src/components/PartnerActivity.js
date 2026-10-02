@@ -447,6 +447,10 @@ export function PartnerActivityPanel({ kind, companyId }) {
   const [tab, setTab] = useState(kind === 'fu' ? 'pending' : 'scheduled');
   const [q, setQ] = useState('');
   const [proj, setProj] = useState('');
+  const [dateFrom, setDateFrom] = useState(null);
+  const [dateTo, setDateTo] = useState(null);
+  const [showFrom, setShowFrom] = useState(false);
+  const [showTo, setShowTo] = useState(false);
 
   // Needed to schedule from here, where no partner is preselected.
   useEffect(() => {
@@ -481,14 +485,16 @@ export function PartnerActivityPanel({ kind, companyId }) {
       } else if (tab === 'pending') { if (r.status !== OPEN_STATUS[kind]) return false; }
       else if (tab !== 'all' && r.status !== tab) return false;
 
+      if (dateFrom && day < dayOf(dateFrom)) return false;
+      if (dateTo && day > dayOf(dateTo)) return false;
       if (proj && r.project_name !== proj) return false;
       if (needle && ![r.partner_name, r.partner_firm, r.project_name, r.remarks]
         .some((v) => String(v || '').toLowerCase().includes(needle))) return false;
       return true;
     });
-  }, [rows, tab, q, proj, kind]);
+  }, [rows, tab, q, proj, dateFrom, dateTo, kind]);
 
-  const narrowed = !!(q.trim() || proj);
+  const narrowed = !!(q.trim() || proj || dateFrom || dateTo);
   const noun = kind === 'fu' ? 'follow-up' : 'site visit';
   const done = () => { setAdding(false); reload(); };
 
@@ -537,11 +543,42 @@ export function PartnerActivityPanel({ kind, companyId }) {
           placeholderTextColor={COLORS.textTertiary}
           style={[common.input, st.panelSearch]} />
 
+        <View style={st.dateRow}>
+          <Text style={st.dateLabel}>Date</Text>
+          <TouchableOpacity onPress={() => setShowFrom(true)} style={st.dateBtn}>
+            <Text style={dateFrom ? st.dateSet : st.datePh}>
+              {dateFrom ? dayOf(dateFrom) : 'From'}
+            </Text>
+          </TouchableOpacity>
+          <Text style={st.dateArrow}>→</Text>
+          <TouchableOpacity onPress={() => setShowTo(true)} style={st.dateBtn}>
+            <Text style={dateTo ? st.dateSet : st.datePh}>
+              {dateTo ? dayOf(dateTo) : 'To'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {showFrom && (
+          <DateTimePicker value={dateFrom || new Date()} mode="date" display="default"
+            onChange={(e, d) => { setShowFrom(false); if (e.type === 'dismissed') return; if (d) setDateFrom(d); }} />
+        )}
+        {showTo && (
+          <DateTimePicker value={dateTo || new Date()} mode="date" display="default"
+            onChange={(e, d) => { setShowTo(false); if (e.type === 'dismissed') return; if (d) setDateTo(d); }} />
+        )}
+
         {projOptions.length > 1 && (
           <FilterSelect label="All Projects" value={proj} onChange={setProj}
             options={[{ value: '', label: 'All Projects' },
                       ...projOptions.map((n) => ({ value: n, label: n }))]}
             style={st.select} />
+        )}
+
+        {narrowed && (
+          <TouchableOpacity style={st.clearBtn}
+            onPress={() => { setQ(''); setProj(''); setDateFrom(null); setDateTo(null); }}>
+            <Ionicons name="close" size={13} color={COLORS.textSecondary} />
+            <Text style={st.clearText}>Clear filters</Text>
+          </TouchableOpacity>
         )}
 
         {loading ? (
@@ -626,6 +663,18 @@ const st = StyleSheet.create({
   panelTabText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
   panelTabTextOn: { color: COLORS.link },
   panelSearch: { marginBottom: 12 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  dateLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary,
+               textTransform: 'uppercase', letterSpacing: 0.5 },
+  dateBtn: { flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9,
+             paddingHorizontal: 10, paddingVertical: 9 },
+  dateSet: { fontSize: 12.5, color: COLORS.textPrimary },
+  datePh: { fontSize: 12.5, color: COLORS.textSecondary },
+  dateArrow: { color: COLORS.textTertiary },
+  clearBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
+              marginTop: 10, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
+              borderWidth: 1.5, borderColor: COLORS.border },
+  clearText: { fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
   blank: { alignItems: 'center', paddingVertical: 48 },
   blankTitle: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary, marginTop: 12 },
   blankSub: { fontSize: 13, color: COLORS.textTertiary, marginTop: 4, textAlign: 'center' },
