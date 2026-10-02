@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import { formatDMY } from '../../utils/dateFormat';
 import common from '../../styles/common';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
-import { rupee, withCompany, DateField, toISO } from './arShared';
+import { rupee, withCompany, DateField, toISO, shareBankStatement } from './arShared';
 
 // Quick ranges — the Indian financial year runs April to March. Same as the web.
 function presetRange(key) {
@@ -74,6 +74,16 @@ export default function ARBankStatementScreen({ navigation, route }) {
           <Text style={common.headerTitle} numberOfLines={1}>Bank statement</Text>
           <Text style={common.headerSub} numberOfLines={1}>Loan payments, running balance</Text>
         </View>
+        {data && !err ? (
+          <TouchableOpacity style={common.iconBtn} accessibilityLabel="Share statement as PDF"
+            onPress={async () => {
+              const period = ranged ? `${from ? formatDMY(from) : 'Start'} – ${to ? formatDMY(to) : 'Today'}` : 'All time';
+              const msg = await shareBankStatement(data, period);
+              if (msg) Alert.alert('Statement', msg);
+            }}>
+            <Ionicons name="share-outline" size={20} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={s.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>

@@ -159,3 +159,50 @@ export async function shareCancellationLetter(cancellationId, companyId, fileLab
   }
 }
 
+// A bank statement as a PDF to share — the app's counterpart of the web page's Print.
+// Built here from the statement the screen already has (the API returns it as data).
+const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const dmy = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—');
+export async function shareBankStatement(d, period) {
+  try {
+    const b = d.bank || {};
+    const rows = (d.rows || []).map((r) => `
+      <tr><td>${dmy(r.date)}</td>
+        <td><b>${esc(r.client || '—')}</b><div class="sub">${esc(r.project)}${r.plots ? ` · Plot ${esc(r.plots)}` : ''}</div></td>
+        <td class="sub">${esc(r.remarks || '')}</td>
+        <td class="num ${r.kind === 'out' ? 'out' : 'in'}">${r.kind === 'out' ? '−' : '+'} ${rupee(r.amount)}</td>
+        <td class="num"><b>${rupee(r.balance)}</b></td></tr>`).join('');
+    const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+      body{font-family:-apple-system,Roboto,Arial,sans-serif;color:#0f1b2d;font-size:11px;margin:0}
+      .band{background:linear-gradient(120deg,#0f2f57,#1f5490 55%,#2f6db5);color:#fff;padding:22px 26px}
+      .band h1{margin:0;font-size:20px}.band div{opacity:.85;margin-top:3px}
+      .wrap{padding:18px 26px}.tiles{display:flex;gap:10px;margin-bottom:14px}
+      .tile{flex:1;border:1px solid #e3e9f1;border-radius:10px;padding:10px 12px;background:#f4f7fb}
+      .tile span{font-size:9px;font-weight:700;color:#6b7a90;text-transform:uppercase}.tile b{display:block;font-size:14px;margin-top:3px}
+      table{width:100%;border-collapse:collapse}th,td{padding:7px 8px;border-bottom:1px solid #e3e9f1;text-align:left;vertical-align:top}
+      th{background:#f4f7fb;font-size:9px;color:#6b7a90;text-transform:uppercase}.num{text-align:right;white-space:nowrap}
+      .sub{color:#6b7a90;font-size:10px}.in{color:#177245;font-weight:700}.out{color:#b3261e;font-weight:700}.ob td{background:#f4f7fb;font-weight:700}
+    </style></head><body>
+      <div class="band"><h1>${esc(b.name || 'Bank statement')}</h1><div>${b.account_no ? `A/c ${esc(b.account_no)} · ` : ''}${esc(period)}</div></div>
+      <div class="wrap">
+        <div class="tiles">
+          <div class="tile"><span>Opening</span><b>${rupee(d.brought_forward)}</b></div>
+          <div class="tile"><span>Received</span><b class="in">+ ${rupee(d.total_in)}</b></div>
+          ${d.total_out ? `<div class="tile"><span>Refunds paid</span><b class="out">− ${rupee(d.total_out)}</b></div>` : ''}
+          <div class="tile"><span>Closing</span><b>${rupee(d.closing_balance)}</b></div>
+        </div>
+        <table><thead><tr><th>Date</th><th>Particulars</th><th>Remarks</th><th class="num">Amount</th><th class="num">Balance</th></tr></thead>
+          <tbody><tr class="ob"><td>${d.from ? dmy(d.from) : '—'}</td><td>${d.from ? 'Balance brought forward' : 'Opening balance'}</td><td></td><td></td><td class="num">${rupee(d.brought_forward)}</td></tr>
+          ${rows || '<tr><td colspan="5" class="sub">No entries in this period.</td></tr>'}
+          <tr class="ob"><td></td><td>Closing balance</td><td></td><td></td><td class="num">${rupee(d.closing_balance)}</td></tr></tbody></table>
+      </div></body></html>`;
+    const { uri } = await Print.printToFileAsync({ html });
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: `Statement · ${b.name || 'Bank'}` });
+    }
+    return '';
+  } catch (e) {
+    return 'Could not prepare the statement.';
+  }
+}
+
