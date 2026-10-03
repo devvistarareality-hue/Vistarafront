@@ -33,6 +33,8 @@ import FilterSelect from './FilterSelect';
 const FU_STATUS = {
   pending:     { label: 'Pending',     tone: 'warn' },
   completed:   { label: 'Completed',   tone: 'ok' },
+  // Nothing sets 'missed' any more — an overdue follow-up just reads as overdue.
+  // Kept so rows already carrying it still render with a label.
   missed:      { label: 'Missed',      tone: 'bad' },
   rescheduled: { label: 'Rescheduled', tone: 'mute' },
 };
@@ -47,7 +49,10 @@ const SV_STATUS = {
 // on an open row follows: a call that did not happen was missed, a visit that
 // will not happen is cancelled.
 const OPEN_STATUS = { fu: 'pending', sv: 'scheduled' };
-const DROP_STATUS = { fu: ['missed', 'Missed'], sv: ['cancelled', 'Cancel'] };
+// A visit that will not happen is cancelled; a follow-up has no second action —
+// one that did not happen simply reads as overdue until it is done, rather than
+// asking whoever glances at the row to classify it.
+const DROP_STATUS = { sv: ['cancelled', 'Cancel'] };
 
 const tones = StyleSheet.create({
   badBg:  { backgroundColor: COLORS.errorBg },
@@ -73,8 +78,12 @@ function fmt(dt) {
 const TONE_BG   = { ok: tones.okBg, warn: tones.warnBg, info: tones.infoBg, mute: tones.muteBg, bad: tones.badBg };
 const TONE_TEXT = { ok: tones.okFg, warn: tones.warnFg, info: tones.infoFg, mute: tones.muteFg, bad: tones.badFg };
 
-function StatusPill({ map, value }) {
-  const s = map[value] || { label: value || '—', tone: 'mute' };
+// `overdue` is not a status anyone sets — it is a pending row whose time has
+// passed. Its own pill is the point: "Pending" on something three days late reads
+// as fine, which it is not.
+function StatusPill({ map, value, overdue }) {
+  const s = overdue ? { label: 'Overdue', tone: 'bad' }
+    : (map[value] || { label: value || '—', tone: 'mute' });
   return (
     <View style={[st.pill, TONE_BG[s.tone] || TONE_BG.mute]}>
       <Text style={[st.pillText, TONE_TEXT[s.tone] || TONE_TEXT.mute]}>{s.label}</Text>
@@ -298,7 +307,7 @@ function ActivityCard({ kind, row, showPartner, onChanged }) {
         <Text style={st.cardTitle} numberOfLines={1}>
           {showPartner ? (row.partner_name || '—') : (kind === 'sv' ? (row.project_name || '—') : fmt(row.scheduled_at))}
         </Text>
-        <StatusPill map={map} value={row.status} />
+        <StatusPill map={map} value={row.status} overdue={overdue} />
       </View>
 
       {showPartner && !!row.partner_firm && <Text style={st.cardSub}>{row.partner_firm}</Text>}
@@ -325,7 +334,7 @@ function ActivityCard({ kind, row, showPartner, onChanged }) {
             <Text style={st.doneText}>Done</Text>
           </TouchableOpacity>
         )}
-        {open && (
+        {open && DROP_STATUS[kind] && (
           <TouchableOpacity onPress={() => setStatus(DROP_STATUS[kind][0])} disabled={busy}
             style={[st.smallBtn, busy && st.dim]}>
             <Text style={st.smallText}>{DROP_STATUS[kind][1]}</Text>
@@ -338,7 +347,28 @@ function ActivityCard({ kind, row, showPartner, onChanged }) {
 
       <CompleteSheet visible={closing} kind={kind} row={row}
         onCancel={() => setClosing(false)}
-        onDone={async (text) => { if (await setStatus('completed', text)) setClosing(false); }} />
+        onDone={async (text, next) => {
+          if (!(await setStatus('completed', text))) return;
+          // Scheduled after the first call succeeds, so a failure here cannot
+          // leave the old one closed and the new one lost with it.
+          if (next) {
+            try {
+              const res = await apiFetch(SALES_ENDPOINTS.partnerFollowUps(), {
+                method: 'POST',
+                body: JSON.stringify({
+                  channel_partner: row.channel_partner,
+                  scheduled_at: next.at.toISOString(),
+                  remarks: next.remarks,
+                }),
+              });
+              if (!res.ok) Alert.alert('Marked done', 'The next follow-up was not scheduled.');
+            } catch (_) {
+              Alert.alert('Marked done', 'The next follow-up was not scheduled.');
+            }
+            onChanged();
+          }
+          setClosing(false);
+        }} />
     </View>
   );
 }
@@ -352,9 +382,21 @@ function ActivityCard({ kind, row, showPartner, onChanged }) {
 function CompleteSheet({ visible, kind, row, onCancel, onDone }) {
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
+  // Closing a follow-up is the moment you know whether another is needed, so the
+  // next one is booked here rather than from a second trip through the list.
+  const [schedNext, setSchedNext] = useState(false);
+  const [nextAt, setNextAt] = useState(() => new Date(Date.now() + 60 * 60 * 1000));
+  const [showNextDate, setShowNextDate] = useState(false);
+  const [showNextTime, setShowNextTime] = useState(false);
+  const [nextRemarks, setNextRemarks] = useState('');
+  const canChain = kind === 'fu';
   const ready = !!text.trim();
 
-  useEffect(() => { if (visible) { setText(''); setSaving(false); } }, [visible]);
+  useEffect(() => {
+    if (!visible) return;
+    setText(''); setSaving(false); setSchedNext(false); setNextRemarks('');
+    setNextAt(new Date(Date.now() + 60 * 60 * 1000));
+  }, [visible]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
@@ -377,9 +419,70 @@ function CompleteSheet({ visible, kind, row, onCancel, onDone }) {
             style={[common.input, st.textarea]} />
           {!ready && <Text style={st.doneHint}>Remarks are required to mark this done.</Text>}
 
+          {canChain && (
+            <>
+              <TouchableOpacity onPress={() => setSchedNext((v) => !v)} style={st.checkRow}>
+                <View style={[st.checkBox, schedNext && st.checkBoxOn]}>
+                  {schedNext && <Ionicons name="checkmark" size={13} color={COLORS.white} />}
+                </View>
+                <Text style={st.checkLabel}>Schedule next follow-up</Text>
+              </TouchableOpacity>
+
+              {schedNext && (
+                <View style={st.nextWrap}>
+                  <Text style={st.lbl}>Next follow-up</Text>
+                  <View style={st.whenRow}>
+                    <TouchableOpacity onPress={() => setShowNextDate(true)} style={st.whenBtn}>
+                      <Ionicons name="calendar-outline" size={15} color={COLORS.textSecondary} />
+                      <Text style={st.whenText}>
+                        {nextAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowNextTime(true)} style={st.whenBtn}>
+                      <Ionicons name="time-outline" size={15} color={COLORS.textSecondary} />
+                      <Text style={st.whenText}>
+                        {nextAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  {showNextDate && (
+                    <DateTimePicker value={nextAt} mode="date" display="default"
+                      onChange={(e, d) => {
+                        setShowNextDate(false);
+                        if (e.type === 'dismissed' || !d) return;
+                        const n = new Date(nextAt);
+                        n.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
+                        setNextAt(n);
+                      }} />
+                  )}
+                  {showNextTime && (
+                    <DateTimePicker value={nextAt} mode="time" display="default"
+                      onChange={(e, d) => {
+                        setShowNextTime(false);
+                        if (e.type === 'dismissed' || !d) return;
+                        const n = new Date(nextAt);
+                        n.setHours(d.getHours(), d.getMinutes(), 0, 0);
+                        setNextAt(n);
+                      }} />
+                  )}
+                  <Text style={st.lbl}>Next follow-up note</Text>
+                  <TextInput value={nextRemarks} onChangeText={setNextRemarks} multiline
+                    placeholder="What to discuss next…"
+                    placeholderTextColor={COLORS.textSecondary}
+                    style={[common.input, st.textarea]} />
+                </View>
+              )}
+            </>
+          )}
+
           <View style={st.formActions}>
             <TouchableOpacity disabled={!ready || saving}
-              onPress={async () => { setSaving(true); await onDone(text.trim()); setSaving(false); }}
+              onPress={async () => {
+                setSaving(true);
+                await onDone(text.trim(),
+                  schedNext ? { at: nextAt, remarks: nextRemarks.trim() } : null);
+                setSaving(false);
+              }}
               style={[common.btn, common.btnSuccess, st.flex1, (!ready || saving) && st.dim]}>
               <Text style={common.btnSuccessText}>{saving ? 'Saving…' : 'Mark Done'}</Text>
             </TouchableOpacity>
@@ -711,6 +814,12 @@ const st = StyleSheet.create({
   doneTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
   doneSub: { fontSize: 12.5, color: COLORS.textSecondary, marginTop: 3, marginBottom: 16 },
   doneHint: { fontSize: 12, color: COLORS.textTertiary, marginTop: -6, marginBottom: 12 },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, marginBottom: 4 },
+  checkBox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, borderColor: COLORS.border,
+              alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface },
+  checkBoxOn: { backgroundColor: COLORS.link, borderColor: COLORS.link },
+  checkLabel: { fontSize: 13.5, fontWeight: '600', color: COLORS.textPrimary },
+  nextWrap: { marginTop: 8, marginBottom: 4 },
   sheet: { maxHeight: '90%', paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
   sheetHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 18,
                paddingTop: 18, paddingBottom: 12 },
