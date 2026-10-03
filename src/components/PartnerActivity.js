@@ -255,17 +255,27 @@ function ActivityCard({ kind, row, showPartner, onChanged }) {
   const endpoint = kind === 'fu' ? SALES_ENDPOINTS.partnerFollowUp : SALES_ENDPOINTS.partnerSiteVisit;
   const map = kind === 'fu' ? FU_STATUS : SV_STATUS;
   const [busy, setBusy] = useState(false);
+  // Marking one done asks what happened first. A row closed with no note proves a
+  // call was made and records nothing about it, which is the opposite of the point.
+  const [closing, setClosing] = useState(false);
   const open = row.status === OPEN_STATUS[kind];
   const overdue = open && row.scheduled_at && new Date(row.scheduled_at) < new Date();
 
-  async function setStatus(status) {
+  async function setStatus(status, outcome) {
     setBusy(true);
+    const body = { status };
+    if (outcome) body.outcome = outcome;
     const res = await apiFetch(endpoint(row.id), {
-      method: 'PATCH', body: JSON.stringify({ status }),
+      method: 'PATCH', body: JSON.stringify(body),
     }).catch(() => null);
     setBusy(false);
-    if (!res || !res.ok) { Alert.alert('Could not update', 'Try again.'); return; }
+    if (!res || !res.ok) {
+      const d = res ? await res.json().catch(() => ({})) : {};
+      Alert.alert('Could not update', d.detail || 'Try again.');
+      return false;
+    }
     onChanged();
+    return true;
   }
 
   function remove() {
@@ -310,7 +320,7 @@ function ActivityCard({ kind, row, showPartner, onChanged }) {
 
       <View style={st.cardActions}>
         {row.status !== 'completed' && (
-          <TouchableOpacity onPress={() => setStatus('completed')} disabled={busy}
+          <TouchableOpacity onPress={() => setClosing(true)} disabled={busy}
             style={[st.smallBtn, st.doneBtn, busy && st.dim]}>
             <Text style={st.doneText}>Done</Text>
           </TouchableOpacity>
@@ -325,7 +335,61 @@ function ActivityCard({ kind, row, showPartner, onChanged }) {
           <Text style={st.removeText}>Remove</Text>
         </TouchableOpacity>
       </View>
+
+      <CompleteSheet visible={closing} kind={kind} row={row}
+        onCancel={() => setClosing(false)}
+        onDone={async (text) => { if (await setStatus('completed', text)) setClosing(false); }} />
     </View>
+  );
+}
+
+/**
+ * What happened — asked before a follow-up or visit can be marked done.
+ *
+ * Required, and the server requires it too: a row closed with no note is a record
+ * that something was scheduled and nothing about how it went.
+ */
+function CompleteSheet({ visible, kind, row, onCancel, onDone }) {
+  const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const ready = !!text.trim();
+
+  useEffect(() => { if (visible) { setText(''); setSaving(false); } }, [visible]);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+      <View style={st.backdrop}>
+        <View style={[common.sheet, st.doneSheet]}>
+          <Text style={st.doneTitle}>
+            Mark {kind === 'fu' ? 'follow-up' : 'site visit'} done
+          </Text>
+          <Text style={st.doneSub}>
+            {row.partner_name || 'Partner'}
+            {row.project_name ? ` · ${row.project_name}` : ''}
+          </Text>
+
+          <Text style={st.lbl}>Remarks *</Text>
+          <TextInput value={text} onChangeText={setText} multiline
+            placeholder={kind === 'fu'
+              ? 'What was discussed, and what happens next?'
+              : 'How did the visit go, and what happens next?'}
+            placeholderTextColor={COLORS.textSecondary}
+            style={[common.input, st.textarea]} />
+          {!ready && <Text style={st.doneHint}>Remarks are required to mark this done.</Text>}
+
+          <View style={st.formActions}>
+            <TouchableOpacity disabled={!ready || saving}
+              onPress={async () => { setSaving(true); await onDone(text.trim()); setSaving(false); }}
+              style={[common.btn, common.btnSuccess, st.flex1, (!ready || saving) && st.dim]}>
+              <Text style={common.btnSuccessText}>{saving ? 'Saving…' : 'Mark Done'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onCancel} style={[common.btn, common.btnSecondary]}>
+              <Text style={common.btnSecondaryText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -643,6 +707,10 @@ const st = StyleSheet.create({
   removeText: { fontSize: 12.5, fontWeight: '700', color: COLORS.error },
 
   backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: COLORS.overlay },
+  doneSheet: { paddingTop: 20 },
+  doneTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  doneSub: { fontSize: 12.5, color: COLORS.textSecondary, marginTop: 3, marginBottom: 16 },
+  doneHint: { fontSize: 12, color: COLORS.textTertiary, marginTop: -6, marginBottom: 12 },
   sheet: { maxHeight: '90%', paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
   sheetHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 18,
                paddingTop: 18, paddingBottom: 12 },
