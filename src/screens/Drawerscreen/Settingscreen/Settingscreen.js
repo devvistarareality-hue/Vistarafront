@@ -7,11 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../../constants/theme';
 import { logout } from '../../../redux/actions/authActions';
 import styles from './styles';
+import { useImpersonating } from '../../../lib/useImpersonating';
 
 const SettingScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const user = useSelector((s) => s.auth.user);
+  const viewingAs = useImpersonating();   // hide Logout while viewing as someone — Exit on the banner is the way back
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -59,10 +61,12 @@ const SettingScreen = () => {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-          <Ionicons name="log-out-outline" size={22} color={COLORS.error} />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        {!viewingAs && (
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
+            <Ionicons name="log-out-outline" size={22} color={COLORS.error} />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
