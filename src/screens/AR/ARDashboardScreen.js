@@ -392,62 +392,62 @@ function ProjectCharts({ rows, data, onOpen }) {
         <View style={[common.card, s.pcCard]}>
           <Text style={s.cardTitle}>Coming due — this month and the next three</Text>
           <Text style={s.cardSub}>Not yet due, by the month it falls due · {inrShort(cSum)} in these {cN} months</Text>
-          <View style={s.cdCols}>
-            {cMonths.map((i) => {
-              const v = cTot[i] || 0;
-              return (
-                <TouchableOpacity key={i} style={s.cdCol} activeOpacity={0.7} onPress={() => cPick(i)}>
-                  <Text style={s.cdVal} numberOfLines={1}>{v ? inrShort(v) : '—'}</Text>
-                  <View style={s.cdTrack}>
-                    <View style={[s.cdBar, { height: `${(v / cMax) * 100}%` }]} />{/* inline-ok: column height from data */}
-                  </View>
-                  <Text style={[s.cdLabel, i === 0 && s.cdNow]} numberOfLines={1}>{cLabels[i]}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          <View style={s.cdLater}>
-            {cLater.map((i) => (
-              <TouchableOpacity key={i} style={s.cdLaterItem} activeOpacity={0.7} onPress={() => cPick(i)}>
-                <Text style={s.cdLaterLabel}>{cLabels[i]}</Text>
-                <Text style={s.cdLaterVal}>{inrShort(cTot[i] || 0)}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {cRows.length ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.cdGrid}>
-              <View>
-                <View style={s.hmRow}>
-                  <View style={s.hmName} />
-                  {cMonths.concat(cLater).map((i) => <Text key={i} style={s.hmCol} numberOfLines={1}>{cLabels[i]}</Text>)}
-                </View>
-                {cRows.map((p) => (
-                  <View key={p.id} style={s.hmRow}>
-                    <Text style={[s.pcName, s.hmName]} numberOfLines={1}>{p.name}</Text>
-                    {cMonths.concat(cLater).map((i) => {
-                      const v = p.coming?.[i] || 0;
-                      const st = i >= cN ? 0 : cStep(v);
-                      return (
-                        <TouchableOpacity key={i} activeOpacity={0.7} onPress={() => setSel({ id: p.id, text: `${p.name} · due ${cLabels[i]} · ${v ? inrShort(v) : 'nothing'}` })}
-                          style={[s.hmCell, i >= cN ? s.cdLaterCell : st ? { backgroundColor: COLORS.vizDue[st] } : s.hmZero]}>{/* inline-ok: grid step colour */}
-                          <Text style={[s.hmText, { color: i >= cN ? COLORS.textPrimary : st === 0 ? COLORS.textTertiary : COLORS.vizDueInk[st] }]}>{v ? inrShort(v) : '—'}</Text>{/* inline-ok: ink for the step */}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+          {/* One scrolling grid for the chart and the table: each month's column sits
+              right above that month's figures. Later amounts are plain totals. */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.cdGrid}>
+            <View>
+              <View style={s.cdChartRow}>
+                <View style={s.hmName} />
+                {cMonths.map((i) => {
+                  const v = cTot[i] || 0;
+                  return (
+                    <TouchableOpacity key={i} style={s.cdCol} activeOpacity={0.7} onPress={() => cPick(i)}>
+                      <Text style={s.cdVal} numberOfLines={1}>{v ? inrShort(v) : '—'}</Text>
+                      <View style={s.cdTrack}>
+                        <View style={[s.cdBar, { height: `${(v / cMax) * 100}%` }]} />{/* inline-ok: column height from data */}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+                {cLater.map((i) => (
+                  <TouchableOpacity key={i} style={s.cdLaterCol} activeOpacity={0.7} onPress={() => cPick(i)}>
+                    <View style={s.cdLaterItem}>
+                      <Text style={s.cdLaterLabel}>{i === cN ? 'Later' : 'Undated'}</Text>
+                      <Text style={s.cdLaterVal} numberOfLines={1}>{inrShort(cTot[i] || 0)}</Text>
+                    </View>
+                  </TouchableOpacity>
                 ))}
-                <View style={[s.hmRow, s.hmTotalRow]}>
-                  <View style={s.hmName}>
-                    <Text style={s.hmTotalName}>Total</Text>
-                    <Text style={s.hmTotalSum}>{inrShort(cMonths.concat(cLater).reduce((t, i) => t + (cTot[i] || 0), 0))}</Text>
-                  </View>
-                  {cMonths.concat(cLater).map((i) => (
-                    <View key={i} style={[s.hmCell, s.hmTotalCell]}><Text style={s.hmTotalText}>{cTot[i] ? inrShort(cTot[i]) : '—'}</Text></View>
-                  ))}
-                </View>
               </View>
-            </ScrollView>
-          ) : null}
+              <View style={s.hmRow}>
+                <View style={s.hmName} />
+                {cMonths.concat(cLater).map((i) => <Text key={i} style={[s.hmCol, i === 0 && s.cdNow]} numberOfLines={1}>{cLabels[i]}</Text>)}
+              </View>
+              {cRows.map((p) => (
+                <View key={p.id} style={s.hmRow}>
+                  <Text style={[s.pcName, s.hmName]} numberOfLines={1}>{p.name}</Text>
+                  {cMonths.concat(cLater).map((i) => {
+                    const v = p.coming?.[i] || 0;
+                    const st = i >= cN ? 0 : cStep(v);
+                    return (
+                      <TouchableOpacity key={i} activeOpacity={0.7} onPress={() => setSel({ id: p.id, text: `${p.name} · due ${cLabels[i]} · ${v ? inrShort(v) : 'nothing'}` })}
+                        style={[s.hmCell, i >= cN ? s.cdLaterCell : st ? { backgroundColor: COLORS.vizDue[st] } : s.hmZero]}>{/* inline-ok: grid step colour */}
+                        <Text style={[s.hmText, { color: i >= cN ? COLORS.textPrimary : st === 0 ? COLORS.textTertiary : COLORS.vizDueInk[st] }]}>{v ? inrShort(v) : '—'}</Text>{/* inline-ok: ink for the step */}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ))}
+              <View style={[s.hmRow, s.hmTotalRow]}>
+                <View style={s.hmName}>
+                  <Text style={s.hmTotalName}>Total</Text>
+                  <Text style={s.hmTotalSum}>{inrShort(cMonths.concat(cLater).reduce((t, i) => t + (cTot[i] || 0), 0))}</Text>
+                </View>
+                {cMonths.concat(cLater).map((i) => (
+                  <View key={i} style={[s.hmCell, s.hmTotalCell]}><Text style={s.hmTotalText}>{cTot[i] ? inrShort(cTot[i]) : '—'}</Text></View>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
         </View>
       ) : null}
       {sel ? (
@@ -489,18 +489,17 @@ const s = StyleSheet.create({
   hmTotalSum: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary },
   hmTotalCell: { backgroundColor: COLORS.surfaceAlt },
   hmTotalText: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
-  cdCols: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, height: 190, marginTop: 14 },
-  cdCol: { flex: 1, height: '100%', alignItems: 'center', gap: 4 },
   cdVal: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
   cdTrack: { flex: 1, width: '100%', justifyContent: 'flex-end', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border },
   cdBar: { width: '62%', minHeight: 3, borderTopLeftRadius: 5, borderTopRightRadius: 5, backgroundColor: COLORS.vizDue[4] },
-  cdLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
-  cdNow: { color: COLORS.textPrimary },
-  cdLater: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border, borderStyle: 'dashed' },
-  cdLaterItem: { flex: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
-  cdLaterLabel: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary },
-  cdLaterVal: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
   cdGrid: { marginTop: 14 },
+  cdChartRow: { flexDirection: 'row', gap: 3, height: 170, marginBottom: 2 },
+  cdCol: { width: 72, alignItems: 'center', gap: 4 },
+  cdLaterCol: { width: 72, justifyContent: 'flex-end', paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  cdLaterItem: { backgroundColor: COLORS.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 8, alignItems: 'center' },
+  cdLaterLabel: { fontSize: 10.5, fontWeight: '700', color: COLORS.textSecondary },
+  cdLaterVal: { fontSize: 12.5, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
+  cdNow: { color: COLORS.textPrimary },
   cdLaterCell: { borderWidth: 1, borderColor: COLORS.border },
   pwEmpty: { textAlign: 'center', color: COLORS.textSecondary, marginTop: 30 },
   pwCard: { padding: 16, marginBottom: 12 },
