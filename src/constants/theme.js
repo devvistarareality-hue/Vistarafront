@@ -137,10 +137,14 @@ export const COLORS = {
   // categorical series and a one-hue sequential ramp (index 1 = least … 7 = most;
   // in dark it runs the other way so "near zero" recedes into the surface).
   viz: IS_DARK ? ['#3987e5', '#d95926', '#199e70'] : ['#2a78d6', '#eb6834', '#1baf7a'],
+  // Heatmap ramp — red, since it shows overdue money; same values as the web.
   vizSeq: IS_DARK
-    ? [null, '#0d366b', '#104281', '#1c5cab', '#2a78d6', '#5598e7', '#86b6ef', '#cde2fb']
-    : [null, '#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '#0d366b'],
-  vizSeqInk: IS_DARK ? ['#ffffff', '#0b0b0b'] : ['#0b0b0b', '#ffffff'],   // [steps 1-3, steps 4-7]
+    ? [null, '#4a120d', '#6e1a12', '#94251a', '#c03a2b', '#e0604f', '#f08f82', '#fbcbc4']
+    : [null, '#fde4e1', '#f9c3bc', '#f29b90', '#e86f61', '#d64838', '#b22f22', '#861d14'],
+  // Ink per step — whichever of black/white reads better on it (checked by contrast).
+  vizSeqInk: IS_DARK
+    ? [null, '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#0b0b0b', '#0b0b0b', '#0b0b0b']
+    : [null, '#0b0b0b', '#0b0b0b', '#0b0b0b', '#0b0b0b', '#0b0b0b', '#ffffff', '#ffffff'],
   inkRgb: T.inkRgb,
   statusBar: IS_DARK ? 'light-content' : 'dark-content',
 

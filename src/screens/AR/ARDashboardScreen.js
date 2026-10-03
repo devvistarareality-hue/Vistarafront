@@ -340,7 +340,7 @@ function ProjectCharts({ rows, onOpen }) {
                   return (
                     <TouchableOpacity key={a} activeOpacity={0.7} onPress={() => setSel({ id: p.id, text: `${p.name} · ${a} days overdue · ${v ? inrShort(v) : 'nothing'}` })}
                       style={[s.hmCell, st ? { backgroundColor: COLORS.vizSeq[st] } : s.hmZero]}>{/* inline-ok: heatmap step colour */}
-                      <Text style={[s.hmText, { color: st === 0 ? COLORS.textTertiary : COLORS.vizSeqInk[st >= 4 ? 1 : 0] }]}>{v ? inrShort(v) : '—'}</Text>{/* inline-ok: ink for the step */}
+                      <Text style={[s.hmText, { color: st === 0 ? COLORS.textTertiary : COLORS.vizSeqInk[st] }]}>{v ? inrShort(v) : '—'}</Text>{/* inline-ok: ink for the step */}
                     </TouchableOpacity>
                   );
                 })}
@@ -367,20 +367,20 @@ const s = StyleSheet.create({
   pcLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   pcSwatch: { width: 10, height: 10, borderRadius: 3 },
   pcLegendText: { fontSize: 11.5, color: COLORS.textSecondary },
-  pcRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
-  pcName: { width: 92, fontSize: 12, fontWeight: '600', color: COLORS.textPrimary },
-  pcTrack: { flex: 1, flexDirection: 'row', gap: 2, height: 14 },
+  pcRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7 },
+  pcName: { width: 100, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  pcTrack: { flex: 1, flexDirection: 'row', gap: 2, height: 20 },
   pcSeg: { height: '100%', borderRadius: 3, minWidth: 2 },
-  pcTotal: { width: 64, textAlign: 'right', fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
+  pcTotal: { width: 70, textAlign: 'right', fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
   pcSel: { backgroundColor: COLORS.surfaceAlt, borderRadius: 12, padding: 10, marginBottom: 12, gap: 6 },
   pcSelText: { fontSize: 12.5, color: COLORS.textPrimary },
   pcSelOpen: { fontSize: 13, fontWeight: '700', color: COLORS.link },
   hmRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3 },
-  hmName: { width: 96 },
-  hmCol: { width: 62, textAlign: 'center', fontSize: 10, fontWeight: '700', color: COLORS.textSecondary },
-  hmCell: { width: 62, height: 30, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
+  hmName: { width: 104 },
+  hmCol: { width: 72, textAlign: 'center', fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  hmCell: { width: 72, height: 38, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
   hmZero: { backgroundColor: COLORS.surfaceAlt },
-  hmText: { fontSize: 10.5, fontWeight: '700' },
+  hmText: { fontSize: 12, fontWeight: '700' },
   pwEmpty: { textAlign: 'center', color: COLORS.textSecondary, marginTop: 30 },
   pwCard: { padding: 16, marginBottom: 12 },
   pwHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
