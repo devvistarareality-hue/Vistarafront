@@ -7,6 +7,8 @@
 // decides presentation: a handful of departments on the home screen, and a new
 // module (Accounts Payable, say) becomes one more part inside one of them.
 
+import { canSee } from './roles';
+
 const hasAny = (mods, list) => list.some((m) => mods.includes(m));
 
 export const GROUPS = [
@@ -38,7 +40,7 @@ export const GROUPS = [
       { key: 'ar', module: 'AR', title: 'Accounts Receivable', desc: 'Collections, dues, ageing, cancellations', screen: 'ARDashboard', icon: 'cash-multiple' },
       // Its own module — ticked per person in User Management; AR users still pick a
       // bank in Record Payment, but only those ticked open Bank Master.
-      { key: 'banks', module: 'Bank Master', title: 'Bank Master', desc: 'Your banks, balances and statements', screen: 'ARBanks', icon: 'bank-outline' },
+      { key: 'banks', module: 'Bank Master', screen: 'bank.screen.list', title: 'Bank Master', desc: 'Your banks, balances and statements', screen: 'ARBanks', icon: 'bank-outline' },
       { key: 'ap', title: 'Accounts Payable', desc: 'Vendor bills and payments', soon: true, icon: 'receipt' },
     ],
   },
@@ -59,6 +61,10 @@ export const GROUPS = [
     parts: [{ key: 'club1000', module: 'Club 1000', title: 'Club 1000', desc: 'Investors, schemes and payouts', screen: 'Club1000Hub', icon: 'trending-up' }] },
 ];
 
+// Every module, in department order — what User Management and Designation Master
+// offer. A new module only has to be added to GROUPS above to appear in both.
+export const ALL_MODULES = GROUPS.flatMap((g) => g.parts.map((p) => p.module)).filter(Boolean);
+
 
 // Whether this person may open Bank Master: admins always; others when it is ticked
 // for them in User Management. Mirrors receivables/permissions.has_bank_master_access.
@@ -73,7 +79,7 @@ export function hasBankMaster(user) {
 export function groupsFor(user, asAdmin) {
   const mods = asAdmin ? GROUPS.flatMap((g) => g.parts.map((p) => p.module)).filter(Boolean) : (user?.modules || []);
   return GROUPS.map((g) => {
-    const parts = g.parts.filter((p) => (g.adminOnly ? asAdmin : p.soon || (p.module ? mods.includes(p.module) : hasAny(mods, p.anyOf || []))));
+    const parts = g.parts.filter((p) => (g.adminOnly ? asAdmin : p.soon || ((p.module ? mods.includes(p.module) : hasAny(mods, p.anyOf || [])) && canSee(user, p.screen))));
     const open = parts.filter((p) => !p.soon);
     // `modules`: the real modules among them — what decides whether a department has
     // one thing to open or several.

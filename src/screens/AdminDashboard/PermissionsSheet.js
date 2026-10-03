@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { GROUPS } from '../../lib/moduleGroups';
+import { GROUPS, ALL_MODULES } from '../../lib/moduleGroups';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS } from '../../constants/theme';
@@ -16,8 +16,6 @@ const DEPTS = GROUPS.filter((g) => g.parts.some((p) => p.module));
 const deptModules = (g) => g.parts.filter((p) => p.module).map((p) => p.module);
 const MODULE_TITLE = Object.fromEntries(GROUPS.flatMap((g) => g.parts.filter((p) => p.module).map((p) => [p.module, p.title])));
 
-const ALL_MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
-                     'Task Allocation', 'Purchase', 'Land', 'Club 1000'];
 const ALIAS_MODULE = { 'Accounts Receivable': 'AR' };
 
 // What a designation may do, per company — the same editor as Designation Master

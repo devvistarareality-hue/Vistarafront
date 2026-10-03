@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GROUPS } from '../../lib/moduleGroups';
+import { GROUPS, ALL_MODULES } from '../../lib/moduleGroups';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StatusBar, ActivityIndicator, Alert, Modal, FlatList, StyleSheet,
@@ -73,8 +73,7 @@ function AppDropdown({ label, value, options, onChange, placeholder = 'Select…
     </>
   );
 }
-const MODULES = ['Sales', 'Channel Partner', 'HR', 'Accounts & Finance', 'AR',
-                 'Task Allocation', 'Purchase', 'Land', 'Club 1000'];
+const MODULES = ALL_MODULES;
 // Departments that hold modules (lib/moduleGroups), and each module's display name.
 const DEPTS = GROUPS.filter((g) => g.parts.some((p) => p.module));
 const deptModules = (g) => g.parts.filter((p) => p.module).map((p) => p.module);
