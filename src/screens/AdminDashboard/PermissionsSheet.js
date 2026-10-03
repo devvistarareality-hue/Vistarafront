@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { GROUPS } from '../../lib/moduleGroups';
+import { DESIGNATION_GROUPS as GROUPS } from '../../lib/moduleGroups';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS } from '../../constants/theme';

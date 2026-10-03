@@ -36,8 +36,9 @@ export const GROUPS = [
       { key: 'accounts', module: 'Accounts & Finance', title: 'Approvals & Bookings', desc: 'Sign off bookings and the bookings ledger',
         screen: 'ModuleHome', params: { module: 'Accounts & Finance', name: 'Accounts & Finance' }, icon: 'wallet-outline' },
       { key: 'ar', module: 'AR', title: 'Accounts Receivable', desc: 'Collections, dues, ageing, cancellations', screen: 'ARDashboard', icon: 'cash-multiple' },
-      // Shared by Receivables now and Payables next, so it belongs to the department.
-      { key: 'banks', anyOf: ['Accounts & Finance', 'AR'], title: 'Bank Master', desc: 'Your banks, balances and statements', screen: 'ARBanks', icon: 'bank-outline' },
+      // Its own module — ticked per person in User Management; AR users still pick a
+      // bank in Record Payment, but only those ticked open Bank Master.
+      { key: 'banks', module: 'Bank Master', grantOnly: true, title: 'Bank Master', desc: 'Your banks, balances and statements', screen: 'ARBanks', icon: 'bank-outline' },
       { key: 'ap', title: 'Accounts Payable', desc: 'Vendor bills and payments', soon: true, icon: 'receipt' },
     ],
   },
@@ -58,6 +59,19 @@ export const GROUPS = [
     parts: [{ key: 'club1000', module: 'Club 1000', title: 'Club 1000', desc: 'Investors, schemes and payouts', screen: 'Club1000Hub', icon: 'trending-up' }] },
 ];
 
+// Designation Master works per module (its menus, dashboards and permissions).
+// Bank Master is only an access tick — it has none of those — so the designation
+// screens list every module but it.
+export const DESIGNATION_GROUPS = GROUPS.map((g) => ({ ...g, parts: g.parts.filter((p) => !p.grantOnly) }));
+
+// Whether this person may open Bank Master: admins always; others when it is ticked
+// for them in User Management. Mirrors receivables/permissions.has_bank_master_access.
+export function hasBankMaster(user) {
+  if (!user) return false;
+  if (user.role === 'Admin' || user.is_staff) return true;
+  return ['modules', 'manager_modules', 'admin_modules'].some((k) => (user[k] || []).includes('Bank Master'));
+}
+
 // asAdmin: the platform admin home, which has always offered every module. Otherwise
 // the person's own modules (the employee home).
 export function groupsFor(user, asAdmin) {
@@ -65,7 +79,7 @@ export function groupsFor(user, asAdmin) {
   return GROUPS.map((g) => {
     const parts = g.parts.filter((p) => (g.adminOnly ? asAdmin : p.soon || (p.module ? mods.includes(p.module) : hasAny(mods, p.anyOf || []))));
     const open = parts.filter((p) => !p.soon);
-    // Shared pages (Bank Master) don't count when deciding whether a department has
+    // `modules`: the real modules among them — what decides whether a department has
     // one thing to open or several.
     return { ...g, parts, open, modules: g.adminOnly ? open : open.filter((p) => p.module) };
   }).filter((g) => g.open.length);
