@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { DESIGNATION_GROUPS as GROUPS } from '../../lib/moduleGroups';
+import { GROUPS } from '../../lib/moduleGroups';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StatusBar, ActivityIndicator, Alert, StyleSheet, Modal,
