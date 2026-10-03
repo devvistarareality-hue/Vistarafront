@@ -1567,7 +1567,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   );
 }
 
-const EMPTY_FILTERS = { status: '', project_id: [], source_id: '', campaign: '', telecaller_id: [], stm_id: [], tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
+const EMPTY_FILTERS = { status: '', project_id: [], source_id: '', channel_partner_id: '', campaign: '', telecaller_id: [], stm_id: [], tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
 // Project / telecaller / STM filters hold several ids; older callers may pass one.
 const asList = (v) => (Array.isArray(v) ? v : (v === '' || v == null ? [] : [String(v)]));
 // A filter counts as set when it has a value — an empty list is not one.
@@ -1576,7 +1576,7 @@ const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback',
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'];
 
 /* ── Filter Bottom Sheet ── */
-function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, facets = null, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false }) {
+function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, facets = null, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false, partners = null }) {
   // Only what occurs in the leads this person can see (?facets=1), as on the web.
   const fx = (key) => facets?.[key] ?? null;
   const [local, setLocal] = useState(filters);
@@ -1696,6 +1696,15 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
               options={[{ value: '', label: 'All Sources' }, ...onlyPresent(sources.map(s => ({ value: String(s.id), label: s.name })), fx('source_ids'), local.source_id)]}
               placeholder="All Sources" />
           </View>
+
+          {/* Which partner firm sent the lead — CP Leads only, as on the web. In Sales
+              every lead has an empty partner and Source already answers it. */}
+          {partners ? (
+            <View>
+              <Text style={fsLbl}>PARTNER FIRM</Text>
+              <PartnerFilter partners={partners} value={local.channel_partner_id} onChange={(v) => set('channel_partner_id', v)} />
+            </View>
+          ) : null}
 
           {/* Meta campaign name — as on the web */}
           <View>
@@ -1979,6 +1988,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     // Several ids at once from the multi-selects — the server reads them comma-separated.
     if (asList(filters.project_id).length)    url += `&project_id=${asList(filters.project_id).join(',')}`;
     if (filters.source_id)     url += `&source_id=${filters.source_id}`;
+    if (filters.channel_partner_id) url += `&channel_partner_id=${filters.channel_partner_id}`;
     if (filters.campaign?.trim()) url += `&campaign=${encodeURIComponent(filters.campaign.trim())}`;
     if (asList(filters.telecaller_id).length) url += `&telecaller_id=${asList(filters.telecaller_id).join(',')}`;
     if (asList(filters.stm_id).length)        url += `&stm_id=${asList(filters.stm_id).join(',')}`;
@@ -2263,7 +2273,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters}
         projects={projects} sources={sources} telecallers={telecallers} stms={stms} facets={facets}
-        showTcStatus={showTcStatus} showStmStatus={showStmStatus} showAssignees={showAssignees} isCp={isCpAny} />
+        showTcStatus={showTcStatus} showStmStatus={showStmStatus} showAssignees={showAssignees} isCp={isCpAny}
+        partners={cpOnly ? channelPartners : null} />
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -2363,6 +2374,50 @@ const SalesLeadsScreenS = StyleSheet.create({
                  backgroundColor: COLORS.surfaceAlt, fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   cpTabs:      { marginHorizontal: 16, marginBottom: 6 },
   cpName:      { fontSize: 11, color: COLORS.textSecondary },
+});
+
+// Partner-firm filter on CP Leads: a search box over the directory (it runs to
+// hundreds of firms) and the matches as a short list. Mirrors the web's PartnerPicker.
+function PartnerFilter({ partners, value, onChange }) {
+  const [q, setQ] = useState('');
+  const picked = partners.find((p) => String(p.id) === String(value));
+  const needle = q.trim().toLowerCase();
+  const matches = partners
+    .filter((p) => !needle || `${p.name} ${p.firm_name || ''}`.toLowerCase().includes(needle))
+    .slice(0, 40);
+  return (
+    <View>
+      {picked ? (
+        <TouchableOpacity style={pfS.picked} onPress={() => onChange('')} activeOpacity={0.8}>
+          <Text style={pfS.pickedText} numberOfLines={1}>{picked.name}{picked.firm_name ? ` · ${picked.firm_name}` : ''}</Text>
+          <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
+        </TouchableOpacity>
+      ) : null}
+      <TextInput style={lcf.input} value={q} onChangeText={setQ} placeholder={picked ? 'Change partner firm…' : 'All partner firms — search…'}
+        placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
+      {needle ? (
+        <View style={pfS.list}>
+          {matches.length ? matches.map((p) => (
+            <TouchableOpacity key={p.id} style={pfS.row} onPress={() => { onChange(String(p.id)); setQ(''); }}>
+              <Text style={pfS.rowName} numberOfLines={1}>{p.name}</Text>
+              {p.firm_name ? <Text style={pfS.rowFirm} numberOfLines={1}>{p.firm_name}</Text> : null}
+            </TouchableOpacity>
+          )) : <Text style={pfS.none}>No partner matches.</Text>}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const pfS = StyleSheet.create({
+  picked: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14,
+            borderWidth: 1.5, borderColor: COLORS.link, backgroundColor: COLORS.accentSoft, marginBottom: 8 },
+  pickedText: { flex: 1, fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  list: { marginTop: 6, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden', backgroundColor: COLORS.surface },
+  row: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  rowName: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  rowFirm: { fontSize: 12, color: COLORS.textSecondary, marginTop: 1 },
+  none: { padding: 14, fontSize: 13, color: COLORS.textSecondary },
 });
 
 // Campaign text field in the filter sheet.
