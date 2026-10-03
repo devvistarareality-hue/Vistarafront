@@ -278,6 +278,7 @@ function ProjectWise({ data, onOpen, onRegister }) {
   if (!rows.length) return <Text style={s.pwEmpty}>No active accounts.</Text>;
   return (
     <View>
+      <ProjectCharts rows={rows} />
       {rows.map((p) => {
         const age = p.ageing || {};
         const worst = AGE_LABELS.map((k, i) => [k, i, age[k] || 0]).filter((x) => x[2] > 0).slice(-3).reverse();
@@ -323,6 +324,77 @@ function ProjectWise({ data, onOpen, onRegister }) {
   );
 }
 
+// Project-wise charts — mirrors the web: a stacked bar per project (Not yet due +
+// Overdue + Interest = Total receivable) and a projects × ageing heatmap on a
+// square-root scale. Tap a bar or a cell for its figures (no hover on a phone).
+const OWES = [['not_due', 'Not yet due'], ['overdue', 'Overdue'], ['net_interest', 'Interest']];
+
+function ProjectCharts({ rows }) {
+  const [sel, setSel] = useState(null);   // text describing the tapped bar / cell
+  const sorted = [...rows].sort((a, b) => b.totals.os_with_interest - a.totals.os_with_interest);
+  const max = Math.max(1, ...sorted.map((p) => OWES.reduce((a, [k]) => a + Math.max(0, p.totals[k] || 0), 0)));
+  const ageMax = Math.max(1, ...rows.flatMap((p) => AGE_LABELS.map((a) => p.ageing?.[a] || 0)));
+  const step = (v) => (v > 0 ? Math.min(7, 1 + Math.floor(Math.sqrt(v / ageMax) * 7)) : 0);
+  return (
+    <View>
+      <View style={[common.card, s.pcCard]}>
+        <Text style={s.cardTitle}>What each project owes</Text>
+        <Text style={s.cardSub}>Total receivable = overdue + not yet due + interest</Text>
+        <View style={s.pcLegend}>
+          {OWES.map(([k, label], i) => (
+            <View key={k} style={s.pcLegendItem}>
+              <View style={[s.pcSwatch, { backgroundColor: COLORS.viz[i] }]} />{/* inline-ok: series colour */}
+              <Text style={s.pcLegendText}>{label}</Text>
+            </View>
+          ))}
+        </View>
+        {sorted.map((p) => (
+          <TouchableOpacity key={p.id} style={s.pcRow} activeOpacity={0.7}
+            onPress={() => setSel(`${p.name} · not yet due ${inrShort(p.totals.not_due)} · overdue ${inrShort(p.totals.overdue)} · interest ${inrShort(p.totals.net_interest)}`)}>
+            <Text style={s.pcName} numberOfLines={1}>{p.name}</Text>
+            <View style={s.pcTrack}>
+              {OWES.map(([k], i) => {
+                const v = Math.max(0, p.totals[k] || 0);
+                return v ? <View key={k} style={[s.pcSeg, { width: `${(v / max) * 100}%`, backgroundColor: COLORS.viz[i] }]} /> : null; // inline-ok: segment width and series colour from data
+              })}
+            </View>
+            <Text style={s.pcTotal}>{inrShort(p.totals.os_with_interest)}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={[common.card, s.pcCard]}>
+        <Text style={s.cardTitle}>Where the overdue sits</Text>
+        <Text style={s.cardSub}>By project and days past due — stronger colour is more</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View>
+            <View style={s.hmRow}>
+              <View style={s.hmName} />
+              {AGE_LABELS.map((a) => <Text key={a} style={s.hmCol}>{a}</Text>)}
+            </View>
+            {sorted.map((p) => (
+              <View key={p.id} style={s.hmRow}>
+                <Text style={[s.pcName, s.hmName]} numberOfLines={1}>{p.name}</Text>
+                {AGE_LABELS.map((a) => {
+                  const v = p.ageing?.[a] || 0;
+                  const st = step(v);
+                  return (
+                    <TouchableOpacity key={a} activeOpacity={0.7} onPress={() => setSel(`${p.name} · ${a} days overdue · ${v ? inrShort(v) : 'nothing'}`)}
+                      style={[s.hmCell, st ? { backgroundColor: COLORS.vizSeq[st] } : s.hmZero]}>{/* inline-ok: heatmap step colour */}
+                      <Text style={[s.hmText, { color: st === 0 ? COLORS.textTertiary : COLORS.vizSeqInk[st >= 4 ? 1 : 0] }]}>{v ? inrShort(v) : '—'}</Text>{/* inline-ok: ink for the step */}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+      {sel ? <Text style={s.pcSel}>{sel}</Text> : null}
+    </View>
+  );
+}
+
 function PwStat({ k, v, bad }) {
   return (
     <View style={s.flex}>
@@ -334,6 +406,23 @@ function PwStat({ k, v, bad }) {
 
 const s = StyleSheet.create({
   viewSeg: { marginBottom: 12 },
+  pcCard: { padding: 16, marginBottom: 12 },
+  pcLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 10, marginBottom: 12 },
+  pcLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  pcSwatch: { width: 10, height: 10, borderRadius: 3 },
+  pcLegendText: { fontSize: 11.5, color: COLORS.textSecondary },
+  pcRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
+  pcName: { width: 92, fontSize: 12, fontWeight: '600', color: COLORS.textPrimary },
+  pcTrack: { flex: 1, flexDirection: 'row', gap: 2, height: 14 },
+  pcSeg: { height: '100%', borderRadius: 3, minWidth: 2 },
+  pcTotal: { width: 64, textAlign: 'right', fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
+  pcSel: { fontSize: 12.5, color: COLORS.textPrimary, backgroundColor: COLORS.surfaceAlt, borderRadius: 12, padding: 10, marginBottom: 12 },
+  hmRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3 },
+  hmName: { width: 96 },
+  hmCol: { width: 62, textAlign: 'center', fontSize: 10, fontWeight: '700', color: COLORS.textSecondary },
+  hmCell: { width: 62, height: 30, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
+  hmZero: { backgroundColor: COLORS.surfaceAlt },
+  hmText: { fontSize: 10.5, fontWeight: '700' },
   pwEmpty: { textAlign: 'center', color: COLORS.textSecondary, marginTop: 30 },
   pwCard: { padding: 16, marginBottom: 12 },
   pwHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
