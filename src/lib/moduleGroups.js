@@ -71,7 +71,9 @@ export const ALL_MODULES = GROUPS.flatMap((g) => g.parts.map((p) => p.module)).f
 export function hasBankMaster(user) {
   if (!user) return false;
   if (user.role === 'Admin' || user.is_staff) return true;
-  return ['modules', 'manager_modules', 'admin_modules'].some((k) => (user[k] || []).includes('Bank Master'));
+  // Ticked for them, and not hidden by their designation's menu (Banks & statements).
+  return ['modules', 'manager_modules', 'admin_modules'].some((k) => (user[k] || []).includes('Bank Master'))
+    && canSee(user, 'bank.screen.list');
 }
 
 // asAdmin: the platform admin home, which has always offered every module. Otherwise

@@ -280,6 +280,47 @@ function ProjectWise({ data, onOpen, onRegister }) {
   return (
     <View>
       <ProjectCharts rows={rows} data={data} onOpen={onOpen} />
+      <ProjectTable rows={rows} data={data} onOpen={onOpen} />
+    </View>
+  );
+}
+
+// "All projects at a glance" — the web's table under the charts: every project's
+// figures in one place, with the totals. Scrolls sideways; tap a project to open it.
+const PT_COLS = [
+  ['Accounts', (p) => `${p.accounts} · ${p.overdue_accounts} od`, (d) => String(d.accounts)],
+  ['Collectable', (p) => inrShort(p.totals.collectable), (d) => inrShort(d.totals.collectable)],
+  ['Received', (p) => `${inrShort(p.totals.received)} · ${p.pct_realised}%`, (d) => `${inrShort(d.totals.received)} · ${d.pct_realised}%`],
+  ['Overdue', (p) => inrShort(p.totals.overdue), (d) => inrShort(d.totals.overdue), 'bad'],
+  ['>180 days', (p) => (p.ageing?.['>180'] ? inrShort(p.ageing['>180']) : '—'), (d) => (d.ageing?.['>180'] ? inrShort(d.ageing['>180']) : '—')],
+  ['Not yet due', (p) => inrShort(p.totals.not_due), (d) => inrShort(d.totals.not_due)],
+  ['Interest', (p) => inrShort(p.totals.net_interest), (d) => inrShort(d.totals.net_interest)],
+  ['Total receivable', (p) => inrShort(p.totals.os_with_interest), (d) => inrShort(d.totals.os_with_interest), 'strong'],
+];
+
+function ProjectTable({ rows, data, onOpen }) {
+  const cell = (tone) => StyleSheet.compose(s.ptCell, tone === 'bad' ? s.ptBad : tone === 'strong' ? s.ptStrong : null);
+  return (
+    <View style={[common.card, s.pcCard]}>
+      <Text style={s.cardTitle}>All projects at a glance</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.ptScroll}>
+        <View>
+          <View style={[s.ptRow, s.ptHead]}>
+            <Text style={[s.ptName, s.ptHeadText]}>Project</Text>
+            {PT_COLS.map(([h]) => <Text key={h} style={[s.ptCell, s.ptHeadText]}>{h}</Text>)}
+          </View>
+          {rows.map((p) => (
+            <TouchableOpacity key={p.id} style={s.ptRow} activeOpacity={0.7} onPress={() => onOpen(p.id)}>
+              <Text style={[s.ptName, s.ptLink]} numberOfLines={1}>{p.name}</Text>
+              {PT_COLS.map(([h, v, , tone]) => <Text key={h} style={cell(tone)}>{v(p)}</Text>)}
+            </TouchableOpacity>
+          ))}
+          <View style={[s.ptRow, s.ptFoot]}>
+            <Text style={[s.ptName, s.ptStrong]}>Total</Text>
+            {PT_COLS.map(([h, , t, tone]) => <Text key={h} style={[cell(tone), s.ptStrong]}>{t(data)}</Text>)}
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -485,6 +526,16 @@ const s = StyleSheet.create({
   hmCell: { width: 72, height: 38, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
   hmZero: { backgroundColor: COLORS.surfaceAlt },
   hmText: { fontSize: 12, fontWeight: '700' },
+  ptScroll: { marginTop: 10 },
+  ptRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  ptHead: { paddingVertical: 8 },
+  ptFoot: { borderBottomWidth: 0, borderTopWidth: 1, borderTopColor: COLORS.border },
+  ptHeadText: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary },
+  ptName: { width: 130, paddingRight: 8, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  ptLink: { color: COLORS.link },
+  ptCell: { width: 108, textAlign: 'right', paddingHorizontal: 6, fontSize: 12.5, color: COLORS.textPrimary },
+  ptBad: { color: COLORS.error, fontWeight: '700' },
+  ptStrong: { fontWeight: '800', color: COLORS.textPrimary },
   hmTotalRow: { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: COLORS.border },
   hmTotalName: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
   hmTotalSum: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary },
