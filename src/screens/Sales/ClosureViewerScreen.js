@@ -380,7 +380,9 @@ export default function ClosureViewerScreen({ navigation, route }) {
         setSelectedIds((ids) => (ids.includes(plot.id) ? ids : [...ids, plot.id]));
       } else {
         const f = (data.failed || [])[0];
-        flash(f?.reason === 'sold'
+        flash(f?.reason === 'not_assigned'
+          ? 'You are not assigned to this project, so you cannot book on it.'
+          : f?.reason === 'sold'
           ? `Plot ${f.number || plot.number} was just sold — pick a different unit.`
           : `Plot ${f?.number || plot.number} was just selected by another salesperson — pick a different one.`);
         apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []).then((pl) => setPlots(Array.isArray(pl) ? pl : (pl?.results || []))).catch(() => {});

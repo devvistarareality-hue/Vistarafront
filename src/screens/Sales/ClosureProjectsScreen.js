@@ -32,7 +32,8 @@ export default function ClosureProjectsScreen({ navigation, route }) {
 
   const load = useCallback(async () => {
     try {
-      const url = SALES_ENDPOINTS.projects + (companyId ? `?company_id=${companyId}` : '');
+      // Only the projects this rep is assigned to (for_booking=1).
+      const url = `${SALES_ENDPOINTS.projects}?for_booking=1${companyId ? `&company_id=${companyId}` : ''}`;
       const res = await apiFetch(url);
       if (res.ok) {
         const d = await res.json();
