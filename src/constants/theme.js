@@ -145,6 +145,14 @@ export const COLORS = {
   vizSeqInk: IS_DARK
     ? [null, '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#0b0b0b', '#0b0b0b', '#0b0b0b']
     : [null, '#0b0b0b', '#0b0b0b', '#0b0b0b', '#0b0b0b', '#0b0b0b', '#ffffff', '#ffffff'],
+  // Second ramp — blue — for money still to come (not yet due), so it never reads
+  // like the red overdue heatmap. Same values as the web's --viz-due-*.
+  vizDue: IS_DARK
+    ? [null, '#0d366b', '#104281', '#1c5cab', '#2a78d6', '#5598e7', '#86b6ef', '#cde2fb']
+    : [null, '#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '#0d366b'],
+  vizDueInk: IS_DARK
+    ? [null, '#ffffff', '#ffffff', '#ffffff', '#0b0b0b', '#0b0b0b', '#0b0b0b', '#0b0b0b']
+    : [null, '#0b0b0b', '#0b0b0b', '#0b0b0b', '#0b0b0b', '#ffffff', '#ffffff', '#ffffff'],
   inkRgb: T.inkRgb,
   statusBar: IS_DARK ? 'light-content' : 'dark-content',
 

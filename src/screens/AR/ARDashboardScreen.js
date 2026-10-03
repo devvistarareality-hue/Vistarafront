@@ -278,22 +278,40 @@ function ProjectWise({ data, onOpen, onRegister }) {
   if (!rows.length) return <Text style={s.pwEmpty}>No active accounts.</Text>;
   return (
     <View>
-      <ProjectCharts rows={rows} onOpen={onOpen} />
+      <ProjectCharts rows={rows} data={data} onOpen={onOpen} />
     </View>
   );
 }
 
 // Project-wise charts — mirrors the web: a stacked bar per project (Not yet due +
 // Overdue + Interest = Total receivable) and a projects × ageing heatmap on a
-// square-root scale. Tap a bar or a cell for its figures (no hover on a phone).
+// square-root scale, then what falls due this month and the next three (blue, so
+// it never reads like the red overdue). Tap a bar or a cell for its figures.
 const OWES = [['not_due', 'Not yet due'], ['overdue', 'Overdue'], ['net_interest', 'Interest']];
 
-function ProjectCharts({ rows, onOpen }) {
+function ProjectCharts({ rows, data, onOpen }) {
   const [sel, setSel] = useState(null);   // { id, text } — the tapped bar / cell
   const sorted = [...rows].sort((a, b) => b.totals.os_with_interest - a.totals.os_with_interest);
   const max = Math.max(1, ...sorted.map((p) => OWES.reduce((a, [k]) => a + Math.max(0, p.totals[k] || 0), 0)));
   const ageMax = Math.max(1, ...rows.flatMap((p) => AGE_LABELS.map((a) => p.ageing?.[a] || 0)));
   const step = (v) => (v > 0 ? Math.min(7, 1 + Math.floor(Math.sqrt(v / ageMax) * 7)) : 0);
+  // Coming due: the months are charted on their own scale; "After …" (and "No date"
+  // when there is any) sit to the side as plain totals so they don't flatten them.
+  const cLabels = data?.coming_labels || [];
+  const cTot = data?.coming || [];
+  const cN = Math.max(0, cLabels.length - 2);
+  const cMonths = [...Array(cN).keys()];
+  const cLater = [cN, cN + 1].filter((i) => i < cLabels.length && (i === cN || (cTot[i] || 0) > 0));
+  const cMax = Math.max(1, ...cMonths.map((i) => cTot[i] || 0));
+  const cCellMax = Math.max(1, ...rows.flatMap((p) => cMonths.map((i) => p.coming?.[i] || 0)));
+  const cStep = (v) => (v > 0 ? Math.min(7, 1 + Math.floor(Math.sqrt(v / cCellMax) * 7)) : 0);
+  const cRows = [...rows].filter((p) => (p.coming || []).some((v) => v > 0))
+    .sort((a, b) => (b.coming || []).reduce((t, v) => t + v, 0) - (a.coming || []).reduce((t, v) => t + v, 0));
+  const cSum = cMonths.reduce((t, i) => t + (cTot[i] || 0), 0);
+  const cPick = (i) => {
+    const by = rows.map((p) => [p, p.coming?.[i] || 0]).filter(([, x]) => x > 0).sort((a, b) => b[1] - a[1]);
+    setSel({ id: by[0]?.[0].id, text: `Due ${cLabels[i]} · ${inrShort(cTot[i] || 0)}${by.length ? '\n' + by.slice(0, 6).map(([p, x]) => `${p.name} ${inrShort(x)}`).join(' · ') : ''}` });
+  };
   return (
     <View>
       <View style={[common.card, s.pcCard]}>
@@ -358,10 +376,63 @@ function ProjectCharts({ rows, onOpen }) {
           </View>
         </ScrollView>
       </View>
+      {cN > 0 ? (
+        <View style={[common.card, s.pcCard]}>
+          <Text style={s.cardTitle}>Coming due — this month and the next three</Text>
+          <Text style={s.cardSub}>Not yet due, by the month it falls due · {inrShort(cSum)} in these {cN} months</Text>
+          <View style={s.cdCols}>
+            {cMonths.map((i) => {
+              const v = cTot[i] || 0;
+              return (
+                <TouchableOpacity key={i} style={s.cdCol} activeOpacity={0.7} onPress={() => cPick(i)}>
+                  <Text style={s.cdVal} numberOfLines={1}>{v ? inrShort(v) : '—'}</Text>
+                  <View style={s.cdTrack}>
+                    <View style={[s.cdBar, { height: `${(v / cMax) * 100}%` }]} />{/* inline-ok: column height from data */}
+                  </View>
+                  <Text style={[s.cdLabel, i === 0 && s.cdNow]} numberOfLines={1}>{cLabels[i]}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <View style={s.cdLater}>
+            {cLater.map((i) => (
+              <TouchableOpacity key={i} style={s.cdLaterItem} activeOpacity={0.7} onPress={() => cPick(i)}>
+                <Text style={s.cdLaterLabel}>{cLabels[i]}</Text>
+                <Text style={s.cdLaterVal}>{inrShort(cTot[i] || 0)}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {cRows.length ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.cdGrid}>
+              <View>
+                <View style={s.hmRow}>
+                  <View style={s.hmName} />
+                  {cMonths.concat(cLater).map((i) => <Text key={i} style={s.hmCol} numberOfLines={1}>{cLabels[i]}</Text>)}
+                </View>
+                {cRows.map((p) => (
+                  <View key={p.id} style={s.hmRow}>
+                    <Text style={[s.pcName, s.hmName]} numberOfLines={1}>{p.name}</Text>
+                    {cMonths.concat(cLater).map((i) => {
+                      const v = p.coming?.[i] || 0;
+                      const st = i >= cN ? 0 : cStep(v);
+                      return (
+                        <TouchableOpacity key={i} activeOpacity={0.7} onPress={() => setSel({ id: p.id, text: `${p.name} · due ${cLabels[i]} · ${v ? inrShort(v) : 'nothing'}` })}
+                          style={[s.hmCell, i >= cN ? s.cdLaterCell : st ? { backgroundColor: COLORS.vizDue[st] } : s.hmZero]}>{/* inline-ok: grid step colour */}
+                          <Text style={[s.hmText, { color: i >= cN ? COLORS.textPrimary : st === 0 ? COLORS.textTertiary : COLORS.vizDueInk[st] }]}>{v ? inrShort(v) : '—'}</Text>{/* inline-ok: ink for the step */}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          ) : null}
+        </View>
+      ) : null}
       {sel ? (
         <View style={s.pcSel}>
           <Text style={s.pcSelText}>{sel.text}</Text>
-          <TouchableOpacity onPress={() => onOpen(sel.id)}><Text style={s.pcSelOpen}>Open dashboard ›</Text></TouchableOpacity>
+          {sel.id ? <TouchableOpacity onPress={() => onOpen(sel.id)}><Text style={s.pcSelOpen}>Open dashboard ›</Text></TouchableOpacity> : null}
         </View>
       ) : null}
     </View>
@@ -391,6 +462,19 @@ const s = StyleSheet.create({
   hmCell: { width: 72, height: 38, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
   hmZero: { backgroundColor: COLORS.surfaceAlt },
   hmText: { fontSize: 12, fontWeight: '700' },
+  cdCols: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, height: 190, marginTop: 14 },
+  cdCol: { flex: 1, height: '100%', alignItems: 'center', gap: 4 },
+  cdVal: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
+  cdTrack: { flex: 1, width: '100%', justifyContent: 'flex-end', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  cdBar: { width: '62%', minHeight: 3, borderTopLeftRadius: 5, borderTopRightRadius: 5, backgroundColor: COLORS.vizDue[4] },
+  cdLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  cdNow: { color: COLORS.textPrimary },
+  cdLater: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border, borderStyle: 'dashed' },
+  cdLaterItem: { flex: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  cdLaterLabel: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary },
+  cdLaterVal: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
+  cdGrid: { marginTop: 14 },
+  cdLaterCell: { borderWidth: 1, borderColor: COLORS.border },
   pwEmpty: { textAlign: 'center', color: COLORS.textSecondary, marginTop: 30 },
   pwCard: { padding: 16, marginBottom: 12 },
   pwHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
