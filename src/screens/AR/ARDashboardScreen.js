@@ -278,48 +278,7 @@ function ProjectWise({ data, onOpen, onRegister }) {
   if (!rows.length) return <Text style={s.pwEmpty}>No active accounts.</Text>;
   return (
     <View>
-      <ProjectCharts rows={rows} />
-      {rows.map((p) => {
-        const age = p.ageing || {};
-        const worst = AGE_LABELS.map((k, i) => [k, i, age[k] || 0]).filter((x) => x[2] > 0).slice(-3).reverse();
-        return (
-          <View key={p.id} style={[common.card, s.pwCard]}>
-            <View style={s.pwHead}>
-              <View style={s.flex}>
-                <Text style={s.pwName} numberOfLines={1}>{p.name}</Text>
-                <Text style={s.pwSub}>{p.accounts} accounts · {p.overdue_accounts} overdue</Text>
-              </View>
-              <View style={s.pwTotal}>
-                <Text style={s.pwTotalLabel}>TOTAL RECEIVABLE</Text>
-                <Text style={s.pwTotalValue}>{inrShort(p.totals.os_with_interest)}</Text>
-              </View>
-            </View>
-            <View style={s.pwTrack}><View style={[s.pwFill, { width: `${Math.min(100, p.pct_realised)}%` }]} /></View>{/* inline-ok: collected % from data */}
-            <Text style={s.pwCollected}>{p.pct_realised}% collected · {inrShort(p.totals.received)} of {inrShort(p.totals.collectable)}</Text>
-            <View style={s.pwStats}>
-              <PwStat k="Overdue" v={inrShort(p.totals.overdue)} bad />
-              <PwStat k="Not yet due" v={inrShort(p.totals.not_due)} />
-              <PwStat k="Interest" v={inrShort(p.totals.net_interest)} />
-              <PwStat k=">180 days" v={age['>180'] ? inrShort(age['>180']) : '—'} bad={!!age['>180']} />
-            </View>
-            <View style={s.stack}>
-              {AGE_LABELS.map((a, i) => age[a] > 0 && <View key={a} style={[s.seg, { flex: age[a], backgroundColor: AGE_COLORS[i] }]} />)}{/* inline-ok: segment share and colour from data */}
-            </View>
-            <View style={s.pwLegend}>
-              {worst.length ? worst.map(([k, i, v]) => (
-                <View key={k} style={s.pwLegendItem}>
-                  <View style={[s.dot, { backgroundColor: AGE_COLORS[i] }]} />{/* inline-ok: bucket colour */}
-                  <Text style={s.pwLegendText}>{k} days · {inrShort(v)}</Text>
-                </View>
-              )) : <Text style={s.pwLegendText}>Nothing overdue</Text>}
-            </View>
-            <View style={s.pwActions}>
-              <Button title="Register" size="sm" variant="secondary" onPress={() => onRegister(p.id)} />
-              <Button title="Open dashboard" size="sm" variant="primary" onPress={() => onOpen(p.id)} />
-            </View>
-          </View>
-        );
-      })}
+      <ProjectCharts rows={rows} onOpen={onOpen} />
     </View>
   );
 }
@@ -329,8 +288,8 @@ function ProjectWise({ data, onOpen, onRegister }) {
 // square-root scale. Tap a bar or a cell for its figures (no hover on a phone).
 const OWES = [['not_due', 'Not yet due'], ['overdue', 'Overdue'], ['net_interest', 'Interest']];
 
-function ProjectCharts({ rows }) {
-  const [sel, setSel] = useState(null);   // text describing the tapped bar / cell
+function ProjectCharts({ rows, onOpen }) {
+  const [sel, setSel] = useState(null);   // { id, text } — the tapped bar / cell
   const sorted = [...rows].sort((a, b) => b.totals.os_with_interest - a.totals.os_with_interest);
   const max = Math.max(1, ...sorted.map((p) => OWES.reduce((a, [k]) => a + Math.max(0, p.totals[k] || 0), 0)));
   const ageMax = Math.max(1, ...rows.flatMap((p) => AGE_LABELS.map((a) => p.ageing?.[a] || 0)));
@@ -350,7 +309,7 @@ function ProjectCharts({ rows }) {
         </View>
         {sorted.map((p) => (
           <TouchableOpacity key={p.id} style={s.pcRow} activeOpacity={0.7}
-            onPress={() => setSel(`${p.name} · not yet due ${inrShort(p.totals.not_due)} · overdue ${inrShort(p.totals.overdue)} · interest ${inrShort(p.totals.net_interest)}`)}>
+            onPress={() => setSel({ id: p.id, text: `${p.name} · not yet due ${inrShort(p.totals.not_due)} · overdue ${inrShort(p.totals.overdue)} · interest ${inrShort(p.totals.net_interest)}` })}>
             <Text style={s.pcName} numberOfLines={1}>{p.name}</Text>
             <View style={s.pcTrack}>
               {OWES.map(([k], i) => {
@@ -379,7 +338,7 @@ function ProjectCharts({ rows }) {
                   const v = p.ageing?.[a] || 0;
                   const st = step(v);
                   return (
-                    <TouchableOpacity key={a} activeOpacity={0.7} onPress={() => setSel(`${p.name} · ${a} days overdue · ${v ? inrShort(v) : 'nothing'}`)}
+                    <TouchableOpacity key={a} activeOpacity={0.7} onPress={() => setSel({ id: p.id, text: `${p.name} · ${a} days overdue · ${v ? inrShort(v) : 'nothing'}` })}
                       style={[s.hmCell, st ? { backgroundColor: COLORS.vizSeq[st] } : s.hmZero]}>{/* inline-ok: heatmap step colour */}
                       <Text style={[s.hmText, { color: st === 0 ? COLORS.textTertiary : COLORS.vizSeqInk[st >= 4 ? 1 : 0] }]}>{v ? inrShort(v) : '—'}</Text>{/* inline-ok: ink for the step */}
                     </TouchableOpacity>
@@ -390,19 +349,16 @@ function ProjectCharts({ rows }) {
           </View>
         </ScrollView>
       </View>
-      {sel ? <Text style={s.pcSel}>{sel}</Text> : null}
+      {sel ? (
+        <View style={s.pcSel}>
+          <Text style={s.pcSelText}>{sel.text}</Text>
+          <TouchableOpacity onPress={() => onOpen(sel.id)}><Text style={s.pcSelOpen}>Open dashboard ›</Text></TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function PwStat({ k, v, bad }) {
-  return (
-    <View style={s.flex}>
-      <Text style={s.pwStatK}>{k}</Text>
-      <Text style={[s.pwStatV, bad && s.pwBad]} numberOfLines={1}>{v}</Text>
-    </View>
-  );
-}
 
 const s = StyleSheet.create({
   viewSeg: { marginBottom: 12 },
@@ -416,7 +372,9 @@ const s = StyleSheet.create({
   pcTrack: { flex: 1, flexDirection: 'row', gap: 2, height: 14 },
   pcSeg: { height: '100%', borderRadius: 3, minWidth: 2 },
   pcTotal: { width: 64, textAlign: 'right', fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
-  pcSel: { fontSize: 12.5, color: COLORS.textPrimary, backgroundColor: COLORS.surfaceAlt, borderRadius: 12, padding: 10, marginBottom: 12 },
+  pcSel: { backgroundColor: COLORS.surfaceAlt, borderRadius: 12, padding: 10, marginBottom: 12, gap: 6 },
+  pcSelText: { fontSize: 12.5, color: COLORS.textPrimary },
+  pcSelOpen: { fontSize: 13, fontWeight: '700', color: COLORS.link },
   hmRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3 },
   hmName: { width: 96 },
   hmCol: { width: 62, textAlign: 'center', fontSize: 10, fontWeight: '700', color: COLORS.textSecondary },
