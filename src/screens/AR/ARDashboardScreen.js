@@ -326,7 +326,7 @@ function ProjectCharts({ rows, data, onOpen }) {
           ))}
         </View>
         {sorted.map((p) => (
-          <TouchableOpacity key={p.id} style={s.pcRow} activeOpacity={0.7}
+          <TouchableOpacity key={p.id} style={[s.pcRow, p === sorted[sorted.length - 1] && s.pcRowLast]} activeOpacity={0.7}
             onPress={() => setSel({ id: p.id, text: `${p.name} · not yet due ${inrShort(p.totals.not_due)} · overdue ${inrShort(p.totals.overdue)} · interest ${inrShort(p.totals.net_interest)}` })}>
             <Text style={s.pcName} numberOfLines={1}>{p.name}</Text>
             {/* Bar as long as the project's total (relative to the largest), its
@@ -336,9 +336,10 @@ function ProjectCharts({ rows, data, onOpen }) {
                 const tot = OWES.reduce((t, [k]) => t + Math.max(0, p.totals[k] || 0), 0) || 1;
                 return (
                   <View style={[s.pcStack, { width: `${(tot / max) * 72}%` }]}>{/* inline-ok: bar length from data */}
+                    {/* A part under ~0.5% of the longest bar is left out — only a sliver. */}
                     {OWES.map(([k], i) => {
                       const v = Math.max(0, p.totals[k] || 0);
-                      return v ? <View key={k} style={[s.pcSeg, { width: `${(v / tot) * 100}%`, backgroundColor: COLORS.viz[i] }]} /> : null; // inline-ok: part of the bar and series colour from data
+                      return v / max >= 0.005 ? <View key={k} style={[s.pcSeg, { flexGrow: v, backgroundColor: COLORS.viz[i] }]} /> : null; // inline-ok: part of the bar and series colour from data
                     })}
                   </View>
                 );
@@ -447,11 +448,12 @@ const s = StyleSheet.create({
   pcLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   pcSwatch: { width: 10, height: 10, borderRadius: 3 },
   pcLegendText: { fontSize: 11.5, color: COLORS.textSecondary },
-  pcRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7 },
-  pcName: { width: 100, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
-  pcTrack: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pcStack: { flexDirection: 'row', height: 16, borderRadius: 4, overflow: 'hidden', minWidth: 4 },
-  pcSeg: { height: '100%', minWidth: 2, borderLeftWidth: 1, borderLeftColor: COLORS.surface },
+  pcRow: { flexDirection: 'row', alignItems: 'center', height: 42, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  pcRowLast: { borderBottomWidth: 0 },
+  pcName: { width: 100, paddingRight: 8, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  pcTrack: { flex: 1, height: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 8, borderLeftWidth: 1, borderLeftColor: COLORS.border },
+  pcStack: { flexDirection: 'row', gap: 2, height: 14, borderRadius: 4, overflow: 'hidden', minWidth: 6 },
+  pcSeg: { flexBasis: 0, height: '100%', minWidth: 2 },
   pcTotal: { fontSize: 12.5, fontWeight: '800', color: COLORS.textPrimary },
   pcSel: { backgroundColor: COLORS.surfaceAlt, borderRadius: 12, padding: 10, marginBottom: 12, gap: 6 },
   pcSelText: { fontSize: 12.5, color: COLORS.textPrimary },
