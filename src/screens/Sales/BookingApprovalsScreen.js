@@ -13,7 +13,6 @@ import FilterSelect from '../../components/FilterSelect';
 import { isManagerRole } from '../../lib/roles';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
-import ExportBookings from '../../components/ExportBookings';
 import ProjectApprovalsPanel from '../../components/ProjectApprovalsPanel';
 
 import AppIcon from '../../components/AppIcon';
@@ -373,7 +372,6 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           </View>
         )}
 
-        <ExportBookings projects={projects} companyId={companyId} />
 
         <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10 }}>
           {TABS.map(([k, label]) => (

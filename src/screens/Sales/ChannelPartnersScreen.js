@@ -77,13 +77,18 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  // One partner per contact number. Checked while the number is typed rather than
+  // on submit, so nobody fills in the whole form only to be told the broker is
+  // already there. The server enforces it regardless (409) — this is the courtesy.
+  const [dupe, setDupe] = useState(null);
+  const [checking, setChecking] = useState(false);
   const isEdit = !!initial;
 
   // Reseed whenever the sheet opens, so editing one partner then another does not
   // carry the first one's values across.
   React.useEffect(() => {
     if (!visible) return;
-    setErr('');
+    setErr(''); setDupe(null); setChecking(false);
     setForm(initial ? {
       name: initial.name || '', contact_no: initial.contact_no || '',
       firm_name: initial.firm_name || '', category: initial.category || 'normal',
@@ -94,9 +99,32 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Ten digits is the whole of an Indian mobile and also what the server matches
+  // on, so there is nothing to ask about before then.
+  const digits = (form.contact_no || '').replace(/\D/g, '');
+  React.useEffect(() => {
+    if (!visible) return undefined;
+    if (digits.length < 10) { setDupe(null); setChecking(false); return undefined; }
+    let dead = false;
+    setChecking(true);
+    // Debounced: typing a number fires this on nearly every keystroke otherwise.
+    const t = setTimeout(async () => {
+      try {
+        const qs = `?contact_no=${encodeURIComponent(form.contact_no)}`
+          + (initial?.id ? `&exclude=${initial.id}` : '');
+        const res = await apiFetch(SALES_ENDPOINTS.partnerLookup(qs));
+        const d = res.ok ? await res.json() : null;
+        if (!dead) setDupe(d && d.exists ? d : null);
+      } catch (_) {}
+      if (!dead) setChecking(false);
+    }, 350);
+    return () => { dead = true; clearTimeout(t); };
+  }, [visible, digits, form.contact_no, initial?.id]);
+
   async function save() {
     if (!form.name.trim())       { setErr('CP Name is required.');    return; }
     if (!form.contact_no.trim()) { setErr('Contact No is required.'); return; }
+    if (dupe) { setErr(`${dupe.name || 'Another partner'} already has this contact number.`); return; }
     setSaving(true); setErr('');
     try {
       const cq = companyId ? `?company_id=${companyId}` : '';
@@ -107,7 +135,14 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
         body: JSON.stringify({ ...form, name: form.name.trim(), contact_no: form.contact_no.trim() }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setErr(data.detail || JSON.stringify(data)); setSaving(false); return; }
+      if (!res.ok) {
+        // 409 is the duplicate rule — it names who holds the number, so show that
+        // under the field as well, not only as an error line.
+        if (res.status === 409 && data.existing) setDupe({ ...data.existing, exists: true });
+        setErr(data.detail || JSON.stringify(data));
+        setSaving(false);
+        return;
+      }
       setSaving(false);
       onSaved(data);
     } catch (e) { setErr(e.message); setSaving(false); }
@@ -127,6 +162,18 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
             <Fld label="CP NAME *" value={form.name} onChange={(v) => set('name', v)} placeholder="e.g. Ramesh Shah" />
             <Fld label="CONTACT NO *" value={form.contact_no} onChange={(v) => set('contact_no', v)}
               placeholder="e.g. 98765 43210" keyboardType="phone-pad" />
+            {(checking || dupe) && (
+              <View style={st.dupeWrap}>
+                {checking && !dupe && <Text style={st.dupeChecking}>Checking…</Text>}
+                {dupe && (
+                  <Text style={st.dupeText}>
+                    Already a channel partner: <Text style={st.dupeName}>{dupe.name || 'Unnamed'}</Text>
+                    {dupe.firm_name ? ` · ${dupe.firm_name}` : ''}
+                    {dupe.is_active === false ? ' (inactive)' : ''}
+                  </Text>
+                )}
+              </View>
+            )}
             <Fld label="FIRM NAME" value={form.firm_name} onChange={(v) => set('firm_name', v)} placeholder="e.g. Shah Realty" />
 
             <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, marginBottom: 5 }}>CATEGORY</Text>
@@ -157,8 +204,8 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
 
             {err ? <Text style={{ color: COLORS.error, fontSize: 13, fontWeight: '600', marginBottom: 12 }}>{err}</Text> : null}
 
-            <TouchableOpacity onPress={save} disabled={saving}
-              style={[ChannelPartnersScreenS.btn, (saving) && ChannelPartnersScreenS.btnDim]}>
+            <TouchableOpacity onPress={save} disabled={saving || !!dupe}
+              style={[ChannelPartnersScreenS.btn, (saving || dupe) && ChannelPartnersScreenS.btnDim]}>
               <Text style={ChannelPartnersScreenS.box}>
                 {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Channel Partner'}
               </Text>
@@ -335,6 +382,10 @@ const st = StyleSheet.create({
   filter: { alignSelf: 'flex-start', marginBottom: 12 },
   loader: { marginTop: 24 },
   empty: { textAlign: 'center', color: MUTED, marginTop: 40 },
+  dupeWrap: { marginTop: -8, marginBottom: 14 },
+  dupeChecking: { fontSize: 12, color: MUTED },
+  dupeText: { fontSize: 12, color: COLORS.error, lineHeight: 17 },
+  dupeName: { fontWeight: '800', color: COLORS.error },
   card: { marginBottom: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { flex: 1, fontSize: 15, fontWeight: '800', color: TEXT },
