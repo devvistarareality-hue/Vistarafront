@@ -28,7 +28,7 @@ const isEoi = (b) => String(b.plot_numbers || '').toUpperCase().startsWith('EOI'
 // approver list gates it there. Approve/Reject never render for those, because
 // approving requires status='sold' first.
 const TABS = [['awaiting_sales', 'Awaiting Sales'], ['awaiting_cp', 'Awaiting CP'],
-              ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected']];
+              ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All at Accounts']];
 
 // Full ISO timestamps render as date + time in IST, matching the backend's TIME_ZONE.
 function fmtDateTime(iso) {
@@ -127,7 +127,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState('pending');
+  const [tab, setTab] = useState(TABS.some(([k]) => k === route?.params?.tab) ? route.params.tab : 'pending');
   const [busy, setBusy] = useState(null);
   const [toReject, setToReject] = useState(null);
   const [toCancel, setToCancel] = useState(null);  // approved booking awaiting cancel confirmation
@@ -196,6 +196,8 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
     pending:  (b) => b.status === 'sold' && b.accounts_status === 'pending',
     approved: (b) => b.status === 'sold' && b.accounts_status === 'approved' && !isCancelled(b),
     rejected: (b) => b.accounts_status === 'rejected',
+    // Everything that has reached Accounts — waiting, approved or sent back (as on web).
+    all:      (b) => b.status === 'sold',
   }[tab];
   const tabRows = rows.filter(inTab);
 
@@ -349,6 +351,11 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                         <Text style={{ fontSize: 10, fontWeight: '800', color: MUTED, marginTop: 4 }}>
                           {isEoi(b) ? 'EOI' : 'LOI'}
                         </Text>
+                        {tab === 'all' ? (
+                          <Text style={StyleSheet.compose(st.accState, b.accounts_status === 'rejected' ? st.accBad : b.accounts_status === 'pending' ? st.accWarn : st.accGood)}>
+                            {b.accounts_status === 'rejected' ? 'Sent back' : b.accounts_status === 'pending' ? 'Waiting for sign-off' : 'Approved by Accounts'}
+                          </Text>
+                        ) : null}
                       </View>
                     </View>
 
@@ -446,4 +453,12 @@ const s = StyleSheet.create({
 
   okBtn:       { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess },
   okBtnText:   { color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 13 },
+});
+
+// All at Accounts: where each booking stands at the Accounts gate.
+const st = StyleSheet.create({
+  accState: { fontSize: 10.5, fontWeight: '800', marginTop: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, overflow: 'hidden' },
+  accGood: { color: COLORS.success, backgroundColor: COLORS.successBg },
+  accWarn: { color: COLORS.warning, backgroundColor: COLORS.warningBg },
+  accBad: { color: COLORS.error, backgroundColor: COLORS.errorBg },
 });
