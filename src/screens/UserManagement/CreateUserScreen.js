@@ -441,7 +441,7 @@ export default function CreateUserScreen({ navigation, route }) {
                 return (
                   <TouchableOpacity key={mod} style={StyleSheet.compose(styles.modulePill, sel && styles.modulePillActive)} onPress={() => toggleModule(mod)}>
                     <MaterialCommunityIcons name={MODULE_ICONS[mod] || 'circle'} size={13} color={sel ? COLORS.white : COLORS.textSecondary} />
-                    <Text style={StyleSheet.compose(styles.modulePillText, sel && styles.modulePillTextActive)}>{MODULE_TITLE[mod] || mod}</Text>
+                    <Text style={StyleSheet.compose(styles.modulePillText, sel && styles.modulePillTextActive)} numberOfLines={1}>{MODULE_TITLE[mod] || mod}</Text>
                   </TouchableOpacity>
                 );
               })}

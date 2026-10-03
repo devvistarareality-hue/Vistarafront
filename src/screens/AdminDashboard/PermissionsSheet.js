@@ -234,9 +234,9 @@ export default function PermissionsSheet({ designation, others, visible, onClose
                         const on = m === own || extra.includes(m);
                         return (
                           <Pressable key={m} disabled={m === own} onPress={() => toggleModule(m)}
-                            style={StyleSheet.compose(s.chip, on && s.chipOn)}>
+                            style={StyleSheet.compose(s.deptChip, on && s.chipOn)}>
                             {on ? <Ionicons name="checkmark" size={13} color={COLORS.link} /> : null}
-                            <Text style={StyleSheet.compose(s.chipText, on && s.chipTextOn)}>{MODULE_TITLE[m] || m}</Text>
+                            <Text style={StyleSheet.compose(s.chipText, on && s.chipTextOn)} numberOfLines={1}>{MODULE_TITLE[m] || m}</Text>
                           </Pressable>
                         );
                       })}
@@ -388,6 +388,9 @@ const s = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8,
           borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   chipOn: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
+  // Modules by department: two equal columns, so every chip lines up with the ones above.
+  deptChip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, width: '48.5%', paddingHorizontal: 10, paddingVertical: 8,
+              borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   chipText: { fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
   // Says what NOT choosing a module means.
   note: { marginTop: 10, fontSize: 11.5, color: COLORS.textSecondary },
