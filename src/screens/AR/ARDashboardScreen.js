@@ -311,13 +311,22 @@ function ProjectCharts({ rows, onOpen }) {
           <TouchableOpacity key={p.id} style={s.pcRow} activeOpacity={0.7}
             onPress={() => setSel({ id: p.id, text: `${p.name} · not yet due ${inrShort(p.totals.not_due)} · overdue ${inrShort(p.totals.overdue)} · interest ${inrShort(p.totals.net_interest)}` })}>
             <Text style={s.pcName} numberOfLines={1}>{p.name}</Text>
+            {/* Bar as long as the project's total (relative to the largest), its
+                parts splitting it, and the total written right where it ends. */}
             <View style={s.pcTrack}>
-              {OWES.map(([k], i) => {
-                const v = Math.max(0, p.totals[k] || 0);
-                return v ? <View key={k} style={[s.pcSeg, { width: `${(v / max) * 100}%`, backgroundColor: COLORS.viz[i] }]} /> : null; // inline-ok: segment width and series colour from data
-              })}
+              {(() => {
+                const tot = OWES.reduce((t, [k]) => t + Math.max(0, p.totals[k] || 0), 0) || 1;
+                return (
+                  <View style={[s.pcStack, { width: `${(tot / max) * 72}%` }]}>{/* inline-ok: bar length from data */}
+                    {OWES.map(([k], i) => {
+                      const v = Math.max(0, p.totals[k] || 0);
+                      return v ? <View key={k} style={[s.pcSeg, { width: `${(v / tot) * 100}%`, backgroundColor: COLORS.viz[i] }]} /> : null; // inline-ok: part of the bar and series colour from data
+                    })}
+                  </View>
+                );
+              })()}
+              <Text style={s.pcTotal}>{inrShort(p.totals.os_with_interest)}</Text>
             </View>
-            <Text style={s.pcTotal}>{inrShort(p.totals.os_with_interest)}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -369,9 +378,10 @@ const s = StyleSheet.create({
   pcLegendText: { fontSize: 11.5, color: COLORS.textSecondary },
   pcRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7 },
   pcName: { width: 100, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
-  pcTrack: { flex: 1, flexDirection: 'row', gap: 2, height: 20 },
-  pcSeg: { height: '100%', borderRadius: 3, minWidth: 2 },
-  pcTotal: { width: 70, textAlign: 'right', fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
+  pcTrack: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pcStack: { flexDirection: 'row', height: 16, borderRadius: 4, overflow: 'hidden', minWidth: 4 },
+  pcSeg: { height: '100%', minWidth: 2, borderLeftWidth: 1, borderLeftColor: COLORS.surface },
+  pcTotal: { fontSize: 12.5, fontWeight: '800', color: COLORS.textPrimary },
   pcSel: { backgroundColor: COLORS.surfaceAlt, borderRadius: 12, padding: 10, marginBottom: 12, gap: 6 },
   pcSelText: { fontSize: 12.5, color: COLORS.textPrimary },
   pcSelOpen: { fontSize: 13, fontWeight: '700', color: COLORS.link },
