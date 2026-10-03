@@ -374,6 +374,17 @@ function ProjectCharts({ rows, data, onOpen }) {
                 })}
               </View>
             ))}
+            {/* Column totals across every project, and the grand total under "Total". */}
+            <View style={[s.hmRow, s.hmTotalRow]}>
+              <View style={s.hmName}>
+                <Text style={s.hmTotalName}>Total</Text>
+                <Text style={s.hmTotalSum}>{inrShort(rows.reduce((t, p) => t + AGE_LABELS.reduce((u, a) => u + (p.ageing?.[a] || 0), 0), 0))}</Text>
+              </View>
+              {AGE_LABELS.map((a) => {
+                const v = rows.reduce((t, p) => t + (p.ageing?.[a] || 0), 0);
+                return <View key={a} style={[s.hmCell, s.hmTotalCell]}><Text style={s.hmTotalText}>{v ? inrShort(v) : '—'}</Text></View>;
+              })}
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -425,6 +436,15 @@ function ProjectCharts({ rows, data, onOpen }) {
                     })}
                   </View>
                 ))}
+                <View style={[s.hmRow, s.hmTotalRow]}>
+                  <View style={s.hmName}>
+                    <Text style={s.hmTotalName}>Total</Text>
+                    <Text style={s.hmTotalSum}>{inrShort(cMonths.concat(cLater).reduce((t, i) => t + (cTot[i] || 0), 0))}</Text>
+                  </View>
+                  {cMonths.concat(cLater).map((i) => (
+                    <View key={i} style={[s.hmCell, s.hmTotalCell]}><Text style={s.hmTotalText}>{cTot[i] ? inrShort(cTot[i]) : '—'}</Text></View>
+                  ))}
+                </View>
               </View>
             </ScrollView>
           ) : null}
@@ -464,6 +484,11 @@ const s = StyleSheet.create({
   hmCell: { width: 72, height: 38, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
   hmZero: { backgroundColor: COLORS.surfaceAlt },
   hmText: { fontSize: 12, fontWeight: '700' },
+  hmTotalRow: { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: COLORS.border },
+  hmTotalName: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
+  hmTotalSum: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary },
+  hmTotalCell: { backgroundColor: COLORS.surfaceAlt },
+  hmTotalText: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
   cdCols: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, height: 190, marginTop: 14 },
   cdCol: { flex: 1, height: '100%', alignItems: 'center', gap: 4 },
   cdVal: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
