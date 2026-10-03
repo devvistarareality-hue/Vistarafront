@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, RADIUS, CARD_SHADOW } from '../../constants/theme';
+import { COLORS, RADIUS, CARD_SHADOW, SHADOWS } from '../../constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle } from 'react-native-svg';
 import common from '../../styles/common';
 import DashboardRoleFilter from '../../components/DashboardRoleFilter';
 import { BASE_URL, SALES_ENDPOINTS } from '../../constants/api';
@@ -84,10 +86,10 @@ function AccountsDashboard({ navigation, module, name }) {
   const totalValue = (v.pending || 0) + (v.approved || 0) + (v.rejected || 0);
   const approvals = (tab) => navigation.navigate('ModuleApprovals', { module, name, tab });
   const kpis = [
-    { key: 'pending', label: 'Waiting for sign-off', n: d.pending || 0, m: v.pending, color: COLORS.warning, go: () => approvals('pending') },
-    { key: 'approved', label: 'Approved', n: d.approved || 0, m: v.approved, color: COLORS.success, go: () => navigation.navigate('ModuleBookings', { module, name }) },
-    { key: 'rejected', label: 'Sent back', n: d.rejected || 0, m: v.rejected, color: COLORS.error, go: () => approvals('rejected') },
-    { key: 'total', label: 'All at Accounts', n: total, m: totalValue, color: COLORS.link, go: () => approvals('all') },
+    { key: 'pending', label: 'Waiting for sign-off', n: d.pending || 0, m: v.pending, color: COLORS.warning, bg: COLORS.warningBg, icon: 'clipboard-outline', go: () => approvals('pending') },
+    { key: 'approved', label: 'Approved', n: d.approved || 0, m: v.approved, color: COLORS.success, bg: COLORS.successBg, icon: 'checkmark-done-outline', go: () => navigation.navigate('ModuleBookings', { module, name }) },
+    { key: 'rejected', label: 'Sent back', n: d.rejected || 0, m: v.rejected, color: COLORS.error, bg: COLORS.errorBg, icon: 'return-down-back-outline', go: () => approvals('rejected') },
+    { key: 'total', label: 'All at Accounts', n: total, m: totalValue, color: COLORS.link, bg: COLORS.accentSoft, icon: 'layers-outline', go: () => approvals('all') },
   ];
   const trend = d.trend || [];
   const trendMax = Math.max(1, ...trend.map((t) => t.count));
@@ -96,31 +98,58 @@ function AccountsDashboard({ navigation, module, name }) {
 
   return (
     <ScrollView contentContainerStyle={common.scroll}>
+      {/* The AR dashboard's hero, for the Accounts gate. */}
+      <LinearGradient colors={COLORS.heroScene} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.heroCard}>
+        <View style={s.heroGlow} />
+        <View style={s.flex}>
+          <Text style={s.heroLabel}>AT THE ACCOUNTS GATE</Text>
+          <Text style={s.heroValue} numberOfLines={1} adjustsFontSizeToFit>{inrShort(totalValue)}</Text>
+          <View style={s.heroSplit}>
+            <View><Text style={s.heroSmall}>Approved</Text><Text style={s.heroSub}>{inrShort(v.approved || 0)}</Text></View>
+            <View><Text style={s.heroSmall}>Waiting</Text><Text style={s.heroSub}>{inrShort(v.pending || 0)}</Text></View>
+            <View><Text style={s.heroSmall}>Bookings</Text><Text style={s.heroSub}>{total}</Text></View>
+          </View>
+        </View>
+        <Ring pct={total ? Math.round(((d.approved || 0) / total) * 100) : 0} />
+      </LinearGradient>
+
+      {(d.pending || 0) > 0 ? (
+        <Pressable style={s.issue} onPress={() => approvals('pending')}>
+          <Ionicons name="hourglass-outline" size={18} color={COLORS.warning} />
+          <View style={s.flex}>
+            <Text style={s.issueN}>{d.pending} <Text style={s.issueLabel}>waiting for sign-off</Text></Text>
+            <Text style={s.issueText}>{inrShort(v.pending || 0)} · oldest waited {(d.oldest_pending || [])[0]?.days ?? 0} days</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={COLORS.warning} />
+        </Pressable>
+      ) : null}
+
       <View style={s.panel}>
-        <Text style={s.kicker}>AT THE ACCOUNTS GATE</Text>
-        <Text style={s.hero}>{total.toLocaleString('en-IN')} <Text style={s.heroUnit}>bookings</Text></Text>
-        <Text style={s.heroSub}>{rupee(totalValue)} in all</Text>
+        <Text style={s.panelTitle}>Where they stand</Text>
+        <Text style={s.panelSub}>Every booking at the Accounts gate</Text>
         <View style={s.bar}>
           {STATES.map((st) => (d[st.key] ? <View key={st.key} style={[s.barSeg, { flexGrow: d[st.key], backgroundColor: st.color }]} /> : null))}{/* inline-ok: share and state colour from data */}
         </View>
-        <View style={s.legend}>
-          {STATES.map((st) => (
-            <View key={st.key} style={s.legendItem}>
-              <View style={[s.dot, { backgroundColor: st.color }]} />{/* inline-ok: state colour */}
-              <Text style={s.legendText}>{st.label} <Text style={s.legendNum}>{d[st.key] || 0}</Text> {total ? Math.round(((d[st.key] || 0) / total) * 100) : 0}%</Text>
-            </View>
-          ))}
-        </View>
-        <Pressable style={s.cta} onPress={() => approvals('pending')}>
-          <Text style={s.ctaText}>Review {d.pending || 0} waiting ›</Text>
-        </Pressable>
+        {STATES.map((st) => (
+          <View key={st.key} style={s.stateRow}>
+            <View style={[s.dot, { backgroundColor: st.color }]} />{/* inline-ok: state colour */}
+            <Text style={s.stateLabel}>{st.label}</Text>
+            <Text style={s.stateN}>{d[st.key] || 0}</Text>
+            <Text style={s.stateMoney}>{v[st.key] ? inrShort(v[st.key]) : '—'}</Text>
+            <Text style={s.statePct}>{total ? Math.round(((d[st.key] || 0) / total) * 100) : 0}%</Text>
+          </View>
+        ))}
       </View>
 
       <View style={s.kpis}>
         {kpis.map((k) => (
-          <Pressable key={k.key} style={[s.kpi, { borderTopColor: k.color }]} onPress={k.go}>{/* inline-ok: state colour */}
+          <Pressable key={k.key} style={s.kpi} onPress={k.go}>
+            <View style={s.kpiTop}>
+              <View style={[s.kpiIcon, { backgroundColor: k.bg }]}><Ionicons name={k.icon} size={17} color={k.color} /></View>{/* inline-ok: tone colour */}
+              <Ionicons name="chevron-forward" size={15} color={COLORS.textTertiary} />
+            </View>
             <Text style={s.kpiLabel} numberOfLines={1}>{k.label.toUpperCase()}</Text>
-            <Text style={s.kpiValue}>{k.n.toLocaleString('en-IN')}</Text>
+            <Text style={[s.kpiValue, { color: k.key === 'total' || k.key === 'pending' ? COLORS.textPrimary : k.color }]}>{k.n.toLocaleString('en-IN')}</Text>{/* inline-ok: tone colour */}
             <Text style={s.kpiMoney}>{inrShort(k.m || 0)}</Text>
           </Pressable>
         ))}
@@ -189,6 +218,21 @@ function AccountsDashboard({ navigation, module, name }) {
   );
 }
 
+function Ring({ pct }) {
+  const p = Math.max(0, Math.min(100, Number(pct) || 0));
+  const r = 40; const c = 2 * Math.PI * r;
+  return (
+    <View style={s.ring}>
+      <Svg width={100} height={100} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r={r} stroke="rgba(255,255,255,0.15)" strokeWidth={9} fill="none" />
+        <Circle cx="50" cy="50" r={r} stroke="#5BE09A" strokeWidth={9} fill="none" strokeLinecap="round"
+          strokeDasharray={`${(p / 100) * c} ${c}`} transform="rotate(-90 50 50)" />
+      </Svg>
+      <View style={s.ringCenter}><Text style={s.ringPct}>{p}%</Text><Text style={s.ringCap}>signed off</Text></View>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   flex: { flex: 1 },
   sub: { fontSize: 12.5, color: COLORS.textSecondary },
@@ -198,22 +242,34 @@ const s = StyleSheet.create({
   body: { fontSize: 12.5, color: COLORS.textSecondary, textAlign: 'center' },
   emptyIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.accentSoft },
   panel: { padding: 16, marginBottom: 12, borderRadius: RADIUS.lg, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder, ...CARD_SHADOW },
-  kicker: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.7, color: COLORS.textSecondary },
-  hero: { fontSize: 34, fontWeight: '800', color: COLORS.textPrimary, marginTop: 4 },
-  heroUnit: { fontSize: 15, fontWeight: '700', color: COLORS.textSecondary },
-  heroSub: { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary },
+  heroCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 24, padding: 20, marginBottom: 12, overflow: 'hidden', ...SHADOWS.md },
+  heroGlow: { position: 'absolute', right: -60, bottom: -90, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(255,255,255,0.05)' },
+  heroLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: 'rgba(255,255,255,0.75)' },
+  heroValue: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', marginTop: 6, letterSpacing: -0.8 },
+  heroSplit: { flexDirection: 'row', gap: 16, marginTop: 14, flexWrap: 'wrap' },
+  heroSmall: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  heroSub: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', marginTop: 2 },
+  ring: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center' },
+  ringCenter: { position: 'absolute', alignItems: 'center' },
+  ringPct: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  ringCap: { fontSize: 10, color: 'rgba(255,255,255,0.7)' },
+  issue: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, marginBottom: 12, borderRadius: RADIUS.lg,
+           backgroundColor: COLORS.warningBg, borderWidth: 1, borderColor: COLORS.warning },
+  issueN: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
+  issueLabel: { fontSize: 13, fontWeight: '700', color: COLORS.warning },
+  issueText: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
+  stateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7 },
+  stateLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  stateN: { width: 40, textAlign: 'right', fontSize: 13.5, fontWeight: '800', color: COLORS.textPrimary },
+  stateMoney: { width: 82, textAlign: 'right', fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
+  statePct: { width: 36, textAlign: 'right', fontSize: 11.5, color: COLORS.textSecondary },
+  kpiTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  kpiIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   bar: { flexDirection: 'row', gap: 2, height: 12, borderRadius: 4, overflow: 'hidden', marginTop: 14, backgroundColor: COLORS.surfaceAlt },
   barSeg: { flexBasis: 0, minWidth: 3, height: '100%' },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 10 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   dot: { width: 9, height: 9, borderRadius: 3 },
-  legendText: { fontSize: 12, color: COLORS.textSecondary },
-  legendNum: { fontWeight: '800', color: COLORS.textPrimary },
-  cta: { marginTop: 14, alignSelf: 'flex-start', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, backgroundColor: COLORS.accentSoft },
-  ctaText: { fontSize: 13, fontWeight: '800', color: COLORS.link },
   kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-  kpi: { width: '48.4%', padding: 14, borderRadius: RADIUS.lg, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder,
-         borderTopWidth: 3, ...CARD_SHADOW },
+  kpi: { width: '48.4%', padding: 14, borderRadius: RADIUS.lg, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder, ...CARD_SHADOW },
   kpiLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
   kpiValue: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary, marginTop: 4 },
   kpiMoney: { fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
