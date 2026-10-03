@@ -10,6 +10,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import AppLoader from '../../components/AppLoader';
+import { PartnerActivitySheet } from '../../components/PartnerActivity';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -183,6 +184,7 @@ export function ChannelPartnerDirectory({ companyId }) {
   const [category, setCategory] = useState('');
   const [editing, setEditing] = useState(null);   // partner being edited
   const [formOpen, setFormOpen] = useState(false);
+  const [activity, setActivity] = useState(null); // partner whose follow-ups/visits are open
 
   const load = useCallback(async () => {
     try {
@@ -226,6 +228,14 @@ export function ChannelPartnerDirectory({ companyId }) {
           .filter((v) => v && v !== '— Select —').join(' · ') || '—'}
       </Text>
       <View style={st.actions}>
+        <TouchableOpacity onPress={() => setActivity(cp)} style={st.activityBtn}>
+          <Ionicons name="calendar-outline" size={14} color={BLUE} />
+          <Text style={st.activityText}>
+            {cp.follow_up_count || cp.site_visit_count
+              ? `${cp.follow_up_count || 0} FU · ${cp.site_visit_count || 0} SV`
+              : 'Schedule'}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => { setEditing(cp); setFormOpen(true); }} style={st.editBtn}>
           <Text style={st.editText}>Edit</Text>
         </TouchableOpacity>
@@ -280,6 +290,11 @@ export function ChannelPartnerDirectory({ companyId }) {
       <PartnerForm visible={formOpen} initial={editing} companyId={companyId}
         onClose={() => setFormOpen(false)}
         onSaved={() => { setFormOpen(false); setEditing(null); load(); }} />
+
+      {/* Reload on close rather than per change: the FU/SV counts on each card
+          are annotated server-side, so they only move when the list refetches. */}
+      <PartnerActivitySheet visible={!!activity} partner={activity} companyId={companyId}
+        onClose={() => { setActivity(null); load(); }} />
     </View>
   );
 }
@@ -327,7 +342,11 @@ const st = StyleSheet.create({
   inactiveText: { fontSize: 11, fontWeight: '700', color: MUTED },
   line1: { fontSize: 13, color: MUTED, marginTop: 3 },
   line2: { fontSize: 12, color: MUTED, marginTop: 2 },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' },
+  activityBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7,
+                 borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border,
+                 backgroundColor: COLORS.accentSoft },
+  activityText: { fontSize: 12.5, fontWeight: '700', color: BLUE },
   editBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border },
   editText: { fontSize: 13, fontWeight: '700', color: TEXT },
   removeBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.error2, backgroundColor: COLORS.errorBg },
