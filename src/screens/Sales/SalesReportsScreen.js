@@ -260,6 +260,7 @@ export default function SalesReportsScreen({ navigation, route }) {
         if (effectiveDates.from) params.set('date_from', effectiveDates.from);
         if (effectiveDates.to)   params.set('date_to',   effectiveDates.to);
         if (companyId)           params.set('company_id', companyId);
+        if (route?.params?.cpOnly) params.set('cp_only', 'true');
         params.set('book', book);
         const qs = params.toString() ? `?${params}` : '';
         const [statsRes, trendRes] = await Promise.all([
@@ -282,6 +283,7 @@ export default function SalesReportsScreen({ navigation, route }) {
       if (effectiveDates.from) params.set('date_from', effectiveDates.from);
       if (effectiveDates.to)   params.set('date_to',   effectiveDates.to);
       if (companyId)           params.set('company_id', companyId);
+      if (route?.params?.cpOnly) params.set('cp_only', 'true');
       params.set('book', book);
       const qs = params.toString() ? `?${params}` : '';
       const [statsRes, trendRes] = await Promise.all([
@@ -412,7 +414,7 @@ export default function SalesReportsScreen({ navigation, route }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: TEXT }}>Reports</Text>
+        <Text style={SalesReportsScreenS.title}>{route?.params?.cpOnly ? 'Channel Partner Dashboard' : 'Reports'}</Text>
         <TouchableOpacity onPress={() => reload(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
           <Ionicons name="refresh-outline" size={20} color={NAVY} />
         </TouchableOpacity>
@@ -680,6 +682,7 @@ export default function SalesReportsScreen({ navigation, route }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const SalesReportsScreenS = StyleSheet.create({
+  title: { flex: 1, fontSize: 20, fontWeight: '800', color: COLORS.textPrimary },
   dash: { marginBottom: 12 },
   // The optional second line on a tile.
   tileSub: { fontSize: 9.5, color: COLORS.textSecondary, textAlign: 'center', fontWeight: '600' },

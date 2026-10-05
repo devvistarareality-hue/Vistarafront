@@ -21,6 +21,8 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW 
 const TILES = [
   // All Leads = partner-sourced leads plus the partner directory, as two tabs (CP
   // Leads / CP Details) — the web module's All Leads page.
+  // The module's Dashboard, as on the web: the Reports screen in Channel Partner mode.
+  { screen: 'cp.screen.dashboard', key: 'SalesReports',       label: 'Dashboard',     desc: 'Partner leads, visits and closures', icon: 'bar-chart-outline', color: COLORS.link, bg: COLORS.linkBg, params: { cpOnly: true } },
   { screen: 'cp.screen.leads', key: 'SalesLeads',         label: 'All Leads',     desc: 'CP leads and partner details', icon: 'people-outline',       color: COLORS.link,    bg: COLORS.linkBg,    params: { cpOnly: true, adminView: true } },
   { screen: 'cp.screen.sitevisits', key: 'SalesSiteVisits',    label: 'Site Visits',   desc: 'Partner-sourced visits',      icon: 'location-outline',      color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, adminView: true } },
   { screen: 'cp.screen.followups', key: 'SalesFollowUps',     label: 'Follow-Ups',    desc: 'Partner-sourced follow-ups',  icon: 'calendar-outline',      color: COLORS.warning, bg: COLORS.warningBg, params: { cpOnly: true, adminView: true } },
