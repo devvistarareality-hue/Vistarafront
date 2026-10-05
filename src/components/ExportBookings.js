@@ -10,9 +10,10 @@ import { SALES_ENDPOINTS } from '../constants/api';
 import { COLORS } from '../constants/theme';
 import FilterSelect from './FilterSelect';
 
-// Download the Accounts-approved bookings as a workbook — Sales and Channel
-// Partner together, and only deals Accounts has signed off, not everything Sales
-// has approved. See BookingExportView for why that distinction matters.
+// Download every booking as a workbook — Sales and Channel Partner together, at
+// whatever stage each has reached. Rendered by the Accounts Approvals screen, and
+// scoped to match it: a download from a screen full of pending deals that quietly
+// omitted them would be worse than no download.
 // which is the point of it: one download covering both sides. Shown only to someone
 // granted "Download booking Excel" in User Management, and to real admins; the server
 // enforces the same rule, this just avoids offering a button that would be refused.
@@ -57,7 +58,7 @@ export function ExportBookings({ projects: given, companyId }) {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          dialogTitle: 'Accounts-approved bookings', UTI: 'org.openxmlformats.spreadsheetml.sheet' });
+          dialogTitle: 'All bookings', UTI: 'org.openxmlformats.spreadsheetml.sheet' });
       } else {
         Alert.alert('Saved', 'Sheet saved to:\n' + uri);
       }
@@ -71,7 +72,7 @@ export function ExportBookings({ projects: given, companyId }) {
       {/* Says what the sheet holds, because this control also sits above My Bookings
           and the download is emphatically not that list. */}
       <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 6 }}>
-        Accounts-approved bookings · Sales + CP
+        All bookings, every stage · Sales + CP
       </Text>
     <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
       <FilterSelect label="All projects" value={project} onChange={setProject}
