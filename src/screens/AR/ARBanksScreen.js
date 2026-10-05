@@ -12,6 +12,7 @@ import LoadError from '../../components/LoadError';
 import FormSheet from '../../components/FormSheet';
 import { Button } from '../../components/ui';
 import { rupee, withCompany, cleanAmount, groupINR } from './arShared';
+import { errText } from '../../lib/apiError';
 
 // Bank Master — mirrors the web page (web/src/app/m/[module]/banks). A Loan payment is
 // recorded into one of these banks; its balance = opening balance + those payments,
@@ -31,7 +32,7 @@ export default function ARBanksScreen({ navigation }) {
     try {
       const r = await apiFetch(withCompany(AR_ENDPOINTS.banks, companyId));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load the banks.'); setRows([]); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load the banks.')); setRows([]); return; }
       // AR users can read the list (for Record Payment) but Bank Master is its own module.
       if (d.can_open === false) { setErr('You do not have access to Bank Master. Ask an admin to tick Bank Master for you in User Management.'); setRows([]); return; }
       setRows(d.results || []); setCanManage(!!d.can_manage);

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Modal } from 'react-native';
 import { getBaseUrl } from '../constants/api';
 import { apiFetch } from '../utils/apiFetch';
 import { COLORS } from '../constants/theme';
+import { errText } from '../lib/apiError';
 
 // "Change my password" modal — opened from the profile sheet.
 export default function ChangePasswordModal({ visible, onClose, onSuccess }) {
@@ -30,7 +31,7 @@ export default function ChangePasswordModal({ visible, onClose, onSuccess }) {
         setCur(''); setNw(''); setConf('');
         setTimeout(() => (onSuccess ? onSuccess() : close()), 1400);
       }
-      else setMsg({ t: 'err', m: d.detail || 'Could not change password.' });
+      else setMsg({ t: 'err', m: errText(d, 'Could not change password.') });
     } catch { setMsg({ t: 'err', m: 'Could not change password.' }); }
     setBusy(false);
   };

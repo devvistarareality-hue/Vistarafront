@@ -24,6 +24,7 @@ import { COLORS } from '../constants/theme';
 import common from '../styles/common';
 import AppLoader from './AppLoader';
 import FilterSelect from './FilterSelect';
+import { errText } from '../lib/apiError';
 
 // Each status names a StyleSheet pair rather than carrying raw colours, so the
 // pill stays a shared style instead of an object literal built per render.
@@ -159,7 +160,7 @@ function ScheduleForm({ kind, partnerId, partners, companyId, onDone, onCancel }
     try {
       const res = await apiFetch(url, { method: 'POST', body: JSON.stringify(body) });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setErr(data.detail || 'Could not schedule that.'); setSaving(false); return; }
+      if (!res.ok) { setErr(errText(data, 'Could not schedule that.')); setSaving(false); return; }
       onDone();
     } catch (e) { setErr(e.message); setSaving(false); }
   }
@@ -280,7 +281,7 @@ function ActivityCard({ kind, row, showPartner, onChanged }) {
     setBusy(false);
     if (!res || !res.ok) {
       const d = res ? await res.json().catch(() => ({})) : {};
-      Alert.alert('Could not update', d.detail || 'Try again.');
+      Alert.alert('Could not update', errText(d, 'Try again.'));
       return false;
     }
     onChanged();

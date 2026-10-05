@@ -18,6 +18,7 @@ import FollowUpSheet from './FollowUpSheet';
 import CancelSheet from './CancelSheet';
 import { Badge, Button, Segmented } from '../../components/ui';
 import { rupee, MODES, recordModes, cleanAmount, groupINR, balanceAfter, MODE_LABEL, AGE_LABELS, STATUS, today, withCompany, DateField, shareStatement } from './arShared';
+import { errText } from '../../lib/apiError';
 
 const confirm = (title, message, okText, destructive) => new Promise((resolve) => {
   Alert.alert(title, message, [
@@ -53,7 +54,7 @@ export default function ARLedgerScreen({ navigation, route }) {
     try {
       const r = await apiFetch(url(AR_ENDPOINTS.account(id)));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load this account.'); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load this account.')); return; }
       setData(d); setLegalDate(d.legal_due_date || '');
     } catch (e) { setErr('Check your connection and try again.'); }
   }, [id, url]);
@@ -128,7 +129,7 @@ export default function ARLedgerScreen({ navigation, route }) {
       const r = await apiFetch(url(AR_ENDPOINTS.loiUrl(id)));
       const d = await r.json().catch(() => ({}));
       if (r.ok && d.url) Linking.openURL(d.url);
-      else Alert.alert('Unavailable', d.detail || 'Could not open the document.');
+      else Alert.alert('Unavailable', errText(d, 'Could not open the document.'));
     } catch (e) { Alert.alert('Error', 'Could not open the document.'); }
   }
 

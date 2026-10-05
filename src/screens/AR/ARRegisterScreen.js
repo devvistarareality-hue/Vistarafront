@@ -13,6 +13,7 @@ import FilterSelect from '../../components/FilterSelect';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { Badge } from '../../components/ui';
 import { inrShort, AGE_LABELS, ISSUES, hasIssue, worstBucket, today, withCompany } from './arShared';
+import { errText } from '../../lib/apiError';
 
 const SHOW = [
   { value: '', label: 'All accounts' },
@@ -50,7 +51,7 @@ export default function ARRegisterScreen({ navigation, route }) {
     try {
       const r = await apiFetch(withCompany(AR_ENDPOINTS.accounts, companyId, [`as_of=${today()}`]));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load the register.'); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load the register.')); return; }
       setRows(d.results || []);
     } catch (e) { setErr('Check your connection and try again.'); }
   }, [companyId]);

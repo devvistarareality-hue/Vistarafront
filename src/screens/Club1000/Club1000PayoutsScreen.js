@@ -11,6 +11,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { formatDMY } from '../../utils/dateFormat';
 import AppLoader from '../../components/AppLoader';
+import { errText } from '../../lib/apiError';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -65,7 +66,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
         body: JSON.stringify({ amount: payForm.amount, notes: payForm.notes }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { Alert.alert('Could not mark paid', d?.detail || 'Please try again.'); return; }
+      if (!res.ok) { Alert.alert('Could not mark paid', errText(d, 'Please try again.')); return; }
       setPayingFor(null);
       load();
     } finally {

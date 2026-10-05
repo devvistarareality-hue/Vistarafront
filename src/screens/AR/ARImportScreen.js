@@ -18,6 +18,7 @@ import LoadError from '../../components/LoadError';
 import FilterSelect from '../../components/FilterSelect';
 import { Button } from '../../components/ui';
 import { rupee, inrShort, MODE_LABEL, withCompany } from './arShared';
+import { errText } from '../../lib/apiError';
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -39,7 +40,7 @@ export default function ARImportScreen({ navigation, route }) {
     try {
       const r = await apiFetch(withCompany(AR_ENDPOINTS.accounts, companyId));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load projects.'); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load projects.')); return; }
       setAccounts(d.results || []);
     } catch (e) { setErr('Check your connection and try again.'); }
   }, [companyId]);
@@ -83,7 +84,7 @@ export default function ARImportScreen({ navigation, route }) {
       // multipart: let fetch set the boundary, so no JSON content-type here
       const r = await fetch(withCompany(AR_ENDPOINTS.import, companyId), { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) Alert.alert('Import failed', d.detail || 'The file could not be read.');
+      if (!r.ok) Alert.alert('Import failed', errText(d, 'The file could not be read.'));
       else setResult(d);
     } catch (e) { Alert.alert('Error', 'The import failed. Check your connection.'); }
     setBusy('');

@@ -11,6 +11,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { Button, Badge } from '../../components/ui';
 import { fmtWhen } from '../../components/ActivityHistory';
 import { rupee, DateField, toISO, withCompany } from './arShared';
+import { errText } from '../../lib/apiError';
 
 // One account's collection follow-ups — same as _FollowUpModal.js on the website:
 // what is scheduled, what was said last time, book the next one, close the open one.
@@ -56,7 +57,7 @@ export default function FollowUpSheet({ row, visible, onClose, onChanged }) {
       const r = await apiFetch(withCompany(AR_ENDPOINTS.followUps(row.id), companyId));
       const d = await r.json().catch(() => ({}));
       setItems(r.ok ? d.results || [] : []);
-      if (!r.ok) setErr(d.detail || 'Could not load follow-ups.');
+      if (!r.ok) setErr(errText(d, 'Could not load follow-ups.'));
     } catch (e) { setItems([]); setErr('Check your connection and try again.'); }
   };
 
@@ -72,7 +73,7 @@ export default function FollowUpSheet({ row, visible, onClose, onChanged }) {
     try {
       const r = await apiFetch(withCompany(url, companyId), { method, body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not save.'); return false; }
+      if (!r.ok) { setErr(errText(d, 'Could not save.')); return false; }
       setOk(okMsg);
       await load();
       onChanged?.();

@@ -16,6 +16,7 @@ import { unitLabel } from '../../lib/bookingUnit';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
+import { errText } from '../../lib/apiError';
 const TEAL = COLORS.success;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -160,7 +161,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         Alert.alert(action === 'approve' ? 'Approve failed' : 'Reject failed',
-                    d.detail || 'Network error.');
+                    errText(d, 'Network error.'));
       }
     } catch (_) {
       Alert.alert('Network error', 'Please try again.');
@@ -179,7 +180,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
         + (companyId ? `?company_id=${companyId}` : ''), { method: 'POST' });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        Alert.alert('Cancel failed', d.detail || `HTTP ${r.status}`);
+        Alert.alert('Cancel failed', errText(d, `HTTP ${r.status}`));
       }
     } catch (e) {
       Alert.alert('Cancel failed', e.message);

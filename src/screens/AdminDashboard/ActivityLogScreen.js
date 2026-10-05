@@ -13,6 +13,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { Button } from '../../components/ui';
 import { ActivityRows } from '../../components/ActivityHistory';
 import { DateField } from '../AR/arShared';
+import { errText } from '../../lib/apiError';
 
 const ACTIONS = [
   { value: '', label: 'Any action' }, { value: 'created', label: 'Created' }, { value: 'submitted', label: 'Submitted' },
@@ -47,7 +48,7 @@ export default function ActivityLogScreen({ navigation, route }) {
     try {
       const r = await apiFetch(`${ACTIVITY_ENDPOINTS.log}?${p.join('&')}`);
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load the activity log.'); if (pg === 1) setRows([]); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load the activity log.')); if (pg === 1) setRows([]); return; }
       setRows((prev) => (pg === 1 ? d.results : [...(prev || []), ...d.results]));
       setMore(!!d.has_more);
       setPage(pg);

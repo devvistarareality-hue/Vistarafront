@@ -6,6 +6,7 @@ import {
   LEAVE_BALANCE_FAILURE,
   LEAVE_BALANCE_REFRESH,
 } from '../types/leaveBalanceTypes';
+import { errText } from '../../lib/apiError';
 
 export const triggerBalanceRefresh = () => ({ type: LEAVE_BALANCE_REFRESH });
 
@@ -26,7 +27,7 @@ export const fetchLeaveBalance = (page = 1) => async (dispatch) => {
     if (response.ok) {
       dispatch({ type: LEAVE_BALANCE_SUCCESS, payload: data, meta: { page } });
     } else {
-      dispatch({ type: LEAVE_BALANCE_FAILURE, payload: data.detail || JSON.stringify(data) });
+      dispatch({ type: LEAVE_BALANCE_FAILURE, payload: errText(data, 'Something went wrong — please try again.') });
     }
   } catch {
     dispatch({ type: LEAVE_BALANCE_FAILURE, payload: 'Network error. Check your connection.' });

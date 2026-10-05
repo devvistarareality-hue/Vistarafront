@@ -6,6 +6,7 @@ import {
   LEAVE_ACTION_FAILURE,
   LEAVE_ACTION_RESET,
 } from '../types/leaveActionTypes';
+import { errText } from '../../lib/apiError';
 
 export const updateLeaveStatus = (id, leaveStatus) => async (dispatch) => {
   dispatch({ type: LEAVE_ACTION_REQUEST });
@@ -24,7 +25,7 @@ export const updateLeaveStatus = (id, leaveStatus) => async (dispatch) => {
       console.log(`Leave ${leaveStatus} successfully`);
       dispatch({ type: LEAVE_ACTION_SUCCESS, payload: { id, status: leaveStatus } });
     } else {
-      dispatch({ type: LEAVE_ACTION_FAILURE, payload: data.detail || JSON.stringify(data) });
+      dispatch({ type: LEAVE_ACTION_FAILURE, payload: errText(data, 'Something went wrong — please try again.') });
     }
   } catch {
     dispatch({ type: LEAVE_ACTION_FAILURE, payload: 'Network error. Check your connection.' });

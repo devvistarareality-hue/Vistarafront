@@ -6,6 +6,7 @@ import {
   REQUEST_LEAVE_FAILURE,
   REQUEST_LEAVE_RESET,
 } from '../types/requestLeaveTypes';
+import { errText } from '../../lib/apiError';
 
 export const requestLeave = (payload) => async (dispatch) => {
   dispatch({ type: REQUEST_LEAVE_REQUEST });
@@ -23,7 +24,7 @@ export const requestLeave = (payload) => async (dispatch) => {
     if (response.ok) {
       dispatch({ type: REQUEST_LEAVE_SUCCESS, payload: data });
     } else {
-      dispatch({ type: REQUEST_LEAVE_FAILURE, payload: data.detail || JSON.stringify(data) });
+      dispatch({ type: REQUEST_LEAVE_FAILURE, payload: errText(data, 'Something went wrong — please try again.') });
     }
   } catch {
     dispatch({ type: REQUEST_LEAVE_FAILURE, payload: 'Network error. Check your connection.' });

@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { FileSystemUploadType } from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SALES_ENDPOINTS } from '../constants/api';
+import { errText } from '../lib/apiError';
 
 // Uploads now go through the backend (service-role key) instead of the public anon
 // key, so the Supabase anon INSERT policy can be revoked. Returns the public URL.
@@ -20,7 +21,7 @@ export async function uploadToSupabase(fileUri, mimeType = 'image/jpeg', folder 
     const res = await fetch(SALES_ENDPOINTS.mediaUpload, { method: 'POST', headers, body: fd });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `Upload failed (${res.status})`);
+      throw new Error(errText(err, `Upload failed (${res.status})`));
     }
     return (await res.json()).url;
   }

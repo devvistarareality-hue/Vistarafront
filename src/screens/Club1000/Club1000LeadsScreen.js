@@ -15,6 +15,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import { onlyPresent } from '../../lib/presentOptions';
+import { errText } from '../../lib/apiError';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -187,7 +188,7 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
       if (!payload.assigned_to) delete payload.assigned_to;
       const res = await apiFetch(CLUB1000_ENDPOINTS.leads, { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json();
-      if (!res.ok) { Alert.alert('Could not add lead', d?.detail || 'Please check the fields.'); return; }
+      if (!res.ok) { Alert.alert('Could not add lead', errText(d, 'Please check the fields.')); return; }
       onSaved(d);
       onClose();
       setForm({ name: '', phone: '', alt_phone: '', email: '', reference_name: '', reference_phone: '', source: 'referral', lead_date: new Date(), scheme_interest: '', amount_interested: '', assigned_to: '', remarks: '' });

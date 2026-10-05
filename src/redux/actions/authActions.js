@@ -19,6 +19,7 @@ import {
   LOGIN_FAILURE,
   LOGOUT,
 } from '../types/authTypes';
+import { errText } from '../../lib/apiError';
 
 // Put the last signed-in user back in the store from local storage. This is a
 // storage read only, so the splash can await it and the navigator's first frame
@@ -83,7 +84,7 @@ export const verifyCompany = (companyCode) => async (dispatch) => {
     if (response.ok) {
       dispatch({ type: COMPANY_VERIFY_SUCCESS, payload: data.company });
     } else {
-      dispatch({ type: COMPANY_VERIFY_FAILURE, payload: data.detail || 'Invalid company code.' });
+      dispatch({ type: COMPANY_VERIFY_FAILURE, payload: errText(data, 'Invalid company code.') });
     }
   } catch (error) {
     dispatch({ type: COMPANY_VERIFY_FAILURE, payload: 'Network error. Check your connection.' });
@@ -111,7 +112,7 @@ export const login = (companyCode, userCode, password) => async (dispatch) => {
       dispatch({ type: LOGIN_SUCCESS, payload: data.user });
       try { OneSignal?.login(data.user.user_code); } catch (e) {}
     } else {
-      dispatch({ type: LOGIN_FAILURE, payload: data.detail || 'Invalid credentials.' });
+      dispatch({ type: LOGIN_FAILURE, payload: errText(data, 'Invalid credentials.') });
     }
   } catch (error) {
     dispatch({ type: LOGIN_FAILURE, payload: 'Network error. Check your connection.' });

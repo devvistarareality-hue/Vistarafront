@@ -14,6 +14,7 @@ import { isManagerRole } from '../../lib/roles';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import { errText } from '../../lib/apiError';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
@@ -318,7 +319,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
         method: 'POST', body: JSON.stringify({ plot_ids: [plotId] }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { Alert.alert('Could not cancel', data.detail || 'Please try again.'); return; }
+      if (!res.ok) { Alert.alert('Could not cancel', errText(data, 'Please try again.')); return; }
       setHoldPanelPlot(null); setDraftPanelPlot(null);
       const pl = await apiFetch(`${SALES_ENDPOINTS.plots}?project=${projectId}`).then(r => r.ok ? r.json() : []);
       setPlots(Array.isArray(pl) ? pl : (pl?.results || []));

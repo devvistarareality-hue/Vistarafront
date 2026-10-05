@@ -12,6 +12,7 @@ import { isManagerRole } from '../../lib/roles';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
+import { errText } from '../../lib/apiError';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const TEAL = COLORS.success; const PURPLE = COLORS.link; const AMBER = COLORS.warning;
 
 function fmtMoney(n) {
@@ -77,7 +78,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorAction(id), { method: 'POST', body: JSON.stringify({ action }) });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        alert(d?.detail || `Could not ${action} this investor.`);
+        alert(errText(d, `Could not ${action} this investor.`));
       }
     } finally {
       setBusy(null);
@@ -157,7 +158,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
       const res = await apiFetch(`${CLUB1000_ENDPOINTS.investorLoiUrl(id)}${pending ? '?pending=1' : ''}`);
       const d = await res.json();
       if (res.ok && d.url) Linking.openURL(d.url);
-      else alert(d?.detail || 'Could not open the LOI.');
+      else alert(errText(d, 'Could not open the LOI.'));
     } catch (e) { alert(e.message); }
   }
 

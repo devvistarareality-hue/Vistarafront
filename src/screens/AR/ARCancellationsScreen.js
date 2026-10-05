@@ -13,6 +13,7 @@ import LoadError from '../../components/LoadError';
 import FormSheet from '../../components/FormSheet';
 import { Button } from '../../components/ui';
 import { rupee, withCompany, today, cleanAmount, groupINR, DateField, shareCancellationLetter } from './arShared';
+import { errText } from '../../lib/apiError';
 
 const STAGES = [['pending', 'Awaiting approval'], ['refund_pending', 'Refund pending'], ['refunded', 'Settled'], ['rejected', 'Rejected'], ['all', 'All']];
 const BADGE = {
@@ -49,7 +50,7 @@ export default function ARCancellationsScreen({ navigation }) {
     try {
       const r = await apiFetch(withCompany(AR_ENDPOINTS.cancellations, companyId));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load cancellations.'); setRows([]); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load cancellations.')); setRows([]); return; }
       setRows(d.results || []); setCounts(d.counts || {}); setCanRefund(!!d.can_refund);
     } catch (e) { setErr('Check your connection and try again.'); setRows([]); }
   }, [companyId]);
@@ -72,7 +73,7 @@ export default function ARCancellationsScreen({ navigation }) {
     const r = await apiFetch(withCompany(AR_ENDPOINTS.cancellationDecide(c.id), companyId), { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
     const d = r ? await r.json().catch(() => ({})) : {};
     setBusy(false);
-    if (!r?.ok) { Alert.alert('Not saved', d.detail || 'Could not save the decision.'); return; }
+    if (!r?.ok) { Alert.alert('Not saved', errText(d, 'Could not save the decision.')); return; }
     load();
   }
 

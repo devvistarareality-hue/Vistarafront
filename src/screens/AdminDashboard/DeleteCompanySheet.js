@@ -6,6 +6,7 @@ import { COLORS } from '../../constants/theme';
 import { COMPANY_ENDPOINTS, SALES_ENDPOINTS } from '../../constants/api';
 import { apiFetch } from '../../utils/apiFetch';
 import { Button } from '../../components/ui';
+import { errText } from '../../lib/apiError';
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -24,10 +25,10 @@ async function saveBackup(company) {
   const b = await apiFetch(SALES_ENDPOINTS.backupSchedule(company.id), { method: 'POST' });
   const bd = await b.json().catch(() => ({}));
   const latest = (bd.history || [])[0];
-  if (!b.ok || !latest?.id) throw new Error(bd.detail || 'The backup could not be taken.');
+  if (!b.ok || !latest?.id) throw new Error(errText(bd, 'The backup could not be taken.'));
   const l = await apiFetch(SALES_ENDPOINTS.backupStored(latest.id, company.id));
   const ld = await l.json().catch(() => ({}));
-  if (!l.ok || !ld.url) throw new Error(ld.detail || 'The backup could not be downloaded.');
+  if (!l.ok || !ld.url) throw new Error(errText(ld, 'The backup could not be downloaded.'));
   const name = `${company.name.replace(/[^A-Za-z0-9]+/g, '-')}-before-delete.xlsx`;
   const got = await FileSystem.downloadAsync(ld.url, FileSystem.cacheDirectory + name).catch(() => null);
   if (!got || got.status !== 200) throw new Error('The backup could not be saved to this phone.');
@@ -68,7 +69,7 @@ export default function DeleteCompanySheet({ company, onClose, onDeleted }) {
         method: 'DELETE', body: JSON.stringify({ reset_key: key, confirm: typed.trim(), check_only: true }) });
       if (!chk.ok) {
         const cd = await chk.json().catch(() => ({}));
-        Alert.alert('Not deleted', cd.detail || 'Nothing was deleted.');
+        Alert.alert('Not deleted', errText(cd, 'Nothing was deleted.'));
         setStage(''); return;
       }
       setStage('backup');
@@ -87,7 +88,7 @@ export default function DeleteCompanySheet({ company, onClose, onDeleted }) {
       } else if (r.ok) {
         setStage(''); onDeleted(company); return;
       } else {
-        Alert.alert('Not deleted', d.detail || `The server returned ${r.status}. Nothing was deleted.`);
+        Alert.alert('Not deleted', errText(d, `The server returned ${r.status}. Nothing was deleted.`));
       }
     } catch (e) {
       Alert.alert('Not deleted', `${e.message} Nothing was deleted.`);

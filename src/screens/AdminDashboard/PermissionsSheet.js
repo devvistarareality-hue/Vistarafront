@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import FormSheet from '../../components/FormSheet';
 import { Button, Segmented } from '../../components/ui';
 import FilterSelect from '../../components/FilterSelect';
+import { errText } from '../../lib/apiError';
 
 // Every module the system knows, and the short name the capability vocabulary
 // uses for AR. Mirrors the web editor, so the two offer the same list.
@@ -97,7 +98,7 @@ export default function PermissionsSheet({ designation, others, visible, onClose
           screens_modules: mine, dashboard: dash }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not save.'); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not save.')); return; }
       onSaved?.(d);
       onClose();
     } catch (e) {

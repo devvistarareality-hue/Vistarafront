@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { ACTIVITY_ENDPOINTS } from '../constants/api';
 import { apiFetch } from '../utils/apiFetch';
+import { errText } from '../lib/apiError';
 
 // Who did what to one record (a booking, an AR account…), newest first — same
 // as components/ActivityHistory.js on the website. Collapsed until opened.
@@ -93,7 +94,7 @@ export default function ActivityHistory({ targetType, targetId, title = 'History
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
         if (!alive) return;
-        if (!r.ok) { setErr(d.detail || 'Could not load the history.'); setRows([]); return; }
+        if (!r.ok) { setErr(errText(d, 'Could not load the history.')); setRows([]); return; }
         setRows(d.results || []);
       })
       .catch(() => { if (alive) { setErr('Could not load the history.'); setRows([]); } });

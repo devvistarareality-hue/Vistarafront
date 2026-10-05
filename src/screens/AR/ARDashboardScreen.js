@@ -17,6 +17,7 @@ import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { inrShort, AGE_LABELS, ISSUES, today, withCompany, DateField } from './arShared';
 import { Segmented, Button } from '../../components/ui';
 import { hasBankMaster } from '../../lib/moduleGroups';
+import { errText } from '../../lib/apiError';
 
 const ISSUE_TEXT = {
   no_schedule: 'No installment schedule — Sales needs to add one',
@@ -57,7 +58,7 @@ export default function ARDashboardScreen({ navigation }) {
       if (project.length) extra.push(`project=${project.join(',')}`);
       const r = await apiFetch(withCompany(AR_ENDPOINTS.dashboard, companyId, extra));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load the dashboard.'); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load the dashboard.')); return; }
       setData(d);
       if (d.projects) setProjects(d.projects);
     } catch (e) { setErr('Check your connection and try again.'); }

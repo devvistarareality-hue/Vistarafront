@@ -6,6 +6,7 @@ import {
   USER_UPDATE_REQUEST, USER_UPDATE_SUCCESS, USER_UPDATE_FAILURE, USER_UPDATE_RESET,
   USER_DELETE_SUCCESS,
 } from '../types/userManagementTypes';
+import { errText } from '../../lib/apiError';
 
 const authHeaders = async () => {
   const token = await AsyncStorage.getItem('access_token');
@@ -21,7 +22,7 @@ export const fetchUsers = () => async (dispatch) => {
     if (res.ok) {
       dispatch({ type: USERS_FETCH_SUCCESS, payload: data });
     } else {
-      dispatch({ type: USERS_FETCH_FAILURE, payload: data.detail || 'Failed to load users.' });
+      dispatch({ type: USERS_FETCH_FAILURE, payload: errText(data, 'Failed to load users.') });
     }
   } catch {
     dispatch({ type: USERS_FETCH_FAILURE, payload: 'Network error.' });
@@ -41,7 +42,7 @@ export const createUser = (payload) => async (dispatch) => {
     if (res.ok || res.status === 201) {
       dispatch({ type: USER_CREATE_SUCCESS, payload: data });
     } else {
-      const msg = data.email?.[0] || data.detail || JSON.stringify(data);
+      const msg = data.email?.[0] || errText(data, 'Something went wrong — please try again.');
       dispatch({ type: USER_CREATE_FAILURE, payload: msg });
     }
   } catch {
@@ -62,7 +63,7 @@ export const updateUser = (id, payload) => async (dispatch) => {
     if (res.ok) {
       dispatch({ type: USER_UPDATE_SUCCESS, payload: data });
     } else {
-      const msg = data.detail || JSON.stringify(data);
+      const msg = errText(data, 'Something went wrong — please try again.');
       dispatch({ type: USER_UPDATE_FAILURE, payload: msg });
     }
   } catch {

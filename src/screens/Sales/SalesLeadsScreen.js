@@ -23,6 +23,7 @@ import common from '../../styles/common';
 import { can } from '../../lib/roles';
 import { Segmented } from '../../components/ui';
 import { ChannelPartnerDirectory } from './ChannelPartnersScreen';
+import { errText, explainApiError } from '../../lib/apiError';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 // A picked visit date as YYYY-MM-DD in the phone's own day (toISOString would
 // shift it to UTC and can land on the day before).
@@ -434,7 +435,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
 
         onUpdated(updated); onClose();
       }
-      else { const e = await res.json().catch(() => ({})); Alert.alert('Not saved', e.detail || 'Could not save lead.'); }
+      else { const e = await res.json().catch(() => ({})); Alert.alert('Not saved', explainApiError(res, e, 'Could not save lead.')); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
   }
@@ -1321,7 +1322,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
         onCreated(lead); onClose(); setForm(emptyForm); setFuForm(emptyFu); setCityOther(false);
         setSvOutcome(''); setSvVisitedDate(new Date());
       }
-      else { const e = await res.json().catch(() => ({})); Alert.alert('Not added', e.detail || JSON.stringify(e)); }
+      else { const e = await res.json().catch(() => ({})); Alert.alert('Not added', explainApiError(res, e, 'Could not add the lead.')); }
     } catch (e) { Alert.alert('Network error', e.message); }
     setSaving(false);
   }
@@ -1874,7 +1875,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
         body: JSON.stringify({ lead: xferLead.id, to_stm: xferTo, reason: xferReason.trim() }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) Alert.alert('Could not transfer', d.detail || 'Please try again.');
+      if (!r.ok) Alert.alert('Could not transfer', errText(d, 'Please try again.'));
       else {
         setXferLead(null); setXferTo(''); setXferReason('');
         loadPendingXfers();

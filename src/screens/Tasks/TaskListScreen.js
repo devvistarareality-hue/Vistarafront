@@ -13,6 +13,7 @@ import { Badge } from '../../components/ui';
 import { STATUS_LABEL, PRIORITIES, PRIORITY_LABEL, withCompany, isOverdue } from './taskShared';
 import TaskDetailSheet from './TaskDetailSheet';
 import { onlyPresent } from '../../lib/presentOptions';
+import { errText } from '../../lib/apiError';
 
 // Dash's tone vocabulary (info/good/warn/bad/muted) → Badge's (info/success/warning/danger/neutral).
 const BADGE_TONE = { info: 'info', good: 'success', warn: 'warning', bad: 'danger', muted: 'neutral' };
@@ -60,7 +61,7 @@ export default function TaskListScreen({ route }) {
       if (q.trim()) extra.push(`search=${encodeURIComponent(q.trim())}`);
       const r = await apiFetch(withCompany(TASK_ENDPOINTS.tasks, companyId, extra));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load tasks.'); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load tasks.')); return; }
       setTasks(d.results || []);
     } catch (e) { setErr('Check your connection and try again.'); }
   }, [tab, listFilter, statusFilter, priorityFilter, overdueOnly, q, companyId]);

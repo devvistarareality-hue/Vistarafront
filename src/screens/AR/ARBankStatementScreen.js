@@ -12,6 +12,7 @@ import common from '../../styles/common';
 import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import { rupee, withCompany, DateField, toISO, shareBankStatement } from './arShared';
+import { errText } from '../../lib/apiError';
 
 // Quick ranges — the Indian financial year runs April to March. Same as the web.
 function presetRange(key) {
@@ -47,7 +48,7 @@ export default function ARBankStatementScreen({ navigation, route }) {
     try {
       const r = await apiFetch(withCompany(AR_ENDPOINTS.bankStatement(id), companyId, extra));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load the statement.'); setData({}); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load the statement.')); setData({}); return; }
       setData(d);
     } catch (e) { setErr('Check your connection and try again.'); setData({}); }
   }, [id, from, to, companyId]);

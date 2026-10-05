@@ -20,6 +20,7 @@ import { apiFetch } from '../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../constants/api';
 import { COLORS, CARD_SHADOW } from '../constants/theme';
 import AppLoader from './AppLoader';
+import { errText } from '../lib/apiError';
 
 const TABS = [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']];
 
@@ -69,7 +70,7 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
         body: JSON.stringify({ action, ...(why ? { reason: why } : {}) }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { Alert.alert('Could not update the project', d.detail || 'Please try again.'); return; }
+      if (!res.ok) { Alert.alert('Could not update the project', errText(d, 'Please try again.')); return; }
       setRejecting(null); setReason('');
       load();
     } finally {

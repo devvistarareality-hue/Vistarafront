@@ -13,6 +13,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { ATTENDANCE_ENDPOINTS } from '../../../../constants/api';
 import { COLORS } from '../../../../constants/theme';
 import AppLoader from '../../../../components/AppLoader';
+import { errText } from '../../../../lib/apiError';
 
 // ── Office geofence ──────────────────────────────────────────────────
 const OFFICE = { latitude: 23.1318, longitude: 72.5691, radius: 500 };
@@ -167,7 +168,7 @@ export default function SignInInternalScreen({ navigation }) {
         setWorkSeconds(0);
         timerRef.current = setInterval(() => setWorkSeconds(s => s + 1), 1000);
       } else {
-        Alert.alert('Sign In Failed', data.detail || 'Could not sign in.');
+        Alert.alert('Sign In Failed', errText(data, 'Could not sign in.'));
       }
     } catch {
       Alert.alert('Error', 'Network error. Please try again.');
@@ -198,7 +199,7 @@ export default function SignInInternalScreen({ navigation }) {
               if (timerRef.current) clearInterval(timerRef.current);
               navigation.navigate('PostSignOut');
             } else {
-              Alert.alert('Sign Out Failed', data.detail || 'Could not sign out.');
+              Alert.alert('Sign Out Failed', errText(data, 'Could not sign out.'));
             }
           } catch {
             Alert.alert('Error', 'Network error. Please try again.');
@@ -248,7 +249,7 @@ export default function SignInInternalScreen({ navigation }) {
         setShowModify(false);
         loadTodayRecord();
       } else {
-        Alert.alert('Error', data.detail || 'Failed to modify attendance.');
+        Alert.alert('Error', errText(data, 'Failed to modify attendance.'));
       }
     } catch {
       Alert.alert('Error', 'Network error. Please try again.');

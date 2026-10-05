@@ -6,6 +6,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { apiFetch } from '../../utils/apiFetch';
 import AppLoader from '../../components/AppLoader';
 import { Badge, Button } from '../../components/ui';
+import { errText } from '../../lib/apiError';
 
 // Lead transfer approvals with a status filter — the app side of the website's
 // sales/_LeadTransfers.js. Pending ones can be approved or rejected; decided ones
@@ -56,7 +57,7 @@ export default function LeadTransfersPanel({ companyId, cpOnly, pendingCount, on
           setBusy(x.id);
           const r = await apiFetch(SALES_ENDPOINTS.leadTransferAction(x.id), { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
           setBusy(null);
-          if (!r?.ok) Alert.alert('Error', (await r?.json().catch(() => ({})))?.detail || 'Could not update the transfer.');
+          if (!r?.ok) Alert.alert('Not updated', errText(await r?.json().catch(() => ({})), 'Could not update the transfer.'));
           load(); onChanged?.();
         } },
       ]);

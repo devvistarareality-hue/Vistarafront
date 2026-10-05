@@ -22,6 +22,7 @@ import { onlyPresent } from '../../lib/presentOptions';
 import LeadHistory from '../../components/LeadHistory';
 import { PartnerActivityPanel } from '../../components/PartnerActivity';
 import CpTabs from '../../components/CpTabs';
+import { errText } from '../../lib/apiError';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -186,7 +187,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
         });
         if (!lr.ok) {
           const e = await lr.json().catch(() => ({}));
-          Alert.alert('Status not saved', e.detail || 'The lead status could not be saved.');
+          Alert.alert('Status not saved', errText(e, 'The lead status could not be saved.'));
         }
       }
       // STM set sv_scheduled -> create the site visit, matching the lead modal.

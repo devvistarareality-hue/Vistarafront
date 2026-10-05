@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { USER_ENDPOINTS } from '../constants/api';
 import { apiFetch } from '../utils/apiFetch';
 import { LOGIN_SUCCESS } from '../redux/types/authTypes';
+import { errText } from './apiError';
 
 const OWN = ['access_token', 'refresh_token', 'user'];
 const key = (k) => `admin_${k}`;
@@ -27,7 +28,7 @@ export const startImpersonation = (userId) => async (dispatch) => {
     body: JSON.stringify({ user_id: userId, platform: 'app' }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.detail || 'Could not open that user’s view.');
+  if (!res.ok) throw new Error(errText(data, 'Could not open that user’s view.'));
 
   for (const k of OWN) {
     const v = await AsyncStorage.getItem(k);

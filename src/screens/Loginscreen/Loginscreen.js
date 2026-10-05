@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseUrl } from '../../constants/api';
 import { LOGIN_SUCCESS } from '../../redux/types/authTypes';
 import images from '../../constants/images';
+import { errText } from '../../lib/apiError';
 
 // react-native-onesignal is a native module absent in Expo Go; load it lazily
 let OneSignal = null;
@@ -95,7 +96,7 @@ const LoginScreen = () => {
           try { OneSignal?.login(data.user.user_code); } catch (_) {}
         }
       } else {
-        setError(data.detail || 'Invalid credentials.');
+        setError(errText(data, 'Invalid credentials.'));
       }
     } catch {
       setError('Network error. Check your connection.');
@@ -121,7 +122,7 @@ const LoginScreen = () => {
         dispatch({ type: LOGIN_SUCCESS, payload: data.user });
         try { OneSignal?.login(data.user.user_code); } catch (_) {}
       } else {
-        setError(data.detail || 'Invalid OTP.');
+        setError(errText(data, 'Invalid OTP.'));
       }
     } catch {
       setError('Network error. Check your connection.');
@@ -145,7 +146,7 @@ const LoginScreen = () => {
         setOtp('');
         setResendSecs(30);
       } else {
-        setError(data.detail || 'Could not resend OTP.');
+        setError(errText(data, 'Could not resend OTP.'));
       }
     } catch {
       setError('Network error. Check your connection.');

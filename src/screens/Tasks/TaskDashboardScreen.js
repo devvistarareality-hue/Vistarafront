@@ -11,6 +11,7 @@ import AppLoader from '../../components/AppLoader';
 import LoadError from '../../components/LoadError';
 import { DashHero, DashKpi, DashKpiGrid, DashAlerts, DashCard, DashBars } from '../../components/Dash';
 import { STATUSES, PRIORITIES, withCompany } from './taskShared';
+import { errText } from '../../lib/apiError';
 
 // Task Allocation landing — open work at a glance, same shared-widget layout
 // the Sales and Club 1000 dashboards use.
@@ -26,7 +27,7 @@ export default function TaskDashboardScreen({ navigation }) {
     try {
       const r = await apiFetch(withCompany(TASK_ENDPOINTS.stats, companyId));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load the dashboard.'); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load the dashboard.')); return; }
       setData(d);
     } catch (e) { setErr('Check your connection and try again.'); }
   }, [companyId]);

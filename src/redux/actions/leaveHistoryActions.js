@@ -5,6 +5,7 @@ import {
   LEAVE_HISTORY_SUCCESS,
   LEAVE_HISTORY_FAILURE,
 } from '../types/leaveHistoryTypes';
+import { errText } from '../../lib/apiError';
 
 const PAGE_SIZE = 20;
 
@@ -23,7 +24,7 @@ export const fetchLeaveHistory = (page = 1) => async (dispatch) => {
     if (response.ok) {
       dispatch({ type: LEAVE_HISTORY_SUCCESS, payload: data, meta: { page } });
     } else {
-      dispatch({ type: LEAVE_HISTORY_FAILURE, payload: data.detail || JSON.stringify(data) });
+      dispatch({ type: LEAVE_HISTORY_FAILURE, payload: errText(data, 'Something went wrong — please try again.') });
     }
   } catch {
     dispatch({ type: LEAVE_HISTORY_FAILURE, payload: 'Network error. Check your connection.' });

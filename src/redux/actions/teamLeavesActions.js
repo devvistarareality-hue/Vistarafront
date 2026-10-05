@@ -5,6 +5,7 @@ import {
   TEAM_LEAVES_SUCCESS,
   TEAM_LEAVES_FAILURE,
 } from '../types/teamLeavesTypes';
+import { errText } from '../../lib/apiError';
 
 const PAGE_SIZE = 20;
 
@@ -21,7 +22,7 @@ export const fetchTeamLeaves = (page = 1) => async (dispatch) => {
     if (response.ok) {
       dispatch({ type: TEAM_LEAVES_SUCCESS, payload: data, meta: { page } });
     } else {
-      dispatch({ type: TEAM_LEAVES_FAILURE, payload: data.detail || JSON.stringify(data) });
+      dispatch({ type: TEAM_LEAVES_FAILURE, payload: errText(data, 'Something went wrong — please try again.') });
     }
   } catch {
     dispatch({ type: TEAM_LEAVES_FAILURE, payload: 'Network error. Check your connection.' });

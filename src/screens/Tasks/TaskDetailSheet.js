@@ -9,6 +9,7 @@ import FormSheet from '../../components/FormSheet';
 import { Button, Badge } from '../../components/ui';
 import { TONES } from '../../components/Dash';
 import { STATUSES, PRIORITIES, withCompany, DateField } from './taskShared';
+import { errText } from '../../lib/apiError';
 
 function Pill({ label, tone, on, onPress }) {
   const t = TONES[tone] || TONES.info;
@@ -79,7 +80,7 @@ export default function TaskDetailSheet({ taskId, defaultListId, lists, visible,
         }),
       });
       const d = await r.json();
-      if (!r.ok) { setErr(d.detail || 'Could not create the task.'); setSaving(false); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not create the task.')); setSaving(false); return; }
       onChanged?.();
       onClose();
     } catch (_) { setErr('Could not create the task.'); }

@@ -10,6 +10,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { fetchCompanies } from '../../redux/actions/companiesActions';
 import common from '../../styles/common';
 import { Button } from '../../components/ui';
+import { errText } from '../../lib/apiError';
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -77,7 +78,7 @@ export default function ReviveCompanyCard() {
       Alert.alert('Could not reach the server', 'The connection dropped. Try again.');
     } else if (!r.ok) {
       setPreview(null);
-      Alert.alert(commit ? 'Not brought back' : 'That file cannot be used', d.detail || `The server returned ${r.status}.`);
+      Alert.alert(commit ? 'Not brought back' : 'That file cannot be used', errText(d, `The server returned ${r.status}.`));
     } else if (commit) {
       Alert.alert('Company brought back',
         `${d.company?.name || 'The company'} (${d.company?.code}) is back with ${(d.total || 0).toLocaleString('en-IN')} records, under its original id.`);

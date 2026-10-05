@@ -17,6 +17,7 @@ import { fmtWhen } from '../../components/ActivityHistory';
 import { rupee, inrShort, today, withCompany } from './arShared';
 import FollowUpSheet from './FollowUpSheet';
 import CancelSheet from './CancelSheet';
+import { errText } from '../../lib/apiError';
 
 const dmy = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
 const WINDOWS = [0, 7, 30, 60, 90];   // 0 = due today
@@ -50,7 +51,7 @@ export default function ARCollectionsScreen({ navigation, route }) {
       if (project.length) extra.push(`project=${project.join(',')}`);
       const r = await apiFetch(withCompany(AR_ENDPOINTS.collections, companyId, extra));
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.detail || 'Could not load collections.'); return; }
+      if (!r.ok) { setErr(errText(d, 'Could not load collections.')); return; }
       setData(d);
     } catch (e) { setErr('Check your connection and try again.'); }
   }, [view, days, project, companyId]);

@@ -8,6 +8,7 @@ import FormSheet from '../../components/FormSheet';
 import AppLoader from '../../components/AppLoader';
 import { Button } from '../../components/ui';
 import { rupee, withCompany } from './arShared';
+import { errText } from '../../lib/apiError';
 
 // Raise a plot cancellation for approval — mirrors the web's _CancelModal. Shows
 // what it settles to first (we keep 10% of the deal net of stamp duty and
@@ -24,7 +25,7 @@ export default function CancelSheet({ row, companyId, onClose, onDone }) {
     apiFetch(withCompany(AR_ENDPOINTS.accountCancellation(row.id), companyId))
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
-        if (!r.ok) { setErr(d.detail || 'Could not work out the settlement.'); setPrev({}); return; }
+        if (!r.ok) { setErr(errText(d, 'Could not work out the settlement.')); setPrev({}); return; }
         setPrev(d);
       })
       .catch(() => { setErr('Check your connection and try again.'); setPrev({}); });

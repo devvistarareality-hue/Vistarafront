@@ -8,6 +8,7 @@ import {
   MONTHLY_ATTENDANCE_SUCCESS,
   MONTHLY_ATTENDANCE_FAILURE,
 } from '../types/dashboardTypes';
+import { errText } from '../../lib/apiError';
 
 const authHeaders = async () => {
   const token = await AsyncStorage.getItem('access_token');
@@ -25,7 +26,7 @@ export const fetchDashboard = () => async (dispatch) => {
     if (response.ok) {
       dispatch({ type: DASHBOARD_SUCCESS, payload: data });
     } else {
-      dispatch({ type: DASHBOARD_FAILURE, payload: data.detail || 'Failed to load dashboard.' });
+      dispatch({ type: DASHBOARD_FAILURE, payload: errText(data, 'Failed to load dashboard.') });
     }
   } catch {
     dispatch({ type: DASHBOARD_FAILURE, payload: 'Network error. Check your connection.' });
@@ -43,7 +44,7 @@ export const fetchMonthlyAttendance = (year, month) => async (dispatch) => {
     if (response.ok) {
       dispatch({ type: MONTHLY_ATTENDANCE_SUCCESS, payload: data });
     } else {
-      dispatch({ type: MONTHLY_ATTENDANCE_FAILURE, payload: data.detail || 'Failed to load monthly data.' });
+      dispatch({ type: MONTHLY_ATTENDANCE_FAILURE, payload: errText(data, 'Failed to load monthly data.') });
     }
   } catch {
     dispatch({ type: MONTHLY_ATTENDANCE_FAILURE, payload: 'Network error. Check your connection.' });

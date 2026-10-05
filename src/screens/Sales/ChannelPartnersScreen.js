@@ -11,6 +11,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import AppLoader from '../../components/AppLoader';
 import { PartnerActivitySheet } from '../../components/PartnerActivity';
+import { errText } from '../../lib/apiError';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -139,7 +140,7 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
         // 409 is the duplicate rule — it names who holds the number, so show that
         // under the field as well, not only as an error line.
         if (res.status === 409 && data.existing) setDupe({ ...data.existing, exists: true });
-        setErr(data.detail || JSON.stringify(data));
+        setErr(errText(data, 'Something went wrong — please try again.'));
         setSaving(false);
         return;
       }

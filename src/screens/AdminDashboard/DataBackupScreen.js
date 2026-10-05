@@ -17,6 +17,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { Button } from '../../components/ui';
 import ReviveCompanyCard from './ReviveCompanyCard';
 import AutoBackupCard from './AutoBackupCard';
+import { errText } from '../../lib/apiError';
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -84,7 +85,7 @@ export default function DataBackupScreen({ navigation }) {
         method: 'POST', body: JSON.stringify({ reset_key: resetKey, confirm: 'DELETE', company_code: resetCode, check_only: true }) });
       if (!chk.ok) {
         const cd = await chk.json().catch(() => ({}));
-        Alert.alert('Reset refused', cd.detail || 'Nothing was changed.');
+        Alert.alert('Reset refused', errText(cd, 'Nothing was changed.'));
         setBusy(''); return;
       }
       const b = await apiFetch(SALES_ENDPOINTS.backupSchedule(companyId), { method: 'POST', timeout: LONG_REQUEST_TIMEOUT_MS });
@@ -125,7 +126,7 @@ export default function DataBackupScreen({ navigation }) {
         } else {
           Alert.alert('Could not confirm the reset', 'The server may still be working. Check this screen again in a minute.');
         }
-      } else if (!r.ok) Alert.alert('Reset refused', d.detail || 'Could not reset.');
+      } else if (!r.ok) Alert.alert('Reset refused', errText(d, 'Could not reset.'));
       else { Alert.alert('Reset done', d.detail); setResetKey(''); }
       loadReset();
     } catch (e) { Alert.alert('Reset failed', 'Check your connection and try again.'); }
@@ -227,10 +228,10 @@ export default function DataBackupScreen({ navigation }) {
         Alert.alert('Check failed', 'The connection dropped. Try again.');
       } else if (r.status === 409) {
         setPreview(null);
-        Alert.alert('Already there', d.detail || 'Those records still exist, so nothing was written.');
+        Alert.alert('Already there', errText(d, 'Those records still exist, so nothing was written.'));
       } else if (!r.ok) {
         setPreview(null);
-        Alert.alert('Restore failed', d.detail || 'The file could not be read.');
+        Alert.alert('Restore failed', errText(d, 'The file could not be read.'));
       } else if (commit) {
         setPreview(null); setFile(null); loadReset();
         Alert.alert('Restored', `${d.total} record${d.total === 1 ? '' : 's'} put back into ${company?.name || 'the company'}.`);

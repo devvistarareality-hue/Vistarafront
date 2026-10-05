@@ -22,6 +22,7 @@ import { buildInvestorLOIHtml } from '../../lib/investorLOIHtml';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import { onlyPresent } from '../../lib/presentOptions';
+import { errText } from '../../lib/apiError';
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -354,7 +355,7 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLe
       if (payload.source !== 'referral') { delete payload.reference_name; delete payload.reference_phone; }
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorDraft, { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { Alert.alert('Could not save the draft', d?.detail || 'Please try again.'); return; }
+      if (!res.ok) { Alert.alert('Could not save the draft', errText(d, 'Please try again.')); return; }
       setDraftId(d.id);
       onSaved(d);
       onClose();
@@ -403,7 +404,7 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes, prefillLe
       const res = await apiFetch(CLUB1000_ENDPOINTS.investors, { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json();
       if (!res.ok) {
-        Alert.alert('Could not add investor', d?.amount_invested?.[0] || d?.detail || 'Please check the fields.');
+        Alert.alert('Could not add investor', d?.amount_invested?.[0] || errText(d, 'Please check the fields.'));
         return;
       }
       onSaved(d);
@@ -754,7 +755,7 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorRevise(investor.id), { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json();
       if (!res.ok) {
-        Alert.alert('Could not submit revision', d?.detail || 'Please check the fields.');
+        Alert.alert('Could not submit revision', errText(d, 'Please check the fields.'));
         return;
       }
       onSaved(d);
@@ -977,7 +978,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorRenew(investor.id), { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json();
       if (!res.ok) {
-        Alert.alert('Could not submit renewal', d?.detail || 'Please check the fields.');
+        Alert.alert('Could not submit renewal', errText(d, 'Please check the fields.'));
         return;
       }
       onSaved(d);
@@ -1128,7 +1129,7 @@ function LedgerModal({ investorId, onClose }) {
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
         if (cancelled) return;
-        if (r.ok) setData(d); else setErr(d?.detail || 'Could not load the ledger.');
+        if (r.ok) setData(d); else setErr(errText(d, 'Could not load the ledger.'));
       })
       .catch((e) => !cancelled && setErr(e.message))
       .finally(() => !cancelled && setLoading(false));
@@ -1260,7 +1261,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       { text: 'Redeem', style: 'destructive', onPress: async () => {
         const res = await apiFetch(CLUB1000_ENDPOINTS.investorRedeem(id), { method: 'POST' });
         const d = await res.json();
-        if (!res.ok) { Alert.alert('Could not redeem', d?.detail || 'Please try again.'); return; }
+        if (!res.ok) { Alert.alert('Could not redeem', errText(d, 'Please try again.')); return; }
         load();
       } },
     ]);
@@ -1272,7 +1273,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       { text: 'Payout', style: 'destructive', onPress: async () => {
         const res = await apiFetch(CLUB1000_ENDPOINTS.investorMaturePayout(id), { method: 'POST' });
         const d = await res.json();
-        if (!res.ok) { Alert.alert('Could not process the payout', d?.detail || 'Please try again.'); return; }
+        if (!res.ok) { Alert.alert('Could not process the payout', errText(d, 'Please try again.')); return; }
         load();
       } },
     ]);
@@ -1283,7 +1284,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorLoiUrl(id));
       const d = await res.json();
       if (res.ok && d.url) Linking.openURL(d.url);
-      else Alert.alert('LOI unavailable', d?.detail || 'Could not open the LOI.');
+      else Alert.alert('LOI unavailable', errText(d, 'Could not open the LOI.'));
     } catch (e) { Alert.alert('LOI unavailable', e.message); }
   }
 

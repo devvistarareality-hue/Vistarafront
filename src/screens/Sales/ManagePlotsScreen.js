@@ -23,6 +23,7 @@ import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import SheetHandle from '../../components/SheetHandle';
+import { errText } from '../../lib/apiError';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -1277,7 +1278,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
     const body = newStatus === 'pending' ? { status: 'hold', manual_hold: true } : { status: newStatus, manual_hold: false };
     const res = await apiFetch(SALES_ENDPOINTS.plot(plotId), { method: 'PATCH', body: JSON.stringify(body) });
     if (res.ok) { const u = await res.json(); setPlots(prev => prev.map(p => p.id === plotId ? u : p)); }
-    else { const d = await res.json().catch(() => ({})); Alert.alert('Not changed', d.detail || 'The unit could not be changed.'); }
+    else { const d = await res.json().catch(() => ({})); Alert.alert('Not changed', errText(d, 'The unit could not be changed.')); }
   }, []);
 
   const openEdit = useCallback((plot) => { setEditPlot(plot); setEditModalVisible(true); }, []);
@@ -1518,7 +1519,7 @@ export default function ManagePlotsScreen({ route, navigation }) {
                         method: 'DELETE', body: JSON.stringify({ project_id: project.id }),
                       });
                       if (res.ok) { setPlots([]); Alert.alert('Done', 'All plots deleted.'); }
-                      else { const e = await res.json(); Alert.alert('Error', e.detail || 'Failed to delete plots'); }
+                      else { const e = await res.json(); Alert.alert('Error', errText(e, 'Failed to delete plots')); }
                     }},
                   ]);
                 }}

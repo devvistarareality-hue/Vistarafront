@@ -7,6 +7,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { apiFetch, LONG_REQUEST_TIMEOUT_MS } from '../../utils/apiFetch';
 import common from '../../styles/common';
 import { Button } from '../../components/ui';
+import { errText } from '../../lib/apiError';
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const FREQS = [['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly']];
@@ -55,7 +56,7 @@ export default function AutoBackupCard({ companyId, company, ready }) {
   async function saveToPhone(id) {
     const r = await apiFetch(SALES_ENDPOINTS.backupStored(id, companyId));
     const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d.url) throw new Error(d.detail || 'No download link.');
+    if (!r.ok || !d.url) throw new Error(errText(d, 'No download link.'));
     const name = `${(company?.name || 'company').replace(/[^A-Za-z0-9]+/g, '-')}-backup-${id}.xlsx`;
     const got = await FileSystem.downloadAsync(d.url, FileSystem.cacheDirectory + name);
     if (got.status !== 200) throw new Error('The file could not be saved to this phone.');
@@ -73,7 +74,7 @@ export default function AutoBackupCard({ companyId, company, ready }) {
       // Building the workbook for a big company takes well over the usual 25s.
       const r = await apiFetch(SALES_ENDPOINTS.backupSchedule(companyId), { method: 'POST', timeout: LONG_REQUEST_TIMEOUT_MS });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { Alert.alert('Backup not taken', d.detail || 'Try again.'); setBusy(''); return; }
+      if (!r.ok) { Alert.alert('Backup not taken', errText(d, 'Try again.')); setBusy(''); return; }
       setSched(d);
       const latest = (d.history || [])[0];
       // Taking one by hand means you want it in hand too.

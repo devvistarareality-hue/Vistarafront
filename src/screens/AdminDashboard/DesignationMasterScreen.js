@@ -14,6 +14,7 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import SheetHandle from '../../components/SheetHandle';
 import PermissionsSheet from './PermissionsSheet';
+import { errText } from '../../lib/apiError';
 
 // Departments that hold modules (lib/moduleGroups), and each module's display name.
 const DEPTS = GROUPS.filter((g) => g.parts.some((p) => p.module));
@@ -124,7 +125,7 @@ export default function DesignationMasterScreen({ navigation }) {
         setName('');
       } else {
         const data = await res.json();
-        Alert.alert('Error', data.detail || JSON.stringify(data));
+        Alert.alert('Error', errText(data, 'Something went wrong — please try again.'));
       }
     } catch {
       Alert.alert('Error', 'Network error.');
