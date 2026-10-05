@@ -20,6 +20,7 @@ import common from '../../styles/common';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { PartnerActivityPanel } from '../../components/PartnerActivity';
 import CpTabs from '../../components/CpTabs';
+import BookFilter, { useBook } from '../../components/BookFilter';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -56,6 +57,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
   const cpOnly = !!route?.params?.cpOnly;
+  // Source filter: Sales / CP / All (components/BookFilter).
+  const [book, setBook] = useBook(cpOnly);
   // Which half of the CP module this screen is showing: the partners' leads,
   // or the partners themselves. Only ever visible when cpOnly.
   const [cpTab, setCpTab] = useState('leads');
@@ -123,6 +126,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       // Channel Partner module: the same screen, restricted to partner-sourced
       // work — the server reads cp_only exactly as the web CP pages send it.
       if (cpOnly) params.push('cp_only=true');
+      params.push(`book=${book}`);
       const url = params.length ? `${SALES_ENDPOINTS.siteVisits}?${params.join('&')}` : SALES_ENDPOINTS.siteVisits;
       const ck = cacheKey('visits', url);
       // Tab, date, project and outcome are all filtered on the device, so this
@@ -135,7 +139,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
       setLoadErr(e?.message || 'Could not load site visits.');
     }
     setLoading(false); setRefreshing(false);
-  }, [companyId, adminView, cpOnly]);
+  }, [companyId, adminView, cpOnly, book]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -381,6 +385,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
           })}
         </ScrollView>
       </View>
+
+      <BookFilter value={book} onChange={setBook} style={fs.book} />
 
       {/* Filters — dropdowns rather than rows of chips */}
       <View style={fs.bar}>
@@ -720,6 +726,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 // Filter bar: one dropdown per facet instead of rows of chips.
 const fs = StyleSheet.create({
   bar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 10 },
+  book: { marginHorizontal: 16, marginTop: 10, marginBottom: 0 },
   sel: { flexGrow: 1, flexBasis: 150, justifyContent: 'space-between' },
   search: { flexBasis: '100%', borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 9, paddingHorizontal: 10,
             paddingVertical: 8, fontSize: 13, color: COLORS.textPrimary },

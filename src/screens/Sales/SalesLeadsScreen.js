@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BookFilter, { useBook } from '../../components/BookFilter';
 import { apiFetch } from '../../utils/apiFetch';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
@@ -1892,7 +1893,9 @@ export default function SalesLeadsScreen({ navigation, route }) {
   // Opened from the Channel Partner module: partner-sourced leads only, with the
   // partner directory as a second tab — the web module's All Leads page.
   const cpOnly = !!route?.params?.cpOnly;
-  const cpQ = cpOnly ? '&cp_only=true' : '';
+  // Source filter: Sales / CP / All (components/BookFilter) — sent with every list request.
+  const [book, setBook] = useBook(cpOnly);
+  const cpQ = (cpOnly ? '&cp_only=true' : '') + `&book=${book}`;
   const [cpTab, setCpTab] = useState('leads');   // 'leads' | 'details'
   const [channelPartners, setChannelPartners] = useState([]);
   useEffect(() => {
@@ -1905,12 +1908,12 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [facets, setFacets] = useState(null);
   useEffect(() => {
     let alive = true;
-    const q = ['facets=1', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : ''].filter(Boolean).join('&');
+    const q = ['facets=1', companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : '', `book=${book}`].filter(Boolean).join('&');
     apiFetch(`${SALES_ENDPOINTS.leads}?${q}`).then((r) => (r.ok ? r.json() : null))
       // Only a real facets answer counts (a server without ?facets=1 replies with the list).
       .then((d) => { if (alive && Array.isArray(d?.project_ids)) setFacets(d); }).catch(() => {});
     return () => { alive = false; };
-  }, [companyId, adminView, cpOnly]);
+  }, [companyId, adminView, cpOnly, book]);
 
   // Telecaller / STM portals get a "To Call" vs "Called" split so they can tell
   // which of their assigned leads are still pending vs already actioned.
@@ -2093,7 +2096,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     const t = setTimeout(() => setSearch(searchText), 400);
     return () => clearTimeout(t);
   }, [searchText]);
-  useEffect(() => { loadData(true); }, [search, filters, companyId, workTab]);
+  useEffect(() => { loadData(true); }, [search, filters, companyId, workTab, book]);
 
   // Client-side company filter (mirrors user management pattern).
   // Only filters if leads actually carry company_id (requires updated backend).
@@ -2216,6 +2219,8 @@ export default function SalesLeadsScreen({ navigation, route }) {
       )}
 
       {cpOnly && cpTab === 'details' ? <ChannelPartnerDirectory companyId={companyId} /> : (<>
+
+      <BookFilter value={book} onChange={setBook} style={SalesLeadsScreenS.bookRow} />
 
       {/* To Call / Called split — telecaller & STM portals only */}
       {isCaller && (
@@ -2374,6 +2379,7 @@ const SalesLeadsScreenS = StyleSheet.create({
   fixedSource: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 12,
                  backgroundColor: COLORS.surfaceAlt, fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   cpTabs:      { marginHorizontal: 16, marginBottom: 6 },
+  bookRow:     { marginHorizontal: 16, marginTop: 4 },
   cpName:      { fontSize: 11, color: COLORS.textSecondary },
 });
 

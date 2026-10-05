@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import BookFilter, { useBook } from '../../components/BookFilter';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 
 // My Conversions — mirrors web/src/app/sales/my-conversions. The site visits and
@@ -28,6 +29,9 @@ const inr = (n) => (n ? `₹${new Intl.NumberFormat('en-IN').format(n)}` : '—'
 export default function MyConversionsScreen({ navigation, route }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const adminView = !!route?.params?.adminView;
+  // Source filter: Sales / CP / All (components/BookFilter).
+  const cpOnly = !!route?.params?.cpOnly;
+  const [book, setBook] = useBook(cpOnly);
   const [tab, setTab] = useState(TABS.some((t) => t.key === route?.params?.initialTab) ? route.params.initialTab : 'sv');
   const [visits, setVisits] = useState([]);
   const [closures, setClosures] = useState([]);
@@ -37,7 +41,7 @@ export default function MyConversionsScreen({ navigation, route }) {
   const [projF, setProjF] = useState([]);   // project names; empty = all
   const [stmF, setStmF] = useState([]);     // STM names; empty = all
 
-  const q = [companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '']
+  const q = [companyId ? `company_id=${companyId}` : '', adminView ? 'admin_view=1' : '', cpOnly ? 'cp_only=true' : '', `book=${book}`]
     .filter(Boolean).join('&');
   const qs = q ? `?${q}` : '';
 
@@ -136,6 +140,7 @@ export default function MyConversionsScreen({ navigation, route }) {
         ))}
       </View>
 
+      <BookFilter value={book} onChange={setBook} style={st.book} />
       <View style={st.searchWrap}>
         <Ionicons name="search" size={16} color={COLORS.textSecondary} />
         <TextInput
@@ -182,6 +187,7 @@ export default function MyConversionsScreen({ navigation, route }) {
 }
 
 const st = StyleSheet.create({
+  book: { marginHorizontal: 16, marginTop: 8 },
   screen:   { flex: 1, backgroundColor: COLORS.screenBg },
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16,
                 marginBottom: 10, paddingHorizontal: 12, height: 42, borderRadius: 14,

@@ -23,6 +23,7 @@ import LeadHistory from '../../components/LeadHistory';
 import { PartnerActivityPanel } from '../../components/PartnerActivity';
 import CpTabs from '../../components/CpTabs';
 import { errText } from '../../lib/apiError';
+import BookFilter, { useBook } from '../../components/BookFilter';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -86,6 +87,8 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
   // Pushed from the Admin section (see SalesCRMScreen) — request full company data.
   const adminView = !!route?.params?.adminView;
   const cpOnly = !!route?.params?.cpOnly;
+  // Source filter: Sales / CP / All (components/BookFilter).
+  const [book, setBook] = useBook(cpOnly);
   // Which half of the CP module this screen is showing: the partners' leads,
   // or the partners themselves. Only ever visible when cpOnly.
   const [cpTab, setCpTab] = useState('leads');
@@ -134,6 +137,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
       // Channel Partner module: the same screen, restricted to partner-sourced
       // work — the server reads cp_only exactly as the web CP pages send it.
       if (cpOnly) params.push('cp_only=true');
+      params.push(`book=${book}`);
       const url = params.length ? `${SALES_ENDPOINTS.followUps}?${params.join('&')}` : SALES_ENDPOINTS.followUps;
       const ck = cacheKey('followups', url);
       const cached = refresh ? null : getCache(ck);
@@ -145,7 +149,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
     }
     setLoading(false);
     setRefreshing(false);
-  }, [companyId, adminView]);
+  }, [companyId, adminView, cpOnly, book]);
 
   useFocusEffect(useCallback(() => { load(); }, [load, companyId]));
 
@@ -347,6 +351,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             </TouchableOpacity>
           )}
         </View>
+        <BookFilter value={book} onChange={setBook} />
         <TextInput style={fuf.search} value={searchText} onChangeText={setSearchText}
           placeholder="Search name, phone…" placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
         <View style={fuf.row}>

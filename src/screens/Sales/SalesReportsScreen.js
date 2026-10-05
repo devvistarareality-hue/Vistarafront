@@ -10,6 +10,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import BookFilter, { useBook } from '../../components/BookFilter';
 import { isManagerRole, can, canSee } from '../../lib/roles';
 import { DashHero, DashAlerts } from '../../components/Dash';
 import { pct } from '../../lib/inr';
@@ -151,7 +152,7 @@ function TrendCard({ title, badge, total, data, color, gradId, showAmount }) {
   );
 }
 
-export default function SalesReportsScreen({ navigation }) {
+export default function SalesReportsScreen({ navigation, route }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const user      = useSelector((s) => s.auth.user);
   const _des      = (user?.designation || '').toLowerCase();
@@ -162,6 +163,8 @@ export default function SalesReportsScreen({ navigation }) {
   // Same rule as the CRM home these tiles moved from: any CP-side designation counts.
   const _isCp     = _des.startsWith('cp') || _des.includes('channel partner');
   const isStmView = can(user, 'sales.pipeline.stm') || _isCp;
+  // Source filter: Sales / CP / All — the same choice the lists these tiles open use.
+  const [book, setBook] = useBook(!!route?.params?.cpOnly || _isCp);
 
   const fmtDate  = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
@@ -257,6 +260,7 @@ export default function SalesReportsScreen({ navigation }) {
         if (effectiveDates.from) params.set('date_from', effectiveDates.from);
         if (effectiveDates.to)   params.set('date_to',   effectiveDates.to);
         if (companyId)           params.set('company_id', companyId);
+        params.set('book', book);
         const qs = params.toString() ? `?${params}` : '';
         const [statsRes, trendRes] = await Promise.all([
           apiFetch(`${SALES_ENDPOINTS.stats}${qs}`),
@@ -269,7 +273,7 @@ export default function SalesReportsScreen({ navigation }) {
       if (!cancelled) { setLoading(false); setRefreshing(false); }
     })();
     return () => { cancelled = true; };
-  }, [companyId, dateFrom, dateTo, selectedMonths, selectedQuarter, selectedFyYear]);
+  }, [companyId, dateFrom, dateTo, selectedMonths, selectedQuarter, selectedFyYear, book]);
 
   async function reload(refresh = false) {
     if (refresh) { setStats(null); setTrend(null); setRefreshing(true); setLoading(true); }
@@ -278,6 +282,7 @@ export default function SalesReportsScreen({ navigation }) {
       if (effectiveDates.from) params.set('date_from', effectiveDates.from);
       if (effectiveDates.to)   params.set('date_to',   effectiveDates.to);
       if (companyId)           params.set('company_id', companyId);
+      params.set('book', book);
       const qs = params.toString() ? `?${params}` : '';
       const [statsRes, trendRes] = await Promise.all([
         apiFetch(`${SALES_ENDPOINTS.stats}${qs}`),
@@ -573,6 +578,7 @@ export default function SalesReportsScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
+        <BookFilter value={book} onChange={setBook} />
 
         {loading ? (
           <AppLoader size={0.7} style={{ marginVertical: 40 }} />

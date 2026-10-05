@@ -15,6 +15,7 @@ import AppLoader from '../../components/AppLoader';
 import FilterSelect from '../../components/FilterSelect';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { isManagerRole } from '../../lib/roles';
+import BookFilter, { useBook } from '../../components/BookFilter';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -126,6 +127,8 @@ function DecidedBy({ b }) {
 
 export function MyBookingsList({navigation, cpOnly = false, initialTab = '', initialScope = '' }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
+  // Source filter: Sales / CP / All (components/BookFilter).
+  const [book, setBook] = useBook(cpOnly);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -164,14 +167,14 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
       // only own and team work, which is the intended difference between the two.
       // The two modules are two books: Channel Partner keeps the partner-sourced
       // bookings, Sales keeps the rest, so a booking is only ever counted once.
-      const q = '?mine=1' + (cpOnly ? '&cp_only=true' : '&source=sales')
+      const q = '?mine=1' + (cpOnly ? '&cp_only=true' : '') + `&book=${book}`
         + (scope === 'visible' && !cpOnly ? '&scope=visible' : '')
         + (companyId ? `&company_id=${companyId}` : '');
       const res = await apiFetch(SALES_ENDPOINTS.bookings + q);
       if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
-  }, [companyId, cpOnly, scope]);
+  }, [companyId, cpOnly, scope, book]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   // The reporting tree, for the 'Booked by' filter. Failing quietly is right here:
@@ -364,6 +367,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
         style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5,
           borderColor: COLORS.border, backgroundColor: COLORS.surface, fontSize: 13,
           color: TEXT, marginBottom: 10 }} />
+      <BookFilter value={book} onChange={(b) => { setBook(b); setOpen({}); }} />
       {projOptions.length > 1 && (
         <MultiFilterSelect label="All Projects" noun="projects" value={proj} style={mb.projPick}
           options={projOptions.map((p) => ({ value: p, label: p }))}
