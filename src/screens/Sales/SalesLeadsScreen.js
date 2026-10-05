@@ -1263,6 +1263,9 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   // the lead straight at sv_done and dates the visit by when they walked in (the
   // Lead Received Date), not by when the STM got round to typing it in.
   const srcName = (id) => (sources.find(x => String(x.value ?? x.id) === String(id))?.name || '').toLowerCase();
+  // Source "Channel Partner" (or the CP section itself): the partner comes from the
+  // CP module's directory and is required, as on the web (the server insists too).
+  const needsPartner = cpOnly || srcName(form.source).trim() === 'channel partner';
   const isWalkIn = /walk\s*-?\s*in/.test(srcName(form.source));
   const [showSvVisitedDate, setShowSvVisitedDate] = useState(false);
 
@@ -1270,7 +1273,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     if (!form.name.trim() || !form.phone.trim()) { Alert.alert('Required', 'Name and phone are required.'); return; }
     if (!form.project) { Alert.alert('Required', 'Project is required.'); return; }
     if (!form.source)  { Alert.alert('Required', 'Source is required.'); return; }
-    if (cpOnly && !form.channel_partner) { Alert.alert('Required', 'Channel Partner is required.'); return; }
+    if (needsPartner && !form.channel_partner) { Alert.alert('Required', 'Pick the Channel Partner this lead came from.'); return; }
     // A rep logging a lead by hand has just spoken to them, so the disposition and
     // the note are the point of the record. Required for the rep's own section only;
     // an admin entering someone else's lead has no call to write up.
@@ -1297,7 +1300,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
     try {
       const body = showStm && form.stm_status === 'sv_done'
         ? { ...form, ...svDoneFields(svOutcome, svVisitedDate, form.stm_remarks) } : { ...form };
-      if (!body.channel_partner) delete body.channel_partner;
+      if (!body.channel_partner || !needsPartner) delete body.channel_partner;
       // A CP lead is owned by whoever adds it, unless a CP Cluster Head hands it
       // straight to one of their CP Executives (same rule as the web).
       if (cpOnly) { body.stm = (_isCpHead && form.stm) ? form.stm : user?.id; body.telecaller = ''; }
@@ -1462,6 +1465,14 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
               />
             </Field>
             )}
+            {!cpOnly && needsPartner ? (
+              <Field label="Channel Partner Name" required>
+                <PickerDropdown
+                  items={channelPartners.map((cp) => ({ value: cp.id, label: cp.name, sublabel: cp.firm_name || cp.contact_no }))}
+                  value={form.channel_partner} onChange={(v) => set('channel_partner', v)}
+                  placeholder="Select channel partner" title="Channel Partner" />
+              </Field>
+            ) : null}
 
 
             {showTC && (
@@ -1899,7 +1910,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
   const [cpTab, setCpTab] = useState('leads');   // 'leads' | 'details'
   const [channelPartners, setChannelPartners] = useState([]);
   useEffect(() => {
-    if (!cpOnly) return;
+    // Loaded in Sales too: Add Lead asks for the partner when Source is "Channel Partner".
     apiFetch(SALES_ENDPOINTS.channelPartners + (companyId ? `?company_id=${companyId}` : ''))
       .then((r) => (r.ok ? r.json() : [])).then((d) => setChannelPartners(Array.isArray(d) ? d : [])).catch(() => {});
   }, [cpOnly, companyId]);
