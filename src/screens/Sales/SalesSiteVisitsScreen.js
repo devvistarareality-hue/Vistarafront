@@ -21,6 +21,7 @@ import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { PartnerActivityPanel } from '../../components/PartnerActivity';
 import CpTabs from '../../components/CpTabs';
 import BookFilter, { useBook } from '../../components/BookFilter';
+import EditVisitSheet from './EditVisitSheet';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -113,6 +114,8 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
 
   // "Mark Done" modal — outcome + remarks are required before a visit can be closed out.
   const [doneSv,   setDoneSv]   = useState(null);
+  // "Edit visit" on a completed visit (sv.can_edit) — see EditVisitSheet.
+  const [editSv,   setEditSv]   = useState(null);
   const [doneForm, setDoneForm] = useState({ outcome: '', remarks: '', visitedDate: new Date() });
   const [showDoneDate, setShowDoneDate] = useState(false);
 
@@ -474,12 +477,21 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
                   <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.btnText }}>Record Closure</Text>
                 </TouchableOpacity>
               )}
+              {sv.status === 'completed' && sv.can_edit ? (
+                <TouchableOpacity onPress={() => setEditSv(sv)} style={SalesSiteVisitsScreenS.editBtn}>
+                  <Ionicons name="create-outline" size={14} color={COLORS.link} />
+                  <Text style={SalesSiteVisitsScreenS.editText}>Edit visit</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           )}
         />
       )}
 
       {/* ── Schedule Modal ── */}
+      <EditVisitSheet visit={editSv} onClose={() => setEditSv(null)}
+        onSaved={(u) => setVisits((list) => list.map((v) => (v.id === u.id ? u : v)))} />
+
       <Modal visible={schedOpen} transparent animationType="slide" onRequestClose={() => setSchedOpen(false)}>
         <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
@@ -736,6 +748,9 @@ const fs = StyleSheet.create({
 const SalesSiteVisitsScreenS = StyleSheet.create({
   btn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.btnTint, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 14, borderWidth: 1, borderColor: COLORS.btnBorder },
   btn2: { marginTop: 12, backgroundColor: COLORS.btnTint, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9, alignSelf: 'flex-start', borderWidth: 1, borderColor: COLORS.btnBorder },
+  editBtn: { marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 7,
+             borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  editText: { fontSize: 12, fontWeight: '700', color: COLORS.link },
   btn3: { marginTop: 16, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
   btn3Dim: { opacity: 0.6 },
 });
