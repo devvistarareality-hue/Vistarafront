@@ -1985,11 +1985,12 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
   // Download Excel: the list on screen — the same query and filters, every page.
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(null);   // { done, total } while building
   async function exportLeads() {
-    setExporting(true);
+    setExporting(true); setExportProgress(null);
     const url = buildLeadsUrl(1).replace(/([?&])page=1&page_size=25&?/, '$1') + '&export=xlsx';
-    const err = await downloadExcel(url, `Leads-${new Date().toISOString().slice(0, 10)}.xlsx`, 'Leads');
-    setExporting(false);
+    const err = await downloadExcel(url, `Leads-${new Date().toISOString().slice(0, 10)}.xlsx`, 'Leads', (done, total) => setExportProgress({ done, total }));
+    setExporting(false); setExportProgress(null);
     if (err) Alert.alert('Not downloaded', err);
   }
 
@@ -2248,6 +2249,11 @@ export default function SalesLeadsScreen({ navigation, route }) {
 
       {cpOnly && cpTab === 'details' ? <ChannelPartnerDirectory companyId={companyId} /> : (<>
 
+      {exporting ? (
+        <Text style={exportS.note}>
+          Preparing Excel…{exportProgress?.total ? ` ${exportProgress.done.toLocaleString('en-IN')} of ${exportProgress.total.toLocaleString('en-IN')}` : ''}
+        </Text>
+      ) : null}
       <BookFilter value={book} onChange={setBook} style={SalesLeadsScreenS.bookRow} />
 
       {/* To Call / Called split — telecaller & STM portals only */}
@@ -2484,4 +2490,10 @@ const mdp = StyleSheet.create({
   rowTextOn: { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '700' },
   done: { margin: 12, paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: COLORS.panel },
   doneText: { fontSize: 15, fontWeight: '800', color: COLORS.white },
+});
+
+// "Preparing Excel… 12,000 of 39,390" while a download is being built.
+const exportS = StyleSheet.create({
+  note: { marginHorizontal: 16, marginTop: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
+          backgroundColor: COLORS.successBg, color: COLORS.success, fontSize: 12.5, fontWeight: '700' },
 });

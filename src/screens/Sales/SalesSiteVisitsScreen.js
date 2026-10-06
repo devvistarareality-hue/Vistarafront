@@ -327,16 +327,17 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
   // Download Excel: completed visits with exactly the filters set here (the screen
   // filters on the device, so they are sent along), as on the web.
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(null);   // { done, total } while building
   async function exportVisits() {
-    setExporting(true);
+    setExporting(true); setExportProgress(null);
     const p = [`export=xlsx`, `book=${book}`, cpOnly ? 'cp_only=true' : '', adminView ? 'admin_view=1' : '',
       companyId ? `company_id=${companyId}` : '',
       range.from ? `date_from=${range.from}` : '', range.to ? `date_to=${range.to}` : '',
       projSel.length ? `projects=${encodeURIComponent(projSel.join('||'))}` : '',
       stmPerson.length ? `stm_ids=${stmPerson.join(',')}` : '', tcPerson.length ? `telecaller_ids=${tcPerson.join(',')}` : '',
       outcomeFilter ? `outcome=${outcomeFilter}` : '', svQ ? `q=${encodeURIComponent(svQ)}` : ''].filter(Boolean).join('&');
-    const err = await downloadExcel(`${SALES_ENDPOINTS.siteVisits}?${p}`, `Site-Visits-${new Date().toISOString().slice(0, 10)}.xlsx`, 'Site visits');
-    setExporting(false);
+    const err = await downloadExcel(`${SALES_ENDPOINTS.siteVisits}?${p}`, `Site-Visits-${new Date().toISOString().slice(0, 10)}.xlsx`, 'Site visits', (done, total) => setExportProgress({ done, total }));
+    setExporting(false); setExportProgress(null);
     if (err) Alert.alert('Not downloaded', err);
   }
 
@@ -412,6 +413,11 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
         </ScrollView>
       </View>
 
+      {exporting ? (
+        <Text style={exportS.note}>
+          Preparing Excel…{exportProgress?.total ? ` ${exportProgress.done.toLocaleString('en-IN')} of ${exportProgress.total.toLocaleString('en-IN')}` : ''}
+        </Text>
+      ) : null}
       <BookFilter value={book} onChange={setBook} style={fs.book} />
 
       {/* Filters — dropdowns rather than rows of chips */}
@@ -789,4 +795,10 @@ const cpHead = StyleSheet.create({
   titleWrap: { flex: 1 },
   title: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary },
   sub: { fontSize: 13, color: COLORS.textSecondary },
+});
+
+// "Preparing Excel… 12,000 of 39,390" while a download is being built.
+const exportS = StyleSheet.create({
+  note: { marginHorizontal: 16, marginTop: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
+          backgroundColor: COLORS.successBg, color: COLORS.success, fontSize: 12.5, fontWeight: '700' },
 });
