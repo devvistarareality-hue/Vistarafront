@@ -126,6 +126,8 @@ export default function CreateUserScreen({ navigation, route }) {
   const [managerModules,  setManagerModules]  = useState(editUser?.manager_modules ?? []);
   const [adminModules,    setAdminModules]    = useState(editUser?.admin_modules   ?? []);
   const [canExport,       setCanExport]       = useState(!!editUser?.can_export_bookings);
+  // Leads and completed Site Visits as Excel (Sales & CP, as filtered) — per person.
+  const [canExportLeads,  setCanExportLeads]  = useState(!!editUser?.can_export_leads);
   const [allDesignations, setAllDesignations] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [reportingManager,    setReportingManager]    = useState(editUser?.reporting_manager ?? null);
@@ -218,12 +220,12 @@ export default function CreateUserScreen({ navigation, route }) {
 
     if (isEdit) {
       setUserCodeError('');
-      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, can_export_leads: canExportLeads, reporting_manager_id: reportingManager?.id ?? null };
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
       if (isVRLAdmin && !selectedCompany) return Alert.alert('Validation', 'Please select a company.');
-      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, can_export_leads: canExportLeads, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
       if (isVRLAdmin && selectedCompany) payload.company_id = selectedCompany.id;
       dispatch(createUser(payload));
     }
@@ -538,6 +540,14 @@ export default function CreateUserScreen({ navigation, route }) {
           <Text style={[styles.adminPillText, canExport && styles.adminPillTextActive]}>Download booking Excel</Text>
         </TouchableOpacity>
         <Text style={styles.managerSubtitle}>Approved bookings, Sales &amp; CP together, with totals</Text>
+        <TouchableOpacity
+          style={StyleSheet.compose(StyleSheet.compose(styles.adminPill, canExportLeads && styles.adminPillActive), local.pillTop)}
+          onPress={() => setCanExportLeads((v) => !v)}
+        >
+          <Ionicons name="download-outline" size={13} color={canExportLeads ? COLORS.white : COLORS.textSecondary} />
+          <Text style={StyleSheet.compose(styles.adminPillText, canExportLeads && styles.adminPillTextActive)}>Download leads &amp; site visits Excel</Text>
+        </TouchableOpacity>
+        <Text style={styles.managerSubtitle}>Their leads and completed visits, Sales &amp; CP, as filtered</Text>
 
         {/* Submit */}
         <TouchableOpacity style={[styles.submitBtn, busy && { opacity: 0.7 }]} onPress={handleSubmit} disabled={busy}>
@@ -635,3 +645,7 @@ export default function CreateUserScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
+const local = StyleSheet.create({
+  pillTop: { alignSelf: 'flex-start', marginTop: 10, marginBottom: 6 },
+});

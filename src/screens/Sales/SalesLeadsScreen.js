@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BookFilter, { useBook } from '../../components/BookFilter';
+import { downloadExcel, canExportLeads } from '../../utils/downloadExcel';
 import { apiFetch } from '../../utils/apiFetch';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
@@ -1982,6 +1983,16 @@ export default function SalesLeadsScreen({ navigation, route }) {
     })();
   }, []));
 
+  // Download Excel: the list on screen — the same query and filters, every page.
+  const [exporting, setExporting] = useState(false);
+  async function exportLeads() {
+    setExporting(true);
+    const url = buildLeadsUrl(1).replace(/([?&])page=1&page_size=25&?/, '$1') + '&export=xlsx';
+    const err = await downloadExcel(url, `Leads-${new Date().toISOString().slice(0, 10)}.xlsx`, 'Leads');
+    setExporting(false);
+    if (err) Alert.alert('Not downloaded', err);
+  }
+
   function buildLeadsUrl(p) {
     let url = `${SALES_ENDPOINTS.leads}?page=${p}&page_size=25`;
     if (isCaller) {
@@ -2215,6 +2226,12 @@ export default function SalesLeadsScreen({ navigation, route }) {
             {total.toLocaleString()} {isCaller ? (workTab === 'pending' ? 'to call' : workTab === 'called' ? 'called' : 'in your pipeline') : (activeFilterCount > 0 ? 'matching' : 'total')} lead{total === 1 ? '' : 's'}
           </Text>
         </View>
+        {cpTab === 'leads' && canExportLeads(user) ? (
+          <TouchableOpacity onPress={exportLeads} disabled={exporting} style={SalesLeadsScreenS.exportBtn}>
+            {exporting ? <ActivityIndicator size="small" color={COLORS.success} />
+              : <Ionicons name="download-outline" size={16} color={COLORS.success} />}
+          </TouchableOpacity>
+        ) : null}
         {cpTab === 'leads' && (
         <TouchableOpacity onPress={() => setCreateModal(true)}
           style={SalesLeadsScreenS.btn4}>
@@ -2391,6 +2408,8 @@ const SalesLeadsScreenS = StyleSheet.create({
                  backgroundColor: COLORS.surfaceAlt, fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   cpTabs:      { marginHorizontal: 16, marginBottom: 6 },
   bookRow:     { marginHorizontal: 16, marginTop: 4 },
+  exportBtn:   { width: 38, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 8,
+                 borderWidth: 1, borderColor: COLORS.success, backgroundColor: COLORS.successBg },
   cpName:      { fontSize: 11, color: COLORS.textSecondary },
 });
 

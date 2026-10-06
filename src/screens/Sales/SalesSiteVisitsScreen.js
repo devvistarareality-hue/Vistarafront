@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Platform, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Modal, TextInput, Platform, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import { PartnerActivityPanel } from '../../components/PartnerActivity';
 import CpTabs from '../../components/CpTabs';
 import BookFilter, { useBook } from '../../components/BookFilter';
 import EditVisitSheet from './EditVisitSheet';
+import { downloadExcel, canExportLeads } from '../../utils/downloadExcel';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -323,6 +324,22 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
     return v.status === filter;
   });
 
+  // Download Excel: completed visits with exactly the filters set here (the screen
+  // filters on the device, so they are sent along), as on the web.
+  const [exporting, setExporting] = useState(false);
+  async function exportVisits() {
+    setExporting(true);
+    const p = [`export=xlsx`, `book=${book}`, cpOnly ? 'cp_only=true' : '', adminView ? 'admin_view=1' : '',
+      companyId ? `company_id=${companyId}` : '',
+      range.from ? `date_from=${range.from}` : '', range.to ? `date_to=${range.to}` : '',
+      projSel.length ? `projects=${encodeURIComponent(projSel.join('||'))}` : '',
+      stmPerson.length ? `stm_ids=${stmPerson.join(',')}` : '', tcPerson.length ? `telecaller_ids=${tcPerson.join(',')}` : '',
+      outcomeFilter ? `outcome=${outcomeFilter}` : '', svQ ? `q=${encodeURIComponent(svQ)}` : ''].filter(Boolean).join('&');
+    const err = await downloadExcel(`${SALES_ENDPOINTS.siteVisits}?${p}`, `Site-Visits-${new Date().toISOString().slice(0, 10)}.xlsx`, 'Site visits');
+    setExporting(false);
+    if (err) Alert.alert('Not downloaded', err);
+  }
+
   const selLead = leads.find((l) => String(l.id) === String(sForm.lead));
   const selProject = projects.find((p) => String(p.id) === String(sForm.project));
 
@@ -366,6 +383,12 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>Site Visits</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{visible.length} visit{visible.length === 1 ? '' : 's'} · {user?.name || ''}</Text>
         </View>
+        {canExportLeads(user) ? (
+          <TouchableOpacity onPress={exportVisits} disabled={exporting} style={SalesSiteVisitsScreenS.exportBtn}>
+            {exporting ? <ActivityIndicator size="small" color={COLORS.success} />
+              : <Ionicons name="download-outline" size={16} color={COLORS.success} />}
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity onPress={openSchedule} style={SalesSiteVisitsScreenS.btn}>
           <Ionicons name="add" size={16} color={COLORS.btnText} />
           <Text style={{ color: COLORS.btnText, fontWeight: '700', fontSize: 12 }}>Schedule</Text>
@@ -751,6 +774,8 @@ const SalesSiteVisitsScreenS = StyleSheet.create({
   editBtn: { marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 7,
              borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   editText: { fontSize: 12, fontWeight: '700', color: COLORS.link },
+  exportBtn: { width: 38, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 8,
+               borderWidth: 1, borderColor: COLORS.success, backgroundColor: COLORS.successBg },
   btn3: { marginTop: 16, backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
   btn3Dim: { opacity: 0.6 },
 });
