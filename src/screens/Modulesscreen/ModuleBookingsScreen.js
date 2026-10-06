@@ -16,7 +16,6 @@ import BookingDetails from '../../components/BookingDetails';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
-import ExportBookings from '../../components/ExportBookings';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const TEAL = COLORS.success;
@@ -177,11 +176,6 @@ export default function ModuleBookingsScreen({ navigation, route }) {
               ))}
             </View>
           )}
-
-          {/* The approved-bookings workbook (Sales and CP together) is downloaded
-              from here, not from Sales Approvals — this is the screen where the
-              finished deals are read. */}
-          <ExportBookings companyId={companyId} />
 
           {approved.length > 0 && (
             <>

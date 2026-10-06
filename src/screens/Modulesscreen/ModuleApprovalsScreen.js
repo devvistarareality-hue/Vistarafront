@@ -10,6 +10,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
+import ExportBookings from '../../components/ExportBookings';
 import BookingDetails from '../../components/BookingDetails';
 import { unitLabel } from '../../lib/bookingUnit';
 
@@ -265,6 +266,11 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
             ))}
           </View>
         </ScrollView>
+
+        {/* Every booking at every stage, Sales and CP together — downloaded from
+            here, and scoped to match this screen rather than only the deals that
+            came out the far end. */}
+        <ExportBookings companyId={companyId} />
 
         <TextInput value={q} onChangeText={(t) => { setQ(t); setOpen({}); }}
           placeholder="Search name, phone or LOI / unit no…" placeholderTextColor={MUTED}
