@@ -69,14 +69,14 @@ export default function TaskDetailSheet({ taskId, defaultListId, lists, visible,
 
   async function create() {
     if (!title.trim()) { setErr('Title is required.'); return; }
-    if (!taskListId) { setErr('Pick a task list.'); return; }
     setSaving(true); setErr('');
     try {
       const r = await apiFetch(TASK_ENDPOINTS.tasks, {
         method: 'POST',
         body: JSON.stringify({
           title: title.trim(), description: description.trim(), status, priority,
-          due_date: dueDate || null, task_list: taskListId, assignee_ids: assignees.map((a) => a.id),
+          due_date: dueDate || null, assignee_ids: assignees.map((a) => a.id),
+          ...(taskListId ? { task_list: taskListId } : {}),
         }),
       });
       const d = await r.json();
@@ -141,13 +141,20 @@ export default function TaskDetailSheet({ taskId, defaultListId, lists, visible,
       <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         {err ? <Text style={s.err}>{err}</Text> : null}
 
-        <Text style={s.label}>Task list</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
-          {(lists || []).map((l) => (
-            <Pill key={l.id} label={l.name} tone="info" on={String(taskListId) === String(l.id)}
-              onPress={() => { setTaskListId(l.id); if (!isCreate) patch({ task_list: l.id }); }} />
-          ))}
-        </ScrollView>
+        {/* Not asked when creating: it was a one-option picker, and the server
+            files a new task on the company's first open list. Kept when editing,
+            where it is the only way to move a task between lists. */}
+        {!isCreate && (
+          <>
+            <Text style={s.label}>Task list</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+              {(lists || []).map((l) => (
+                <Pill key={l.id} label={l.name} tone="info" on={String(taskListId) === String(l.id)}
+                  onPress={() => { setTaskListId(l.id); patch({ task_list: l.id }); }} />
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         <Text style={s.label}>Due date</Text>
         <DateField value={dueDate} onChange={(v) => { setDueDate(v); if (!isCreate) patch({ due_date: v || null }); }} compact />
