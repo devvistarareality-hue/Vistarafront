@@ -2254,7 +2254,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
           Preparing Excel…{exportProgress?.total ? ` ${exportProgress.done.toLocaleString('en-IN')} of ${exportProgress.total.toLocaleString('en-IN')}` : ''}
         </Text>
       ) : null}
-      <BookFilter value={book} onChange={setBook} style={SalesLeadsScreenS.bookRow} />
+      <BookFilter hidden={cpOnly} value={book} onChange={setBook} style={SalesLeadsScreenS.bookRow} />
 
       {/* To Call / Called split — telecaller & STM portals only */}
       {isCaller && (

@@ -140,7 +140,7 @@ export default function MyConversionsScreen({ navigation, route }) {
         ))}
       </View>
 
-      <BookFilter value={book} onChange={setBook} style={st.book} />
+      <BookFilter hidden={cpOnly} value={book} onChange={setBook} style={st.book} />
       <View style={st.searchWrap}>
         <Ionicons name="search" size={16} color={COLORS.textSecondary} />
         <TextInput

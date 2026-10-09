@@ -351,7 +351,7 @@ export default function SalesFollowUpsScreen({ navigation, route }) {
             </TouchableOpacity>
           )}
         </View>
-        <BookFilter value={book} onChange={setBook} />
+        <BookFilter hidden={cpOnly} value={book} onChange={setBook} />
         <TextInput style={fuf.search} value={searchText} onChangeText={setSearchText}
           placeholder="Search name, phone…" placeholderTextColor={COLORS.textTertiary} autoCorrect={false} />
         <View style={fuf.row}>

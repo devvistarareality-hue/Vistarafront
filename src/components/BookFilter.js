@@ -18,6 +18,8 @@ import { Segmented } from './ui';
 export const BOOK_OPTIONS = [{ value: 'sales', label: 'Sales' }, { value: 'cp', label: 'CP' }, { value: 'all', label: 'All' }];
 
 export function useBook(cpOnly) {
+  // The Channel Partner module is the partner book, full stop: no switch there, and
+  // the server's own CP rules apply (see backend requested_book).
   const key = cpOnly ? 'nx_book_cp' : 'nx_book_sales';
   const fallback = cpOnly ? 'cp' : 'sales';
   const [book, setBookState] = useState(fallback);
@@ -32,10 +34,12 @@ export function useBook(cpOnly) {
     setBookState(b);
     AsyncStorage.setItem(key, b).catch(() => {});
   };
+  if (cpOnly) return ['cp', () => {}];
   return [book, setBook];
 }
 
-export default function BookFilter({ value, onChange, style }) {
+export default function BookFilter({ value, onChange, style, hidden }) {
+  if (hidden) return null;
   return (
     <View style={[s.row, style]}>
       <Text style={s.label}>SOURCE</Text>

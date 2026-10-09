@@ -367,7 +367,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
         style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5,
           borderColor: COLORS.border, backgroundColor: COLORS.surface, fontSize: 13,
           color: TEXT, marginBottom: 10 }} />
-      <BookFilter value={book} onChange={(b) => { setBook(b); setOpen({}); }} />
+      <BookFilter hidden={cpOnly} value={book} onChange={(b) => { setBook(b); setOpen({}); }} />
       {projOptions.length > 1 && (
         <MultiFilterSelect label="All Projects" noun="projects" value={proj} style={mb.projPick}
           options={projOptions.map((p) => ({ value: p, label: p }))}

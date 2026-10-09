@@ -164,7 +164,8 @@ export default function SalesReportsScreen({ navigation, route }) {
   const _isCp     = _des.startsWith('cp') || _des.includes('channel partner');
   const isStmView = can(user, 'sales.pipeline.stm') || _isCp;
   // Source filter: Sales / CP / All — the same choice the lists these tiles open use.
-  const [book, setBook] = useBook(!!route?.params?.cpOnly || _isCp);
+  const _cpBook = !!route?.params?.cpOnly || _isCp;
+  const [book, setBook] = useBook(_cpBook);
 
   const fmtDate  = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const fmtLabel = (d) => d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'All';
@@ -580,7 +581,7 @@ export default function SalesReportsScreen({ navigation, route }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
-        <BookFilter value={book} onChange={setBook} />
+        <BookFilter hidden={_cpBook} value={book} onChange={setBook} />
 
         {loading ? (
           <AppLoader size={0.7} style={{ marginVertical: 40 }} />

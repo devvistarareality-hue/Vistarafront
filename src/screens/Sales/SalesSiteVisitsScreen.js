@@ -418,7 +418,7 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
           Preparing Excel…{exportProgress?.total ? ` ${exportProgress.done.toLocaleString('en-IN')} of ${exportProgress.total.toLocaleString('en-IN')}` : ''}
         </Text>
       ) : null}
-      <BookFilter value={book} onChange={setBook} style={fs.book} />
+      <BookFilter hidden={cpOnly} value={book} onChange={setBook} style={fs.book} />
 
       {/* Filters — dropdowns rather than rows of chips */}
       <View style={fs.bar}>
