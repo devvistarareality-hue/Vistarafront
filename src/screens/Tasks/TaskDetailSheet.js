@@ -34,6 +34,7 @@ export default function TaskDetailSheet({ taskId, defaultListId, lists, visible,
   const [priority, setPriority] = useState('normal');
   const [dueDate, setDueDate] = useState('');
   const [taskListId, setTaskListId] = useState('');
+  const [code, setCode] = useState('');
   const [assignees, setAssignees] = useState([]);
   const [people, setPeople] = useState([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -56,7 +57,7 @@ export default function TaskDetailSheet({ taskId, defaultListId, lists, visible,
     apiFetch(TASK_ENDPOINTS.task(taskId)).then((r) => r.json()).then((d) => {
       setTask(d); setTitle(d.title || ''); setDescription(d.description || '');
       setStatus(d.status || 'todo'); setPriority(d.priority || 'normal');
-      setDueDate(d.due_date || ''); setTaskListId(d.task_list || '');
+      setDueDate(d.due_date || ''); setTaskListId(d.task_list || ''); setCode(d.code || '');
       setAssignees(d.assignees || []); setChecklist(d.checklist_items || []);
     }).catch(() => {});
     apiFetch(TASK_ENDPOINTS.comments(taskId)).then((r) => r.json()).then((d) => setComments(d.results || [])).catch(() => {});
@@ -134,6 +135,7 @@ export default function TaskDetailSheet({ taskId, defaultListId, lists, visible,
   return (
     <FormSheet visible={visible} onClose={onClose}>
       <View style={s.head}>
+        {!!code && <Text style={s.code}>{code}</Text>}
         <TextInput style={s.titleInput} value={title} onChangeText={setTitle} placeholder="Task title…"
           placeholderTextColor={COLORS.textTertiary}
           onBlur={() => !isCreate && title.trim() && patch({ title: title.trim() })} />
@@ -248,6 +250,9 @@ export default function TaskDetailSheet({ taskId, defaultListId, lists, visible,
 
 const s = StyleSheet.create({
   head: { paddingHorizontal: 20, paddingBottom: 8 },
+  code: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary,
+          backgroundColor: COLORS.surfaceAlt, borderRadius: 6, paddingHorizontal: 7,
+          paddingVertical: 3, alignSelf: 'flex-start', overflow: 'hidden', marginBottom: 6 },
   titleInput: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary, paddingVertical: 4 },
   scroll: { flexShrink: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 28 },
