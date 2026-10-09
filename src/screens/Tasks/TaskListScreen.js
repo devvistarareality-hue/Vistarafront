@@ -81,7 +81,7 @@ export default function TaskListScreen({ route }) {
       <View style={s.filters}>
         <View style={[common.searchBox, s.flex]}>
           <Ionicons name="search" size={16} color={COLORS.textSecondary} />
-          <TextInput style={s.searchInput} value={q} onChangeText={setQ} placeholder="Search task title"
+          <TextInput style={s.searchInput} value={q} onChangeText={setQ} placeholder="Search title or task ID"
             placeholderTextColor={COLORS.textTertiary} autoCorrect={false} onSubmitEditing={load} />
         </View>
       </View>
@@ -141,7 +141,11 @@ function TaskCard({ t, onPress }) {
   return (
     <TouchableOpacity style={[common.card, s.card, overdue && s.late]} activeOpacity={0.8} onPress={onPress}>
       <View style={s.cardTop}>
-        <Text style={s.title} numberOfLines={2}>{t.title}</Text>
+        <View style={s.titleWrap}>
+          {/* The reference, for quoting and for searching back to this task. */}
+          {t.code ? <Text style={s.code}>{t.code}</Text> : null}
+          <Text style={s.title} numberOfLines={2}>{t.title}</Text>
+        </View>
         <Badge label={PRIORITY_LABEL[t.priority]} tone={BADGE_TONE[priorityTone] || 'info'} />
       </View>
       <View style={s.metaRow}>
@@ -174,6 +178,10 @@ const s = StyleSheet.create({
   card: { marginBottom: 10, padding: 14, gap: 6 },
   late: { borderColor: COLORS.error2 },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
+  titleWrap: { flex: 1, flexDirection: 'row', alignItems: 'baseline', gap: 7 },
+  code: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary,
+          backgroundColor: COLORS.surfaceAlt, borderRadius: 6, paddingHorizontal: 6,
+          paddingVertical: 2, overflow: 'hidden' },
   title: { flex: 1, fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   sub: { fontSize: 12, color: COLORS.textSecondary },
