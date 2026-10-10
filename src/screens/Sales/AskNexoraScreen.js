@@ -11,18 +11,27 @@ import common from '../../styles/common';
 import { explainApiError } from '../../lib/apiError';
 
 // Ask Nexora — the AI assistant (mirrors the web's components/AskNexora; backend
-// sales/assistant.py). Ask in plain words; the server answers from what this person
-// can see. Opened from Sales CRM and the Channel Partner hub, for people ticked in
+// sales/assistant.py). Ask in plain words; the server works out which module the
+// question is about and answers from what this person can see. Opened from the Home
+// dashboard and every module (params.module = where from), for people ticked in
 // User Management (Ask Nexora (AI)) and admins.
 export const canUseAI = (user) => !!(user && (user.can_use_ai || user.role === 'Admin' || user.is_staff));
 
-const EXAMPLES = [
-  "Show today's site visits",
-  'How many Meta leads came this week, project-wise?',
-  'Which STM has the most pending follow-ups?',
-  'Why are closures low this month?',
-  'What should my team focus on this week?',
-];
+const EXAMPLES = {
+  sales: ["Show today's site visits", 'How many Meta leads came this week, project-wise?',
+    'Which STM has the most pending follow-ups?', 'Why are closures low this month?'],
+  cp: ['How many partner leads came this month, partner-wise?', "Show this week's CP site visits",
+    'Which partners brought bookings this quarter?'],
+  ar: ['How much is overdue, project-wise?', 'Which 10 accounts owe the most?',
+    'What collection follow-ups are due today?'],
+  execution: ['How many tasks are overdue, by person?', 'What is due this week?', 'Which tasks are blocked?'],
+  hr: ['Who is on leave this week?', 'How many leave requests are pending?', 'My attendance this month'],
+  club1000: ['How much has been invested this year, scheme-wise?', 'Which payouts are due this month?'],
+  dashboard: ["Today's site visits and bookings", 'How much is overdue in AR, project-wise?',
+    'How many tasks are overdue?', 'Who is on leave this week?', 'Give me a summary of this month'],
+};
+const MODULE_NAMES = { sales: 'Sales', cp: 'Channel Partner', ar: 'Accounts Receivable', execution: 'Task Allocation',
+  hr: 'HR', club1000: 'Club 1000', accounts: 'Accounts & Finance', purchase: 'Purchase', land: 'Land' };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Simple Markdown — paragraphs, bullets, **bold**, tables — as native views.
@@ -81,7 +90,8 @@ function Markdown({ text }) {
 export default function AskNexoraScreen({ navigation, route }) {
   const user = useSelector((st) => st.auth.user);
   const companyId = useSelector((st) => st.adminFilter?.companyId);
-  const cp = !!route?.params?.cp;
+  const module = route?.params?.module || (route?.params?.cp ? 'cp' : 'dashboard');
+  const examples = EXAMPLES[module] || EXAMPLES.dashboard;
   const [turns, setTurns] = useState([]);    // [{ q, a?, err?, busy? }]
   const [text, setText] = useState('');
   const busy = turns.some((t) => t.busy);
@@ -97,7 +107,7 @@ export default function AskNexoraScreen({ navigation, route }) {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.aiAsk, {
         method: 'POST',
-        body: JSON.stringify({ question: q, history, company_id: companyId || null, module: cp ? 'cp' : 'sales' }),
+        body: JSON.stringify({ question: q, history, company_id: companyId || null, module }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) { finish({ err: explainApiError(res, d, 'Ask Nexora could not take that question.') }); return; }
@@ -129,7 +139,7 @@ export default function AskNexoraScreen({ navigation, route }) {
         </TouchableOpacity>
         <View style={s.flex}>
           <Text style={common.headerTitle}>Ask Nexora</Text>
-          <Text style={s.sub}>{cp ? 'Channel Partner data' : 'Your Sales data'} · AI</Text>
+          <Text style={s.sub}>{MODULE_NAMES[module] ? `${MODULE_NAMES[module]} · all your modules` : 'All your modules'} · AI</Text>
         </View>
         {turns.length > 0 && !busy ? (
           <TouchableOpacity onPress={() => setTurns([])}><Text style={s.newChat}>New chat</Text></TouchableOpacity>
@@ -140,8 +150,8 @@ export default function AskNexoraScreen({ navigation, route }) {
           onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
           {turns.length === 0 ? (
             <View>
-              <Text style={s.intro}>Ask about your leads, site visits, follow-ups, closures and bookings in plain words. Answers use only what you can see.</Text>
-              {EXAMPLES.map((ex) => (
+              <Text style={s.intro}>Ask about anything in your modules (Sales, AR, tasks, HR and more) in plain words. Answers use only what you can see.</Text>
+              {examples.map((ex) => (
                 <TouchableOpacity key={ex} style={s.example} onPress={() => ask(ex)}>
                   <Ionicons name="sparkles-outline" size={14} color={COLORS.link} />
                   <Text style={s.exampleText}>{ex}</Text>

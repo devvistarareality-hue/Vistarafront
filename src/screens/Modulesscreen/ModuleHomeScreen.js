@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole, canSee } from '../../lib/roles';
 import { hasBankMaster } from '../../lib/moduleGroups';
+import { canUseAI } from '../Sales/AskNexoraScreen';
 
 // Display name → the prefix its screen keys use.
 const MODULE_SLUG = { 'Accounts & Finance': 'accounts', HR: 'hr', 'Task Allocation': 'execution',
@@ -47,6 +48,9 @@ export default function ModuleHomeScreen({ navigation, route }) {
     // only for people it is ticked for (lib/moduleGroups).
     ...(isAccounts && hasBankMaster(user) ? [{ key: 'ARBanks', label: 'Bank Master', desc: 'Your banks, balances and statements', icon: 'business-outline',
       color: COLORS.info, bg: COLORS.infoBg }] : []),
+    // Ask Nexora — questions about this module (or any other the person has).
+    ...(canUseAI(user) ? [{ key: 'AskNexora', label: 'Ask Nexora', desc: 'Ask questions, get analysis', icon: 'sparkles-outline',
+      color: COLORS.link, bg: COLORS.linkBg, params: { module: slug } }] : []),
     // Who changed what in this module, and when — real admins only.
     ...(isLogAdmin ? [{ key: 'ActivityLog', label: 'Log', desc: 'Who changed what, and when', icon: 'time-outline',
       color: COLORS.link, bg: COLORS.linkBg, params: { modules: [module], title: `${name} Log` } }] : []),

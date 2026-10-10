@@ -13,6 +13,7 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import { DashHero, DashKpi, DashKpiGrid, DashAlerts, DashCard, DashBars } from '../../components/Dash';
 import { inrShort, pct } from '../../lib/inr';
+import { canUseAI } from '../Sales/AskNexoraScreen';
 
 const NAVY  = COLORS.navy;
 const TEAL  = COLORS.success;
@@ -31,6 +32,7 @@ const MENU = [
   { screen: 'club.screen.rewards', key: 'Club1000ReferralRewards', label: 'Referral Rewards', icon: 'gift-outline', color: COLORS.warning, bg: COLORS.warningBg, managerOnly: false },
   { screen: 'club.screen.myteam', key: 'MyTeam',             label: 'My Team',      icon: 'people-circle-outline', color: COLORS.purple,   bg: COLORS.purpleBg,  managerOnly: true, navParams: { module: 'Club 1000', title: 'My Team' } },
   // Who changed what in Club 1000, and when — real admins only.
+  { key: 'AskNexora',          label: 'Ask Nexora',   icon: 'sparkles-outline',      color: COLORS.link,     bg: COLORS.linkBg,    aiOnly: true, navParams: { module: 'club1000' } },
   { key: 'ActivityLog',        label: 'Log',          icon: 'time-outline',          color: COLORS.link,     bg: COLORS.linkBg,    adminOnly: true, navParams: { modules: ['Club 1000'], title: 'Club 1000 Log' } },
 ];
 
@@ -61,7 +63,7 @@ export default function Club1000HubScreen({ navigation, route }) {
   }
 
   const isLogAdmin = user?.role === 'Admin' || user?.is_staff;
-  visibleMenu = visibleMenu.filter((m) => !m.adminOnly || isLogAdmin);
+  visibleMenu = visibleMenu.filter((m) => (!m.adminOnly || isLogAdmin) && (!m.aiOnly || canUseAI(user)));
 
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);

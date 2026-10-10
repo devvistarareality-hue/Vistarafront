@@ -22,6 +22,7 @@ import { withAlpha } from '../../../constants/theme';
 import AppLoader from '../../../components/AppLoader';
 import { can } from '../../../lib/roles';
 import { useImpersonating } from '../../../lib/useImpersonating';
+import { canUseAI } from '../../Sales/AskNexoraScreen';
 const { width } = Dimensions.get('window');
 
 const MONTH_NAMES = [
@@ -372,6 +373,11 @@ const HomeScreen = () => {
               ...(authUser?.is_approver ? [{
                 key: 'leave-approvals', label: 'Leave\nApprovals', icon: 'checkmark-done-outline', color: COLORS.link, backgroundColor: COLORS.screenBg,
                 action: () => navigation.navigate('LeaveApprovals'),
+              }] : []),
+              // Ask Nexora — any question across the person's modules.
+              ...(canUseAI(authUser) ? [{
+                key: 'ask-nexora', label: 'Ask\nNexora', icon: 'sparkles-outline', color: COLORS.link, backgroundColor: COLORS.linkBg,
+                action: () => navigation.navigate('AskNexora', { module: 'dashboard' }),
               }] : []),
             ].map((a) => (
               <TouchableOpacity

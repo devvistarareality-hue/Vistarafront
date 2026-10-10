@@ -58,7 +58,7 @@ const MENU = [
   // Who changed what in Sales, and when — real admins only.
   { key: 'ActivityLog',       label: 'Log',           icon: 'time-outline',            color: COLORS.link, bg: COLORS.linkBg,  adminOnly: true, trueAdminOnly: true, navParams: { modules: ['Sales', 'Channel Partner'], title: 'Sales Log' } , screen: 'sales.screen.datareset' },
   // Ask Nexora — the AI assistant; only for people ticked for it (and admins).
-  { key: 'AskNexora',         label: 'Ask Nexora',    icon: 'sparkles-outline',        color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, aiOnly: true },
+  { key: 'AskNexora',         label: 'Ask Nexora',    icon: 'sparkles-outline',        color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, aiOnly: true, navParams: { module: 'sales' } },
   { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: COLORS.linkPressed, bg: COLORS.infoBg,  adminOnly: false , screen: 'sales.screen.reports' },
 ];
 
