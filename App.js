@@ -15,11 +15,15 @@ import { COLORS } from './src/constants/theme';
 import { DialogHost, showDialog, isDialogHostMounted } from './src/components/AppDialog';
 import AppBackground from './src/components/AppBackground';
 import ImpersonationBanner from './src/components/ImpersonationBanner';
+import { installModuleHeader } from './src/utils/moduleHeader';
 
 // Every Alert.alert in the app renders the themed premium dialog.
 const nativeAlert = Alert.alert;
 Alert.alert = (title, message, buttons, options) =>
   isDialogHostMounted() ? showDialog(title, message, buttons, options) : nativeAlert(title, message, buttons, options);
+
+// Calls made from Channel Partner screens are logged under Channel Partner.
+installModuleHeader();
 
 // Placeholders follow the app theme unless a component sets its own.
 if (TextInput.defaultProps == null) TextInput.defaultProps = {};
