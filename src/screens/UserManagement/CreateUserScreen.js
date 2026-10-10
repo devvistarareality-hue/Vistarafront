@@ -128,6 +128,8 @@ export default function CreateUserScreen({ navigation, route }) {
   const [canExport,       setCanExport]       = useState(!!editUser?.can_export_bookings);
   // Leads and completed Site Visits as Excel (Sales & CP, as filtered) — per person.
   const [canExportLeads,  setCanExportLeads]  = useState(!!editUser?.can_export_leads);
+  // Ask Nexora (AI assistant) — per person.
+  const [canUseAi,        setCanUseAi]        = useState(!!editUser?.can_use_ai);
   const [allDesignations, setAllDesignations] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [reportingManager,    setReportingManager]    = useState(editUser?.reporting_manager ?? null);
@@ -220,12 +222,12 @@ export default function CreateUserScreen({ navigation, route }) {
 
     if (isEdit) {
       setUserCodeError('');
-      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, can_export_leads: canExportLeads, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, user_code: userCode.toUpperCase().trim(), role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, can_export_leads: canExportLeads, can_use_ai: canUseAi, reporting_manager_id: reportingManager?.id ?? null };
       if (changePass && password) payload.password = password;
       dispatch(updateUser(editUser.id, payload));
     } else {
       if (isVRLAdmin && !selectedCompany) return Alert.alert('Validation', 'Please select a company.');
-      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, can_export_leads: canExportLeads, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
+      const payload = { name, email, phone, password, role, designation, modules, manager_modules: managerModules, admin_modules: adminModules, can_export_bookings: canExport, can_export_leads: canExportLeads, can_use_ai: canUseAi, user_code_prefix: userCodePrefix, reporting_manager_id: reportingManager?.id ?? null };
       if (isVRLAdmin && selectedCompany) payload.company_id = selectedCompany.id;
       dispatch(createUser(payload));
     }
@@ -548,6 +550,14 @@ export default function CreateUserScreen({ navigation, route }) {
           <Text style={StyleSheet.compose(styles.adminPillText, canExportLeads && styles.adminPillTextActive)}>Download leads &amp; site visits Excel</Text>
         </TouchableOpacity>
         <Text style={styles.managerSubtitle}>Their leads and completed visits, Sales &amp; CP, as filtered</Text>
+        <TouchableOpacity
+          style={StyleSheet.compose(StyleSheet.compose(styles.adminPill, canUseAi && styles.adminPillActive), local.pillTop)}
+          onPress={() => setCanUseAi((v) => !v)}
+        >
+          <Ionicons name="sparkles-outline" size={13} color={canUseAi ? COLORS.white : COLORS.textSecondary} />
+          <Text style={StyleSheet.compose(styles.adminPillText, canUseAi && styles.adminPillTextActive)}>Ask Nexora (AI)</Text>
+        </TouchableOpacity>
+        <Text style={styles.managerSubtitle}>Ask questions and get analysis of their own data</Text>
 
         {/* Submit */}
         <TouchableOpacity style={[styles.submitBtn, busy && { opacity: 0.7 }]} onPress={handleSubmit} disabled={busy}>

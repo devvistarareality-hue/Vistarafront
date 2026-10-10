@@ -13,6 +13,7 @@ import { isManagerRole, can, canSee, dashboardFor } from '../../lib/roles';
 import DashboardRoleFilter from '../../components/DashboardRoleFilter';
 import { ThemeIconButton } from '../../components/ThemeToggle';
 import AppLoader from '../../components/AppLoader';
+import { canUseAI } from './AskNexoraScreen';
 
 const NAVY  = COLORS.navy;
 const BLUE  = COLORS.link;
@@ -56,6 +57,8 @@ const MENU = [
   { key: 'SalesDataReset',    label: 'Data Reset',    icon: 'trash-outline',           color: COLORS.error, bg: COLORS.errorBg,  adminOnly: true  , screen: 'sales.screen.datareset' },
   // Who changed what in Sales, and when — real admins only.
   { key: 'ActivityLog',       label: 'Log',           icon: 'time-outline',            color: COLORS.link, bg: COLORS.linkBg,  adminOnly: true, trueAdminOnly: true, navParams: { modules: ['Sales', 'Channel Partner'], title: 'Sales Log' } , screen: 'sales.screen.datareset' },
+  // Ask Nexora — the AI assistant; only for people ticked for it (and admins).
+  { key: 'AskNexora',         label: 'Ask Nexora',    icon: 'sparkles-outline',        color: COLORS.link, bg: COLORS.linkBg,  adminOnly: false, aiOnly: true },
   { key: 'SalesReports',      label: 'Reports',       icon: 'bar-chart-outline',       color: COLORS.linkPressed, bg: COLORS.infoBg,  adminOnly: false , screen: 'sales.screen.reports' },
 ];
 
@@ -118,7 +121,7 @@ export default function SalesCRMScreen({ navigation, route }) {
   // headed by) the CP side rather than Sales.
   const teamParams = (m) => (m.key === 'MyTeam' && isCp
     ? { ...m, navParams: { cp: true, title: 'My Team' } } : m);
-  const baseFilter = m => canSee(user, m.screen) && (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
+  const baseFilter = m => canSee(user, m.screen) && (!m.aiOnly || canUseAI(user)) && (!m.trueAdminOnly || isTrueAdmin) && (!m.managerOnly || isAdmin || isManager) && (!m.stmOnly || isAdmin || isStm || isManager || isCp) && (!m.tcOnly || isAdmin || isTelecaller) && (!m.tcStmOnly || isAdmin || isTelecaller || isStm || isManager || isCp) && !(m.hideForStm && isStm && !isAdmin && !isManager);
   // Tiles that pull hierarchy-scoped data need adminView threaded into their own
   // params so THEY request full company data too (see backend's admin_view=1).
   const withAdminParams = (m) => ({ ...m, navParams: { ...(m.navParams || {}), adminView: true } });

@@ -47,6 +47,7 @@ import SalesSourcesScreen      from '../screens/Sales/SalesSourcesScreen';
 import SalesTeamScreen         from '../screens/Sales/SalesTeamScreen';
 import SalesDistributionScreen from '../screens/Sales/SalesDistributionScreen';
 import SalesReportsScreen      from '../screens/Sales/SalesReportsScreen';
+import AskNexoraScreen         from '../screens/Sales/AskNexoraScreen';
 import ChannelPartnerHubScreen from '../screens/Sales/ChannelPartnerHubScreen';
 import ChannelPartnersScreen  from '../screens/Sales/ChannelPartnersScreen';
 import SalesImportScreen       from '../screens/Sales/SalesImportScreen';
@@ -161,6 +162,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesTeam"           component={SalesTeamScreen} />
             <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
             <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
+            <Stack.Screen name="AskNexora"           component={AskNexoraScreen} />
             <Stack.Screen name="ChannelPartnerHub" component={ChannelPartnerHubScreen} />
             <Stack.Screen name="ChannelPartners"    component={ChannelPartnersScreen} />
             <Stack.Screen name="SalesImport"         component={SalesImportScreen} />
@@ -207,6 +209,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SalesTeam"           component={SalesTeamScreen} />
             <Stack.Screen name="SalesDistribution"   component={SalesDistributionScreen} />
             <Stack.Screen name="SalesReports"        component={SalesReportsScreen} />
+            <Stack.Screen name="AskNexora"           component={AskNexoraScreen} />
             <Stack.Screen name="ChannelPartnerHub" component={ChannelPartnerHubScreen} />
             <Stack.Screen name="ActivityLog"          component={ActivityLogScreen} />
             <Stack.Screen name="ChannelPartners"    component={ChannelPartnersScreen} />
