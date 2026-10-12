@@ -31,6 +31,9 @@ const TILES = [
   { screen: 'cp.screen.approvals', key: 'BookingApprovals',   label: 'Approvals',     desc: 'CP bookings to sign off',     icon: 'checkmark-done-outline',color: COLORS.success, bg: COLORS.successBg, params: { cpOnly: true, cpMode: true, adminView: true } },
   // Managers only, as in the web menu — a CP Executive has no reports, so the chart
   // would only ever be empty for them.
+  // The CP desk's own people and their project assignments — the same screen
+  // Sales has, scoped to this module (cpOnly).
+  { screen: 'cp.screen.users', key: 'SalesTeam', label: 'Team Users', desc: 'CP people and their projects', icon: 'person-circle-outline', color: COLORS.purple, bg: COLORS.purpleBg, params: { cpOnly: true }, adminOnly: true },
   { screen: 'cp.screen.myteam', key: 'MyTeam',             label: 'My Team',       desc: 'The CP org chart',            icon: 'people-circle-outline', color: COLORS.purple,  bg: COLORS.purpleBg,  params: { module: 'Sales', title: 'My Team · Channel Partner', cp: true }, managerOnly: true },
   // Who changed what in Channel Partner, and when — real admins only.
   { key: 'AskNexora',          label: 'Ask Nexora',    desc: 'Ask questions, get analysis',  icon: 'sparkles-outline',      color: COLORS.link,    bg: COLORS.linkBg,    params: { module: 'cp' }, aiOnly: true },
