@@ -479,15 +479,15 @@ export default function BookingFormScreen({ navigation, route }) {
       area:       t ? String((+t.plot_area  || 0) * n) : s.area,
       const_area: t ? String((+t.const_area || 0) * n) : s.const_area }));
   };
-  // LOI unit type: the chosen standard size fills Plot & Construction Area (× units,
-  // one per picked plot unless changed). Re-applied after the plots load.
+  // LOI unit type: the chosen type fills Construction Area (× units, one per picked
+  // plot unless changed). Plot Area is never touched — it is the picked plot's own
+  // area, fixed when the project was mapped. Re-applied after the plots load.
   const loiTypes = !eoiMode ? (project?.loi_unit_types || []) : [];
   const loiUnitCount = Math.max(1, parseInt(loiUnits, 10) || plotIds.length || 1);
   useEffect(() => {
     const t = loiTypes.find((x) => x.type === loiType);
     if (!t) return;
     setF((s) => ({ ...s, villa_type: t.type,
-      area:       String(+((+t.plot_area  || 0) * loiUnitCount).toFixed(2)),
       const_area: String(+((+t.const_area || 0) * loiUnitCount).toFixed(2)) }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loiType, loiUnitCount, project, unitLoaded]);

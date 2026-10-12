@@ -810,9 +810,9 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             <UnitTypesEditor title="EOI Unit Types" value={form.eoi_unit_types} inputStyle={inp}
               onChange={(v) => setForm((f) => ({ ...f, eoi_unit_types: v }))}
               hint="Standard sizes shown when creating an EOI. Plot & Construction Area auto-fill from the chosen type." />
-            <UnitTypesEditor title="LOI Unit Types" value={form.loi_unit_types} inputStyle={inp} copyFrom={form.eoi_unit_types}
+            <UnitTypesEditor title="LOI Unit Types" value={form.loi_unit_types} inputStyle={inp} copyFrom={form.eoi_unit_types} noPlotArea
               onChange={(v) => setForm((f) => ({ ...f, loi_unit_types: v }))}
-              hint="Standard sizes for an LOI — a new customer booking directly, or an EOI converted to LOI. Plot & Construction Area auto-fill from the chosen type." />
+              hint="Construction Area for each unit type on an LOI — new or converted from an EOI. Plot Area always comes from the plot picked (fixed when the project was mapped)." />
 
             <View style={{ height: 20 }} />
           </ScrollView>

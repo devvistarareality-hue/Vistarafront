@@ -7,7 +7,9 @@ import { COLORS } from '../constants/theme';
 // Used twice on the project form: EOI Unit Types (before plots exist) and LOI Unit
 // Types (a new LOI, or an EOI converted to LOI). Mirrors the web's
 // components/UnitTypesEditor.
-export default function UnitTypesEditor({ title, hint, value, onChange, copyFrom, inputStyle }) {
+// `noPlotArea`: the LOI list has no Plot Area — on an LOI the plot is real, and its
+// area is the one fixed when the project was mapped.
+export default function UnitTypesEditor({ title, hint, value, onChange, copyFrom, inputStyle, noPlotArea = false }) {
   const rows = value || [];
   const update = (i, k, v) => onChange(rows.map((t, idx) => (idx === i ? { ...t, [k]: v } : t)));
   const copyRows = (copyFrom || []).filter((t) => (t.type || '').trim());
@@ -19,8 +21,8 @@ export default function UnitTypesEditor({ title, hint, value, onChange, copyFrom
         <View key={i} style={s.row}>
           <TextInput value={t.type} onChangeText={(v) => update(i, 'type', v)} placeholder="2 BHK"
             style={StyleSheet.compose(inputStyle, s.typeIn)} />
-          <TextInput value={String(t.plot_area || '')} onChangeText={(v) => update(i, 'plot_area', v)} placeholder="Plot"
-            keyboardType="numeric" style={StyleSheet.compose(inputStyle, s.numIn)} />
+          {!noPlotArea && <TextInput value={String(t.plot_area || '')} onChangeText={(v) => update(i, 'plot_area', v)} placeholder="Plot"
+            keyboardType="numeric" style={StyleSheet.compose(inputStyle, s.numIn)} />}
           <TextInput value={String(t.const_area || '')} onChangeText={(v) => update(i, 'const_area', v)} placeholder="Const"
             keyboardType="numeric" style={StyleSheet.compose(inputStyle, s.numIn)} />
           <TouchableOpacity onPress={() => onChange(rows.filter((_, idx) => idx !== i))}>
@@ -28,11 +30,11 @@ export default function UnitTypesEditor({ title, hint, value, onChange, copyFrom
           </TouchableOpacity>
         </View>
       ))}
-      <TouchableOpacity onPress={() => onChange([...rows, { type: '', plot_area: '', const_area: '' }])} style={s.add}>
+      <TouchableOpacity onPress={() => onChange([...rows, noPlotArea ? { type: '', const_area: '' } : { type: '', plot_area: '', const_area: '' }])} style={s.add}>
         <Text style={s.addText}>+ Add Unit Type</Text>
       </TouchableOpacity>
       {copyRows.length > 0 && (
-        <TouchableOpacity onPress={() => onChange(copyRows.map((t) => ({ ...t })))} style={s.add}>
+        <TouchableOpacity onPress={() => onChange(copyRows.map((t) => (noPlotArea ? { type: t.type, const_area: t.const_area } : { ...t })))} style={s.add}>
           <Text style={s.addText}>Copy from EOI</Text>
         </TouchableOpacity>
       )}
