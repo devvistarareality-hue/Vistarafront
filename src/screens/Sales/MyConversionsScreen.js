@@ -9,6 +9,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import BookFilter, { useBook } from '../../components/BookFilter';
+import FilterSelect from '../../components/FilterSelect';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 
 // My Conversions — mirrors web/src/app/sales/my-conversions. The site visits and
@@ -38,6 +39,7 @@ export default function MyConversionsScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [range, setRange] = useState({ from: '', to: '' });
   const [projF, setProjF] = useState([]);   // project names; empty = all
   const [stmF, setStmF] = useState([]);     // STM names; empty = all
 
@@ -59,6 +61,23 @@ export default function MyConversionsScreen({ navigation, route }) {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  const istToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const istDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); };
+  const DATE_PRESETS = [
+    ['All',        () => ({ from: '', to: '' })],
+    ['Today',      () => ({ from: istToday(), to: istToday() })],
+    ['7 days',     () => ({ from: istDaysAgo(6), to: istToday() })],
+    ['30 days',    () => ({ from: istDaysAgo(29), to: istToday() })],
+    ['This month', () => { const t = istToday(); return { from: `${t.slice(0, 7)}-01`, to: t }; }],
+  ];
+  const datePreset = (DATE_PRESETS.find(([, make]) => {
+    const r = make(); return r.from === range.from && r.to === range.to;
+  }) || ['All'])[0];
+  const pickDatePreset = (label) => {
+    const item = DATE_PRESETS.find(([l]) => l === (label || 'All')) || DATE_PRESETS[0];
+    setRange(item[1]());
+  };
+
   const done = visits.filter((v) => v.status === 'completed');
   const upcoming = visits.filter((v) => v.status === 'scheduled')
     .sort((a, b) => new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0));
@@ -74,11 +93,31 @@ export default function MyConversionsScreen({ navigation, route }) {
     r.stm_name, r.referred_by_telecaller_name, r.unit_type, r.unit_no,
   ].some((f) => String(f || '').toLowerCase().includes(needle));
 
+  // Each tab is dated by the column it shows — a completed visit by when it
+  // happened, an upcoming one by when it is due, a closure by its closure date.
+  // One shared field would drop rows whose other date is blank, which is most.
+  const dayOf = (v) => {
+    if (!v) return '';
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? String(v).slice(0, 10) : d.toLocaleDateString('en-CA');
+  };
+  const dateOf = (r) => (tab === 'closures' ? r.closure_date
+    : tab === 'upcoming' ? r.scheduled_at : (r.visited_at || r.scheduled_at));
+  const inRange = (r) => {
+    if (!range.from && !range.to) return true;
+    const d = dayOf(dateOf(r));
+    if (!d) return false;
+    return (!range.from || d >= range.from) && (!range.to || d <= range.to);
+  };
+
   const all = tab === 'sv' ? done : tab === 'upcoming' ? upcoming : closures;
   const rows = all.filter((r) => (!needle || match(r))
     && (!projF.length || projF.includes(r.project_name || '—'))
-    && (!stmF.length || stmF.includes(r.stm_name || '—')));
-  const filtered = !!(needle || projF.length || stmF.length);
+    && (!stmF.length || stmF.includes(r.stm_name || '—'))
+    && inRange(r));
+  // The date range counts as narrowing too, or an empty period reads as "nothing
+  // here at all" rather than "nothing in the month you picked".
+  const filtered = !!(needle || projF.length || stmF.length || range.from || range.to);
 
   // The pickers offer only what this tab's rows hold (as on the web); a pick made
   // on another tab stays listed so it can be seen and cleared.
@@ -163,6 +202,9 @@ export default function MyConversionsScreen({ navigation, route }) {
       </View>
 
       <View style={st.filters}>
+        <FilterSelect label="Any date" value={datePreset === 'All' ? '' : datePreset}
+          onChange={pickDatePreset}
+          options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any date' : l }))} />
         <MultiFilterSelect label="All Projects" noun="projects" value={projF} onChange={setProjF}
           options={present('project_name', projF, 'No project')} />
         <MultiFilterSelect label="All STMs" noun="STMs" value={stmF} onChange={setStmF}
