@@ -74,6 +74,10 @@ export default function BookingFormScreen({ navigation, route }) {
   const [eoiNo, setEoiNo] = useState('');
   const [eoiType, setEoiType] = useState('');   // selected EOI standard unit type
   const [eoiUnits, setEoiUnits] = useState('1'); // no. of units — multiplies the standard area
+  // LOI standard unit type (project.loi_unit_types) — a new LOI or an EOI converted to
+  // LOI. '' = none picked: the areas come from the plot(s) as before. Mirrors the web.
+  const [loiType, setLoiType] = useState('');
+  const [loiUnits, setLoiUnits] = useState('');  // '' = one per picked plot
 
   const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
   const [plcPlots, setPlcPlots] = useState(null);   // picked plots' Corner / Common Plot Facing marks
@@ -475,6 +479,25 @@ export default function BookingFormScreen({ navigation, route }) {
       area:       t ? String((+t.plot_area  || 0) * n) : s.area,
       const_area: t ? String((+t.const_area || 0) * n) : s.const_area }));
   };
+  // LOI unit type: the chosen standard size fills Plot & Construction Area (× units,
+  // one per picked plot unless changed). Re-applied after the plots load.
+  const loiTypes = !eoiMode ? (project?.loi_unit_types || []) : [];
+  const loiUnitCount = Math.max(1, parseInt(loiUnits, 10) || plotIds.length || 1);
+  useEffect(() => {
+    const t = loiTypes.find((x) => x.type === loiType);
+    if (!t) return;
+    setF((s) => ({ ...s, villa_type: t.type,
+      area:       String(+((+t.plot_area  || 0) * loiUnitCount).toFixed(2)),
+      const_area: String(+((+t.const_area || 0) * loiUnitCount).toFixed(2)) }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loiType, loiUnitCount, project, unitLoaded]);
+  // Converting an EOI: start on the LOI type with the EOI's own type name, if any.
+  useEffect(() => {
+    if (!convertEoiId || loiType || !f.villa_type) return;
+    if (loiTypes.some((x) => x.type === f.villa_type)) setLoiType(f.villa_type);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convertEoiId, f.villa_type, project]);
+
   const v = useMemo(() => computeFormulas({
     formulaSet, projectName: project?.name, loiVariant: project?.loi_variant,
     area: f.area, landRate: f.land_rate, devRate: f.dev_rate, constArea: f.const_area, constRate: f.const_rate,
@@ -1155,9 +1178,15 @@ export default function BookingFormScreen({ navigation, route }) {
               <Fld l="No. of Units" val={eoiUnits} on={(u) => { setEoiUnits(u); applyEoiUnit(eoiType, u); }} kb="numeric" />
             </>
           )}
+          {loiTypes.length > 0 && (
+            <>
+              <Pick l="Unit Type" val={loiType} on={setLoiType} opts={['', ...loiTypes.map((x) => x.type)]} />
+              {!!loiType && <Fld l="No. of Units" val={loiUnits || String(loiUnitCount)} on={setLoiUnits} kb="numeric" />}
+            </>
+          )}
           <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} />
           {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
-          {flags.bunglowTypeIsDropdown && !eoiMode && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
+          {flags.bunglowTypeIsDropdown && !eoiMode && !loiTypes.length && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
         </Sec>
 
         <Sec title="Pricing">

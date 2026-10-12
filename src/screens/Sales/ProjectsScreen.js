@@ -24,6 +24,7 @@ async function readJson(res) {
   catch { return { _raw: text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) }; }
 }
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
+import UnitTypesEditor, { cleanUnitTypes } from '../../components/UnitTypesEditor';
 import FormSheet from '../../components/FormSheet';
 
 import AppIcon from '../../components/AppIcon';
@@ -299,7 +300,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const [form, setForm] = useState({
     name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '',
     total_area: '', total_plots: '', price_range: '', possession: '', description: '',
-    cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false,
+    cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], loi_unit_types: [], kiosk_enabled: false,
     is_locked: false, locked_blocks: [],
     floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }],
   });
@@ -308,9 +309,6 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
   const formBlocks = [...new Set((form.floor_plans || []).map((f) => f.block || '').filter(Boolean))].sort();
 
   // EOI standard unit types (pre-approval sizes) — [{type, plot_area, const_area}].
-  const addEoiType    = () => setForm(f => ({ ...f, eoi_unit_types: [...(f.eoi_unit_types || []), { type: '', plot_area: '', const_area: '' }] }));
-  const removeEoiType = (i) => setForm(f => ({ ...f, eoi_unit_types: f.eoi_unit_types.filter((_, idx) => idx !== i) }));
-  const updateEoiType = (i, k, val) => setForm(f => ({ ...f, eoi_unit_types: f.eoi_unit_types.map((t, idx) => idx === i ? { ...t, [k]: val } : t) }));
   const [saving,         setSaving]         = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingLogo,  setUploadingLogo]  = useState(false);
@@ -354,6 +352,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
           project_type:    project.project_type    || 'Plotted',
           formula_set:     project.formula_set      || 'kalrav',
           eoi_unit_types:  project.eoi_unit_types   || [],
+          loi_unit_types:  project.loi_unit_types   || [],
           tagline:         project.tagline         || '',
           rera:            project.rera            || '',
           total_area:      project.total_area      || '',
@@ -376,7 +375,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
         });
         setEditableTypes((project.plot_type_plans || []).map(pt => ({ original: pt.name, current: pt.name })));
       } else {
-        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], kiosk_enabled: false, is_locked: false, locked_blocks: [], floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
+        setForm({ name: '', location: '', project_type: 'Plotted', formula_set: 'kalrav', tagline: '', rera: '', total_area: '', total_plots: '', price_range: '', possession: '', description: '', cover_image_url: '', logo_url: '', master_plan_url: '', is_active: true, eoi_unit_types: [], loi_unit_types: [], kiosk_enabled: false, is_locked: false, locked_blocks: [], floor_wise: false, block_industrial: false, floor_plans: [{ floor: 0, label: 'Ground', prefix: 'Shop', from: 1, to: 12, image_url: '' }] });
         setHasTypes(false); setNoTypePlots(''); setPlotTypes([{ name: '', from: '1', to: '' }]);
         setEditableTypes([]);
       }
@@ -428,7 +427,7 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
 
       // New project: send total_plots=0 so backend _sync_plots() skips auto-creation
       const body = { ...form, total_plots: editing ? totalPlots : 0,
-        eoi_unit_types: (form.eoi_unit_types || []).filter(t => (t.type || '').trim()) };
+        eoi_unit_types: cleanUnitTypes(form.eoi_unit_types), loi_unit_types: cleanUnitTypes(form.loi_unit_types) };
       const url    = editing ? SALES_ENDPOINTS.project(project.id) : SALES_ENDPOINTS.projects;
       const method = editing ? 'PATCH' : 'POST';
       const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
@@ -806,22 +805,14 @@ function AddEditModal({ visible, project, onClose, onSaved }) {
             </View>
             )}
 
-            {/* EOI Unit Types — standard pre-approval sizes to prefill the EOI form */}
-            <View style={{ marginTop: 6 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>EOI Unit Types</Text>
-              <Text style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>Standard sizes shown when creating an EOI. Plot &amp; Construction Area auto-fill from the chosen type.</Text>
-              {(form.eoi_unit_types || []).map((t, i) => (
-                <View key={i} style={{ flexDirection: 'row', gap: 6, marginBottom: 8, alignItems: 'center' }}>
-                  <TextInput value={t.type} onChangeText={v => updateEoiType(i, 'type', v)} placeholder="2 BHK" style={[inp, { flex: 1 }]} />
-                  <TextInput value={String(t.plot_area || '')} onChangeText={v => updateEoiType(i, 'plot_area', v)} placeholder="Plot" keyboardType="numeric" style={[inp, { width: 68 }]} />
-                  <TextInput value={String(t.const_area || '')} onChangeText={v => updateEoiType(i, 'const_area', v)} placeholder="Const" keyboardType="numeric" style={[inp, { width: 68 }]} />
-                  <TouchableOpacity onPress={() => removeEoiType(i)}><Ionicons name="close-circle" size={20} color={COLORS.error} /></TouchableOpacity>
-                </View>
-              ))}
-              <TouchableOpacity onPress={addEoiType} style={{ borderWidth: 1.5, borderColor: COLORS.warningAlt, borderStyle: 'dashed', borderRadius: 8, paddingVertical: 8, alignItems: 'center', marginTop: 2 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.warningAlt }}>+ Add Unit Type</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Standard sizes: EOI (before plots are approved) and LOI (a new LOI, or an
+                EOI converted to LOI). Picking one on the booking form fills the areas. */}
+            <UnitTypesEditor title="EOI Unit Types" value={form.eoi_unit_types} inputStyle={inp}
+              onChange={(v) => setForm((f) => ({ ...f, eoi_unit_types: v }))}
+              hint="Standard sizes shown when creating an EOI. Plot & Construction Area auto-fill from the chosen type." />
+            <UnitTypesEditor title="LOI Unit Types" value={form.loi_unit_types} inputStyle={inp} copyFrom={form.eoi_unit_types}
+              onChange={(v) => setForm((f) => ({ ...f, loi_unit_types: v }))}
+              hint="Standard sizes for an LOI — a new customer booking directly, or an EOI converted to LOI. Plot & Construction Area auto-fill from the chosen type." />
 
             <View style={{ height: 20 }} />
           </ScrollView>
