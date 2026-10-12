@@ -1771,7 +1771,7 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           <View>
             <Text style={fsLbl}>{isCp ? 'CP STATUS' : 'STM STATUS'}</Text>
             <DropdownPicker value={local.stm_status} onChange={v => set('stm_status', v)}
-              options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...onlyPresent(STM_STATUSES, fx('stm_statuses'), local.stm_status).map(s => ({ value: s, label: s.replace(/_/g,' ') }))]}
+              options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...onlyPresent(STM_STATUSES, fx('stm_statuses'), local.stm_status).map(s => ({ value: s, label: s.replace(/_/g,' ') })), { value: 'not_updated', label: 'not updated by STM' }]}
               placeholder={isCp ? 'All CP Statuses' : 'All STM Statuses'} />
           </View>
           )}
