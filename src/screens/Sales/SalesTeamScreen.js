@@ -127,7 +127,10 @@ function Chip({ label, active, onPress }) {
   );
 }
 
-export default function SalesTeamScreen({ navigation }) {
+export default function SalesTeamScreen({ navigation, route }) {
+  // Opened from the Channel Partner hub, this lists that desk instead — the same
+  // screen, scoped by department server-side (sales/views.py::SalesTeamView ?cp=1).
+  const cpOnly = !!route?.params?.cpOnly;
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   const canAssign = me?.role === 'Admin' || me?.is_staff || isManagerRole(me);
@@ -148,9 +151,11 @@ export default function SalesTeamScreen({ navigation }) {
     setFetchError('');
     try {
       const cq = companyId ? `?company_id=${companyId}` : '';
-      // `team` is the Sales-department-scoped list (same as web); usersSlim returns
+      // `team` is the department-scoped list (same as web); usersSlim returns
       // every department, which is why finance/HR users were leaking in.
-      const res = await apiFetch(SALES_ENDPOINTS.team + cq);
+      const teamQ = [companyId ? `company_id=${companyId}` : '', cpOnly ? 'cp=1' : '']
+        .filter(Boolean).join('&');
+      const res = await apiFetch(SALES_ENDPOINTS.team + (teamQ ? `?${teamQ}` : ''));
       if (res.ok) {
         const d = await res.json();
         const list = Array.isArray(d) ? d : (d.results || []);
@@ -199,7 +204,7 @@ export default function SalesTeamScreen({ navigation }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} /></TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Sales Team</Text>
+          <Text style={SalesTeamScreenS.screenTitle}>{cpOnly ? 'Channel Partner Team' : 'Sales Team'}</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{filtered.length} of {members.length} members</Text>
         </View>
         <TouchableOpacity onPress={() => load(true)} disabled={refreshing} style={{ padding: 6, backgroundColor: BG, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8 }}>
@@ -285,6 +290,7 @@ export default function SalesTeamScreen({ navigation }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const SalesTeamScreenS = StyleSheet.create({
+  screenTitle: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
   panel: { backgroundColor: COLORS.panel, paddingHorizontal: 20, paddingVertical: 18, borderTopLeftRadius: 22, borderTopRightRadius: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
   btnDim: { opacity: 0.6 },

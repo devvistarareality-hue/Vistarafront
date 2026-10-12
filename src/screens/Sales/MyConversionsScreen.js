@@ -81,10 +81,6 @@ export default function MyConversionsScreen({ navigation, route }) {
   const done = visits.filter((v) => v.status === 'completed');
   const upcoming = visits.filter((v) => v.status === 'scheduled')
     .sort((a, b) => new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0));
-  // The tab labels keep the real totals, so they do not move while a search
-  // narrows the list under them.
-  const counts = { sv: done.length, upcoming: upcoming.length, closures: closures.length };
-
   // One box across every column a person would recognise a row by. Phone matters
   // most here: it is what someone has in hand when a client rings back.
   const needle = search.trim().toLowerCase();
@@ -93,7 +89,7 @@ export default function MyConversionsScreen({ navigation, route }) {
     r.stm_name, r.referred_by_telecaller_name, r.unit_type, r.unit_no,
   ].some((f) => String(f || '').toLowerCase().includes(needle));
 
-  // Each tab is dated by the column it shows — a completed visit by when it
+  // Each pool is dated by the column it shows — a completed visit by when it
   // happened, an upcoming one by when it is due, a closure by its closure date.
   // One shared field would drop rows whose other date is blank, which is most.
   const dayOf = (v) => {
@@ -101,27 +97,35 @@ export default function MyConversionsScreen({ navigation, route }) {
     const d = new Date(v);
     return Number.isNaN(d.getTime()) ? String(v).slice(0, 10) : d.toLocaleDateString('en-CA');
   };
-  const dateOf = (r) => (tab === 'closures' ? r.closure_date
-    : tab === 'upcoming' ? r.scheduled_at : (r.visited_at || r.scheduled_at));
-  const inRange = (r) => {
+  const inRange = (value) => {
     if (!range.from && !range.to) return true;
-    const d = dayOf(dateOf(r));
+    const d = dayOf(value);
     if (!d) return false;
     return (!range.from || d >= range.from) && (!range.to || d <= range.to);
   };
-
-  const all = tab === 'sv' ? done : tab === 'upcoming' ? upcoming : closures;
-  const rows = all.filter((r) => (!needle || match(r))
+  const narrow = (list, dateOf) => list.filter((r) => (!needle || match(r))
     && (!projF.length || projF.includes(r.project_name || '—'))
     && (!stmF.length || stmF.includes(r.stm_name || '—'))
-    && inRange(r));
+    && inRange(dateOf(r)));
+
+  // All three narrowed, not just the open tab's: the tab labels count these, and
+  // "(51)" above a list of nine contradicts itself once a date range is set.
+  const doneRows = narrow(done, (r) => r.visited_at || r.scheduled_at);
+  const upcomingRows = narrow(upcoming, (r) => r.scheduled_at);
+  const closureRows = narrow(closures, (r) => r.closure_date);
+  const counts = { sv: doneRows.length, upcoming: upcomingRows.length, closures: closureRows.length };
+
+  const rows = tab === 'sv' ? doneRows : tab === 'upcoming' ? upcomingRows : closureRows;
   // The date range counts as narrowing too, or an empty period reads as "nothing
   // here at all" rather than "nothing in the month you picked".
   const filtered = !!(needle || projF.length || stmF.length || range.from || range.to);
 
   // The pickers offer only what this tab's rows hold (as on the web); a pick made
-  // on another tab stays listed so it can be seen and cleared.
-  const present = (key, picked, none) => [...new Set([...all.map((r) => r[key] || '—'), ...picked])]
+  // on another tab stays listed so it can be seen and cleared. Built from the
+  // unnarrowed pool, or picking a project would remove every other project from
+  // the list and leave no way back.
+  const tabPool = tab === 'sv' ? done : tab === 'upcoming' ? upcoming : closures;
+  const present = (key, picked, none) => [...new Set([...tabPool.map((r) => r[key] || '—'), ...picked])]
     .sort((a, b) => (a === '—') - (b === '—') || a.localeCompare(b))
     .map((n) => ({ value: n, label: n === '—' ? none : n }));
 
