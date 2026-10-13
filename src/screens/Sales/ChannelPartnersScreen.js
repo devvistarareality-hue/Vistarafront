@@ -82,7 +82,7 @@ function Fld({ label, value, onChange, placeholder, keyboardType }) {
 
 // Add / edit one partner. The same required fields the web form enforces (name and
 // contact number), so a record created here is valid on both sides.
-function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
+function PartnerForm({ visible, initial, companyId, onClose, onSaved, onRemove }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -162,9 +162,11 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
       <View style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.45)`, justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
-            <Text style={{ flex: 1, fontSize: 16, fontWeight: '800', color: TEXT }}>
-              {isEdit ? 'Edit Channel Partner' : 'Add Channel Partner'}
-            </Text>
+            {/* As on the web: the partner's name and number head their details. */}
+            <View style={st.headText}>
+              <Text style={st.headTitle}>{isEdit ? (initial.name || 'Channel Partner') : 'Add Channel Partner'}</Text>
+              {isEdit && !!initial.contact_no && <Text style={st.headSub}>{initial.contact_no}</Text>}
+            </View>
             <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={TEXT} /></TouchableOpacity>
           </View>
           <ScrollView contentContainerStyle={{ padding: 18 }} keyboardShouldPersistTaps="handled">
@@ -219,6 +221,11 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved }) {
                 {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Channel Partner'}
               </Text>
             </TouchableOpacity>
+            {isEdit && onRemove && (
+              <TouchableOpacity onPress={() => onRemove(initial)} style={st.formRemove}>
+                <Text style={st.removeText}>Remove partner</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -270,7 +277,7 @@ export function ChannelPartnerDirectory({ companyId }) {
         .some((v) => String(v || '').toLowerCase().includes(needle)))), [rows, category, needle]);
 
   const renderItem = useCallback(({ item: cp }) => (
-    <View style={[CARD, st.card]}>
+    <TouchableOpacity activeOpacity={0.8} onPress={() => { setEditing(cp); setFormOpen(true); }} style={[CARD, st.card]}>
       <View style={st.row}>
         <Text style={st.name}>{cp.name}</Text>
         <Badge category={cp.category} />
@@ -278,7 +285,8 @@ export function ChannelPartnerDirectory({ companyId }) {
           <View style={st.inactive}><Text style={st.inactiveText}>Inactive</Text></View>
         )}
       </View>
-      <Text style={st.line1}>{[cp.contact_no, cp.firm_name].filter(Boolean).join(' · ') || '—'}</Text>
+      {/* The number is not on the card — it shows in the partner's details. */}
+      <Text style={st.line1}>{cp.firm_name || '—'}</Text>
       <Text style={st.line2}>
         {[SEGMENT_OPTIONS.find((o) => o.value === cp.segment)?.label, cp.city, cp.area]
           .filter((v) => v && v !== '— Select —').join(' · ') || '—'}
@@ -296,14 +304,8 @@ export function ChannelPartnerDirectory({ companyId }) {
               : 'Schedule'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => { setEditing(cp); setFormOpen(true); }} style={st.editBtn}>
-          <Text style={st.editText}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => remove(cp)} style={st.removeBtn}>
-          <Text style={st.removeText}>Remove</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   ), [companyId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const header = (
@@ -349,7 +351,8 @@ export function ChannelPartnerDirectory({ companyId }) {
 
       <PartnerForm visible={formOpen} initial={editing} companyId={companyId}
         onClose={() => setFormOpen(false)}
-        onSaved={() => { setFormOpen(false); setEditing(null); load(); }} />
+        onSaved={() => { setFormOpen(false); setEditing(null); load(); }}
+        onRemove={(cp) => { setFormOpen(false); setEditing(null); remove(cp); }} />
 
       {/* Reload on close rather than per change: the FU/SV counts on each card
           are annotated server-side, so they only move when the list refetches. */}
@@ -412,8 +415,9 @@ const st = StyleSheet.create({
                  borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border,
                  backgroundColor: COLORS.accentSoft },
   activityText: { fontSize: 12.5, fontWeight: '700', color: BLUE },
-  editBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border },
-  editText: { fontSize: 13, fontWeight: '700', color: TEXT },
-  removeBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.error2, backgroundColor: COLORS.errorBg },
+  formRemove: { marginTop: 10, paddingVertical: 12, alignItems: 'center', borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.error2, backgroundColor: COLORS.errorBg },
+  headText: { flex: 1 },
+  headTitle: { fontSize: 16, fontWeight: '800', color: TEXT },
+  headSub: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
   removeText: { fontSize: 13, fontWeight: '700', color: COLORS.error },
 });
