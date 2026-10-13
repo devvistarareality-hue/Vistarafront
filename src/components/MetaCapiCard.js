@@ -67,14 +67,14 @@ export default function MetaCapiCard({ cfg, companyId, onSaved }) {
         <Switch value={enabled} onValueChange={setEnabled} />
       </View>
       <Text style={s.lbl}>Dataset ID</Text>
-      <TextInput style={s.inp} value={datasetId} onChangeText={setDatasetId} keyboardType="numeric" placeholder="e.g. 1602590401463535"
+      <TextInput style={s.inp} value={datasetId} onChangeText={setDatasetId} keyboardType="numeric" placeholder="From Events Manager → dataset"
         placeholderTextColor={COLORS.textTertiary} />
       <Text style={s.lbl}>Access token</Text>
       <TextInput style={s.inp} value={token} onChangeText={setToken} secureTextEntry autoCapitalize="none"
         placeholder={tokenSet ? 'Saved — type a new one to replace it' : 'Dataset → Settings → Conversions API'} placeholderTextColor={COLORS.textTertiary} />
       <Text style={s.lbl}>Test event code (optional)</Text>
       <TextInput style={s.inp} value={testCode} onChangeText={setTestCode} autoCapitalize="characters"
-        placeholder="TEST12345 — clear it once testing is done" placeholderTextColor={COLORS.textTertiary} />
+        placeholder="e.g. TEST12345" placeholderTextColor={COLORS.textTertiary} />
       <View style={s.row}>
         <TouchableOpacity style={StyleSheet.compose(s.btn, s.primary)} onPress={save} disabled={!!busy}>
           <Text style={s.primaryText}>{busy === 'save' ? 'Saving…' : 'Save'}</Text>
