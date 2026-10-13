@@ -16,6 +16,7 @@ import BookingDetails from '../../components/BookingDetails';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
+import PeriodFilter from '../../components/PeriodFilter';
 const NAVY = COLORS.navy; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const TEAL = COLORS.success;
@@ -203,23 +204,8 @@ export default function ModuleBookingsScreen({ navigation, route }) {
 
           {approved.length > 0 && (
             <>
-              {/* Booking-date range — a dropdown, like the project / STM filters */}
-              <View style={s.filterBar}>
-                <FilterSelect label="Any booking date" value={datePreset === 'All' ? '' : datePreset} style={s.filterSel}
-                  onChange={pickDatePreset}
-                  options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any booking date' : l }))} />
-              </View>
-              <View style={s.periodRow}>
-                <FilterSelect label="Year" value={fySel} style={s.periodSel}
-                  onChange={(v) => { if (!v) { pickRange({ from: '', to: '' }); return; } const y = +v; setFyY(y); pickRange({ from: `${y}-04-01`, to: `${y + 1}-03-31` }); }}
-                  options={[{ value: '', label: 'Year' }, ...FY_OPTS.map((y) => ({ value: String(y), label: `FY ${y}-${String(y + 1).slice(2)}` }))]} />
-                <FilterSelect label="Month" value={monthSel} style={s.periodSel}
-                  onChange={(v) => { const m = MONTHS.find((x) => x.key === v); pickRange(m || { from: '', to: '' }); }}
-                  options={[{ value: '', label: 'Month' }, ...MONTHS.map((m) => ({ value: m.key, label: m.label }))]} />
-                <FilterSelect label="Quarter" value={quarterSel} style={s.periodSel}
-                  onChange={(v) => { const q = QUARTERS.find((x) => x.key === v); pickRange(q || { from: '', to: '' }); }}
-                  options={[{ value: '', label: 'Quarter' }, ...QUARTERS.map((q) => ({ value: q.key, label: q.label }))]} />
-              </View>
+              {/* Booking-date range: quick ranges + Year / Month / Quarter (shared with Approvals). */}
+              <PeriodFilter value={range} onChange={(r) => { setRange(r); setOpen({}); }} anyLabel="Any booking date" />
               {(projOptions.length > 1 || stmOptions.length > 1) && (
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
                   {projOptions.length > 1 && (

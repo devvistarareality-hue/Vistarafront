@@ -19,6 +19,7 @@ import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import LeadTransfersPanel from './LeadTransfersPanel';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
+import PeriodFilter, { inRange } from '../../components/PeriodFilter';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -397,11 +398,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
         </View>
 
         {/* Booking-date range — a dropdown, like every other filter here */}
-        <View style={s.filterBar}>
-          <FilterSelect label="Any booking date" value={datePreset === 'All' ? '' : datePreset} style={s.filterSel}
-            onChange={pickDatePreset}
-            options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any booking date' : l }))} />
-        </View>
+        <PeriodFilter value={range} onChange={setRange} anyLabel="Any booking date" />
 
         {/* Which project and whose bookings — sheets rather than chips, since there are
             a dozen STMs and the names are too long to scan in a row. */}

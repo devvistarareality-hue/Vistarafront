@@ -16,6 +16,7 @@ import FilterSelect from '../../components/FilterSelect';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { isManagerRole } from '../../lib/roles';
 import BookFilter, { useBook } from '../../components/BookFilter';
+import PeriodFilter, { inRange } from '../../components/PeriodFilter';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -139,6 +140,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
   // The Closures card opens this already filtered to Approved.
   const [tab, setTab] = useState(TABS.some(([k]) => k === initialTab) ? initialTab : '');
   const [q, setQ] = useState('');
+  const [range, setRange] = useState({ from: '', to: '' });   // booking-date period
   const [proj, setProj] = useState([]);   // project names; empty = all
   const [who, setWho] = useState('');     // 'booked by' — a user id, '' for everyone
   // Whose bookings the server sends: this person's own desk, or everything they
@@ -242,7 +244,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
   // Counting over all rows instead kept the numbers still as you switched tabs, but
   // on Approved they then summed to the full 244 next to a list of 229 — a filter
   // that misreports its own result is worse than one that moves.
-  const preWho = rows.filter((b) => inTab(b, tab) && matches(b)
+  const preWho = rows.filter((b) => inTab(b, tab) && matches(b) && inRange(b.booking_date, range)
     && (!proj.length || proj.includes(projName(b))));
 
   // 'Booked by' — a manager's list holds their whole reporting subtree, so let them
@@ -367,6 +369,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
         style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5,
           borderColor: COLORS.border, backgroundColor: COLORS.surface, fontSize: 13,
           color: TEXT, marginBottom: 10 }} />
+      <PeriodFilter value={range} onChange={(r) => { setRange(r); setOpen({}); }} anyLabel="Any booking date" />
       <BookFilter hidden={cpOnly} value={book} onChange={(b) => { setBook(b); setOpen({}); }} />
       {projOptions.length > 1 && (
         <MultiFilterSelect label="All Projects" noun="projects" value={proj} style={mb.projPick}
