@@ -15,7 +15,6 @@ import ThemeToggle from '../../components/ThemeToggle';
 import { useImpersonating } from '../../lib/useImpersonating';
 import { groupsFor, openGroup } from '../../lib/moduleGroups';
 import { DepartmentCard } from '../../components/Departments';
-import { canUseAI } from '../Sales/AskNexoraScreen';
 
 
 export default function AdminDashboardScreen({ navigation }) {
@@ -77,18 +76,6 @@ export default function AdminDashboardScreen({ navigation }) {
             />
           </View>
         )}
-        {/* Ask Nexora — any question across every module (the web shows it on the admin dashboard too). */}
-        {canUseAI(user) && (
-          <TouchableOpacity style={s.askCard} activeOpacity={0.8}
-            onPress={() => navigation.navigate('AskNexora', { module: 'dashboard' })}>
-            <View style={s.askIcon}><Ionicons name="sparkles-outline" size={20} color={COLORS.link} /></View>
-            <View style={s.askText}>
-              <Text style={s.askTitle}>Ask Nexora</Text>
-              <Text style={s.askSub}>Ask anything about your data — or speak it</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
-          </TouchableOpacity>
-        )}
         <Text style={s.sectionTitle}>DEPARTMENTS</Text>
         {groups.map((g) => (
           <DepartmentCard key={g.key} group={g} onPress={() => openGroup(navigation, g, true)} />
@@ -100,12 +87,6 @@ export default function AdminDashboardScreen({ navigation }) {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
-  askCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, marginBottom: 20, borderRadius: 18,
-             borderWidth: 1, borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
-  askIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface },
-  askText: { flex: 1 },
-  askTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
-  askSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20 },
   headerLeft:   { flex: 1, marginRight: 12 },

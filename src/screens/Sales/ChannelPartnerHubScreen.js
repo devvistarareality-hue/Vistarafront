@@ -36,7 +36,6 @@ const TILES = [
   { screen: 'cp.screen.users', key: 'SalesTeam', label: 'Team Users', desc: 'CP people and their projects', icon: 'person-circle-outline', color: COLORS.purple, bg: COLORS.purpleBg, params: { cpOnly: true }, adminOnly: true },
   { screen: 'cp.screen.myteam', key: 'MyTeam',             label: 'My Team',       desc: 'The CP org chart',            icon: 'people-circle-outline', color: COLORS.purple,  bg: COLORS.purpleBg,  params: { module: 'Sales', title: 'My Team · Channel Partner', cp: true }, managerOnly: true },
   // Who changed what in Channel Partner, and when — real admins only.
-  { key: 'AskNexora',          label: 'Ask Nexora',    desc: 'Ask questions, get analysis',  icon: 'sparkles-outline',      color: COLORS.link,    bg: COLORS.linkBg,    params: { module: 'cp' }, aiOnly: true },
   { key: 'ActivityLog',        label: 'Log',           desc: 'Who changed what, and when',  icon: 'time-outline',          color: COLORS.link,    bg: COLORS.linkBg,    params: { modules: ['Channel Partner'], title: 'Channel Partner Log' }, adminOnly: true },
 ];
 

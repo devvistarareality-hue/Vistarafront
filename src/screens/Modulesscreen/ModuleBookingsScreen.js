@@ -65,6 +65,30 @@ export default function ModuleBookingsScreen({ navigation, route }) {
     setRange(item[1]()); setOpen({});
   };
 
+  // Year / Month / Quarter, like the website's date filter — Indian financial year
+  // (April to March). Each just sets the booking-date range.
+  const nowIst = istToday();
+  const curFy = +nowIst.slice(5, 7) >= 4 ? +nowIst.slice(0, 4) : +nowIst.slice(0, 4) - 1;
+  const [fyY, setFyY] = useState(curFy);
+  const pad = (n) => String(n).padStart(2, '0');
+  const lastDay = (y, m) => new Date(y, m, 0).getDate();          // m is 1-12
+  const FY_OPTS = [0, 1, 2, 3].map((i) => curFy - i).filter((y) => y >= 2020);
+  const MONTHS = Array.from({ length: 12 }, (_, i) => {
+    const m = ((i + 3) % 12) + 1; const y = m >= 4 ? fyY : fyY + 1;
+    return { key: `${y}-${pad(m)}`, label: new Date(y, m - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
+             from: `${y}-${pad(m)}-01`, to: `${y}-${pad(m)}-${lastDay(y, m)}` };
+  });
+  const QUARTERS = [
+    { key: 'Q1', label: 'Q1 · Apr–Jun', from: `${fyY}-04-01`, to: `${fyY}-06-30` },
+    { key: 'Q2', label: 'Q2 · Jul–Sep', from: `${fyY}-07-01`, to: `${fyY}-09-30` },
+    { key: 'Q3', label: 'Q3 · Oct–Dec', from: `${fyY}-10-01`, to: `${fyY}-12-31` },
+    { key: 'Q4', label: 'Q4 · Jan–Mar', from: `${fyY + 1}-01-01`, to: `${fyY + 1}-03-31` },
+  ];
+  const pickRange = (r) => { setRange({ from: r.from, to: r.to }); setOpen({}); };
+  const fySel = range.from === `${fyY}-04-01` && range.to === `${fyY + 1}-03-31` ? String(fyY) : '';
+  const monthSel = (MONTHS.find((m) => m.from === range.from && m.to === range.to) || {}).key || '';
+  const quarterSel = (QUARTERS.find((q) => q.from === range.from && q.to === range.to) || {}).key || '';
+
   const toggleDetails = (id) => setDetailsOpen((o) => ({ ...o, [id]: !o[id] }));
   // Revision history, fetched per booking on demand: only a handful of deals are ever
   // revised, so loading every chain up front would be work for nothing.
@@ -184,6 +208,17 @@ export default function ModuleBookingsScreen({ navigation, route }) {
                 <FilterSelect label="Any booking date" value={datePreset === 'All' ? '' : datePreset} style={s.filterSel}
                   onChange={pickDatePreset}
                   options={DATE_PRESETS.map(([l]) => ({ value: l === 'All' ? '' : l, label: l === 'All' ? 'Any booking date' : l }))} />
+              </View>
+              <View style={s.periodRow}>
+                <FilterSelect label="Year" value={fySel} style={s.periodSel}
+                  onChange={(v) => { if (!v) { pickRange({ from: '', to: '' }); return; } const y = +v; setFyY(y); pickRange({ from: `${y}-04-01`, to: `${y + 1}-03-31` }); }}
+                  options={[{ value: '', label: 'Year' }, ...FY_OPTS.map((y) => ({ value: String(y), label: `FY ${y}-${String(y + 1).slice(2)}` }))]} />
+                <FilterSelect label="Month" value={monthSel} style={s.periodSel}
+                  onChange={(v) => { const m = MONTHS.find((x) => x.key === v); pickRange(m || { from: '', to: '' }); }}
+                  options={[{ value: '', label: 'Month' }, ...MONTHS.map((m) => ({ value: m.key, label: m.label }))]} />
+                <FilterSelect label="Quarter" value={quarterSel} style={s.periodSel}
+                  onChange={(v) => { const q = QUARTERS.find((x) => x.key === v); pickRange(q || { from: '', to: '' }); }}
+                  options={[{ value: '', label: 'Quarter' }, ...QUARTERS.map((q) => ({ value: q.key, label: q.label }))]} />
               </View>
               {(projOptions.length > 1 || stmOptions.length > 1) && (
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
@@ -350,4 +385,6 @@ const s = StyleSheet.create({
 
   filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   filterSel: { flexGrow: 1, flexBasis: 160, justifyContent: 'space-between' },
+  periodRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  periodSel: { flex: 1, justifyContent: 'space-between' },
 });
