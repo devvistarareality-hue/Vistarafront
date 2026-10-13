@@ -1581,7 +1581,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   );
 }
 
-const EMPTY_FILTERS = { status: '', project_id: [], source_id: '', channel_partner_id: '', campaign: '', telecaller_id: [], stm_id: [], tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', is_duplicate: false, unassigned: false };
+const EMPTY_FILTERS = { status: '', project_id: [], source_id: '', channel_partner_id: '', campaign: '', telecaller_id: [], stm_id: [], tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', date_basis: '', is_duplicate: false, unassigned: false };
 // Project / telecaller / STM filters hold several ids; older callers may pass one.
 const asList = (v) => (Array.isArray(v) ? v : (v === '' || v == null ? [] : [String(v)]));
 // A filter counts as set when it has a value — an empty list is not one.
@@ -1623,6 +1623,16 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
           {/* Quick date */}
           <View>
             <Text style={fsLbl}>DATE RANGE</Text>
+            {/* What the dates mean — when the lead arrived, or when it was first called
+                (the dashboard's Called / MQL tile). Mirrors the web. */}
+            <View style={basisS.row}>
+              {[['', 'Received'], ['called', 'First called']].map(([v, label]) => (
+                <TouchableOpacity key={label} onPress={() => set('date_basis', v)}
+                  style={StyleSheet.compose(basisS.btn, (local.date_basis || '') === v && basisS.on)}>
+                  <Text style={StyleSheet.compose(basisS.text, (local.date_basis || '') === v && basisS.textOn)}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
               {[['Today', today, today], ['Week', daysAgo(6), today], ['Month', daysAgo(29), today]].map(([label, from, to]) => {
                 const active = local.date_from === from && local.date_to === to;
@@ -2024,6 +2034,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (filters.disqualify_reason) url += `&disqualify_reason=${filters.disqualify_reason}`;
     if (filters.date_from)     url += `&date_from=${filters.date_from}`;
     if (filters.date_to)       url += `&date_to=${filters.date_to}`;
+    if (filters.date_basis && (filters.date_from || filters.date_to)) url += `&date_basis=${filters.date_basis}`;
     if (filters.is_duplicate)  url += `&is_duplicate=true`;
     if (filters.unassigned)    url += `&unassigned=true`;
     if (adminView)             url += `&admin_view=1`;
@@ -2496,4 +2507,12 @@ const mdp = StyleSheet.create({
 const exportS = StyleSheet.create({
   note: { marginHorizontal: 16, marginTop: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
           backgroundColor: COLORS.successBg, color: COLORS.success, fontSize: 12.5, fontWeight: '700' },
+});
+
+const basisS = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  btn: { flex: 1, paddingVertical: 8, borderRadius: 14, alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  on: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
+  text: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  textOn: { color: COLORS.link },
 });
