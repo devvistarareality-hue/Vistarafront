@@ -96,7 +96,34 @@ export default function AskNexoraScreen({ navigation, route }) {
   const examples = EXAMPLES[module] || EXAMPLES.dashboard;
   const [turns, setTurns] = useState([]);    // [{ q, a?, err?, busy? }]
   const [text, setText] = useState('');
+  const [chatId, setChatId] = useState(null);   // the saved conversation these turns belong to
+  const [chats, setChats] = useState(null);     // History list when open, else null
   const busy = turns.some((t) => t.busy);
+
+  // History: the person's own past chats (saved on the server, encrypted). Mirrors the web.
+  async function openHistory() {
+    setChats([]);
+    try {
+      const r = await apiFetch(SALES_ENDPOINTS.aiChats);
+      const d = r.ok ? await r.json() : { results: [] };
+      setChats(d.results || []);
+    } catch (e) { setChats([]); }
+  }
+  async function openChat(id) {
+    try {
+      const r = await apiFetch(SALES_ENDPOINTS.aiChat(id));
+      if (!r.ok) { Alert.alert('Could not open', 'That chat could not be opened.'); return; }
+      const d = await r.json();
+      setTurns((d.turns || []).map((t) => ({ q: t.q, a: t.a, files: t.files || [] })));
+      setChatId(d.id); setChats(null);
+    } catch (e) { Alert.alert('Could not open', 'Check your connection and try again.'); }
+  }
+  async function deleteChat(id) {
+    await apiFetch(SALES_ENDPOINTS.aiChat(id), { method: 'DELETE' }).catch(() => null);
+    setChats((cs) => (cs || []).filter((c) => c.id !== id));
+    if (chatId === id) { setTurns([]); setChatId(null); }
+  }
+  const newChat = () => { setTurns([]); setChatId(null); setChats(null); };
   const scroll = useRef(null);
 
   async function ask(question) {
@@ -109,10 +136,11 @@ export default function AskNexoraScreen({ navigation, route }) {
     try {
       const res = await apiFetch(SALES_ENDPOINTS.aiAsk, {
         method: 'POST',
-        body: JSON.stringify({ question: q, history, company_id: companyId || null, module }),
+        body: JSON.stringify({ question: q, history, chat_id: chatId, company_id: companyId || null, module }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) { finish({ err: explainApiError(res, d, 'Ask Nexora could not take that question.') }); return; }
+      if (d.chat) setChatId(d.chat);
       for (let n = 0; n < 120; n += 1) {
         await sleep(n < 5 ? 1200 : 2000);
         const r = await apiFetch(SALES_ENDPOINTS.aiAskJob(d.job));
@@ -143,14 +171,36 @@ export default function AskNexoraScreen({ navigation, route }) {
           <Text style={common.headerTitle}>Ask Nexora</Text>
           <Text style={s.sub}>{MODULE_NAMES[module] ? `${MODULE_NAMES[module]} · all your modules` : 'All your modules'} · AI</Text>
         </View>
-        {turns.length > 0 && !busy ? (
-          <TouchableOpacity onPress={() => setTurns([])}><Text style={s.newChat}>New chat</Text></TouchableOpacity>
+        {!busy ? (
+          <TouchableOpacity onPress={() => (chats ? setChats(null) : openHistory())} style={s.headBtn}>
+            <Ionicons name="time-outline" size={18} color={COLORS.link} />
+          </TouchableOpacity>
+        ) : null}
+        {(turns.length > 0 || chats) && !busy ? (
+          <TouchableOpacity onPress={newChat}><Text style={s.newChat}>New chat</Text></TouchableOpacity>
         ) : null}
       </View>
       <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
         <ScrollView ref={scroll} contentContainerStyle={s.body}
           onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
-          {turns.length === 0 ? (
+          {chats ? (
+            <View>
+              <Text style={s.histTitle}>PREVIOUS CHATS</Text>
+              {chats.length === 0 && <Text style={s.intro}>No saved chats yet.</Text>}
+              {chats.map((c) => (
+                <View key={c.id} style={s.histRow}>
+                  <TouchableOpacity style={s.flex} onPress={() => openChat(c.id)}>
+                    <Text style={s.histQ} numberOfLines={1}>{c.title}</Text>
+                    <Text style={s.histMeta}>{c.turns} question{c.turns === 1 ? '' : 's'} · {new Date(c.updated_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => deleteChat(c.id)} style={s.headBtn}>
+                    <Ionicons name="trash-outline" size={17} color={COLORS.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          ) : null}
+          {!chats && turns.length === 0 ? (
             <View>
               <Text style={s.intro}>Ask about anything in your modules (Sales, AR, tasks, HR and more) in plain words. Answers use only what you can see.</Text>
               {examples.map((ex) => (
@@ -161,7 +211,7 @@ export default function AskNexoraScreen({ navigation, route }) {
               ))}
             </View>
           ) : null}
-          {turns.map((t, i) => (
+          {!chats && turns.map((t, i) => (
             <View key={i} style={s.turn}>
               <View style={s.q}><Text style={s.qText}>{t.q}</Text></View>
               {t.busy ? (
@@ -237,6 +287,12 @@ const s = StyleSheet.create({
   send: { width: 46, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
           backgroundColor: COLORS.accentSoft, borderWidth: 1, borderColor: COLORS.link },
   sendOff: { opacity: 0.4 },
+  headBtn: { padding: 6 },
+  histTitle: { fontSize: 11, fontWeight: '700', color: COLORS.textTertiary, letterSpacing: 1, marginBottom: 8 },
+  histRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
+             borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  histQ: { fontSize: 13.5, fontWeight: '600', color: COLORS.textPrimary },
+  histMeta: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
   file: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'flex-start', maxWidth: '92%', paddingHorizontal: 12,
           paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
   fileTitle: { fontSize: 13.5, fontWeight: '700', color: COLORS.link },

@@ -62,6 +62,8 @@ export const SALES_ENDPOINTS = {
   get aiAsk()     { return `${BASE_URL}/api/sales/ai/ask/`; },
   aiAskJob: (job) => `${BASE_URL}/api/sales/ai/ask/${job}/`,
   aiFile: (id) => `${BASE_URL}/api/sales/ai/files/${id}/`,
+  get aiChats()  { return `${BASE_URL}/api/sales/ai/chats/`; },
+  aiChat: (id) => `${BASE_URL}/api/sales/ai/chats/${id}/`,
   get closures()   { return `${BASE_URL}/api/sales/closures/`; },
   closureCancel: (id) => `${BASE_URL}/api/sales/closures/${id}/cancel/`,
   // Team/Users
