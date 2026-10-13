@@ -77,7 +77,6 @@ export default function BookingFormScreen({ navigation, route }) {
   // LOI standard unit type (project.loi_unit_types) — a new LOI or an EOI converted to
   // LOI. '' = none picked: the areas come from the plot(s) as before. Mirrors the web.
   const [loiType, setLoiType] = useState('');
-  const [loiUnits, setLoiUnits] = useState('');  // '' = one per picked plot
 
   const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
   const [plcPlots, setPlcPlots] = useState(null);   // picked plots' Corner / Common Plot Facing marks
@@ -479,11 +478,11 @@ export default function BookingFormScreen({ navigation, route }) {
       area:       t ? String((+t.plot_area  || 0) * n) : s.area,
       const_area: t ? String((+t.const_area || 0) * n) : s.const_area }));
   };
-  // LOI unit type: the chosen type fills Construction Area (× units, one per picked
-  // plot unless changed). Plot Area is never touched — it is the picked plot's own
+  // LOI unit type: the chosen type fills Construction Area (one per picked plot — no
+  // separate No. of Units on an LOI). Plot Area is never touched — it is the picked plot's own
   // area, fixed when the project was mapped. Re-applied after the plots load.
   const loiTypes = !eoiMode ? (project?.loi_unit_types || []) : [];
-  const loiUnitCount = Math.max(1, parseInt(loiUnits, 10) || plotIds.length || 1);
+  const loiUnitCount = Math.max(1, plotIds.length || 1);
   useEffect(() => {
     const t = loiTypes.find((x) => x.type === loiType);
     if (!t) return;
@@ -1181,7 +1180,6 @@ export default function BookingFormScreen({ navigation, route }) {
           {loiTypes.length > 0 && (
             <>
               <Pick l="Unit Type" val={loiType} on={setLoiType} opts={['', ...loiTypes.map((x) => x.type)]} />
-              {!!loiType && <Fld l="No. of Units" val={loiUnits || String(loiUnitCount)} on={setLoiUnits} kb="numeric" />}
             </>
           )}
           <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} />
