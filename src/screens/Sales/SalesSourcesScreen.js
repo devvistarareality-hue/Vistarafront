@@ -14,6 +14,7 @@ import FormSheet from '../../components/FormSheet';
 import AppIcon from '../../components/AppIcon';
 import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
+import MetaCapiCard from '../../components/MetaCapiCard';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const GREEN = COLORS.success; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 
 const PRESETS = ['Meta', 'Google', 'Referral', 'Walk-in', 'IVR', 'Portal', 'Other'];
@@ -396,6 +397,10 @@ function MetaTab() {
           </Card>
         );
       })()}
+
+      {/* Lead stages sent back to Meta (Conversions API for CRM). */}
+      {cfg && <MetaCapiCard key={cfg.capi_dataset_id || 'capi'} cfg={cfg} companyId={companyId}
+        onSaved={(d) => setCfg((c) => ({ ...c, ...d }))} />}
 
       {/* Connected Pages & Forms — always shown, with on-demand refresh */}
       <Card>
