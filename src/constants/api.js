@@ -61,6 +61,7 @@ export const SALES_ENDPOINTS = {
   siteVisitEdit: (id) => `${BASE_URL}/api/sales/site-visits/${id}/edit/`,
   get aiAsk()     { return `${BASE_URL}/api/sales/ai/ask/`; },
   aiAskJob: (job) => `${BASE_URL}/api/sales/ai/ask/${job}/`,
+  aiFile: (id) => `${BASE_URL}/api/sales/ai/files/${id}/`,
   get closures()   { return `${BASE_URL}/api/sales/closures/`; },
   closureCancel: (id) => `${BASE_URL}/api/sales/closures/${id}/cancel/`,
   // Team/Users

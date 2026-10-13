@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView,
-  Platform, StyleSheet } from 'react-native';
+  Platform, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { SALES_ENDPOINTS } from '../../constants/api';
 import { apiFetch } from '../../utils/apiFetch';
 import common from '../../styles/common';
 import { explainApiError } from '../../lib/apiError';
+import { downloadExcel } from '../../utils/downloadExcel';
 
 // Ask Nexora — the AI assistant (mirrors the web's components/AskNexora; backend
 // sales/assistant.py). Ask in plain words; the server works out which module the
@@ -28,7 +29,8 @@ const EXAMPLES = {
   hr: ['Who is on leave this week?', 'How many leave requests are pending?', 'My attendance this month'],
   club1000: ['How much has been invested this year, scheme-wise?', 'Which payouts are due this month?'],
   dashboard: ["Today's site visits and bookings", 'How much is overdue in AR, project-wise?',
-    'How many tasks are overdue?', 'Who is on leave this week?', 'Give me a summary of this month'],
+    'How many tasks are overdue?', 'Make a PDF report of this month, module-wise',
+    "Make an Excel of this month's bookings"],
 };
 const MODULE_NAMES = { sales: 'Sales', cp: 'Channel Partner', ar: 'Accounts Receivable', execution: 'Task Allocation',
   hr: 'HR', club1000: 'Club 1000', accounts: 'Accounts & Finance', purchase: 'Purchase', land: 'Land' };
@@ -116,7 +118,7 @@ export default function AskNexoraScreen({ navigation, route }) {
         const r = await apiFetch(SALES_ENDPOINTS.aiAskJob(d.job));
         const st = await r.json().catch(() => ({}));
         if (!r.ok) { finish({ err: explainApiError(r, st, 'Ask Nexora could not answer.') }); return; }
-        if (st.status === 'done') { finish({ a: st.answer }); return; }
+        if (st.status === 'done') { finish({ a: st.answer, files: st.files || [] }); return; }
         if (st.status === 'error') { finish({ err: st.detail || 'Ask Nexora could not answer.' }); return; }
       }
       finish({ err: 'That is taking too long — try a narrower question.' });
@@ -166,6 +168,19 @@ export default function AskNexoraScreen({ navigation, route }) {
                 <View style={s.a}><View style={s.thinking}><ActivityIndicator size="small" color={COLORS.link} /><Text style={s.thinkingText}>Looking at your data…</Text></View></View>
               ) : null}
               {t.a ? <View style={s.a}><Markdown text={t.a} /></View> : null}
+              {(t.files || []).map((f) => (
+                <TouchableOpacity key={f.id} style={s.file} onPress={async () => {
+                  const err = await downloadExcel(SALES_ENDPOINTS.aiFile(f.id), f.name, f.name);
+                  if (err) Alert.alert('Could not download', err);
+                }}>
+                  <Ionicons name={f.format === 'pdf' ? 'document-text-outline' : 'grid-outline'} size={16} color={COLORS.link} />
+                  <View style={s.flex}>
+                    <Text style={s.fileTitle}>{f.format === 'pdf' ? 'Download PDF' : 'Download Excel'}</Text>
+                    <Text style={s.fileName} numberOfLines={1}>{f.name}</Text>
+                  </View>
+                  <Ionicons name="download-outline" size={18} color={COLORS.link} />
+                </TouchableOpacity>
+              ))}
               {t.err ? <View style={StyleSheet.compose(s.a, s.err)}><Text style={s.errText}>{t.err}</Text></View> : null}
             </View>
           ))}
@@ -222,5 +237,9 @@ const s = StyleSheet.create({
   send: { width: 46, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
           backgroundColor: COLORS.accentSoft, borderWidth: 1, borderColor: COLORS.link },
   sendOff: { opacity: 0.4 },
+  file: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'flex-start', maxWidth: '92%', paddingHorizontal: 12,
+          paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
+  fileTitle: { fontSize: 13.5, fontWeight: '700', color: COLORS.link },
+  fileName: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 1 },
   foot: { fontSize: 11, color: COLORS.textSecondary, paddingHorizontal: 14, paddingVertical: 6 },
 });

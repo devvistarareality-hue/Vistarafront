@@ -43,9 +43,11 @@ export async function downloadExcel(url, name, title = 'Excel', onProgress) {
       return body?.detail || (status === 403 ? 'You do not have access to download this.' : `Could not build the sheet (HTTP ${status}). Try again.`);
     }
     if (await Sharing.isAvailableAsync()) {
+      // Excel by default; a PDF (Ask Nexora reports) is shared as a PDF.
+      const pdf = /\.pdf$/i.test(name);
       await Sharing.shareAsync(uri, {
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        dialogTitle: title, UTI: 'org.openxmlformats.spreadsheetml.sheet' });
+        mimeType: pdf ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        dialogTitle: title, UTI: pdf ? 'com.adobe.pdf' : 'org.openxmlformats.spreadsheetml.sheet' });
     }
     return '';
   } catch (e) {
