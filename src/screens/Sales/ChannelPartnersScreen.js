@@ -97,7 +97,7 @@ function PartnerHistory({ partnerId, companyId }) {
   if (!rows.length) return <Text style={st.histEmpty}>No changes recorded yet.</Text>;
   return rows.map((r) => (
     <View key={r.id} style={st.histRow}>
-      <View style={st.histDot}><Ionicons name={r.action === 'created' ? 'add' : r.action === 'deleted' ? 'trash-outline' : 'create-outline'} size={14} color={BLUE} /></View>
+      <View style={st.histDot}><Ionicons name={r.action === 'created' ? 'add' : r.action === 'deleted' ? 'trash-outline' : /follow|visit/i.test(r.summary || '') ? 'calendar-outline' : 'create-outline'} size={14} color={BLUE} /></View>
       <View style={st.histBody}>
         <Text style={st.histTitle}>{r.summary}</Text>
         {(r.changes || []).map((c, i) => (
