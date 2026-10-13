@@ -10,7 +10,7 @@ import { explainApiError } from '../lib/apiError';
 // Mirrors the web's components/MetaCapiCard.
 const STAGE_HELP = {
   Lead_Received: 'Meta form lead arrives',
-  Qualified: 'Telecaller marks it warm',
+  Qualified: 'TC or STM marks it warm, or a visit is booked',
   Site_Visit_Scheduled: 'Site visit booked',
   Site_Visit_Done: 'Site visit completed',
   Booked: 'Booking approved',
