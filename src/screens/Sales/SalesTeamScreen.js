@@ -18,8 +18,12 @@ const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW 
 // an assignment is what confines a manager's leads to those projects. Director and
 // General Manager always see the whole company, so they are not offered one.
 const ASSIGN_DESIGS = ['TELECALLER', 'STM'];
+// Employees and interns (any designation — STM, telecaller, CP Executive) take
+// them as well: an assignment confines what they can book to those projects
+// (booking_project_ids / BOOKING_SCOPED_ROLES on the backend).
 const canHoldProjects = (m) =>
-  ASSIGN_DESIGS.includes((m?.designation || '').toUpperCase()) || m?.role === 'Manager';
+  ASSIGN_DESIGS.includes((m?.designation || '').toUpperCase())
+  || ['Manager', 'Employee', 'Intern'].includes(m?.role);
 
 const DESIG_COLORS = {
   TELECALLER:         { bg: COLORS.warningBg, text: COLORS.warningAlt },
