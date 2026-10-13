@@ -26,6 +26,7 @@ import { can } from '../../lib/roles';
 import { Segmented } from '../../components/ui';
 import { ChannelPartnerDirectory } from './ChannelPartnersScreen';
 import { errText, explainApiError } from '../../lib/apiError';
+import PeriodFilter from '../../components/PeriodFilter';
 const NAVY = COLORS.navy; const BLUE = COLORS.link; const BG = COLORS.screenBg; const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 // A picked visit date as YYYY-MM-DD in the phone's own day (toISOString would
 // shift it to UTC and can land on the day before).
@@ -1590,7 +1591,11 @@ const TC_STATUSES  = ['warm','cold','not_interested','not_reachable','callback',
 const STM_STATUSES = ['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'];
 
 /* ── Filter Bottom Sheet ── */
+// Received / First called — for Manager and above (mirrors the web).
+const canPickBasis = (u) => !!(u?.is_staff || ['Admin', 'Director', 'General Manager', 'Manager'].includes(u?.role));
+
 function FilterSheet({ visible, onClose, filters, setFilters, projects, sources, telecallers, stms, facets = null, showTcStatus = true, showStmStatus = true, showAssignees = true, isCp = false, partners = null }) {
+  const sheetUser = useSelector((s) => s.auth.user);
   // Only what occurs in the leads this person can see (?facets=1), as on the web.
   const fx = (key) => facets?.[key] ?? null;
   const [local, setLocal] = useState(filters);
@@ -1625,14 +1630,17 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
             <Text style={fsLbl}>DATE RANGE</Text>
             {/* What the dates mean — when the lead arrived, or when it was first called
                 (the dashboard's Called / MQL tile). Mirrors the web. */}
-            <View style={basisS.row}>
+            {canPickBasis(sheetUser) && <View style={basisS.row}>
               {[['', 'Received'], ['called', 'First called']].map(([v, label]) => (
                 <TouchableOpacity key={label} onPress={() => set('date_basis', v)}
                   style={StyleSheet.compose(basisS.btn, (local.date_basis || '') === v && basisS.on)}>
                   <Text style={StyleSheet.compose(basisS.text, (local.date_basis || '') === v && basisS.textOn)}>{label}</Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </View>}
+            {/* Year / Month / Quarter, like the website's date bar */}
+            <PeriodFilter value={{ from: local.date_from, to: local.date_to }} anyLabel="Any date"
+              onChange={(r) => { set('date_from', r.from); set('date_to', r.to); }} />
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
               {[['Today', today, today], ['Week', daysAgo(6), today], ['Month', daysAgo(29), today]].map(([label, from, to]) => {
                 const active = local.date_from === from && local.date_to === to;
@@ -2034,7 +2042,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (filters.disqualify_reason) url += `&disqualify_reason=${filters.disqualify_reason}`;
     if (filters.date_from)     url += `&date_from=${filters.date_from}`;
     if (filters.date_to)       url += `&date_to=${filters.date_to}`;
-    if (filters.date_basis && (filters.date_from || filters.date_to)) url += `&date_basis=${filters.date_basis}`;
+    if (canPickBasis(user) && filters.date_basis && (filters.date_from || filters.date_to)) url += `&date_basis=${filters.date_basis}`;
     if (filters.is_duplicate)  url += `&is_duplicate=true`;
     if (filters.unassigned)    url += `&unassigned=true`;
     if (adminView)             url += `&admin_view=1`;
