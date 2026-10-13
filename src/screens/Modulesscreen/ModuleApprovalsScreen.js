@@ -17,6 +17,7 @@ import { unitLabel } from '../../lib/bookingUnit';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
+import PeriodFilter, { inRange } from '../../components/PeriodFilter';
 import { errText } from '../../lib/apiError';
 const TEAL = COLORS.success;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -137,6 +138,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const [projSel, setProjSel] = useState([]);   // [] = every project
   const proj = projSel.join(', ');   // the picks, for the labels below
   const [stmSel, setStmSel] = useState([]);   // [] = every STM
+  const [range, setRange] = useState({ from: '', to: '' });   // booking-date period (PeriodFilter)
   const stm = stmSel.join(', ');   // the picks, for the labels below
   const [open, setOpen] = useState({});
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
@@ -221,11 +223,11 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const projName = (b) => b.project_name || '—';
   const stmOptions = [...new Set(tabRows.map(stmName))].sort((a, b) => a.localeCompare(b));
   const projOptions = [...new Set(tabRows.map(projName))].sort((a, b) => a.localeCompare(b));
-  const narrowed = !!ql || !!stm || !!proj;
+  const narrowed = !!ql || !!stm || !!proj || !!(range.from || range.to);
 
   const groups = {};
   tabRows
-    .filter((b) => matches(b) && (!stmSel.length || stmSel.includes(stmName(b))) && (!projSel.length || projSel.includes(projName(b))))
+    .filter((b) => matches(b) && inRange(b.booking_date, range) && (!stmSel.length || stmSel.includes(stmName(b))) && (!projSel.length || projSel.includes(projName(b))))
     .forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
   // Rejected and Approved sort by when that Accounts action happened; the two awaiting
@@ -277,6 +279,8 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
           style={{ height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5,
             borderColor: COLORS.border, backgroundColor: COLORS.surface, fontSize: 13,
             color: TEXT, marginBottom: 10 }} />
+
+        <PeriodFilter value={range} onChange={(r) => { setRange(r); setOpen({}); }} anyLabel="Any booking date" />
 
         {(projOptions.length > 1 || stmOptions.length > 1) && (
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
