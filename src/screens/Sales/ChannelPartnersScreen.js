@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
-import { SALES_ENDPOINTS } from '../../constants/api';
+import { SALES_ENDPOINTS, ACTIVITY_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import AppLoader from '../../components/AppLoader';
@@ -82,7 +82,36 @@ function Fld({ label, value, onChange, placeholder, keyboardType }) {
 
 // Add / edit one partner. The same required fields the web form enforces (name and
 // contact number), so a record created here is valid on both sides.
+// A partner's History tab: their own entries in the activity log, newest first —
+// like a lead's History. Mirrors the web's PartnerHistory.
+function PartnerHistory({ partnerId, companyId }) {
+  const [rows, setRows] = useState(null);
+  React.useEffect(() => {
+    let dead = false;
+    const q = `?target_type=channel-partner&target_id=${partnerId}${companyId ? `&company_id=${companyId}` : ''}`;
+    apiFetch(ACTIVITY_ENDPOINTS.log + q).then((r) => (r.ok ? r.json() : { results: [] }))
+      .then((d) => { if (!dead) setRows(d.results || []); }).catch(() => { if (!dead) setRows([]); });
+    return () => { dead = true; };
+  }, [partnerId, companyId]);
+  if (!rows) return <AppLoader />;
+  if (!rows.length) return <Text style={st.histEmpty}>No changes recorded yet.</Text>;
+  return rows.map((r) => (
+    <View key={r.id} style={st.histRow}>
+      <View style={st.histDot}><Ionicons name={r.action === 'created' ? 'add' : r.action === 'deleted' ? 'trash-outline' : 'create-outline'} size={14} color={BLUE} /></View>
+      <View style={st.histBody}>
+        <Text style={st.histTitle}>{r.summary}</Text>
+        {(r.changes || []).map((c, i) => (
+          <Text key={i} style={st.histChange}>{c.field}: {c.from || '—'} → {c.to || '—'}</Text>
+        ))}
+        <Text style={st.histMeta}>{r.actor?.name || 'System'} · {new Date(r.at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
+      </View>
+    </View>
+  ));
+}
+
 function PartnerForm({ visible, initial, companyId, onClose, onSaved, onRemove }) {
+  const [tab, setTab] = useState('detail');
+  React.useEffect(() => { if (visible) setTab('detail'); }, [visible, initial?.id]);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -169,6 +198,18 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved, onRemove }
             </View>
             <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={TEXT} /></TouchableOpacity>
           </View>
+          {isEdit && (
+            <View style={st.tabs}>
+              {[['detail', 'Detail'], ['history', 'History']].map(([k, label]) => (
+                <TouchableOpacity key={k} onPress={() => setTab(k)} style={StyleSheet.compose(st.tab, tab === k && st.tabOn)}>
+                  <Text style={StyleSheet.compose(st.tabText, tab === k && st.tabTextOn)}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          {tab === 'history' && isEdit ? (
+            <ScrollView contentContainerStyle={st.histWrap}><PartnerHistory partnerId={initial.id} companyId={companyId} /></ScrollView>
+          ) : (
           <ScrollView contentContainerStyle={{ padding: 18 }} keyboardShouldPersistTaps="handled">
             <Fld label="CP NAME *" value={form.name} onChange={(v) => set('name', v)} placeholder="e.g. Ramesh Shah" />
             <Fld label="CONTACT NO *" value={form.contact_no} onChange={(v) => set('contact_no', v)}
@@ -227,6 +268,7 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved, onRemove }
               </TouchableOpacity>
             )}
           </ScrollView>
+          )}
         </View>
       </View>
     </Modal>
@@ -417,6 +459,19 @@ const st = StyleSheet.create({
   activityText: { fontSize: 12.5, fontWeight: '700', color: BLUE },
   formRemove: { marginTop: 10, paddingVertical: 12, alignItems: 'center', borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.error2, backgroundColor: COLORS.errorBg },
   headText: { flex: 1 },
+  tabs: { flexDirection: 'row', gap: 4, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt },
+  tab: { paddingVertical: 11, paddingHorizontal: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabOn: { borderBottomColor: BLUE },
+  tabText: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
+  tabTextOn: { color: BLUE },
+  histWrap: { padding: 18, paddingBottom: 30 },
+  histEmpty: { fontSize: 13, color: COLORS.textTertiary, textAlign: 'center', marginTop: 20 },
+  histRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  histDot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.linkBg },
+  histBody: { flex: 1 },
+  histTitle: { fontSize: 13, fontWeight: '700', color: TEXT },
+  histChange: { fontSize: 12, color: COLORS.textSecondary, marginTop: 3 },
+  histMeta: { fontSize: 11, color: COLORS.textTertiary, marginTop: 4 },
   headTitle: { fontSize: 16, fontWeight: '800', color: TEXT },
   headSub: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
   removeText: { fontSize: 13, fontWeight: '700', color: COLORS.error },
