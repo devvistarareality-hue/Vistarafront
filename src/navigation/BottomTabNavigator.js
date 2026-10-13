@@ -8,6 +8,7 @@ import { COLORS } from '../constants/theme';
 import HomeScreen from '../screens/Dashboardscreen/Homescreen/Homescreen';
 import ModulesScreen from '../screens/Modulesscreen/ModulesScreen';
 import SalesCRMScreen from '../screens/Sales/SalesCRMScreen';
+import AskNexoraScreen from '../screens/Sales/AskNexoraScreen';
 import NotificationsScreen from '../screens/Sales/NotificationsScreen';
 import SalesLeadsScreen from '../screens/Sales/SalesLeadsScreen';
 import SalesFollowUpsScreen from '../screens/Sales/SalesFollowUpsScreen';
@@ -90,6 +91,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="TaskDashboard" component={TaskDashboardScreen} />
       <ModulesStack.Screen name="TaskList" component={TaskListScreen} />
       <ModulesStack.Screen name="ActivityLog" component={ActivityLogScreen} />
+      <ModulesStack.Screen name="AskNexora" component={AskNexoraScreen} />
       <ModulesStack.Screen name="DataBackup" component={DataBackupScreen} />
     </ModulesStack.Navigator>
   );

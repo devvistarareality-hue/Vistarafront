@@ -229,6 +229,7 @@ const AppNavigator = () => {
             <Stack.Screen name="LeaveApprovals" component={LeaveApprovalsScreen} options={{ animation: 'none' }} />
             <Stack.Screen name="RequestLeave"  component={RequestLeaveScreen} />
             <Stack.Screen name="Placeholder"   component={PlaceholderScreen} />
+            <Stack.Screen name="AskNexora"     component={AskNexoraScreen} />
           </>
         )}
 
