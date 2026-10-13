@@ -11,6 +11,13 @@ import common from '../../styles/common';
 import { explainApiError } from '../../lib/apiError';
 import { downloadExcel } from '../../utils/downloadExcel';
 
+// Voice typing (expo-speech-recognition): the phone's own speech service. Loaded
+// defensively so a build without the native module (Expo Go) still opens the
+// screen — the mic is simply not shown there. Mirrors the web's browser mic.
+let Speech = null;
+try { Speech = require('expo-speech-recognition'); } catch (e) { Speech = null; }
+const useSpeechEvent = Speech?.useSpeechRecognitionEvent || (() => {});
+
 // Ask Nexora — the AI assistant (mirrors the web's components/AskNexora; backend
 // sales/assistant.py). Ask in plain words; the server works out which module the
 // question is about and answers from what this person can see. Opened from the Home
@@ -97,6 +104,26 @@ export default function AskNexoraScreen({ navigation, route }) {
   const [turns, setTurns] = useState([]);    // [{ q, a?, err?, busy? }]
   const [text, setText] = useState('');
   const [chatId, setChatId] = useState(null);   // the saved conversation these turns belong to
+  const [listening, setListening] = useState(false);
+  const voiceBase = useRef('');
+  useSpeechEvent('result', (e) => {
+    const said = e?.results?.[0]?.transcript || '';
+    setText(voiceBase.current + said);
+  });
+  useSpeechEvent('end', () => setListening(false));
+  useSpeechEvent('error', (e) => {
+    setListening(false);
+    if (e?.error === 'not-allowed') Alert.alert('Microphone', 'Allow the microphone for Nexora to use voice typing.');
+  });
+  async function toggleVoice() {
+    if (!Speech) return;
+    if (listening) { Speech.ExpoSpeechRecognitionModule.stop(); return; }
+    const perm = await Speech.ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!perm.granted) { Alert.alert('Microphone', 'Allow the microphone for Nexora to use voice typing.'); return; }
+    voiceBase.current = text ? text.replace(/\s*$/, ' ') : '';
+    Speech.ExpoSpeechRecognitionModule.start({ lang: 'en-IN', interimResults: true, continuous: false });
+    setListening(true);
+  }
   const [chats, setChats] = useState(null);     // History list when open, else null
   const busy = turns.some((t) => t.busy);
 
@@ -237,7 +264,12 @@ export default function AskNexoraScreen({ navigation, route }) {
         </ScrollView>
         <View style={s.inputRow}>
           <TextInput style={s.input} value={text} onChangeText={setText} editable={!busy} multiline
-            placeholder="Ask a question…" placeholderTextColor={COLORS.textTertiary} />
+            placeholder={listening ? 'Listening… speak your question' : 'Ask a question…'} placeholderTextColor={COLORS.textTertiary} />
+          {Speech ? (
+            <TouchableOpacity style={StyleSheet.compose(s.mic, listening && s.micOn)} onPress={toggleVoice} disabled={busy}>
+              <Ionicons name={listening ? 'mic-off' : 'mic-outline'} size={19} color={listening ? COLORS.error : COLORS.link} />
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity style={StyleSheet.compose(s.send, (busy || !text.trim()) && s.sendOff)}
             onPress={() => ask(text)} disabled={busy || !text.trim()}>
             <Ionicons name="send" size={18} color={COLORS.link} />
@@ -287,6 +319,9 @@ const s = StyleSheet.create({
   send: { width: 46, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
           backgroundColor: COLORS.accentSoft, borderWidth: 1, borderColor: COLORS.link },
   sendOff: { opacity: 0.4 },
+  mic: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+         borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  micOn: { borderColor: COLORS.error, backgroundColor: COLORS.errorBg },
   headBtn: { padding: 6 },
   histTitle: { fontSize: 11, fontWeight: '700', color: COLORS.textTertiary, letterSpacing: 1, marginBottom: 8 },
   histRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
