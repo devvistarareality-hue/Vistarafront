@@ -482,7 +482,10 @@ export default function SalesSiteVisitsScreen({ navigation, route }) {
                 )}
               </View>
               <Text style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>{sv.lead_phone || ''}{sv.project_name ? ` · ${sv.project_name}` : ''}</Text>
-              {!!sv.referred_by_telecaller_name && <Text style={{ fontSize: 11, color: COLORS.textTertiary || MUTED, marginTop: 2 }}>via TC: {sv.referred_by_telecaller_name}</Text>}
+              {/* Who is working the visit: the STM, and the telecaller who set it up. */}
+              <Text style={svPeople.line}>
+                STM: <Text style={svPeople.name}>{sv.stm_name || '—'}</Text>{'   '}Telecaller: <Text style={svPeople.name}>{sv.referred_by_telecaller_name || '—'}</Text>
+              </Text>
               <Text style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>Scheduled: {fmtDateTime(sv.scheduled_at)}</Text>
               {!!sv.visited_at && <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Visited: {fmtDateTime(sv.visited_at)}</Text>}
               {!!sv.remarks && <Text style={{ fontSize: 12, color: MUTED, marginTop: 6, fontStyle: 'italic' }}>"{sv.remarks}"</Text>}
@@ -801,4 +804,9 @@ const cpHead = StyleSheet.create({
 const exportS = StyleSheet.create({
   note: { marginHorizontal: 16, marginTop: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
           backgroundColor: COLORS.successBg, color: COLORS.success, fontSize: 12.5, fontWeight: '700' },
+});
+
+const svPeople = StyleSheet.create({
+  line: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
+  name: { fontWeight: '700', color: COLORS.textPrimary },
 });
