@@ -49,6 +49,14 @@ const GUJARAT_CITIES = [
 const EMPTY = { name: '', contact_no: '', firm_name: '', category: 'normal',
                 segment: '', city: '', area: '', is_active: true };
 
+// Date only: the time a partner was keyed in is noise, the day is the fact.
+function fmtAdded(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 function Badge({ category }) {
   const c = CATEGORY_COLOR[category] || { bg: COLORS.surfaceAlt, color: MUTED };
   const label = CATEGORY_OPTIONS.find((o) => o.value === category)?.label || category || '—';
@@ -275,6 +283,10 @@ export function ChannelPartnerDirectory({ companyId }) {
         {[SEGMENT_OPTIONS.find((o) => o.value === cp.segment)?.label, cp.city, cp.area]
           .filter((v) => v && v !== '— Select —').join(' · ') || '—'}
       </Text>
+      {/* When the partnership started. The Add form can backdate this, so it is
+          not always the row's creation timestamp. */}
+      {!!cp.created_at && <Text style={st.added}>Added {fmtAdded(cp.created_at)}</Text>}
+
       <View style={st.actions}>
         <TouchableOpacity onPress={() => setActivity(cp)} style={st.activityBtn}>
           <Ionicons name="calendar-outline" size={14} color={BLUE} />
@@ -394,6 +406,7 @@ const st = StyleSheet.create({
   inactiveText: { fontSize: 11, fontWeight: '700', color: MUTED },
   line1: { fontSize: 13, color: MUTED, marginTop: 3 },
   line2: { fontSize: 12, color: MUTED, marginTop: 2 },
+  added: { fontSize: 11.5, color: COLORS.textTertiary, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' },
   activityBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7,
                  borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border,
