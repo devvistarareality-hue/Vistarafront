@@ -207,7 +207,7 @@ export default function AskNexoraScreen({ navigation, route }) {
           <TouchableOpacity onPress={newChat}><Text style={s.newChat}>New chat</Text></TouchableOpacity>
         ) : null}
       </View>
-      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
+      <KeyboardAvoidingView style={s.flex} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
         <ScrollView ref={scroll} contentContainerStyle={s.body}
           onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
           {chats ? (

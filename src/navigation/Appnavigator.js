@@ -3,6 +3,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { COLORS } from '../constants/theme';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { navigationRef } from './navigationRef';
+import AskNexoraFab from '../components/AskNexoraFab';
 import { useSelector } from 'react-redux';
 
 // Auth screens
@@ -112,9 +113,13 @@ const AppNavigator = () => {
   const isVRLAdmin  = user?.role === 'Admin' && user?.company_code === 'VRL' && !_isModuleAdmin;
   // Kiosk device — client-facing self-booking only, no other screens.
   const isKiosk     = user?.role === 'Kiosk';
+  const [routeName, setRouteName] = React.useState(null);
 
   return (
-    <NavigationContainer ref={navigationRef} theme={NAV_THEME}>
+    <>
+    <NavigationContainer ref={navigationRef} theme={NAV_THEME}
+      onReady={() => setRouteName(navigationRef.getCurrentRoute()?.name)}
+      onStateChange={() => setRouteName(navigationRef.getCurrentRoute()?.name)}>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right', freezeOnBlur: true, contentStyle: { backgroundColor: 'transparent' } }}>
 
         {!user ? (
@@ -235,6 +240,9 @@ const AppNavigator = () => {
 
       </Stack.Navigator>
     </NavigationContainer>
+    {/* Ask Nexora on every screen, like the website (hidden where it would be in the way). */}
+    <AskNexoraFab routeName={routeName} />
+    </>
   );
 };
 
