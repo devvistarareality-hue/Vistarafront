@@ -23,6 +23,8 @@ import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import { onlyPresent } from '../../lib/presentOptions';
 import { errText } from '../../lib/apiError';
+import PeriodFilter from '../../components/PeriodFilter';
+import FilterSelect from '../../components/FilterSelect';
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -1206,6 +1208,13 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
+  // Match the web: the dashboard narrows by investment date, payout frequency and who
+  // added the investor, and its renewal / maturity tiles open the rows they counted.
+  const [range, setRange] = useState({ from: '', to: '' });
+  const [payoutFilter, setPayoutFilter] = useState('');
+  const [addedByFilter, setAddedByFilter] = useState('');
+  const [bucket, setBucket] = useState(route?.params?.bucket || '');
+  React.useEffect(() => { if (route?.params?.bucket !== undefined) setBucket(route.params.bucket || ''); }, [route?.params?.bucket]);
   // Only the values these rows hold (?facets=1), as on the web — see lib/presentOptions.
   const [facets, setFacets] = useState(null);
   useEffect(() => {
@@ -1240,6 +1249,11 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       const params = new URLSearchParams();
       if (statusFilter) params.set('status', statusFilter);
       if (search) params.set('search', search);
+      if (bucket) params.set('bucket', bucket);
+      if (payoutFilter) params.set('interest_payout', payoutFilter);
+      if (addedByFilter) params.set('added_by', addedByFilter);
+      if (range.from) params.set('date_from', range.from);
+      if (range.to) params.set('date_to', range.to);
       // The approved portfolio only — pending/rejected submissions live on the
       // dedicated Investor Approvals screen (managers) until they're actioned.
       params.set('approval_status', 'approved');
@@ -1253,7 +1267,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     setLoading(false); setRefreshing(false);
   }
 
-  useFocusEffect(React.useCallback(() => { load(); }, [statusFilter, search]));
+  useFocusEffect(React.useCallback(() => { load(); },
+    [statusFilter, search, bucket, payoutFilter, addedByFilter, range.from, range.to]));
 
   function redeem(id) {
     Alert.alert('Redeem investment?', 'This applies the premature-redemption rate for the elapsed period.', [
@@ -1337,6 +1352,26 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {/* Date, payout and added-by — like the website (and a tile's bucket, removable). */}
+      <View style={invF.wrap}>
+        {!!bucket && (
+          <TouchableOpacity style={invF.bucket} onPress={() => setBucket('')}>
+            <Text style={invF.bucketText}>{bucket === 'due_for_renewal' ? 'Due for renewal' : 'Maturing in 30 days'}</Text>
+            <Ionicons name="close" size={14} color={COLORS.warning} />
+          </TouchableOpacity>
+        )}
+        <PeriodFilter value={range} onChange={setRange} anyLabel="Any investment date" />
+        <View style={invF.row}>
+          <FilterSelect label="All payouts" value={payoutFilter} onChange={setPayoutFilter} style={invF.cell}
+            options={[{ value: '', label: 'All payouts' }, ...[['quarterly', 'Quarterly'], ['monthly', 'Monthly'], ['yearly', 'Yearly'], ['maturity', 'At maturity']]
+              .filter(([v]) => !facets?.payouts || facets.payouts.includes(v) || payoutFilter === v).map(([v, l]) => ({ value: v, label: l }))]} />
+          {(facets?.added_by || []).length > 1 && (
+            <FilterSelect label="Added by anyone" value={addedByFilter} onChange={setAddedByFilter} style={invF.cell}
+              options={[{ value: '', label: 'Added by anyone' }, ...facets.added_by.map((a) => ({ value: a.id, label: a.name }))]} />
+          )}
+        </View>
+      </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
@@ -1439,4 +1474,13 @@ const ClubInvestorsScreenS = StyleSheet.create({
   rowBtnPurple: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.purpleBg },
   rowBtnPurpleText: { fontSize: 11, fontWeight: '700', color: COLORS.purple },
   box5: { color: COLORS.btnText, fontSize: 15, fontWeight: '800' },
+});
+
+const invF = StyleSheet.create({
+  wrap: { paddingHorizontal: 16, paddingTop: 10 },
+  row: { flexDirection: 'row', gap: 8 },
+  cell: { flex: 1, justifyContent: 'space-between' },
+  bucket: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginBottom: 8, paddingHorizontal: 12,
+            paddingVertical: 6, borderRadius: 16, borderWidth: 1.5, borderColor: COLORS.warning, backgroundColor: COLORS.warningBg },
+  bucketText: { fontSize: 12, fontWeight: '700', color: COLORS.warning },
 });
