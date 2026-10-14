@@ -238,7 +238,7 @@ function fmtDateTime(iso) {
 
 /* ── Lead Detail Modal ── */
 // The words for a status in the edit form: a closed lead reads as its booking's stage (as on the web).
-const statusWords = (s, stage) => (s === 'closed' && CLOSED_STAGE[stage] ? CLOSED_STAGE[stage].label.toLowerCase() : (s || '').replace(/_/g, ' '));
+const statusWords = (s, stage) => (s === 'closed' && CLOSED_STAGE[stage] ? `closed · ${CLOSED_STAGE[stage].label.toLowerCase()}` : (s || '').replace(/_/g, ' '));
 
 function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated, navigation }) {
   const leadStage = lead?.closed_stage || null;
