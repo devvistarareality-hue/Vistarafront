@@ -1602,7 +1602,7 @@ function CreateLeadModal({ projects, sources, telecallers = [], stms = [], cps =
   );
 }
 
-const EMPTY_FILTERS = { status: '', project_id: [], source_id: '', channel_partner_id: '', campaign: '', telecaller_id: [], stm_id: [], tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', date_basis: '', is_duplicate: false, unassigned: false };
+const EMPTY_FILTERS = { status: '', project_id: [], source_id: '', channel_partner_id: '', campaign: '', telecaller_id: [], stm_id: [], tc_status: '', stm_status: '', disqualify_reason: '', date_from: '', date_to: '', date_basis: '', closed_stage: '', is_duplicate: false, unassigned: false };
 // Project / telecaller / STM filters hold several ids; older callers may pass one.
 const asList = (v) => (Array.isArray(v) ? v : (v === '' || v == null ? [] : [String(v)]));
 // A filter counts as set when it has a value — an empty list is not one.
@@ -1811,6 +1811,18 @@ function FilterSheet({ visible, onClose, filters, setFilters, projects, sources,
             <DropdownPicker value={local.stm_status} onChange={v => set('stm_status', v)}
               options={[{ value: '', label: isCp ? 'All CP Statuses' : 'All STM Statuses' }, ...onlyPresent(STM_STATUSES, fx('stm_statuses'), local.stm_status).map(s => ({ value: s, label: s.replace(/_/g,' ') })), { value: 'not_updated', label: 'not updated by STM' }]}
               placeholder={isCp ? 'All CP Statuses' : 'All STM Statuses'} />
+          </View>
+          )}
+
+          {/* A closed lead's booking stage — once a status says closed (as on the web). */}
+          {(local.status === 'closed' || local.stm_status === 'closed') && (
+          <View>
+            <Text style={fsLbl}>BOOKING STAGE</Text>
+            <DropdownPicker value={local.closed_stage || ''} onChange={v => set('closed_stage', v)}
+              options={[{ value: '', label: 'Any booking stage' }, { value: 'booking_pending', label: 'Booking pending' },
+                { value: 'booked', label: 'Booked' }, { value: 'booking_rejected', label: 'Booking rejected' },
+                { value: 'booking_cancelled', label: 'Booking cancelled' }]}
+              placeholder="Any booking stage" />
           </View>
           )}
 
@@ -2062,6 +2074,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
     if (filters.disqualify_reason) url += `&disqualify_reason=${filters.disqualify_reason}`;
     if (filters.date_from)     url += `&date_from=${filters.date_from}`;
     if (filters.date_to)       url += `&date_to=${filters.date_to}`;
+    if (filters.closed_stage && (filters.status === 'closed' || filters.stm_status === 'closed')) url += `&closed_stage=${filters.closed_stage}`;
     if (canPickBasis(user) && filters.date_basis && (filters.date_from || filters.date_to)) url += `&date_basis=${filters.date_basis}`;
     if (filters.is_duplicate)  url += `&is_duplicate=true`;
     if (filters.unassigned)    url += `&unassigned=true`;
