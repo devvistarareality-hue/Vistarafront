@@ -35,7 +35,8 @@ export default function ImpersonationBanner() {
   const exit = () => {
     Alert.alert('Exit', `Return to your own account (${admin.name || admin.user_code})?`, [
       { text: 'Stay', style: 'cancel' },
-      { text: 'Exit', onPress: () => dispatch(stopImpersonation()) },
+      // Hide the bar at once (a second tap can't start a second Exit), then switch back.
+      { text: 'Exit', onPress: () => { setAdmin(null); dispatch(stopImpersonation()); } },
     ]);
   };
 

@@ -12,6 +12,7 @@ import { USER_ENDPOINTS } from '../constants/api';
 import { apiFetch } from '../utils/apiFetch';
 import { LOGIN_SUCCESS } from '../redux/types/authTypes';
 import { errText } from './apiError';
+import { loadUser } from '../redux/actions/authActions';
 
 const OWN = ['access_token', 'refresh_token', 'user'];
 const key = (k) => `admin_${k}`;
@@ -22,7 +23,7 @@ export async function impersonating() {
   catch { return null; }
 }
 
-export const startImpersonation = (userId) => async (dispatch) => {
+export const startImpersonation = (userId) => async (dispatch, getState) => {
   const res = await apiFetch(USER_ENDPOINTS.impersonate, {
     method: 'POST',
     body: JSON.stringify({ user_id: userId, platform: 'app' }),
@@ -30,30 +31,41 @@ export const startImpersonation = (userId) => async (dispatch) => {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(errText(data, 'Could not open that user’s view.'));
 
-  for (const k of OWN) {
-    const v = await AsyncStorage.getItem(k);
-    if (v !== null) await AsyncStorage.setItem(key(k), v);
-    else await AsyncStorage.removeItem(key(k));
-  }
+  // Set the admin's own session aside. Their profile comes from the store: a normal
+  // login keeps it in redux (and `cached_user`), never under a `user` key, so reading
+  // that key stashed nothing and Exit had no one to switch back to.
+  const me = getState()?.auth?.user;
+  const [access, refresh] = await Promise.all([AsyncStorage.getItem('access_token'), AsyncStorage.getItem('refresh_token')]);
+  await AsyncStorage.multiSet([
+    [key('access_token'), access || ''], [key('refresh_token'), refresh || ''],
+    [key('user'), me ? JSON.stringify(me) : ''],
+  ]);
 
-  await AsyncStorage.setItem('access_token',  data.tokens.access);
-  await AsyncStorage.setItem('refresh_token', data.tokens.refresh);
-  await AsyncStorage.setItem('user', JSON.stringify(data.user));
-  await AsyncStorage.setItem('impersonated_by', JSON.stringify(data.impersonated_by));
+  await AsyncStorage.multiSet([
+    ['access_token', data.tokens.access], ['refresh_token', data.tokens.refresh],
+    ['impersonated_by', JSON.stringify(data.impersonated_by)],
+  ]);
   dispatch({ type: LOGIN_SUCCESS, payload: data.user });
   return data;
 };
 
 /** Put the admin back in their own account. */
 export const stopImpersonation = () => async (dispatch) => {
+  const [[, access], [, refresh], [, rawUser]] = await AsyncStorage.multiGet(
+    [key('access_token'), key('refresh_token'), key('user')]);
+  await AsyncStorage.multiRemove(['impersonated_by', key('access_token'), key('refresh_token'), key('user')]);
+
+  // Nothing set aside (a session from an older build, or Exit tapped twice): never
+  // wipe the tokens in use — that is what signed the admin out. The session they are
+  // in carries on as a normal one, and the profile is re-read from the server.
+  if (!access) { dispatch(loadUser()); return null; }
+
+  await AsyncStorage.multiSet([['access_token', access], ['refresh_token', refresh || '']]);
   let own = null;
-  for (const k of OWN) {
-    const v = await AsyncStorage.getItem(key(k));
-    if (v !== null) await AsyncStorage.setItem(k, v); else await AsyncStorage.removeItem(k);
-    await AsyncStorage.removeItem(key(k));
-    if (k === 'user' && v) { try { own = JSON.parse(v); } catch {} }
-  }
-  await AsyncStorage.removeItem('impersonated_by');
+  try { own = rawUser ? JSON.parse(rawUser) : null; } catch { own = null; }
+  // Switch the screens back straight away from the saved profile; then confirm it
+  // with the server (the profile is re-read with the restored token).
   if (own) dispatch({ type: LOGIN_SUCCESS, payload: own });
+  dispatch(loadUser());
   return own;
 };
