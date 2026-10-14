@@ -26,6 +26,7 @@ async function readJson(res) {
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import UnitTypesEditor, { cleanUnitTypes } from '../../components/UnitTypesEditor';
 import FormSheet from '../../components/FormSheet';
+import PaymentPlansSheet from '../../components/PaymentPlansSheet';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
@@ -81,7 +82,7 @@ function PlotStats({ counts }) {
 }
 
 /* ─── Project Card ─── */
-function ProjectCard({ project, onEdit, onManage }) {
+function ProjectCard({ project, onEdit, onManage, onPlans }) {
   const pc = project.plot_counts || {};
   return (
     <View style={[cardStyle, { marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' }]}>
@@ -137,6 +138,10 @@ function ProjectCard({ project, onEdit, onManage }) {
         <TouchableOpacity onPress={() => onManage(project)}
           style={ProjectsScreenS.btn}>
           <Text style={{ color: COLORS.btnText, fontSize: 13, fontWeight: '700' }}>Manage Plots →</Text>
+        </TouchableOpacity>
+        {/* The installments a new booking here starts with (Direct LOI / EOI → LOI). */}
+        <TouchableOpacity onPress={() => onPlans(project)} style={ProjectsScreenS.plansBtn}>
+          <Text style={ProjectsScreenS.plansText}>Payment Plans</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -827,6 +832,8 @@ export default function ProjectsScreen() {
   const [refreshing,   setRefreshing]   = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editProject,  setEditProject]  = useState(null);
+  // The project whose Payment Plans are open, or null.
+  const [plansFor,     setPlansFor]     = useState(null);
   const navigation = require('@react-navigation/native').useNavigation();
   const companyId = useSelector((s) => s.adminFilter?.companyId);
 
@@ -895,7 +902,7 @@ export default function ProjectsScreen() {
       <FlatList
         data={projects}
         keyExtractor={p => String(p.id)}
-        renderItem={({ item }) => <ProjectCard project={item} onEdit={openEdit} onManage={openManage} />}
+        renderItem={({ item }) => <ProjectCard project={item} onEdit={openEdit} onManage={openManage} onPlans={setPlansFor} />}
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}
@@ -910,6 +917,8 @@ export default function ProjectsScreen() {
 
       <AddEditModal visible={modalVisible} project={editProject}
         onClose={() => setModalVisible(false)} onSaved={handleSaved} />
+      <PaymentPlansSheet visible={!!plansFor} project={plansFor} onClose={() => setPlansFor(null)}
+        onSaved={(d) => setProjects((prev) => prev.map((x) => (x.id === d.id ? d : x)))} />
     </SafeAreaView>
   );
 }
@@ -935,6 +944,8 @@ const ProjectsScreenS = StyleSheet.create({
   lockChipText:   { fontSize: 12.5, fontWeight: '700', color: COLORS.textSecondary },
   lockChipTextOn: { color: COLORS.warning2 },
   btn: { marginTop: 12, paddingVertical: 10, backgroundColor: COLORS.btnTint, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
+  plansBtn: { marginTop: 8, paddingVertical: 10, backgroundColor: COLORS.surface, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
+  plansText: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700' },
   header: { backgroundColor: 'transparent', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
   btn2: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.btnTint, borderRadius: 14, borderWidth: 1, borderColor: COLORS.btnBorder, opacity: 1 },
   btn2Dim: { opacity: 0.6 },
