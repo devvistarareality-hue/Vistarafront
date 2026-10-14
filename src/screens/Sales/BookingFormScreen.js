@@ -199,7 +199,7 @@ export default function BookingFormScreen({ navigation, route }) {
       const srcDisp = (n) => { if (!n) return n; if (/^referral$/i.test(n)) return 'Reference'; if (/^other$/i.test(n)) return 'Other'; return n; };
       setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: srcDisp(b.source || ''),
         area: b.area || '', area_unit: b.area_unit || 'sq.yd', const_area: b.const_area || '', villa_type: b.villa_type || '',
-        land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
+        land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(devRateOf(b)),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         sale_deed_amount: b.sale_deed_amount ? String(b.sale_deed_amount) : '',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
@@ -241,7 +241,7 @@ export default function BookingFormScreen({ navigation, route }) {
       const srcDisp = (n) => { if (!n) return n; if (/^referral$/i.test(n)) return 'Reference'; if (/^other$/i.test(n)) return 'Other'; return n; };
       setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: srcDisp(b.source || ''),
         area: b.area || '', area_unit: b.area_unit || 'sq.yd', const_area: b.const_area || '', villa_type: b.villa_type || '',
-        land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
+        land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(devRateOf(b)),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         sale_deed_amount: b.sale_deed_amount ? String(b.sale_deed_amount) : '',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
@@ -272,7 +272,7 @@ export default function BookingFormScreen({ navigation, route }) {
       const srcDisp = (n) => { if (!n) return n; if (/^referral$/i.test(n)) return 'Reference'; if (/^other$/i.test(n)) return 'Other'; return n; };
       setF((s) => ({ ...s, client_name: b.client_name || '', gender: b.gender || '', phone: b.phone || '', address: b.address || '', source: srcDisp(b.source || ''),
         area_unit: b.area_unit || s.area_unit, const_area: b.const_area || '', villa_type: b.villa_type || '',
-        land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(b.dev_agreement_rate),
+        land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(devRateOf(b)),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
         discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
@@ -529,10 +529,13 @@ export default function BookingFormScreen({ navigation, route }) {
   const kalBase = (v.plotBasic || 0) + (v.plotDev || 0) + (v.constAmt || 0) + (v.premiumLocation || 0);
   const setKalravUnitPrice = (up) => setF((s) => {
     const total = Math.max(0, Math.round(up));
+    // Keep the Land Sale Deed and the Development Agreement; the rest goes on the
+    // Construction Agreement (or, if the price is below those two, cut the LSD).
     const lsd = Math.round(Number(s.land_sale_deed) || 0);
-    return lsd <= total
-      ? { ...s, const_agreement: String(total - lsd) }
-      : { ...s, land_sale_deed: String(total), const_agreement: '0' };
+    const dev = flags.hasDevAgreementInfo ? Math.round((Number(s.dev_agreement_rate) || 0) * (Number(s.area) || 0)) : 0;
+    return lsd + dev <= total
+      ? { ...s, const_agreement: String(total - lsd - dev) }
+      : { ...s, land_sale_deed: String(Math.max(0, total - dev)), const_agreement: '0' };
   });
   useEffect(() => {
     if (!editingAmtRef.current) setDeedAmtStr(String(Math.round(v.saleDeed) || ''));
@@ -1228,8 +1231,8 @@ export default function BookingFormScreen({ navigation, route }) {
             </View>
           )}
           {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
-          {/* Kalrav's Development Agreement is shown for the record only: it is not part of
-              the Unit Price, the taxes or the total, and the LOI does not print it. */}
+          {/* Kalrav's Development Agreement is part of the Unit Price (LSD + Dev Agreement +
+              Construction Agreement); the LOI shows it inside the Unit Price, not as a line. */}
           {flags.hasDevAgreementInfo && (
             <>
               <Fld l={`Development Agreement Rate (₹/${unit})`} val={f.dev_agreement_rate} on={(t) => set('dev_agreement_rate', t)} kb="numeric" />
@@ -1276,7 +1279,7 @@ export default function BookingFormScreen({ navigation, route }) {
           ); })}
           {formulaSet === 'kalrav' && (
             <>
-              {/* Kalrav: Unit Price = Land Sale Deed + Construction Agreement, and Sale Deed % =
+              {/* Kalrav: Unit Price = Land Sale Deed + Development + Construction Agreement, and Sale Deed % =
                   Unit Price / (Plot Basic + Dev + Construction + PLC). Type either: it keeps the
                   Land Sale Deed and moves the Construction Agreement, so all three agree. */}
               <View style={BookingFormScreenS.kalField}>
@@ -1544,6 +1547,11 @@ const plcS = StyleSheet.create({
 
 // An installment's Stage (e.g. "On booking", "Plinth") is optional; the LOI prints the
 // column only when a row has one.
+// Kalrav's Development Agreement is in the Unit Price, and its rate is saved to only 2
+// decimals — so the rate is read back from the saved amount, and a revision keeps the
+// Unit Price to the rupee. Mirrors the website.
+const devRateOf = (b) => ((b.formula_set || 'kalrav') === 'kalrav' && Number(b.dev_agreement) > 0 && Number(b.area) > 0
+  ? String(Number(b.dev_agreement) / Number(b.area)) : b.dev_agreement_rate);
 const stageOf = (r) => ((r && String(r.stage || '').trim()) ? { stage: String(r.stage).trim() } : {});
 
 const Fld = ({ l, val, on, kb, ph, invalid }) => (
