@@ -237,7 +237,11 @@ function fmtDateTime(iso) {
 }
 
 /* ── Lead Detail Modal ── */
+// The words for a status in the edit form: a closed lead reads as its booking's stage (as on the web).
+const statusWords = (s, stage) => (s === 'closed' && CLOSED_STAGE[stage] ? CLOSED_STAGE[stage].label.toLowerCase() : (s || '').replace(/_/g, ' '));
+
 function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, onClose, onUpdated, navigation }) {
+  const leadStage = lead?.closed_stage || null;
   const user = useSelector((s) => s.auth.user);
   // Only admins/managers may (re)assign telecaller / STM. Telecaller & Sales Executive
   // portals can update status & remarks but cannot reassign leads.
@@ -599,14 +603,14 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                   <Text style={lblS}>Overall Status</Text>
                   {canAssign ? (
                     <PickerDropdown
-                      items={STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.label }))}
+                      items={STATUSES.filter(s => s.key !== 'all').map(s => ({ value: s.key, label: s.key === 'closed' ? statusWords('closed', leadStage) : s.label }))}
                       value={form.status} onChange={v => set('status', v)}
                       placeholder="Status" title="Overall Status" />
                   ) : (
                     // Auto-derived from the workflow — read-only for telecallers / STMs.
                     <View style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: COLORS.screenBg, marginBottom: 8 }}>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, textTransform: 'capitalize' }}>
-                        {(STATUSES.find(s => s.key === form.status)?.label) || '—'}
+                        {form.status === 'closed' ? statusWords('closed', leadStage) : ((STATUSES.find(s => s.key === form.status)?.label) || '—')}
                       </Text>
                     </View>
                   )}
@@ -694,7 +698,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
                 <View style={half}>
                   <Text style={lblS}>{_isCp ? 'CP Status' : 'STM Status'} {_isStm ? <Text style={{ color: COLORS.error }}>*</Text> : ''}</Text>
                   <PickerDropdown
-                    items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'].map(s => ({ value: s, label: s.replace(/_/g,' ') }))}
+                    items={['hot','warm','cold','not_interested','sv_scheduled','sv_done','closed','not_qualified'].map(s => ({ value: s, label: statusWords(s, leadStage) }))}
                     value={form.stm_status} onChange={v => set('stm_status', v)}
                     placeholder="Status" title={_isCp ? 'CP Status' : 'STM Status'} />
                 </View>
