@@ -29,6 +29,17 @@ const TABS = [
   { value: 'view', label: 'Dashboard' },
 ];
 
+// One plain line at the top of each tab, so it is clear what the tab decides.
+const TAB_HELP = {
+  actions: 'What they can do. For managers and directors leave the "Works …" switches off — those turn their screen into a telecaller\'s or STM\'s work queue.',
+  menu: 'Which tabs appear in their sidebar. Tap a screen to show or hide it.',
+  view: 'Which dashboard opens first, and whose leads, visits and bookings they can see.',
+};
+
+// The personal work queues. A director runs the desk rather than working a queue,
+// so "Full access" leaves these off (a CP-module title keeps the CP desk).
+const WORK_QUEUES = ['sales.pipeline.telecalling', 'sales.pipeline.stm', 'sales.pipeline.cp', 'sales.pipeline.cp_manager'];
+
 export default function PermissionsSheet({ designation, others, visible, onClose, onSaved }) {
   const [catalogue, setCatalogue] = useState(null);
   const [tab, setTab] = useState('actions');
@@ -46,10 +57,12 @@ export default function PermissionsSheet({ designation, others, visible, onClose
   const [dash, setDash] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  // Set once "Full access" has filled the form, until it is saved.
+  const [filled, setFilled] = useState(false);
 
   useEffect(() => {
     if (!visible || !designation) return;
-    setErr(''); setTab('actions');
+    setErr(''); setTab('actions'); setFilled(false);
     setCaps(designation.effective_capabilities || designation.capabilities || []);
     setScope(designation.data_scope || '');
     setScreens(designation.effective_screens || designation.screens || []);
@@ -88,6 +101,21 @@ export default function PermissionsSheet({ designation, others, visible, onClose
     setScope(sourceRow.data_scope || '');
   };
   const copyDashboard = () => { if (sourceRow) setDash(sourceRow.dashboard || ''); };
+
+  // Director / MD in one tap: every action and every menu tab of the modules this
+  // designation decides, except the work queues; the whole company's records; the
+  // dashboard their permissions imply. Nothing is saved until Save.
+  const fullAccess = () => {
+    const keepCp = own === 'Channel Partner';
+    setCaps((catalogue?.capabilities || [])
+      .filter((c) => mine.includes(c.module))
+      .filter((c) => !WORK_QUEUES.includes(c.key) || (keepCp && c.key === 'sales.pipeline.cp_manager'))
+      .map((c) => c.key));
+    setScreens((catalogue?.screens || []).filter((c) => mine.includes(c.module)).map((c) => c.key));
+    setScope('company');
+    setDash('');
+    setFilled(true);
+  };
 
   const save = async () => {
     setSaving(true); setErr('');
@@ -145,6 +173,15 @@ export default function PermissionsSheet({ designation, others, visible, onClose
 
       <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         {err ? <Text style={s.err}>{err}</Text> : null}
+        <View style={s.fullBox}>
+          <Text style={s.fullTitle}>Director / MD — full access</Text>
+          <Text style={s.fullText}>
+            Every action and menu tab, records of the whole company. Also set their Role to
+            Director in User Management and tick their modules there.
+          </Text>
+          <Button title="Give full access" size="sm" disabled={!catalogue} onPress={fullAccess} />
+          {filled ? <Text style={s.fullDone}>Filled in for full access — press Save to keep it.</Text> : null}
+        </View>
         {(others || []).length > 1 ? (
           <View style={s.copyBox}>
             <Text style={s.copyLead}>COPY FROM ANOTHER DESIGNATION</Text>
@@ -162,6 +199,7 @@ export default function PermissionsSheet({ designation, others, visible, onClose
           <Text style={s.note}>Ticked with what this title already allows today. Saving makes it explicit for this company.</Text>
         ) : null}
 
+        {catalogue ? <Text style={s.lead}>{TAB_HELP[tab]}</Text> : null}
         {!catalogue ? <Text style={s.muted}>Loading…</Text> : tab === 'actions' ? (
           <>
             <View style={s.presetRow}>
@@ -214,7 +252,6 @@ export default function PermissionsSheet({ designation, others, visible, onClose
           </>
         ) : tab === 'menu' ? (
           <>
-            <Text style={s.lead}>Tap a screen to show or hide it for this designation.</Text>
             {/* A module left off this list keeps its own default menu, so a CFO
                 granted Sales still sees the Sales sidebar. Adding it here is how
                 you take charge of it — including hiding all of it. */}
@@ -356,6 +393,11 @@ const s = StyleSheet.create({
   copyLead: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8, color: COLORS.textSecondary, marginBottom: 8 },
   copyBtns: { flexDirection: 'row', gap: 8, marginTop: 8 },
   copyHint: { fontSize: 11, color: COLORS.textTertiary, marginTop: 6 },
+  fullBox: { marginTop: 12, padding: 12, gap: 8, borderRadius: RADIUS.lg, borderWidth: 1,
+             borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
+  fullTitle: { fontSize: 13.5, fontWeight: '800', color: COLORS.textPrimary },
+  fullText: { fontSize: 11.5, lineHeight: 16, color: COLORS.textSecondary },
+  fullDone: { fontSize: 12, fontWeight: '700', color: COLORS.success },
   muted: { color: COLORS.textSecondary, fontSize: 13, paddingVertical: 14 },
   lead: { fontSize: 12.5, color: COLORS.textSecondary, marginTop: 10 },
   note: { fontSize: 12.5, lineHeight: 18, color: COLORS.link, backgroundColor: COLORS.accentSoft,
