@@ -11,7 +11,7 @@ import { Button, Segmented } from './ui';
 import { COLORS, RADIUS } from '../constants/theme';
 import { apiFetch } from '../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../constants/api';
-import { PLAN_KEYS, emptyPlan, pctTotal } from '../lib/paymentPlans';
+import { PLAN_KEYS, balance, emptyPlan, pctTotal, whenText } from '../lib/paymentPlans';
 
 const SECTIONS = [
   ['extra', 'EXTRA WORK AMOUNT INSTALLMENTS'],
@@ -42,9 +42,10 @@ export default function PaymentPlansSheet({ project, visible, onClose, onSaved }
   if (!project) return null;
   const plan = plans[tab] || emptyPlan();
   const setPlan = (fn) => setPlans((all) => ({ ...all, [tab]: fn(all[tab] || emptyPlan()) }));
-  const setRow = (sec, i, k, v) => setPlan((p) => ({ ...p, [sec]: p[sec].map((r, idx) => (idx === i ? { ...r, [k]: v } : r)) }));
-  const addRow = (sec) => setPlan((p) => ({ ...p, [sec]: [...p[sec], { pct: '', days: '', stage: '' }] }));
-  const dropRow = (sec, i) => setPlan((p) => ({ ...p, [sec]: p[sec].filter((_, idx) => idx !== i) }));
+  // The last installment takes whatever % the others leave, so a section always totals 100.
+  const setRow = (sec, i, k, v) => setPlan((p) => ({ ...p, [sec]: balance(p[sec].map((r, idx) => (idx === i ? { ...r, [k]: v } : r))) }));
+  const addRow = (sec) => setPlan((p) => ({ ...p, [sec]: balance([...p[sec], { pct: '', days: '', stage: '' }]) }));
+  const dropRow = (sec, i) => setPlan((p) => ({ ...p, [sec]: balance(p[sec].filter((_, idx) => idx !== i)) }));
   const setLegal = (k, v) => setPlan((p) => ({ ...p, legal: { ...p.legal, [k]: v } }));
   const copyDirect = () => setPlans((all) => ({ ...all, eoi: JSON.parse(JSON.stringify(all.direct || emptyPlan())) }));
 
@@ -95,7 +96,7 @@ export default function PaymentPlansSheet({ project, visible, onClose, onSaved }
       <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <Text style={s.lead}>
           {tab === 'direct' ? 'Used when an LOI is booked directly.' : 'Used when an EOI is converted to an LOI.'}
-          {' '}Days count from the booking date (0 = on the booking date). Leave a section empty to start it blank.
+          {' '}Due is in days after the booking date — 0 means on the booking date. The last installment's share fills itself so each section totals 100%.
         </Text>
         {tab === 'eoi' ? (
           <TouchableOpacity onPress={copyDirect} style={s.copy}><Text style={s.copyText}>Copy from Direct LOI</Text></TouchableOpacity>
@@ -112,19 +113,40 @@ export default function PaymentPlansSheet({ project, visible, onClose, onSaved }
                 <Text style={s.cardTitle}>{label}</Text>
                 {rows.length ? <Text style={ok ? s.totalOk : s.totalBad}>Total {total.toFixed(2)}%</Text> : null}
               </View>
-              {rows.map((r, i) => (
-                <View key={i} style={s.rowBox}>
-                  <View style={s.row}>
-                    <Text style={s.no}>{i + 1}</Text>
-                    <TextInput style={s.inSmall} keyboardType="numeric" value={r.pct} onChangeText={(t) => setRow(sec, i, 'pct', t)} placeholder="%" placeholderTextColor={COLORS.textTertiary} />
-                    <TextInput style={s.inSmall} keyboardType="numeric" value={r.days} onChangeText={(t) => setRow(sec, i, 'days', t)} placeholder="Days" placeholderTextColor={COLORS.textTertiary} />
-                    <TouchableOpacity onPress={() => dropRow(sec, i)} hitSlop={8} style={s.drop}>
-                      <Ionicons name="close" size={16} color={COLORS.textSecondary} />
-                    </TouchableOpacity>
+              {rows.length ? (
+                <View style={s.bar}><View style={StyleSheet.compose(ok ? s.barOk : s.barBad, { width: `${Math.min(100, total)}%` })} /></View> // inline-ok: share of 100% filled
+              ) : <Text style={s.empty}>No installments — the booking starts this section blank.</Text>}
+              {rows.map((r, i) => {
+                const isLast = i === rows.length - 1;
+                return (
+                  <View key={i} style={s.item}>
+                    <View style={s.itemTop}>
+                      <View style={s.no}><Text style={s.noText}>{i + 1}</Text></View>
+                      <View style={s.flex}>
+                        <Text style={s.fLabel}>SHARE{isLast ? '  · AUTO' : ''}</Text>
+                        <View style={isLast ? s.boxAuto : s.box}>
+                          <TextInput style={isLast ? s.inAuto : s.in} keyboardType="numeric" value={r.pct} editable={!isLast}
+                            onChangeText={(t) => setRow(sec, i, 'pct', t)} placeholder="0" placeholderTextColor={COLORS.textTertiary} />
+                          <Text style={s.unit}>%</Text>
+                        </View>
+                      </View>
+                      <View style={s.flex}>
+                        <Text style={s.fLabel}>DUE</Text>
+                        <View style={s.box}>
+                          <TextInput style={s.in} keyboardType="number-pad" value={r.days}
+                            onChangeText={(t) => setRow(sec, i, 'days', t.replace(/[^0-9]/g, ''))} placeholder="0" placeholderTextColor={COLORS.textTertiary} />
+                          <Text style={s.unit}>days</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity onPress={() => dropRow(sec, i)} hitSlop={8} style={s.drop}>
+                        <Ionicons name="close" size={16} color={COLORS.textSecondary} />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={s.when}>{whenText(r.days)}</Text>
+                    <TextInput style={s.inStage} value={r.stage} onChangeText={(t) => setRow(sec, i, 'stage', t)} placeholder="Stage (optional), e.g. On booking" placeholderTextColor={COLORS.textTertiary} />
                   </View>
-                  <TextInput style={s.inStage} value={r.stage} onChangeText={(t) => setRow(sec, i, 'stage', t)} placeholder="Stage (optional), e.g. On booking" placeholderTextColor={COLORS.textTertiary} />
-                </View>
-              ))}
+                );
+              })}
               <TouchableOpacity onPress={() => addRow(sec)} style={s.add}><Text style={s.addText}>+ Add installment</Text></TouchableOpacity>
             </View>
           );
@@ -132,7 +154,11 @@ export default function PaymentPlansSheet({ project, visible, onClose, onSaved }
 
         <View style={s.card}>
           <View style={s.cardHead}><Text style={s.cardTitle}>LEGAL & OTHER CHARGES</Text></View>
-          <TextInput style={s.inStage} keyboardType="numeric" value={plan.legal.days} onChangeText={(t) => setLegal('days', t)} placeholder="Days after booking (blank = no date)" placeholderTextColor={COLORS.textTertiary} />
+          <View style={s.box}>
+            <TextInput style={s.in} keyboardType="number-pad" value={plan.legal.days} onChangeText={(t) => setLegal('days', t.replace(/[^0-9]/g, ''))} placeholder="—" placeholderTextColor={COLORS.textTertiary} />
+            <Text style={s.unit}>days</Text>
+          </View>
+          <Text style={s.when}>{plan.legal.days === '' ? 'No date (sale deed or possession)' : whenText(plan.legal.days)}</Text>
           <TextInput style={s.inStage} value={plan.legal.stage} onChangeText={(t) => setLegal('stage', t)} placeholder="Stage (optional), e.g. At sale deed" placeholderTextColor={COLORS.textTertiary} />
         </View>
       </ScrollView>
@@ -166,12 +192,26 @@ const s = StyleSheet.create({
   cardTitle: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, color: COLORS.textSecondary },
   totalOk: { fontSize: 11.5, fontWeight: '800', color: COLORS.success },
   totalBad: { fontSize: 11.5, fontWeight: '800', color: COLORS.danger },
-  rowBox: { gap: 6, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  no: { width: 18, fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
-  inSmall: { ...field, flex: 1 },
+  bar: { height: 6, borderRadius: 999, backgroundColor: COLORS.surfaceAlt, overflow: 'hidden', marginBottom: 4 },
+  barOk: { height: '100%', borderRadius: 999, backgroundColor: COLORS.success },
+  barBad: { height: '100%', borderRadius: 999, backgroundColor: COLORS.danger },
+  empty: { fontSize: 12, color: COLORS.textSecondary },
+  // One installment: number · share · due · remove, then its date in words and the stage.
+  item: { gap: 6, padding: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  itemTop: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  no: { width: 26, height: 26, borderRadius: 13, marginBottom: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.accentSoft },
+  noText: { fontSize: 12, fontWeight: '800', color: COLORS.link },
+  fLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, color: COLORS.textSecondary, marginBottom: 4 },
+  box: { flexDirection: 'row', alignItems: 'center', height: 40, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md,
+         paddingHorizontal: 10, backgroundColor: COLORS.surface },
+  boxAuto: { flexDirection: 'row', alignItems: 'center', height: 40, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md,
+             paddingHorizontal: 10, backgroundColor: COLORS.accentSoft },
+  in: { flex: 1, fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, paddingVertical: 0 },
+  inAuto: { flex: 1, fontSize: 14, fontWeight: '700', color: COLORS.link, paddingVertical: 0 },
+  unit: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, marginLeft: 4 },
+  when: { fontSize: 11, fontWeight: '600', color: COLORS.link, marginLeft: 34 },
   inStage: { ...field },
-  drop: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surfaceAlt },
+  drop: { width: 30, height: 30, borderRadius: 15, marginBottom: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surfaceAlt },
   add: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1,
          borderColor: COLORS.border, backgroundColor: COLORS.surface, marginTop: 2 },
   addText: { fontSize: 12, fontWeight: '700', color: COLORS.link },
