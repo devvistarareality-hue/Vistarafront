@@ -1149,6 +1149,10 @@ function rateMasterFields(formulaSet) {
     flags.hasSaleDeedRate && { key: 'sale_deed_rate', label: 'Sale Deed Rate', unit: 'sq.ft' },
     flags.hasDevAgreement && { key: 'dev_agreement_rate', label: 'Dev Agreement Rate', unit: 'sq.ft' },
     { key: 'maint_rate', label: 'Maintenance Rate', unit: flags.areaUnit },
+    // Months and the legal charge prefill the booking form's fields of the same name.
+    // Industrial charges maintenance as Plot Area × Rate, with no months.
+    flags.hasConstructionFields && { key: 'maint_months', label: 'Maintenance Months', suffix: 'months' },
+    { key: 'legal_charges', label: 'Legal Documentation charge', suffix: '₹' },
   ].filter(Boolean);
 }
 
@@ -1191,7 +1195,7 @@ function RateMasterEditor({ project, onProjectUpdate }) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
         {fields.map((f) => (
           <View key={f.key} style={{ width: '47%' }}>
-            <Text style={plcS.rmLabel}>{f.label} ({f.unit ? `₹/${f.unit}` : '₹ per plot'})</Text>
+            <Text style={plcS.rmLabel}>{f.label} ({f.suffix || (f.unit ? `₹/${f.unit}` : '₹ per plot')})</Text>
             <TextInput value={String(form[f.key] ?? '')} onChangeText={(v) => setForm((s) => ({ ...s, [f.key]: v }))}
               keyboardType="numeric" placeholder="Not set" placeholderTextColor={COLORS.textTertiary}
               style={{ height: 38, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border, fontSize: 13, color: TEXT, backgroundColor: COLORS.surface }} />
