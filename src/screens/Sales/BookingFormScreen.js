@@ -1265,6 +1265,35 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasConstructionFields && <Fld l={`Construction Rate (₹/${unit})`} val={f.const_rate} on={(t) => set('const_rate', t)} kb="numeric" />}
           {flags.hasSaleDeedRate && <Fld l="Sale Deed Rate (₹/sq.ft)" val={f.sale_deed_rate} on={(t) => set('sale_deed_rate', t)} kb="numeric" />}
           {flags.hasDevAgreement && <Fld l="Dev Agreement Rate (₹/sq.ft)" val={f.dev_agreement_rate} on={(t) => set('dev_agreement_rate', t)} kb="numeric" />}
+          {/* PLC: ticked from the plot's Corner / Common Plot Facing marks in Manage
+              Plots — read-only here, so a charge can't be added to or dropped from a plot
+              that isn't marked. The amount comes from the project's Rate Master, also
+              read-only here. */}
+          {flags.hasPlcFixed && plcBothOnly ? (
+            <View>
+              <View style={plcS.row}>
+                <View style={plcS.boxOn}><Ionicons name="checkmark" size={14} color={COLORS.white} /></View>
+                <Text style={plcS.label}>PLC — Corner + Common Plot Facing</Text>
+              </View>
+              <Text style={plcS.amount}>{plcBothVal ? rupee(plcBothVal) : 'Set in the Rate Master'}</Text>
+            </View>
+          ) : null}
+          {/* Only the PLC that applies to the plot is shown — no unticked line for the other. */}
+          {flags.hasPlcFixed && !plcBothOnly && PLC_KINDS.filter(([k]) => f[`plc_${k}_on`]).map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
+            <View key={k}>
+              <View style={plcS.row}>
+                <View style={on ? plcS.boxOn : plcS.box}>
+                  {on ? <Ionicons name="checkmark" size={14} color={COLORS.white} /> : null}
+                </View>
+                <Text style={plcS.label}>PLC — {label}</Text>
+              </View>
+              {on ? <Text style={plcS.amount}>{Number(f[`plc_${k}`]) ? rupee(f[`plc_${k}`]) : 'Set in the Rate Master'}</Text> : null}
+            </View>
+          ); })}
+          {/* Kalrav: the three agreement parts, the Sale Deed % and the Unit Price, in one
+              box — together they make up the Loan Amount. Mirrors the website. */}
+          <View style={isKal ? BookingFormScreenS.loanBox : null}>
+          {isKal ? <Text style={BookingFormScreenS.loanTitle}>LOAN AMOUNT</Text> : null}
           {flags.hasLsdRate && (
             <View style={BookingFormScreenS.kalField}>
               <Text style={BookingFormScreenS.kalLabel}>{`Land Sale Deed Rate (₹/${unit})`}</Text>
@@ -1298,31 +1327,6 @@ export default function BookingFormScreen({ navigation, route }) {
           )}
           {flags.hasConstructionAgreement && <Fld l={kalLabel('Construction Agreement (₹)', 'cag')} val={f.const_agreement} on={(t) => (isKal ? setKalPart('cag', t) : set('const_agreement', t))} kb="numeric" />}
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
-          {/* PLC: ticked from the plot's Corner / Common Plot Facing marks in Manage
-              Plots — read-only here, so a charge can't be added to or dropped from a plot
-              that isn't marked. The amount comes from the project's Rate Master, also
-              read-only here. */}
-          {flags.hasPlcFixed && plcBothOnly ? (
-            <View>
-              <View style={plcS.row}>
-                <View style={plcS.boxOn}><Ionicons name="checkmark" size={14} color={COLORS.white} /></View>
-                <Text style={plcS.label}>PLC — Corner + Common Plot Facing</Text>
-              </View>
-              <Text style={plcS.amount}>{plcBothVal ? rupee(plcBothVal) : 'Set in the Rate Master'}</Text>
-            </View>
-          ) : null}
-          {/* Only the PLC that applies to the plot is shown — no unticked line for the other. */}
-          {flags.hasPlcFixed && !plcBothOnly && PLC_KINDS.filter(([k]) => f[`plc_${k}_on`]).map(([k, label]) => { const on = !!f[`plc_${k}_on`]; return (
-            <View key={k}>
-              <View style={plcS.row}>
-                <View style={on ? plcS.boxOn : plcS.box}>
-                  {on ? <Ionicons name="checkmark" size={14} color={COLORS.white} /> : null}
-                </View>
-                <Text style={plcS.label}>PLC — {label}</Text>
-              </View>
-              {on ? <Text style={plcS.amount}>{Number(f[`plc_${k}`]) ? rupee(f[`plc_${k}`]) : 'Set in the Rate Master'}</Text> : null}
-            </View>
-          ); })}
           {formulaSet === 'kalrav' && (
             <>
               {/* Kalrav: Unit Price = Land Sale Deed + Development + Construction Agreement, and Sale Deed % =
@@ -1346,6 +1350,7 @@ export default function BookingFormScreen({ navigation, route }) {
               </View>
             </>
           )}
+          </View>
           {hasSaleDeedSplit && formulaSet !== 'kalrav' && (
             <>
               <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => setF((s) => ({ ...s, sale_deed_pct: t, sale_deed_amount: '' }))} kb="numeric" />
@@ -1685,6 +1690,10 @@ const Tot = ({ l, sub, sub2, val, valFmt, big, subtotal }) => (
 const BookingFormScreenS = StyleSheet.create({
   // A payment-schedule row (date · % · amount), and its optional Stage box below it.
   instRow: { flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' },
+  // Kalrav "Loan Amount" box: agreement parts, Sale Deed % and Unit Price together.
+  loanBox: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, paddingBottom: 2,
+             marginTop: 4, marginBottom: 12, backgroundColor: COLORS.surfaceAlt },
+  loanTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: COLORS.link, marginBottom: 10 },
   stageIn: { ...inpS, marginTop: 4, marginLeft: 24 },
   kalField: { marginBottom: 10 },
   kalLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 },
