@@ -576,6 +576,12 @@ export default function BookingFormScreen({ navigation, route }) {
       return withParts(s, p, key, val);
     });
   };
+  // Loan Amount box → all three parts to 0 (so the Sale Deed % and Unit Price read 0 too),
+  // and forget which were typed, so the next two filled decide the auto one again.
+  const clearLoan = () => {
+    setKalTouched([]); setRateEdit(null); setKalEdit(null);
+    setF((s) => ({ ...s, land_sale_deed: '0', const_agreement: '0', dev_agreement_rate: '0' }));
+  };
   const kalLabel = (text, k) => (isKal && kalAuto === k ? `${text} · auto` : text);
   useEffect(() => {
     if (!editingAmtRef.current) setDeedAmtStr(String(Math.round(v.saleDeed) || ''));
@@ -1293,7 +1299,14 @@ export default function BookingFormScreen({ navigation, route }) {
           {/* Kalrav: the three agreement parts, the Sale Deed % and the Unit Price, in one
               box — together they make up the Loan Amount. Mirrors the website. */}
           <View style={isKal ? BookingFormScreenS.loanBox : null}>
-          {isKal ? <Text style={BookingFormScreenS.loanTitle}>LOAN AMOUNT</Text> : null}
+          {isKal ? (
+            <View style={BookingFormScreenS.loanHead}>
+              <Text style={BookingFormScreenS.loanTitle}>LOAN AMOUNT</Text>
+              <TouchableOpacity onPress={clearLoan} hitSlop={8} style={BookingFormScreenS.loanClear}>
+                <Text style={BookingFormScreenS.loanClearText}>Clear all</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
           {flags.hasLsdRate && (
             <View style={BookingFormScreenS.kalField}>
               <Text style={BookingFormScreenS.kalLabel}>{`Land Sale Deed Rate (₹/${unit})`}</Text>
@@ -1693,7 +1706,11 @@ const BookingFormScreenS = StyleSheet.create({
   // Kalrav "Loan Amount" box: agreement parts, Sale Deed % and Unit Price together.
   loanBox: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, paddingBottom: 2,
              marginTop: 4, marginBottom: 12, backgroundColor: COLORS.surfaceAlt },
-  loanTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: COLORS.link, marginBottom: 10 },
+  loanHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  loanTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: COLORS.link },
+  loanClear: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: COLORS.border,
+               backgroundColor: COLORS.surface },
+  loanClearText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   stageIn: { ...inpS, marginTop: 4, marginLeft: 24 },
   kalField: { marginBottom: 10 },
   kalLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 },
