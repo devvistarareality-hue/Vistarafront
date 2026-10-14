@@ -239,19 +239,23 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   const unitInst = installments.filter(i => !i.isExtra && !i.isExtraWork && !i.isNsd);
   const ewcRaw = [
     ...installments.filter(i => i.isNsd),
-    ...extraWorkInst.map(r => ({ no: 'W' + r.no, date: r.date, pct: r.pct, amt: r.amt, isExtraWork: true, desc: v.extraWorkDesc })),
+    ...extraWorkInst.map(r => ({ no: 'W' + r.no, date: r.date, pct: r.pct, amt: r.amt, isExtraWork: true, desc: v.extraWorkDesc, stage: r.stage })),
   ];
   const legalInst = installments.filter(i => i.isExtra && Math.round(i.amt || 0) > 0);
-  const schedHdr = `<table class="sched"><tr><th>#</th><th>Due Date</th><th>%</th><th class="r">Amount (Rs.)</th></tr>`;
+  // A Stage column (after Amount) only when some installment has one; otherwise the
+  // schedule prints exactly as before. Mirrors the website's LOI.
+  const hasStage = [...unitInst, ...ewcRaw, ...legalInst].some((i) => String(i.stage || '').trim());
+  const stg = (i) => (hasStage ? `<td class="stg">${esc(String(i.stage || '').trim())}</td>` : '');
+  const schedHdr = `<table class="sched"><tr><th>#</th><th>Due Date</th><th>%</th><th class="r">Amount (Rs.)</th>${hasStage ? '<th>Stage</th>' : ''}</tr>`;
   const fmtSub = (n) => n % 1 === 0 ? money(n) : n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const subRow = (label, n) => `<tr class="grand"><td colspan="3">${label}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${fmtSub(n)}</span></div></td></tr>`;
+  const subRow = (label, n) => `<tr class="grand"><td colspan="3">${label}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${fmtSub(n)}</span></div></td>${hasStage ? '<td></td>' : ''}</tr>`;
 
   const NO_DATE = 'Date of Sale Deed or Possession (whichever is earlier)';
 
   let grandUnit = 0;
   const unitRows = unitInst.map(i => {
     const amt = Math.round(i.amt || 0); grandUnit += amt;
-    return `<tr><td class="no"><span class="circ">${esc(i.no)}</span></td><td>${esc(fmtDate(i.date))}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${esc(i.no)}</span></td><td>${esc(fmtDate(i.date))}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td>${stg(i)}</tr>`;
   }).join('');
 
   let grandEwc = 0;
@@ -259,17 +263,17 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
     if (i.isNsd) {
       const docAmt = (i.amt || 0) / 100; grandEwc += docAmt;
       const docStr = docAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(fmtDate(i.date))}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${docStr}</span></div></td></tr>`;
+      return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(fmtDate(i.date))}</td><td>${(i.pct || 0)}%</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${docStr}</span></div></td>${stg(i)}</tr>`;
     }
     const amt = Math.round(i.amt || 0); grandEwc += amt;
-    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(fmtDate(i.date))}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(fmtDate(i.date))}</td><td>${esc((i.desc || 'Extra Work').slice(0, 20))}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td>${stg(i)}</tr>`;
   }).join('');
 
   let grandLegal = 0;
   const legalRows = legalInst.map((i, idx) => {
     const amt = Math.round(i.amt || 0); grandLegal += amt;
     const rawDate = fmtDate(i.date); const legalDate = (rawDate && rawDate !== '—') ? rawDate : NO_DATE;
-    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(legalDate)}</td><td>${esc(i.label || 'Legal & Other Charges')}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td></tr>`;
+    return `<tr><td class="no"><span class="circ">${idx + 1}</span></td><td>${esc(legalDate)}</td><td>${esc(i.label || 'Legal & Other Charges')}</td><td class="amtcell"><div class="amtw"><span class="rsl">Rs.</span><span class="amtn">${money(amt)}</span></div></td>${stg(i)}</tr>`;
   }).join('');
 
   const grand = grandUnit + grandEwc + grandLegal;
@@ -364,6 +368,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   .sched th:last-child { border-top-right-radius: 5px; }
   .sched th.r, .sched td.r { text-align: right; }
   .sched td { padding: 6px 8px; border-bottom: 1px solid #eef0f5; font-size: 11px; }
+  .sched td.stg { font-size: 10px; max-width: 130px; color: #334155; }
   .sched td.r { font-weight: 700; white-space: nowrap; }
   .sched td.amtcell { text-align: right; padding: 6px 8px; }
   .sched .amtw { display: inline-flex; justify-content: space-between; align-items: center; width: 138px; }

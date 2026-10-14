@@ -88,6 +88,10 @@ export default function BookingFormScreen({ navigation, route }) {
   const [insts, setInsts] = useState([]);
   const [nsdInsts, setNsdInsts] = useState([]);
   const [extraDate, setExtraDate] = useState('');
+  const [extraStage, setExtraStage] = useState(''); // its Stage (optional, printed on the LOI when filled)
+  // A rate box being typed in (Kalrav LSD / Dev Agreement / Construction Agreement),
+  // so it shows what was typed rather than the figure worked back from the amount.
+  const [rateEdit, setRateEdit] = useState(null);
   const [ew, setEw] = useState({ desc: '', amt: '' });
   const [ewInsts, setEwInsts] = useState([]);
   const [extraTerms, setExtraTerms] = useState([]); // [{title,desc}] — appended below default LOI terms
@@ -203,13 +207,13 @@ export default function BookingFormScreen({ navigation, route }) {
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
-        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork && !i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
-        setNsdInsts(b.installments.filter((i) => i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork && !i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || ''), stage: i.stage || '' })));
+        setNsdInsts(b.installments.filter((i) => i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || ''), stage: i.stage || '' })));
         const ex = b.installments.find((i) => i.isExtra);
-        if (ex) setExtraDate(safeDate(ex.date));
+        if (ex) { setExtraDate(safeDate(ex.date)); setExtraStage(ex.stage || ''); }
       }
       setEw({ desc: b.extra_work_desc || '', amt: b.extra_work_amount ? String(b.extra_work_amount) : '' });
-      if (Array.isArray(b.extra_work_inst)) setEwInsts(b.extra_work_inst.map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+      if (Array.isArray(b.extra_work_inst)) setEwInsts(b.extra_work_inst.map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || ''), stage: i.stage || '' })));
       if (Array.isArray(b.extra_terms)) setExtraTerms(b.extra_terms.map((t) => ({ title: t.title || '', desc: t.desc || '' })));
     }).catch(() => {});
   }, [reviseId]);
@@ -245,13 +249,13 @@ export default function BookingFormScreen({ navigation, route }) {
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
-        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork && !i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
-        setNsdInsts(b.installments.filter((i) => i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork && !i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || ''), stage: i.stage || '' })));
+        setNsdInsts(b.installments.filter((i) => i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || ''), stage: i.stage || '' })));
         const ex = b.installments.find((i) => i.isExtra);
-        if (ex) setExtraDate(safeDate(ex.date));
+        if (ex) { setExtraDate(safeDate(ex.date)); setExtraStage(ex.stage || ''); }
       }
       setEw({ desc: b.extra_work_desc || '', amt: b.extra_work_amount ? String(b.extra_work_amount) : '' });
-      if (Array.isArray(b.extra_work_inst)) setEwInsts(b.extra_work_inst.map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+      if (Array.isArray(b.extra_work_inst)) setEwInsts(b.extra_work_inst.map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || ''), stage: i.stage || '' })));
       if (Array.isArray(b.extra_terms)) setExtraTerms(b.extra_terms.map((t) => ({ title: t.title || '', desc: t.desc || '' })));
     }).catch(() => {});
   }, [draftId]);
@@ -275,8 +279,8 @@ export default function BookingFormScreen({ navigation, route }) {
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
-        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork && !i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
-        setNsdInsts(b.installments.filter((i) => i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || '') })));
+        setInsts(b.installments.filter((i) => !i.isExtra && !i.isExtraWork && !i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || ''), stage: i.stage || '' })));
+        setNsdInsts(b.installments.filter((i) => i.isNsd).map((i) => ({ date: safeDate(i.date), pct: String(i.pct || ''), amt: String(i.amt || ''), stage: i.stage || '' })));
       }
       if (Array.isArray(b.extra_terms)) setExtraTerms(b.extra_terms.map((t) => ({ title: t.title || '', desc: t.desc || '' })));
     }).catch(() => {});
@@ -560,6 +564,17 @@ export default function BookingFormScreen({ navigation, route }) {
   // Area unit follows the STM's toggle (relabel only); defaults to the project's native unit.
   const unit = f.area_unit || flags.areaUnit;
   const inr = (n) => Number(n || 0).toLocaleString('en-IN');
+  // Kalrav rates beside the agreement amounts: the amount is what is kept, the rate
+  // is amount ÷ area — type either and the other follows. Mirrors the website.
+  const plotArea = Number(f.area) || 0;
+  const constArea = Number(f.const_area) || 0;
+  const rateOf = (amt, a) => (a > 0 && Number(amt) ? (Number(amt) / a).toFixed(2) : '');
+  const amtOf = (rate, a) => String(Math.round((Number(rate) || 0) * a));
+  const rateBox = (k, shown) => ({
+    value: rateEdit?.k === k ? rateEdit.t : shown,
+    onFocus: () => setRateEdit({ k, t: shown }),
+    onBlur: () => setRateEdit(null),
+  });
   const extraSub = formulaSet === 'ankhol' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal'
     : formulaSet === 'industrial' ? 'Stamp + Reg + GST + Maint Dep + Maint Adv + Legal'
     : 'Stamp + Reg + GST + Maintenance + Legal';
@@ -610,7 +625,7 @@ export default function BookingFormScreen({ navigation, route }) {
       return next;
     });
   }
-  const ewArr = () => ewInsts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isExtraWork: true }));
+  const ewArr = () => ewInsts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isExtraWork: true, ...stageOf(r) }));
 
 
   function buildInsts(n) { n = parseInt(n, 10) || 0; setInsts(Array.from({ length: n }, (_, i) => insts[i] || { date: '', pct: '', amt: '' })); }
@@ -693,15 +708,15 @@ export default function BookingFormScreen({ navigation, route }) {
     });
   }
   function instArr() {
-    const arr = insts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0 }));
+    const arr = insts.map((r, i) => ({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, ...stageOf(r) }));
     if (prat) {
       if (!pratSched) return [];
       // isNsd marks the Extra Work Amount rows — the LOI prints those per hundred.
-      nsdInsts.forEach((r, i) => arr.push({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isNsd: true }));
+      nsdInsts.forEach((r, i) => arr.push({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isNsd: true, ...stageOf(r) }));
       return arr.concat(pratExtras());
     }
-    nsdInsts.forEach((r, i) => arr.push({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isNsd: true }));
-    arr.push({ no: 'Extra', date: extraDate, amt: Math.round(v.totalExtra), isExtra: true });
+    nsdInsts.forEach((r, i) => arr.push({ no: i + 1, date: r.date, pct: parseFloat(r.pct) || 0, amt: parseFloat(r.amt) || 0, isNsd: true, ...stageOf(r) }));
+    arr.push({ no: 'Extra', date: extraDate, amt: Math.round(v.totalExtra), isExtra: true, ...stageOf({ stage: extraStage }) });
     return arr;
   }
 
@@ -852,6 +867,8 @@ export default function BookingFormScreen({ navigation, route }) {
       villa_type: flags.bunglowTypeIsDropdown ? f.villa_type : '', bunglow_type: flags.bunglowTypeFixed || '',
       land_rate: f.land_rate || 0, dev_rate: f.dev_rate || 0, const_rate: f.const_rate || 0,
       sale_deed_rate: f.sale_deed_rate || 0, dev_agreement_rate: f.dev_agreement_rate || 0,
+      lsd_rate: rateOf(f.land_sale_deed, Number(f.area) || 0) || 0,
+      const_agreement_rate: rateOf(f.const_agreement, Number(f.const_area) || 0) || 0,
       sale_deed_pct: f.sale_deed_pct === '' || f.sale_deed_pct == null ? 60 : f.sale_deed_pct,
       sale_deed_amount: f.sale_deed_amount || 0,
       maint_rate: f.maint_rate || 0, maint_months: f.maint_months || 0,
@@ -1203,7 +1220,33 @@ export default function BookingFormScreen({ navigation, route }) {
           {flags.hasConstructionFields && <Fld l={`Construction Rate (₹/${unit})`} val={f.const_rate} on={(t) => set('const_rate', t)} kb="numeric" />}
           {flags.hasSaleDeedRate && <Fld l="Sale Deed Rate (₹/sq.ft)" val={f.sale_deed_rate} on={(t) => set('sale_deed_rate', t)} kb="numeric" />}
           {flags.hasDevAgreement && <Fld l="Dev Agreement Rate (₹/sq.ft)" val={f.dev_agreement_rate} on={(t) => set('dev_agreement_rate', t)} kb="numeric" />}
+          {flags.hasLsdRate && (
+            <View style={BookingFormScreenS.kalField}>
+              <Text style={BookingFormScreenS.kalLabel}>{`Land Sale Deed Rate (₹/${unit})`}</Text>
+              <TextInput keyboardType="numeric" style={inpS} {...rateBox('lsd', rateOf(f.land_sale_deed, plotArea))}
+                onChangeText={(t) => { setRateEdit({ k: 'lsd', t }); set('land_sale_deed', amtOf(t, plotArea)); }} />
+            </View>
+          )}
           {flags.hasLandSaleDeed && <Fld l="Land Sale Deed (₹)" val={f.land_sale_deed} on={(t) => set('land_sale_deed', t)} kb="numeric" />}
+          {/* Kalrav's Development Agreement is shown for the record only: it is not part of
+              the Unit Price, the taxes or the total, and the LOI does not print it. */}
+          {flags.hasDevAgreementInfo && (
+            <>
+              <Fld l={`Development Agreement Rate (₹/${unit})`} val={f.dev_agreement_rate} on={(t) => set('dev_agreement_rate', t)} kb="numeric" />
+              <View style={BookingFormScreenS.kalField}>
+                <Text style={BookingFormScreenS.kalLabel}>Development Agreement Value (₹)</Text>
+                <TextInput keyboardType="numeric" style={inpS} {...rateBox('dev', v.devAgreement ? String(Math.round(v.devAgreement)) : '')}
+                  onChangeText={(t) => { setRateEdit({ k: 'dev', t }); set('dev_agreement_rate', plotArea > 0 ? ((Number(t) || 0) / plotArea).toFixed(4) : ''); }} />
+              </View>
+            </>
+          )}
+          {flags.hasConstAgreementRate && (
+            <View style={BookingFormScreenS.kalField}>
+              <Text style={BookingFormScreenS.kalLabel}>{`Construction Agreement Rate (₹/${unit})`}</Text>
+              <TextInput keyboardType="numeric" style={inpS} {...rateBox('cag', rateOf(f.const_agreement, constArea))}
+                onChangeText={(t) => { setRateEdit({ k: 'cag', t }); set('const_agreement', amtOf(t, constArea)); }} />
+            </View>
+          )}
           {flags.hasConstructionAgreement && <Fld l="Construction Agreement (₹)" val={f.const_agreement} on={(t) => set('const_agreement', t)} kb="numeric" />}
           {flags.hasPremiumLocation && <Fld l="Premium Location (₹)" val={f.premium_location} on={(t) => set('premium_location', t)} kb="numeric" />}
           {/* PLC: ticked from the plot's Corner / Common Plot Facing marks in Manage
@@ -1335,12 +1378,15 @@ export default function BookingFormScreen({ navigation, route }) {
               <Text style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{rupee(nsdBase)}</Text>
               <Fld l="No. of Installments (Extra Work Amount)" val={nsdInsts.length ? String(nsdInsts.length) : ''} on={buildNsdInsts} kb="numeric" />
               {nsdInsts.map((r, i) => (
-                <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
+                <React.Fragment key={i}>
+              <View style={BookingFormScreenS.instRow}>
                   <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
                   <DateField value={r.date} onChange={(t) => setNsdInst(i, 'date', t)} style={{ flex: 2 }} />
                   <TextInput value={r.pct} onChangeText={(t) => setNsdInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
                   <TextInput value={r.amt} onChangeText={(t) => setNsdInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
                 </View>
+              <TextInput value={r.stage || ''} onChangeText={(t) => setNsdInst(i, 'stage', t)} placeholder="Stage (optional)" style={BookingFormScreenS.stageIn} />
+              </React.Fragment>
               ))}
               {nsdInsts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(nsdPctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {nsdPctTotal.toFixed(2)}%</Text>}
             </View>
@@ -1353,12 +1399,15 @@ export default function BookingFormScreen({ navigation, route }) {
           )}
           <Fld l="No. of Installments" val={insts.length ? String(insts.length) : ''} on={buildInsts} kb="numeric" />
           {insts.map((r, i) => (
-            <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
+            <React.Fragment key={i}>
+          <View style={BookingFormScreenS.instRow}>
               <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
               <DateField value={r.date} onChange={(t) => setInst(i, 'date', t)} style={{ flex: 2 }} />
               <TextInput value={r.pct} onChangeText={(t) => setInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
               <TextInput value={r.amt} onChangeText={(t) => setInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
             </View>
+          <TextInput value={r.stage || ''} onChangeText={(t) => setInst(i, 'stage', t)} placeholder="Stage (optional)" style={BookingFormScreenS.stageIn} />
+          </React.Fragment>
           ))}
           {/* Pratishtha's three charge lines all fall due on the sale deed or possession,
               so they carry that wording instead of a date picker. */}
@@ -1374,6 +1423,9 @@ export default function BookingFormScreen({ navigation, route }) {
               <Text style={{ flex: 2.4, color: COLORS.warning, fontWeight: '700', fontSize: 12, textAlign: 'right' }}>Legal & Other Charges {rupee(v.totalExtra)}</Text>
             </View>
           )}
+          {!pratSched && v.totalExtra > 0 ? (
+            <TextInput value={extraStage} onChangeText={setExtraStage} placeholder="Stage for Legal & Other Charges (optional)" style={BookingFormScreenS.stageIn} />
+          ) : null}
           {insts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(pctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Total {pctTotal.toFixed(2)}%</Text>}
           </>)}
         </Sec>
@@ -1384,12 +1436,15 @@ export default function BookingFormScreen({ navigation, route }) {
             <Fld l="Total Amount (₹)" val={ew.amt} on={(t) => setEw((s) => ({ ...s, amt: t }))} kb="numeric" />
             <Fld l="No. of Installments" val={ewInsts.length ? String(ewInsts.length) : ''} on={buildEw} kb="numeric" />
             {ewInsts.map((r, i) => (
-              <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' }}>
+              <React.Fragment key={i}>
+              <View style={BookingFormScreenS.instRow}>
                 <Text style={{ width: 16, color: MUTED }}>{i + 1}</Text>
                 <DateField value={r.date} onChange={(t) => setEwInst(i, 'date', t)} style={{ flex: 2 }} />
                 <TextInput value={r.pct} onChangeText={(t) => setEwInst(i, 'pct', t)} placeholder="%" keyboardType="numeric" style={[inpS, { flex: 1 }]} />
                 <TextInput value={r.amt} onChangeText={(t) => setEwInst(i, 'amt', t)} placeholder="₹" keyboardType="numeric" style={[inpS, { flex: 1.4 }]} />
               </View>
+              <TextInput value={r.stage || ''} onChangeText={(t) => setEwInst(i, 'stage', t)} placeholder="Stage (optional)" style={BookingFormScreenS.stageIn} />
+              </React.Fragment>
             ))}
             {ewInsts.length > 0 && <Text style={{ fontSize: 12, marginTop: 6, color: Math.abs(ewPctTotal - 100) < 0.01 ? COLORS.success : COLORS.error }}>Extra Work Total {ewPctTotal.toFixed(2)}%</Text>}
           </Sec>
@@ -1487,6 +1542,10 @@ const plcS = StyleSheet.create({
             fontSize: 14, color: COLORS.textSecondary, backgroundColor: COLORS.surface2, marginBottom: 10 },
 });
 
+// An installment's Stage (e.g. "On booking", "Plinth") is optional; the LOI prints the
+// column only when a row has one.
+const stageOf = (r) => ((r && String(r.stage || '').trim()) ? { stage: String(r.stage).trim() } : {});
+
 const Fld = ({ l, val, on, kb, ph, invalid }) => (
   <View style={{ marginBottom: 10 }}>
     <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>{l}</Text>
@@ -1570,6 +1629,9 @@ const Tot = ({ l, sub, sub2, val, valFmt, big, subtotal }) => (
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const BookingFormScreenS = StyleSheet.create({
+  // A payment-schedule row (date · % · amount), and its optional Stage box below it.
+  instRow: { flexDirection: 'row', gap: 8, marginTop: 6, alignItems: 'center' },
+  stageIn: { ...inpS, marginTop: 4, marginLeft: 24 },
   kalField: { marginBottom: 10 },
   kalLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 },
   flatPriceInput: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
