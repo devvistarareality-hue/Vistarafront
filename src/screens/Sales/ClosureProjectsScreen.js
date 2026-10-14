@@ -8,6 +8,7 @@ import { apiFetch } from '../../utils/apiFetch';
 import { SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { MyBookingsList } from './MyBookingsScreen';
+import { useFocusParam } from '../../lib/useFocusParam';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
@@ -29,6 +30,8 @@ export default function ClosureProjectsScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [view,       setView]       = useState(route.params?.initialView || 'closures'); // 'closures' | 'mybookings'
   useEffect(() => { if (route.params?.initialView) setView(route.params.initialView); }, [route.params?.initialView]);
+  // Opened from a booking notification: My Bookings narrowed to that booking.
+  const [focusId, clearFocus] = useFocusParam(route, 'focusBookingId');
 
   const load = useCallback(async () => {
     try {
@@ -72,7 +75,7 @@ export default function ClosureProjectsScreen({ navigation, route }) {
         ))}
       </View>
 
-      {view === 'mybookings' ? <MyBookingsList navigation={navigation} cpOnly={cpOnly} initialTab={route.params?.initialTab} initialScope={route.params?.initialScope} /> : loading ? (
+      {view === 'mybookings' ? <MyBookingsList navigation={navigation} cpOnly={cpOnly} initialTab={route.params?.initialTab} initialScope={route.params?.initialScope} focusId={focusId} onClearFocus={clearFocus} /> : loading ? (
         <AppLoader style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}

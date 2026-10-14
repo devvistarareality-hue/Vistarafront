@@ -43,6 +43,10 @@ export default function TaskListScreen({ route }) {
   const [err, setErr] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [openTaskId, setOpenTaskId] = useState(undefined);
+  // Opened from a task notification (openTaskId): that task's sheet.
+  useEffect(() => {
+    if (route?.params?.openTaskId) setOpenTaskId(Number(route.params.openTaskId));
+  }, [route?.params?.openTaskId, route?.params?._n]);
 
   useEffect(() => {
     apiFetch(withCompany(TASK_ENDPOINTS.lists, companyId)).then((r) => r.json()).then((d) => setLists(d.results || [])).catch(() => {});

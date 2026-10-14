@@ -12,6 +12,8 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
+import FocusChip from '../../components/FocusChip';
+import { useFocusParam } from '../../lib/useFocusParam';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
@@ -42,6 +44,15 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
   const [tab, setTab] = useState('approved');   // 'approved' | 'cancelled'
   const [detailsOpen, setDetailsOpen] = useState({});
+  // Opened from a booking notification (focusBookingId): that one booking, whichever
+  // tab it is in, with its project and details open — until "Show all".
+  const [focusId, clearFocus] = useFocusParam(route, 'focusBookingId');
+  React.useEffect(() => {
+    const b = focusId && rows.find((x) => String(x.id) === String(focusId));
+    if (!b) return;
+    setOpen({ [b.project_name || '—']: true });
+    setDetailsOpen((o) => ({ ...o, [b.id]: true }));
+  }, [focusId, rows]);
   // Same three filters as the Sales approvals screen: booking date, project, STM.
   const [range, setRange] = useState({ from: '', to: '' });
   const [projSel, setProjSel] = useState([]);   // [] = every project
@@ -140,7 +151,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const isCancelled = (b) => String(b.approval_status || '').toUpperCase().includes('CANCEL');
   const approvedRows  = rows.filter(isApproved);
   const cancelledRows = rows.filter(isCancelled);
-  const approved = tab === 'cancelled' ? cancelledRows : approvedRows;
+  const approved = focusId ? rows.filter((b) => String(b.id) === String(focusId)) : tab === 'cancelled' ? cancelledRows : approvedRows;
 
   // Booking date is a plain YYYY-MM-DD, so the range compares as strings. A booking
   // with no date can't be placed in time, so a live range excludes it rather than
@@ -158,7 +169,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
   const projName = (b) => b.project_name || '—';
   const stmOptions = [...new Set(approved.map(stmName))].sort((a, b) => a.localeCompare(b));
   const projOptions = [...new Set(approved.map(projName))].sort((a, b) => a.localeCompare(b));
-  const narrowed = dated || !!stm || !!proj;
+  const narrowed = !!focusId || dated || !!stm || !!proj;
 
   const groups = {};
   approved
@@ -186,6 +197,7 @@ export default function ModuleBookingsScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}>
+        {focusId && !loading ? <FocusChip what="booking" found={approved.length > 0} onClear={clearFocus} /> : null}
         {loading ? <AppLoader style={{ marginTop: 24 }} />
         : err ? <View style={[CARD, { alignItems: 'center' }]}><Text style={{ color: COLORS.error }}>{err}</Text></View>
         : <>

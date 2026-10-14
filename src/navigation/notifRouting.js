@@ -49,13 +49,36 @@ const ROUTE_FOR_TYPE = {
   investor_approved: { screen: 'Club1000Investors' },
 };
 
-// Where a notification opens for THIS person. ROUTE_FOR_TYPE is the screen for
-// someone who has it; a role without that screen (a telecaller has no Site Visits
-// or Booking, a non-manager no Approvals) goes to its own equivalent instead —
-// never to a screen its menu doesn't offer. Mirrors the website's bell.
+// Notifications about one lead open that lead (its details, follow-ups and history).
+const LEAD_TYPES = new Set(['new_lead', 're_enquiry', 'followup', 'followup_overdue', 'sv', 'sv_overdue', 'sv_done',
+  'lead_transfer_approved', 'lead_transfer_rejected']);
+const BOOKING_SCREENS = ['BookingApprovals', 'ClosureProjects', 'ModuleApprovals', 'ModuleBookings'];
+
+// Where a notification opens for THIS person — the screen for their role, narrowed to
+// the very record it is about: a lead opens that lead, a booking its list showing only
+// that booking (focusBookingId), a new project only that project, an AR alert that
+// account's ledger, a task that task. Used by the in-app list and by push taps alike.
+// Mirrors the website's bell (urlFor).
 export function routeForNotifType(type, user = store.getState()?.auth?.user, data = null) {
-  // A repeat enquiry opens that very lead.
-  if (type === 're_enquiry' && data?.lead_id) return { screen: 'SalesLeads', params: { openLeadId: data.lead_id } };
+  const d = data || {};
+  const lead = d.lead_id || d.lead;
+  if (LEAD_TYPES.has(type) && lead) return { screen: 'SalesLeads', params: { openLeadId: lead } };
+  if (type === 'project_pending_approval') return { screen: 'BookingApprovals', params: { section: 'projects', focusProjectId: d.project } };
+  if (String(type || '').startsWith('ar_') && d.account_id) return { screen: 'ARLedger', params: { id: d.account_id } };
+  if (String(type || '').startsWith('task_') && d.task_id) return { screen: 'TaskList', params: { tab: 'my_tasks', openTaskId: d.task_id } };
+  if (type === 'investor_approved' && d.investor_id) return { screen: 'Club1000Investors', params: { openInvestorId: d.investor_id } };
+  const route = baseRoute(type, user);
+  if (route && d.booking_id && BOOKING_SCREENS.includes(route.screen)) {
+    return { ...route, params: { ...(route.params || {}), focusBookingId: d.booking_id } };
+  }
+  return route;
+}
+
+// The screen for the person's role. ROUTE_FOR_TYPE is the screen for someone who has
+// it; a role without that screen (a telecaller has no Site Visits or Booking, a
+// non-manager no Approvals) goes to its own equivalent instead — never to a screen its
+// menu doesn't offer.
+function baseRoute(type, user) {
   const route = ROUTE_FOR_TYPE[type] || null;
   if (!route || !user) return route;
   const admin = user.role === 'Admin' || user.is_staff || (user.admin_modules || []).includes('Sales');
@@ -69,7 +92,7 @@ export function routeForNotifType(type, user = store.getState()?.auth?.user, dat
   const conv = (tab) => ({ screen: 'MyConversions', params: { initialTab: tab } });
   if (['sv', 'sv_overdue'].includes(type)) return visits ? route : conversions ? conv('upcoming') : null;
   if (type === 'sv_done') return visits ? route : conversions ? conv('sv') : null;
-  if (type === 'closure') return conversions ? conv('closures') : booking ? route : null;
+  if (type === 'closure') return booking ? route : conversions ? conv('closures') : null;
   if (type === 'project_pending_approval') return route;   // sent only to the project approvers
   if (route.screen === 'BookingApprovals') {
     return approvals ? route : booking ? { screen: 'ClosureProjects', params: { initialView: 'mybookings' } }
@@ -122,11 +145,14 @@ function deepLink(route, attempt) {
 // regular user tree), so a tap did nothing there; this goes the same way a push does.
 export function openNotifRoute(route) {
   if (!route) return;
-  deepLink(route, 0);
+  deepLink(withNonce(route), 0);
 }
+
+// A fresh `_n` each time, so a screen already showing opens the record again.
+const withNonce = (route) => ({ ...route, params: { ...(route.params || {}), _n: Date.now() } });
 
 export function navigateFromNotif(data) {
   const route = routeForNotifType(data && data.type, undefined, data);
   if (!route) return;
-  deepLink(route, 0);
+  deepLink(withNonce(route), 0);
 }

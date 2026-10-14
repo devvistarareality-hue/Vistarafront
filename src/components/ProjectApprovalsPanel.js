@@ -21,10 +21,12 @@ import { SALES_ENDPOINTS } from '../constants/api';
 import { COLORS, CARD_SHADOW } from '../constants/theme';
 import AppLoader from './AppLoader';
 import { errText } from '../lib/apiError';
+import FocusChip from './FocusChip';
 
 const TABS = [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']];
 
-export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
+// focusId: opened from a "New project needs approval" notification — just that project.
+export default function ProjectApprovalsPanel({ isAdmin, refreshKey, focusId = '', onClearFocus }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('pending');
@@ -91,12 +93,14 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey }) {
     } catch (e) { loadApprovers(); }
   }
 
-  const shown = tab === 'all' ? projects
+  const shown = focusId ? projects.filter((p) => String(p.id) === String(focusId))
+    : tab === 'all' ? projects
     : projects.filter((p) => (p.approval_status || 'approved') === tab);
   const pendingCount = projects.filter((p) => p.approval_status === 'pending').length;
 
   return (
     <View>
+      {focusId && !loading ? <FocusChip what="project" found={shown.length > 0} onClear={onClearFocus} /> : null}
       {isAdmin && (
         <View style={pa.cfg}>
           <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>

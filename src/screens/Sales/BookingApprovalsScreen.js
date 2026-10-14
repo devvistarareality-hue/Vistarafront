@@ -14,6 +14,8 @@ import { isManagerRole } from '../../lib/roles';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
 import ProjectApprovalsPanel from '../../components/ProjectApprovalsPanel';
+import FocusChip from '../../components/FocusChip';
+import { useFocusParam } from '../../lib/useFocusParam';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
@@ -123,6 +125,16 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // My Bookings shows, because an approver deciding on a deal needs the figures in
   // front of them, not a second screen to go and find.
   const [cardDetails, setCardDetails] = useState({});
+  // Opened from a notification (focusBookingId): the All tab narrowed to that one
+  // booking with its details open, until "Show all". Mirrors the website's ?booking=.
+  const [focusId, clearFocus] = useFocusParam(route, 'focusBookingId');
+  const [focusProjectId, clearProjectFocus] = useFocusParam(route, 'focusProjectId');
+  useEffect(() => {
+    if (!focusId) return;
+    setSection('bookings'); setTab('');
+    setCardDetails((o) => ({ ...o, [focusId]: true }));
+  }, [focusId]);
+  useEffect(() => { if (focusProjectId) setSection('projects'); }, [focusProjectId]);
   const [revs, setRevs] = useState({});
   const [revOpen, setRevOpen] = useState({});
   const [revDetails, setRevDetails] = useState({});
@@ -269,9 +281,9 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const projName = (b) => b.project_name || '—';
   const stmOptions = [...new Set(rows.map(stmName))].sort((a, b) => a.localeCompare(b));
   const projOptions = [...new Set(rows.map(projName))].sort((a, b) => a.localeCompare(b));
-  const narrowed = !!ql || dated || !!stm || !!proj || resale;
+  const narrowed = !!focusId || !!ql || dated || !!stm || !!proj || resale;
   const resaleCount = rows.filter((b) => b.is_resale).length;
-  const visible = rows.filter((b) => matches(b) && inRange(b)
+  const visible = focusId ? rows.filter((b) => String(b.id) === focusId) : rows.filter((b) => matches(b) && inRange(b)
     && (!stmSel.length || stmSel.includes(stmName(b))) && (!projSel.length || projSel.includes(projName(b)))
     && (!resale || b.is_resale));
 
@@ -337,9 +349,10 @@ export default function BookingApprovalsScreen({ navigation, route }) {
           <LeadTransfersPanel companyId={companyId} cpOnly={cpOnly} pendingCount={xfers.length} onChanged={loadTransfers} refreshKey={refreshing} />
         )}
 
-        {section === 'projects' && <ProjectApprovalsPanel isAdmin={isAdmin} refreshKey={refreshing} />}
+        {section === 'projects' && <ProjectApprovalsPanel isAdmin={isAdmin} refreshKey={refreshing} focusId={focusProjectId} onClearFocus={clearProjectFocus} />}
 
         {section === 'bookings' && (<>
+          {focusId && !loading ? <FocusChip what="booking" found={visible.length > 0} onClear={clearFocus} /> : null}
         {isAdmin && (
           <View style={[CARD, { marginBottom: 12 }]}>
             <TouchableOpacity onPress={() => setCfgOpen((o) => !o)}>

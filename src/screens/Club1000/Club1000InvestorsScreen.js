@@ -1226,6 +1226,10 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [revising,   setRevising]   = useState(null);
   const [renewing,   setRenewing]   = useState(null);
   const [ledgerFor,  setLedgerFor]  = useState(null);
+  // Opened from an investor notification (openInvestorId): that investor's ledger.
+  useEffect(() => {
+    if (route?.params?.openInvestorId) setLedgerFor(Number(route.params.openInvestorId));
+  }, [route?.params?.openInvestorId, route?.params?._n]);
   // Opened from a Lead's "Convert to Investor" action (see Club1000LeadsScreen).
   const [prefillLead, setPrefillLead] = useState(route?.params?.prefillLead || null);
   const [search, setSearch] = useState('');

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, RefreshControl, Alert, TextInput, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -8,6 +8,7 @@ import { openLoi } from '../../utils/openLoi';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { unitLabel } from '../../lib/bookingUnit';
 import BookingDetails from '../../components/BookingDetails';
+import FocusChip from '../../components/FocusChip';
 import ExportBookings from '../../components/ExportBookings';
 
 import AppIcon from '../../components/AppIcon';
@@ -126,7 +127,9 @@ function DecidedBy({ b }) {
   );
 }
 
-export function MyBookingsList({navigation, cpOnly = false, initialTab = '', initialScope = '' }) {
+// focusId: opened from a booking notification — that one booking, looked for in everything
+// this person may see (a manager is told about a team member's deal), until "Show all".
+export function MyBookingsList({navigation, cpOnly = false, initialTab = '', initialScope = '', focusId = '', onClearFocus }) {
   const companyId = useSelector((s) => s.adminFilter?.companyId);
   // Source filter: Sales / CP / All (components/BookFilter).
   const [book, setBook] = useBook(cpOnly);
@@ -158,6 +161,13 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
   // single map let one toggle open two blocks at once.
   const [revDetails, setRevDetails] = useState({});
   const [cardDetails, setCardDetails] = useState({});
+  useEffect(() => { if (focusId && !cpOnly) setScope('visible'); }, [focusId]);
+  useEffect(() => {
+    const b = focusId && rows.find((x) => String(x.id) === String(focusId));
+    if (!b) return;
+    setOpen({ [b.project_name || '—']: true });
+    setCardDetails((o) => ({ ...o, [b.id]: true }));
+  }, [focusId, rows]);
   const toggleRevDetails = (id) => setRevDetails((o) => ({ ...o, [id]: !o[id] }));
   const me = useSelector((s) => s.auth.user);
   const [team, setTeam] = useState([]);   // the viewer's reporting subtree
@@ -343,7 +353,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
     : who === 'firstsale' ? !b.is_resale
     : whoSet.has(bookedById(b)));
 
-  const visible = preWho.filter(byWho);
+  const visible = focusId ? rows.filter((b) => String(b.id) === String(focusId)) : preWho.filter(byWho);
 
   visible.forEach((b) => { const k = b.project_name || '—'; (groups[k] = groups[k] || []).push(b); });
   const projectNames = Object.keys(groups).sort();
@@ -354,6 +364,7 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
       {/* The booking export. Also on Approvals, but that screen is manager-only —
           anyone granted the permission needs to reach it from here too. */}
       {!cpOnly && <ExportBookings companyId={companyId} />}
+      {focusId && !loading ? <FocusChip what="booking" found={visible.length > 0} onClear={onClearFocus} /> : null}
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         {TABS.map(([k, label]) => (

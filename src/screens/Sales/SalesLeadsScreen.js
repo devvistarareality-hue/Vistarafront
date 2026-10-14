@@ -1910,7 +1910,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
       setSelectedLead(await r.json());
       setDetailModal(true);
     }).catch(() => {});
-  }, [route?.params?.openLeadId]);
+  }, [route?.params?.openLeadId, route?.params?._n]);   // _n: a second tap on the same notification
   const [createModal, setCreateModal] = useState(false);
   // Transfer straight from a lead card — the lead being handed on, or null.
   const [xferLead, setXferLead] = useState(null);

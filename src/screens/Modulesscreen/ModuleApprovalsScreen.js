@@ -12,6 +12,8 @@ import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import FilterSelect from '../../components/FilterSelect';
 import ExportBookings from '../../components/ExportBookings';
 import BookingDetails from '../../components/BookingDetails';
+import FocusChip from '../../components/FocusChip';
+import { useFocusParam } from '../../lib/useFocusParam';
 import { unitLabel } from '../../lib/bookingUnit';
 
 import AppIcon from '../../components/AppIcon';
@@ -143,6 +145,15 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const [open, setOpen] = useState({});
   const toggle = (pn) => setOpen((o) => ({ ...o, [pn]: !o[pn] }));
   const [detailsOpen, setDetailsOpen] = useState({});
+  // Opened from a booking notification (focusBookingId): that one booking, whichever
+  // tab it is in, with its project and details open — until "Show all".
+  const [focusId, clearFocus] = useFocusParam(route, 'focusBookingId');
+  React.useEffect(() => {
+    const b = focusId && rows.find((x) => String(x.id) === String(focusId));
+    if (!b) return;
+    setOpen({ [b.project_name || '—']: true });
+    setDetailsOpen((o) => ({ ...o, [b.id]: true }));
+  }, [focusId, rows]);
 
   const load = useCallback(async () => {
     try {
@@ -203,7 +214,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
     // Everything that has reached Accounts — waiting, approved or sent back (as on web).
     all:      (b) => b.status === 'sold',
   }[tab];
-  const tabRows = rows.filter(inTab);
+  const tabRows = focusId ? rows.filter((b) => String(b.id) === String(focusId)) : rows.filter(inTab);
 
   // Same search rules as the Sales approvals screen, so a query that finds a booking
   // there finds it here. Phones are stored with spaces, so digit queries compare
@@ -223,7 +234,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const projName = (b) => b.project_name || '—';
   const stmOptions = [...new Set(tabRows.map(stmName))].sort((a, b) => a.localeCompare(b));
   const projOptions = [...new Set(tabRows.map(projName))].sort((a, b) => a.localeCompare(b));
-  const narrowed = !!ql || !!stm || !!proj || !!(range.from || range.to);
+  const narrowed = !!focusId || !!ql || !!stm || !!proj || !!(range.from || range.to);
 
   const groups = {};
   tabRows
@@ -257,6 +268,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
+        {focusId && !loading ? <FocusChip what="booking" found={tabRows.length > 0} onClear={clearFocus} /> : null}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', gap: 6 }}>
