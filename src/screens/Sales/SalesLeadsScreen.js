@@ -99,7 +99,23 @@ const OUTCOME_COLOR = { hot: COLORS.error, warm: COLORS.warning, cold: COLORS.li
 // `outcome` (SV Hot/Warm/Cold, only meaningful for sv_done) is shown alongside
 // the stage — "SV DONE · HOT" — rather than replacing it, so the pipeline stage
 // and the visit's outcome are both visible without conflating the two.
-function StatusBadge({ status, outcome }) {
+// A closed lead shows where its booking stands instead of a bare "CLOSED" (as on the web).
+const CLOSED_STAGE = {
+  booking_pending:   { label: 'BOOKING PENDING',   bg: COLORS.warningBg, text: COLORS.warning },
+  booked:            { label: 'BOOKED',            bg: COLORS.successBg, text: COLORS.success },
+  booking_rejected:  { label: 'BOOKING REJECTED',  bg: COLORS.errorBg,   text: COLORS.error },
+  booking_cancelled: { label: 'BOOKING CANCELLED', bg: COLORS.screenBg,  text: MUTED },
+};
+
+function StatusBadge({ status, outcome, stage }) {
+  const cs = status === 'closed' ? CLOSED_STAGE[stage] : null;
+  if (cs) {
+    return (
+      <View style={StyleSheet.compose(stageS.pill, { backgroundColor: cs.bg })}>
+        <Text style={StyleSheet.compose(stageS.text, { color: cs.text })}>{cs.label}</Text>
+      </View>
+    );
+  }
   const c = STATUS_COLOR[status] || { bg: COLORS.screenBg, text: MUTED };
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: c.bg }}>
@@ -479,7 +495,7 @@ function LeadDetailModal({ lead, projects, sources, telecallers, stms, visible, 
             <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={MUTED} /></TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
               <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>{lead.name}</Text>
-              <StatusBadge status={lead.status} outcome={lead.sv_outcome} />
+              <StatusBadge status={lead.status} outcome={lead.sv_outcome} stage={lead.closed_stage} />
             </View>
             <TouchableOpacity onPress={save} disabled={saving}
               style={[SalesLeadsScreenS.btn, (saving) && SalesLeadsScreenS.btnDim]}>
@@ -2194,7 +2210,7 @@ export default function SalesLeadsScreen({ navigation, route }) {
                     <Ionicons name="call" size={13} color={COLORS.success} />
                   </TouchableOpacity>
                 )}
-                <StatusBadge status={item.status} outcome={item.sv_outcome} />
+                <StatusBadge status={item.status} outcome={item.sv_outcome} stage={item.closed_stage} />
               </View>
             </View>
             {!!metaLine && (
@@ -2523,4 +2539,9 @@ const basisS = StyleSheet.create({
   on: { borderColor: COLORS.link, backgroundColor: COLORS.accentSoft },
   text: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   textOn: { color: COLORS.link },
+});
+
+const stageS = StyleSheet.create({
+  pill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  text: { fontSize: 10, fontWeight: '700' },
 });
