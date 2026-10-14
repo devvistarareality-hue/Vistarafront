@@ -651,7 +651,7 @@ export default function BookingFormScreen({ navigation, route }) {
     : (formulaSet === 'ankhol' ? '5% of Sale Deed'
       : formulaSet === 'industrial' ? (v.isTundav ? '18% of 67% of Sale Deed' : '18% of Development Agreement')
       : v.isKalrav3 ? '5% of Unit Price'
-      : (Math.round(v.devAgreement) > 0 ? '18% of Construction + Development Agreement' : '18% of Construction Agreement'));
+      : '18% of Construction + Development Agreement');
   const maintSub = formulaSet === 'ankhol' ? 'Construction Area × Rate × Months'
     : formulaSet === 'industrial' ? 'Plot Area × Rate' : 'Plot Area × Rate × Months';
   function buildEw(n) { n = parseInt(n, 10) || 0; setEwInsts(Array.from({ length: n }, (_, i) => ewInsts[i] || { date: '', pct: '', amt: '' })); }
