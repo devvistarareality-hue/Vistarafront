@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { NOTIFICATION_ENDPOINTS } from '../../constants/api';
-import { routeForNotifType } from '../../navigation/notifRouting';
+import { openNotifRoute, routeForNotifType } from '../../navigation/notifRouting';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 
 import AppIcon from '../../components/AppIcon';
@@ -89,7 +89,7 @@ export default function NotificationsScreen({ navigation }) {
           const target = routeForNotifType(n.type, undefined, n.data);
           const st = styleFor(n.type);
           return (
-          <TouchableOpacity key={n.id} activeOpacity={target ? 0.7 : 1} onPress={() => target && navigation.navigate(target.screen, target.params)}
+          <TouchableOpacity key={n.id} activeOpacity={target ? 0.7 : 1} onPress={() => target && openNotifRoute(target)}
             style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14,
               borderLeftWidth: n.is_read ? 0 : 3, borderLeftColor: st.color,
               backgroundColor: n.is_read ? COLORS.cardBg : COLORS.accentSofter, elevation: n.is_read ? CARD.elevation : 0 }]}>

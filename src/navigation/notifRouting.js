@@ -29,7 +29,7 @@ const ROUTE_FOR_TYPE = {
   ar_followup_overdue: { screen: 'ARCollections', params: { tab: 'followups' } },
   ar_collections_digest: { screen: 'ARCollections', params: { tab: 'overdue' } },
   ar_due_soon: { screen: 'ARCollections', params: { tab: 'upcoming' } },
-  lead_transfer_requested: { screen: 'BookingApprovals' },
+  lead_transfer_requested: { screen: 'BookingApprovals', params: { section: 'transfers' } },
   lead_transfer_approved: { screen: 'SalesLeads' },
   lead_transfer_rejected: { screen: 'SalesLeads' },
   closure: { screen: 'ClosureProjects', params: { initialView: 'mybookings', initialTab: 'sold' } },
@@ -43,6 +43,10 @@ const ROUTE_FOR_TYPE = {
   task_assigned: { screen: 'TaskList', params: { tab: 'my_tasks' } },
   task_comment: { screen: 'TaskList', params: { tab: 'my_tasks' } },
   task_due_soon: { screen: 'TaskList', params: { tab: 'my_tasks' } },
+  // A new project waits on Approvals → Projects; Club 1000 investors on their screens.
+  project_pending_approval: { screen: 'BookingApprovals', params: { section: 'projects' } },
+  investor_approval: { screen: 'Club1000InvestorApprovals' },
+  investor_approved: { screen: 'Club1000Investors' },
 };
 
 // Where a notification opens for THIS person. ROUTE_FOR_TYPE is the screen for
@@ -66,6 +70,7 @@ export function routeForNotifType(type, user = store.getState()?.auth?.user, dat
   if (['sv', 'sv_overdue'].includes(type)) return visits ? route : conversions ? conv('upcoming') : null;
   if (type === 'sv_done') return visits ? route : conversions ? conv('sv') : null;
   if (type === 'closure') return conversions ? conv('closures') : booking ? route : null;
+  if (type === 'project_pending_approval') return route;   // sent only to the project approvers
   if (route.screen === 'BookingApprovals') {
     return approvals ? route : booking ? { screen: 'ClosureProjects', params: { initialView: 'mybookings' } }
       : conversions ? conv('closures') : null;
@@ -110,6 +115,14 @@ function deepLink(route, attempt) {
       if (!cur || cur.name !== route.screen) deepLink(route, attempt + 1);
     }, 300);
   }
+}
+
+// Open a notification's screen from the in-app list. A plain navigation.navigate from
+// the Notifications screen cannot reach a screen nested in Dashboard → Modules (the
+// regular user tree), so a tap did nothing there; this goes the same way a push does.
+export function openNotifRoute(route) {
+  if (!route) return;
+  deepLink(route, 0);
 }
 
 export function navigateFromNotif(data) {

@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS } from '../constants/theme';
 import { impersonating, stopImpersonation } from '../lib/impersonate';
@@ -17,6 +18,9 @@ export default function ImpersonationBanner() {
   const dispatch = useDispatch();
   const user = useSelector((s) => s.auth?.user);
   const [admin, setAdmin] = useState(null);
+  // The bar sits above the navigator, so it must clear the phone's status bar itself —
+  // drawn under it, Exit was behind the clock and battery and could not be tapped.
+  const insets = useSafeAreaInsets();
 
   // Re-read whenever the signed-in user changes — that is exactly when an
   // impersonation starts or ends.
@@ -36,7 +40,7 @@ export default function ImpersonationBanner() {
   };
 
   return (
-    <View style={styles.bar}>
+    <View style={StyleSheet.compose(styles.bar, { paddingTop: 9 + insets.top })}> {/* inline-ok: status bar height from the device */}
       <View style={styles.dot} />
       <Text style={styles.text} numberOfLines={2}>
         Viewing as <Text style={styles.strong}>{user?.name || 'this user'}</Text> — signed in as{' '}

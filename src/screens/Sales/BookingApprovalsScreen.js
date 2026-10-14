@@ -191,8 +191,10 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // booking on that project, so they belong on the same screen.
   const [xfers, setXfers] = useState([]);
   // Lead transfers and booking approvals are two jobs: one section each,
-  // always opening on booking approvals.
-  const [section, setSection] = useState('bookings');
+  // opening on booking approvals unless the route names a section (a notification for
+  // a lead transfer or a new project). Mirrors the website's ?section=.
+  const [section, setSection] = useState(() => (
+    ['bookings', 'transfers', 'projects'].includes(route?.params?.section) ? route.params.section : 'bookings'));
   const pickSection = setSection;
   const loadTransfers = useCallback(() => {
     // cp_only in the Channel Partner module: a lead transfer is a Sales activity, so
