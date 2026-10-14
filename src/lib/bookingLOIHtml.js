@@ -124,7 +124,7 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   } else {
     extra += mrow(v.applyStampDuty === 'No' ? 'Stamp Duty (Not Applicable)' : 'Stamp Duty (4.9% of Land Sale Deed)', v.applyStampDuty === 'No' ? 0 : v.stampDuty);
     extra += mrow(v.applyRegFee === 'No' ? 'Registration Fees (Not Applicable)' : ('Registration Fees (' + (v.gender === 'Female' ? ('Female - ' + (v.applyPageFee === 'No' ? 'Rs.0' : 'Rs.1,500')) : ('Male - 1% LSD' + (v.applyPageFee === 'No' ? '' : ' + Rs.1,500'))) + ')'), v.applyRegFee === 'No' ? 0 : v.regFees);
-    extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : 'GST (18% of Construction Agreement)', v.applyGst === 'No' ? 0 : v.gst)
+    extra += mrow(v.applyGst === 'No' ? 'GST (Not Applicable)' : (Math.round(v.devAgreement) > 0 ? 'GST (18% of Construction + Development Agreement)' : 'GST (18% of Construction Agreement)'), v.applyGst === 'No' ? 0 : v.gst)
       + (isKalrav3 ? (mrow('Maintenance Deposit', v.maintDeposit) + mrow('Maintenance Advance', v.maintAdvance)) : mrow('Maintenance', v.maint))
       + mrow('Legal Documentation charge', v.legal);
   }
