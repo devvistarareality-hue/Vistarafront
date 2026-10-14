@@ -44,8 +44,12 @@ export default function PaymentPlansSheet({ project, visible, onClose, onSaved }
   const setPlan = (fn) => setPlans((all) => ({ ...all, [tab]: fn(all[tab] || emptyPlan()) }));
   // The last installment takes whatever % the others leave, so a section always totals 100.
   const setRow = (sec, i, k, v) => setPlan((p) => ({ ...p, [sec]: balance(p[sec].map((r, idx) => (idx === i ? { ...r, [k]: v } : r))) }));
-  const addRow = (sec) => setPlan((p) => ({ ...p, [sec]: balance([...p[sec], { pct: '', days: '', stage: '' }]) }));
-  const dropRow = (sec, i) => setPlan((p) => ({ ...p, [sec]: balance(p[sec].filter((_, idx) => idx !== i)) }));
+  // "No. of Installments", as on the booking form: rows already filled are kept, new
+  // ones start empty, and the last one takes the remaining %.
+  const setCount = (sec, n) => setPlan((p) => {
+    const count = Math.min(24, Math.max(0, parseInt(n, 10) || 0));
+    return { ...p, [sec]: balance(Array.from({ length: count }, (_, i) => p[sec][i] || { pct: '', days: '', stage: '' })) };
+  });
   const setLegal = (k, v) => setPlan((p) => ({ ...p, legal: { ...p.legal, [k]: v } }));
   const copyDirect = () => setPlans((all) => ({ ...all, eoi: JSON.parse(JSON.stringify(all.direct || emptyPlan())) }));
 
@@ -113,9 +117,16 @@ export default function PaymentPlansSheet({ project, visible, onClose, onSaved }
                 <Text style={s.cardTitle}>{label}</Text>
                 {rows.length ? <Text style={ok ? s.totalOk : s.totalBad}>Total {total.toFixed(2)}%</Text> : null}
               </View>
+              <View style={s.countRow}>
+                <Text style={s.countLabel}>No. of Installments</Text>
+                <View style={s.countBox}>
+                  <TextInput style={s.in} keyboardType="number-pad" value={rows.length ? String(rows.length) : ''}
+                    onChangeText={(t) => setCount(sec, t.replace(/[^0-9]/g, ''))} placeholder="0" placeholderTextColor={COLORS.textTertiary} />
+                </View>
+              </View>
               {rows.length ? (
                 <View style={s.bar}><View style={StyleSheet.compose(ok ? s.barOk : s.barBad, { width: `${Math.min(100, total)}%` })} /></View> // inline-ok: share of 100% filled
-              ) : <Text style={s.empty}>No installments — the booking starts this section blank.</Text>}
+              ) : <Text style={s.empty}>0 = no installments; the booking starts this section blank.</Text>}
               {rows.map((r, i) => {
                 const isLast = i === rows.length - 1;
                 return (
@@ -138,16 +149,12 @@ export default function PaymentPlansSheet({ project, visible, onClose, onSaved }
                           <Text style={s.unit}>days</Text>
                         </View>
                       </View>
-                      <TouchableOpacity onPress={() => dropRow(sec, i)} hitSlop={8} style={s.drop}>
-                        <Ionicons name="close" size={16} color={COLORS.textSecondary} />
-                      </TouchableOpacity>
                     </View>
                     <Text style={s.when}>{whenText(r.days)}</Text>
                     <TextInput style={s.inStage} value={r.stage} onChangeText={(t) => setRow(sec, i, 'stage', t)} placeholder="Stage (optional), e.g. On booking" placeholderTextColor={COLORS.textTertiary} />
                   </View>
                 );
               })}
-              <TouchableOpacity onPress={() => addRow(sec)} style={s.add}><Text style={s.addText}>+ Add installment</Text></TouchableOpacity>
             </View>
           );
         })}
@@ -196,6 +203,10 @@ const s = StyleSheet.create({
   barOk: { height: '100%', borderRadius: 999, backgroundColor: COLORS.success },
   barBad: { height: '100%', borderRadius: 999, backgroundColor: COLORS.danger },
   empty: { fontSize: 12, color: COLORS.textSecondary },
+  countRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  countLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
+  countBox: { width: 90, flexDirection: 'row', alignItems: 'center', height: 40, borderWidth: 1.5, borderColor: COLORS.border,
+              borderRadius: RADIUS.md, paddingHorizontal: 10, backgroundColor: COLORS.surface },
   // One installment: number · share · due · remove, then its date in words and the stage.
   item: { gap: 6, padding: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   itemTop: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
