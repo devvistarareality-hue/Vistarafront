@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, FlatList, TouchableOpacity, TextInput, StatusBar,
          ActivityIndicator, RefreshControl, Modal, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import FilterSelect from '../../components/FilterSelect';
 import AppLoader from '../../components/AppLoader';
 import { PartnerActivitySheet } from '../../components/PartnerActivity';
 import { errText } from '../../lib/apiError';
+import { onlyPresent } from '../../lib/presentOptions';
 
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -287,18 +288,53 @@ export function ChannelPartnerDirectory({ companyId }) {
   const [refreshing, setRefreshing] = useState(false);
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
+  // Matching web: a directory of hundreds is read by these columns, plus the
+  // one question no column answers — which of these has produced anything.
+  const [statusF, setStatusF] = useState('');
+  const [segmentF, setSegmentF] = useState('');
+  const [locationF, setLocationF] = useState('');
+  const [bucket, setBucket] = useState('');
+  const [facets, setFacets] = useState(null);
   const [editing, setEditing] = useState(null);   // partner being edited
   const [formOpen, setFormOpen] = useState(false);
   const [activity, setActivity] = useState(null); // partner whose follow-ups/visits are open
 
-  const load = useCallback(async () => {
-    try {
-      const res = await apiFetch(SALES_ENDPOINTS.channelPartners + (companyId ? `?company_id=${companyId}` : ''));
-      if (res.ok) { const d = await res.json(); setRows(Array.isArray(d) ? d : []); }
-    } catch (_) {}
-    setLoading(false); setRefreshing(false);
+  useEffect(() => {
+    apiFetch(`${SALES_ENDPOINTS.channelPartners}?facets=1${companyId ? `&company_id=${companyId}` : ''}`)
+      .then((r) => (r.ok ? r.json() : null)).then((d) => d && setFacets(d)).catch(() => {});
   }, [companyId]);
+
+  // Only the newest request writes to state — filters outpace the network, and
+  // a slower earlier one landing last would show the wrong list.
+  const reqRef = useRef(0);
+
+  const load = useCallback(async () => {
+    const ticket = ++reqRef.current;
+    try {
+      const params = new URLSearchParams();
+      if (companyId) params.set('company_id', companyId);
+      if (category) params.set('category', category);
+      if (statusF) params.set('status', statusF);
+      if (segmentF) params.set('segment', segmentF);
+      if (locationF) params.set('location', locationF);
+      if (bucket) params.set('bucket', bucket);
+      const query = params.toString();
+      const res = await apiFetch(SALES_ENDPOINTS.channelPartners + (query ? `?${query}` : ''));
+      if (res.ok) {
+        const d = await res.json();
+        if (ticket !== reqRef.current) return;
+        setRows(Array.isArray(d) ? d : []);
+      }
+    } catch (_) {}
+    if (ticket === reqRef.current) { setLoading(false); setRefreshing(false); }
+  }, [companyId, category, statusF, segmentF, locationF, bucket]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const narrowed = !!(category || statusF || segmentF || locationF || bucket || q.trim());
+
+  function clearFilters() {
+    setCategory(''); setStatusF(''); setSegmentF(''); setLocationF(''); setBucket(''); setQ('');
+  }
 
   function remove(cp) {
     Alert.alert('Remove this partner?',
@@ -313,10 +349,11 @@ export function ChannelPartnerDirectory({ companyId }) {
   }
 
   const needle = q.trim().toLowerCase();
+  // Everything but the search is applied by the server (it holds the whole
+  // directory); the search stays here so typing filters without a round trip.
   const visible = useMemo(() => rows.filter((cp) =>
-    (!category || cp.category === category)
-    && (!needle || [cp.name, cp.contact_no, cp.firm_name]
-        .some((v) => String(v || '').toLowerCase().includes(needle)))), [rows, category, needle]);
+    (!needle || [cp.name, cp.contact_no, cp.firm_name]
+      .some((v) => String(v || '').toLowerCase().includes(needle)))), [rows, needle]);
 
   const renderItem = useCallback(({ item: cp }) => (
     <TouchableOpacity activeOpacity={0.8} onPress={() => { setEditing(cp); setFormOpen(true); }} style={[CARD, st.card]}>
@@ -353,7 +390,9 @@ export function ChannelPartnerDirectory({ companyId }) {
   const header = (
     <View>
       <View style={st.topRow}>
-        <Text style={st.count}>{rows.length} in the directory</Text>
+        <Text style={st.count}>
+          {narrowed ? `${visible.length} of the directory` : `${rows.length} in the directory`}
+        </Text>
         <TouchableOpacity onPress={() => { setEditing(null); setFormOpen(true); }} style={st.addBtn}>
           <Ionicons name="add" size={16} color={COLORS.white} />
           <Text style={st.addText}>Add</Text>
@@ -361,8 +400,40 @@ export function ChannelPartnerDirectory({ companyId }) {
       </View>
       <TextInput value={q} onChangeText={setQ} placeholder="Search name, contact no or firm name…"
         placeholderTextColor={MUTED} style={st.search} />
-      <FilterSelect label="All categories" value={category} onChange={setCategory}
-        options={[{ value: '', label: 'All categories' }, ...CATEGORY_OPTIONS]} style={st.filter} />
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.filterRow}>
+        <FilterSelect label="All statuses" value={statusF} onChange={setStatusF}
+          options={[{ value: '', label: 'All statuses' },
+                    { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+        <FilterSelect label="All categories" value={category} onChange={setCategory}
+          options={[{ value: '', label: 'All categories' },
+                    ...onlyPresent(CATEGORY_OPTIONS, facets?.categories ?? null, category)]} />
+        <FilterSelect label="All segments" value={segmentF} onChange={setSegmentF}
+          options={[{ value: '', label: 'All segments' },
+                    ...onlyPresent(SEGMENT_OPTIONS.filter((o) => o.value), facets?.segments ?? null, segmentF)]} />
+        <FilterSelect label="All locations" value={locationF} onChange={setLocationF}
+          options={[{ value: '', label: 'All locations' },
+                    ...(facets?.locations || []).map((l) => ({ value: l, label: l }))]} />
+      </ScrollView>
+
+      {/* The question a directory this size is opened with, and the one no
+          column answers: which partners have produced anything, and which has
+          nobody touched at all. Both are counts, not stored fields. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.pillRow}>
+        {[{ value: 'with_leads', label: 'With leads' },
+          { value: 'no_leads', label: 'No leads' },
+          { value: 'untouched', label: 'Never contacted' }].map((b) => (
+          <TouchableOpacity key={b.value} onPress={() => setBucket(bucket === b.value ? '' : b.value)}
+            style={[st.pill, bucket === b.value && st.pillOn]}>
+            <Text style={[st.pillText, bucket === b.value && st.pillTextOn]}>{b.label}</Text>
+          </TouchableOpacity>
+        ))}
+        {narrowed && (
+          <TouchableOpacity onPress={clearFilters} style={st.clearBtn}>
+            <Text style={st.clearText}>Clear</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
     </View>
   );
 
@@ -378,7 +449,9 @@ export function ChannelPartnerDirectory({ companyId }) {
           ListHeaderComponent={header}
           ListEmptyComponent={
             <Text style={st.empty}>
-              {rows.length ? 'No partner matches that search.' : 'No channel partners yet. Add the first one.'}
+              {rows.length ? 'No partner matches that search.'
+                : narrowed ? 'No partners match these filters.'
+                : 'No channel partners yet. Add the first one.'}
             </Text>
           }
           contentContainerStyle={st.pad}
@@ -438,6 +511,17 @@ const st = StyleSheet.create({
   search: { height: 40, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border,
             backgroundColor: COLORS.surface, color: TEXT, fontSize: 14, marginBottom: 10 },
   filter: { alignSelf: 'flex-start', marginBottom: 12 },
+  // Two scrolling rows rather than a wrap: on a phone four pickers and three
+  // toggles stacked would push the first partner below the fold.
+  filterRow: { flexDirection: 'row', gap: 8, paddingBottom: 8 },
+  pillRow: { flexDirection: 'row', gap: 8, paddingBottom: 12, alignItems: 'center' },
+  pill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+  pillOn: { backgroundColor: COLORS.accentSoft, borderColor: COLORS.link },
+  pillText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  pillTextOn: { color: COLORS.link },
+  clearBtn: { paddingHorizontal: 12, paddingVertical: 8 },
+  clearText: { fontSize: 12, fontWeight: '700', color: COLORS.error },
   loader: { marginTop: 24 },
   empty: { textAlign: 'center', color: MUTED, marginTop: 40 },
   dupeWrap: { marginTop: -8, marginBottom: 14 },
