@@ -63,7 +63,7 @@ export default function UserNotificationsSheet({ user, visible, onClose }) {
         {!ready ? <AppLoader style={s.loader} /> : (
           <NotificationPrefsEditor kinds={catalogue.notifications || []} fallback={catalogue.notification_default}
             value={value} onChange={setValue} inherit={data.designation || {}}
-            inheritLabel={data.designation_name || 'the designation'} />
+            inheritLabel={data.designation_name || 'the designation'} modules={user.modules || null} />
         )}
       </ScrollView>
       <View style={s.foot}>

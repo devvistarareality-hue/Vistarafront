@@ -258,7 +258,7 @@ export default function PermissionsSheet({ designation, others, visible, onClose
           </>
         ) : tab === 'notify' ? (
           <NotificationPrefsEditor kinds={catalogue.notifications || []} presets={catalogue.notification_presets || []}
-            fallback={catalogue.notification_default} value={notif} onChange={setNotif} />
+            fallback={catalogue.notification_default} value={notif} onChange={setNotif} modules={mine} />
         ) : tab === 'menu' ? (
           <>
             {/* A module left off this list keeps its own default menu, so a CFO

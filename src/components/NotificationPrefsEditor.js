@@ -11,21 +11,29 @@ import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS } from '../constants/theme';
+import { GROUPS } from '../lib/moduleGroups';
 
 const MODES = [['push', 'Push'], ['inapp', 'In-app'], ['off', 'Off']];
+// Each module's display name, as on the home screen (AR → "Accounts Receivable").
+const MODULE_TITLE = Object.fromEntries(GROUPS.flatMap((g) => g.parts.filter((p) => p.module).map((p) => [p.module, p.title])));
 const LEVELS = [1, 2, 3, 4, 5];
 
-export default function NotificationPrefsEditor({ kinds = [], presets = [], fallback, value, onChange, inherit = null, inheritLabel = 'the designation' }) {
+// `modules`: the modules this designation's menu answers for (or the person's modules);
+// only their notifications are listed, a section per module. Channel Partner shares the
+// Sales notifications. Left out → every module. Same as the website.
+export default function NotificationPrefsEditor({ kinds = [], presets = [], fallback, value, onChange, inherit = null, inheritLabel = 'the designation', modules = null }) {
   const base = fallback || { mode: 'push', levels: 5, digest: false };
   const groups = useMemo(() => {
+    const has = (m) => !modules || modules.includes(m) || (m === 'Sales' && modules.includes('Channel Partner'));
     const out = [];
-    kinds.forEach((k) => {
-      let g = out.find((x) => x.name === k.group);
-      if (!g) { g = { name: k.group, items: [] }; out.push(g); }
+    kinds.filter((k) => has(k.module || 'Sales')).forEach((k) => {
+      const m = k.module || 'Sales';
+      let g = out.find((x) => x.module === m);
+      if (!g) { g = { module: m, name: MODULE_TITLE[m] || m, items: [] }; out.push(g); }
       g.items.push(k);
     });
     return out;
-  }, [kinds]);
+  }, [kinds, modules]);
 
   const personMode = inherit !== null;
   const own = (k) => (value || {})[k];
@@ -37,7 +45,7 @@ export default function NotificationPrefsEditor({ kinds = [], presets = [], fall
 
   return (
     <View>
-      {!personMode && presets.length ? (
+      {!personMode && presets.length > 0 && groups.some((g) => g.items.some((k) => k.team)) ? (
         <View style={s.presets}>
           <Text style={s.presetLead}>Start from</Text>
           {presets.map((p) => (
@@ -47,14 +55,18 @@ export default function NotificationPrefsEditor({ kinds = [], presets = [], fall
           ))}
         </View>
       ) : null}
+      {!groups.length ? <Text style={s.help}>No notifications belong to the modules in this menu.</Text> : null}
       {groups.map((g) => (
-        <View key={g.name} style={s.card}>
+        <View key={g.module} style={s.card}>
           <Text style={s.group}>{g.name.toUpperCase()}</Text>
-          {g.items.map((k) => {
+          {g.items.map((k, idx) => {
+            // Sub-headings only where a module has more than one kind of alert (Sales).
+            const newSub = new Set(g.items.map((x) => x.group)).size > 1 && (idx === 0 || g.items[idx - 1].group !== k.group);
             const e = effective(k.key);
             const isDefault = personMode && !own(k.key);
             return (
               <View key={k.key} style={s.row}>
+                {newSub ? <Text style={s.sub}>{k.group.toUpperCase()}</Text> : null}
                 <View style={s.titleRow}>
                   <Text style={e.mode === 'off' ? s.labelOff : s.label}>{k.label}</Text>
                   {k.team ? <Text style={s.team}>TEAM</Text> : null}
@@ -117,6 +129,7 @@ const s = StyleSheet.create({
   presetText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   card: { borderWidth: 1, borderColor: COLORS.cardBorder, backgroundColor: COLORS.surface2, borderRadius: RADIUS.lg, padding: 12, marginTop: 12 },
   group: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8, color: COLORS.textSecondary, marginBottom: 4 },
+  sub: { fontSize: 10, fontWeight: '700', letterSpacing: 0.6, color: COLORS.textTertiary, marginBottom: 2 },
   row: { paddingVertical: 10, borderTopWidth: 1, borderTopColor: COLORS.border, gap: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   label: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
