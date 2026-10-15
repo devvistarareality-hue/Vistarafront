@@ -16,6 +16,7 @@ import FilterSelect from '../../components/FilterSelect';
 import AppLoader from '../../components/AppLoader';
 import { isSuperAdmin } from '../../lib/roles';
 import { startImpersonation } from '../../lib/impersonate';
+import UserNotificationsSheet from '../../components/UserNotificationsSheet';
 
 const ROLE_AVATAR_COLOR = {
   Admin:       COLORS.navy,
@@ -41,6 +42,8 @@ export default function UserManagementScreen({ navigation }) {
   const { companies: allCompanies } = useSelector((s) => s.companies);
   const me = useSelector((st) => st.auth?.user);
   const canViewAs = isSuperAdmin(me);
+  // The person whose notification settings are open, or null.
+  const [notifFor, setNotifFor] = useState(null);
 
   useFocusEffect(useCallback(() => { dispatch(fetchUsers()); }, [dispatch]));
   useEffect(() => { if (error) Alert.alert('Error', error); }, [error]);
@@ -176,6 +179,9 @@ export default function UserManagementScreen({ navigation }) {
                 <TouchableOpacity style={s.editBtn} onPress={() => navigation.navigate('CreateUser', { user: item })}>
                   <Ionicons name="pencil" size={16} color={COLORS.link} />
                 </TouchableOpacity>
+                <TouchableOpacity style={s.notifBtn} onPress={() => setNotifFor(item)}>
+                  <Ionicons name="notifications-outline" size={16} color={COLORS.link} />
+                </TouchableOpacity>
                 {canViewAs && item.is_active && !item.is_staff && item.id !== me?.id ? (
                   <TouchableOpacity style={s.viewAsBtn} onPress={() => handleViewAs(item)}>
                     <Ionicons name="eye-outline" size={16} color={COLORS.warningSolid} />
@@ -195,6 +201,7 @@ export default function UserManagementScreen({ navigation }) {
           }
         />
       )}
+      <UserNotificationsSheet visible={!!notifFor} user={notifFor} onClose={() => setNotifFor(null)} />
     </SafeAreaView>
   );
 }
@@ -231,6 +238,7 @@ const s = StyleSheet.create({
   actions:     { flexDirection: 'column', gap: 6, marginLeft: 8 },
   editBtn:     { padding: 6, borderRadius: 8, backgroundColor: COLORS.linkBg },
   viewAsBtn:   { padding: 6, borderRadius: 8, backgroundColor: COLORS.warningSoft },
+  notifBtn:    { padding: 6, borderRadius: 8, backgroundColor: COLORS.accentSoft },
   toggleBtn:   { padding: 2 },
   deleteBtn:   { padding: 6, borderRadius: 8, backgroundColor: COLORS.screenBg },
 });

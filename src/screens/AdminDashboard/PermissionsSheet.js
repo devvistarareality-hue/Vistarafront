@@ -9,6 +9,7 @@ import FormSheet from '../../components/FormSheet';
 import { Button, Segmented } from '../../components/ui';
 import FilterSelect from '../../components/FilterSelect';
 import { errText } from '../../lib/apiError';
+import NotificationPrefsEditor from '../../components/NotificationPrefsEditor';
 
 // Every module the system knows, and the short name the capability vocabulary
 // uses for AR. Mirrors the web editor, so the two offer the same list.
@@ -27,6 +28,7 @@ const TABS = [
   { value: 'actions', label: 'Actions' },
   { value: 'menu', label: 'Menu' },
   { value: 'view', label: 'Dashboard' },
+  { value: 'notify', label: 'Alerts' },
 ];
 
 // One plain line at the top of each tab, so it is clear what the tab decides.
@@ -34,6 +36,7 @@ const TAB_HELP = {
   actions: 'What they can do. For managers and directors leave the "Works …" switches off — those turn their screen into a telecaller\'s or STM\'s work queue.',
   menu: 'Which tabs appear in their sidebar. Tap a screen to show or hide it.',
   view: 'Which dashboard opens first, and whose leads, visits and bookings they can see.',
+  notify: 'Which alerts they get: Push (bell + phone), In-app (bell only) or Off. Team alerts can go only to the direct manager, or come as one morning summary.',
 };
 
 // The personal work queues. A director runs the desk rather than working a queue,
@@ -55,6 +58,8 @@ export default function PermissionsSheet({ designation, others, visible, onClose
   // naming those here, saving an Accounts menu would empty them.
   const [extra, setExtra] = useState([]);
   const [dash, setDash] = useState('');
+  // Notifications: per kind push / in-app / off (+ levels and summary for team alerts).
+  const [notif, setNotif] = useState({});
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   // Set once "Full access" has filled the form, until it is saved.
@@ -70,6 +75,7 @@ export default function PermissionsSheet({ designation, others, visible, onClose
     setExtra((designation.effective_screen_modules || designation.screens_modules || [])
       .filter((m) => m && m !== ownModule));
     setDash(designation.dashboard || '');
+    setNotif(designation.notification_prefs || {});
     apiFetch(`${BASE_URL}/api/auth/designations/capabilities/`)
       .then((r) => r.json()).then(setCatalogue)
       .catch(() => setErr('Could not load the permission list.'));
@@ -123,7 +129,7 @@ export default function PermissionsSheet({ designation, others, visible, onClose
       const r = await apiFetch(`${BASE_URL}/api/auth/designations/${designation.id}/`, {
         method: 'PATCH',
         body: JSON.stringify({ capabilities: caps, data_scope: scope, screens,
-          screens_modules: mine, dashboard: dash }),
+          screens_modules: mine, dashboard: dash, notification_prefs: notif }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(errText(d, 'Could not save.')); return; }
@@ -250,6 +256,9 @@ export default function PermissionsSheet({ designation, others, visible, onClose
               );
             })}
           </>
+        ) : tab === 'notify' ? (
+          <NotificationPrefsEditor kinds={catalogue.notifications || []} presets={catalogue.notification_presets || []}
+            fallback={catalogue.notification_default} value={notif} onChange={setNotif} />
         ) : tab === 'menu' ? (
           <>
             {/* A module left off this list keeps its own default menu, so a CFO

@@ -45,6 +45,8 @@ const ROUTE_FOR_TYPE = {
   task_due_soon: { screen: 'TaskList', params: { tab: 'my_tasks' } },
   // A new project waits on Approvals → Projects; Club 1000 investors on their screens.
   project_pending_approval: { screen: 'BookingApprovals', params: { section: 'projects' } },
+  // The team morning summary opens the overdue follow-ups.
+  team_digest: { screen: 'SalesFollowUps', params: { initialFilter: 'overdue' } },
   investor_approval: { screen: 'Club1000InvestorApprovals' },
   investor_approved: { screen: 'Club1000Investors' },
 };
