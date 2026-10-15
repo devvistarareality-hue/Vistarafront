@@ -12,6 +12,7 @@ import { setAdminCompany } from '../../redux/reducers/adminFilterReducer';
 import FilterSelect from '../../components/FilterSelect';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import ThemeToggle from '../../components/ThemeToggle';
+import NotificationBellButton from '../../components/NotificationBellButton';
 import { useImpersonating } from '../../lib/useImpersonating';
 import { groupsFor, openGroup } from '../../lib/moduleGroups';
 import { DepartmentCard } from '../../components/Departments';
@@ -52,6 +53,8 @@ export default function AdminDashboardScreen({ navigation }) {
             <Text style={s.adminBadgeText}>Administrator</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {/* The admin stack is flat: the Notifications screen is one of its own routes. */}
+            <NotificationBellButton onOpen={() => navigation.navigate('SalesNotifications')} />
             <ThemeToggle compact />
             {!viewingAs && (
             <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
