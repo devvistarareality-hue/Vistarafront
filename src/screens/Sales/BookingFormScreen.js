@@ -82,6 +82,7 @@ export default function BookingFormScreen({ navigation, route }) {
 
   const [project, setProject] = useState(p.formulaSet ? { name: p.projectName, formula_set: p.formulaSet } : null);
   const [plcPlots, setPlcPlots] = useState(null);   // picked plots' Corner / Common Plot Facing marks
+  const [plotAreaFixed, setPlotAreaFixed] = useState(false);   // LOI: Plot Area is the plots' own, not typed
   const [plotNo, setPlotNo] = useState(p.plotNumber || '');
   const [sources, setSources] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -168,6 +169,8 @@ export default function BookingFormScreen({ navigation, route }) {
         setPickedNos(picked.map((x) => stripPlotPrefix(x.number)));
         // How many picked plots carry each Kalrav PLC mark (seeds the PLC rows below).
         setPlcPlots(picked.map((x) => ({ is_corner: !!x.is_corner, is_clubhouse_facing: !!x.is_clubhouse_facing })));
+        // An LOI's Plot Area is the plots' own, fixed when the project was mapped.
+        setPlotAreaFixed(!eoiMode && picked.every((x) => (parseFloat(String(x.size || '').replace(/[^\d.]/g, '')) || 0) > 0));
         const sumArea = picked.reduce((a, x) => a + (parseFloat((x.size || '').replace(/[^\d.]/g, '')) || 0), 0);
         // Auto-map construction area from the plot definition(s) into the booking.
         const sumConst = picked.reduce((a, x) => a + (parseFloat((x.construction_area || '').replace(/[^\d.]/g, '')) || 0), 0);
@@ -1292,7 +1295,9 @@ export default function BookingFormScreen({ navigation, route }) {
             <Pick key={`loi${i}`} l={loiSlots > 1 ? `Unit Type — ${loiLabel(i)}` : 'Unit Type'} val={loiPick[i] || ''}
               on={(v) => setLoiPick((p) => ({ ...p, [i]: v }))} opts={['', ...loiTypes.map((x) => x.type)]} />
           ))}
-          <Fld l={`Plot Area (${unit})`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} />
+          {/* An LOI is on real plots whose area was fixed when the project was mapped, so it
+              is shown, not typed. An EOI, or a plot with no area on record, takes it by hand. */}
+          <Fld l={`Plot Area (${unit})${plotAreaFixed ? ' · from the plot' : ''}`} val={f.area} on={(t) => set('area', t)} kb="numeric" invalid={errs.area} ro={plotAreaFixed} />
           {flags.hasConstructionFields && <Fld l={`Construction Area (${unit})`} val={f.const_area} on={(t) => set('const_area', t)} kb="numeric" />}
           {flags.bunglowTypeIsDropdown && !eoiMode && !loiTypes.length && <Pick l="Villa Type" val={f.villa_type} on={(x) => set('villa_type', x)} opts={['1BHK', '2BHK', '3BHK', '4BHK', 'Customized Villa']} />}
         </Sec>
@@ -1642,10 +1647,10 @@ const devRateOf = (b) => ((b.formula_set || 'kalrav') === 'kalrav' && Number(b.d
   ? String(Number(b.dev_agreement) / Number(b.area)) : b.dev_agreement_rate);
 const stageOf = (r) => ((r && String(r.stage || '').trim()) ? { stage: String(r.stage).trim() } : {});
 
-const Fld = ({ l, val, on, kb, ph, invalid }) => (
+const Fld = ({ l, val, on, kb, ph, invalid, ro }) => (
   <View style={{ marginBottom: 10 }}>
     <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>{l}</Text>
-    <TextInput value={val} onChangeText={on} keyboardType={kb || 'default'} placeholder={ph}
+    <TextInput value={val} onChangeText={on} keyboardType={kb || 'default'} placeholder={ph} editable={!ro}
       style={[inpS, invalid ? { borderColor: COLORS.error, backgroundColor: COLORS.errorBg } : null]} />
   </View>
 );
