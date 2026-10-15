@@ -140,6 +140,15 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   const [revDetails, setRevDetails] = useState({});
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  // A Channel Partner booking is on the CP Approvals, a Sales one on Sales's — and a
+  // notification does not say which. Not found here → open the other list, once
+  // (`looked` stops it bouncing back when it is on neither). Mirrors the website.
+  useEffect(() => {
+    if (!focusId || loading || tab !== '' || rows.some((b) => String(b.id) === focusId) || route?.params?.looked) return;
+    const other = cpMode ? {} : { cpOnly: true, cpMode: true, adminView: true };
+    (navigation.replace || navigation.navigate)('BookingApprovals', { ...other, focusBookingId: focusId, looked: true, _n: Date.now() });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId, loading, tab, rows]);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(null);
   const [managers, setManagers] = useState([]);
