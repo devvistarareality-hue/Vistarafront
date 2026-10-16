@@ -1,3 +1,5 @@
+// First: sign-in tokens go to secure storage before anything reads one.
+import './src/lib/secureTokens';
 import { registerRootComponent } from 'expo';
 
 import Root from './Root';
