@@ -3,7 +3,8 @@
 // overdue to them, what falls due next, what they have been paid, and a Pay sheet
 // that settles any of their pending payouts at once. Same as the website.
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, StyleSheet, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -210,30 +211,35 @@ function Fig({ label, value, sub, bad }) {
   );
 }
 
-// Settle any of one investor's pending payouts: late ones ticked to start with, each
-// amount adjustable, one note for all.
+// Settle any of one investor's pending payouts. Each payout carries its own target
+// (what was due), the amount actually paid (the target unless changed), the date it
+// was paid (today unless changed) and its own remarks. Late ones start ticked.
 function PaySheet({ row, today, onClose, onDone }) {
-  const [sel, setSel] = useState({});
-  const [amounts, setAmounts] = useState({});
-  const [notes, setNotes] = useState('');
+  const [lines, setLines] = useState({});
+  const [picking, setPicking] = useState(null);   // payout id whose date picker is open
   const [busy, setBusy] = useState(false);
   const [seededFor, setSeededFor] = useState(null);
   if (row && seededFor !== row.id) {
     setSeededFor(row.id);
-    setSel(Object.fromEntries(row.pending.map((p) => [p.id, p.due_date < today])));
-    setAmounts(Object.fromEntries(row.pending.map((p) => [p.id, String(Number(p.amount_due) || 0)])));
-    setNotes('');
+    setLines(Object.fromEntries(row.pending.map((p) => [p.id, {
+      on: p.due_date < today, amount: String(Number(p.amount_due) || 0), date: today, notes: '',
+    }])));
   }
   if (!row) return null;
-  const picked = row.pending.filter((p) => sel[p.id]);
-  const total = picked.reduce((t, p) => t + (Number(amounts[p.id]) || 0), 0);
+  const setLine = (id, patch) => setLines((l) => ({ ...l, [id]: { ...l[id], ...patch } }));
+  const picked = row.pending.filter((p) => lines[p.id]?.on);
+  const total = picked.reduce((t, p) => t + (Number(lines[p.id].amount) || 0), 0);
+  const target = picked.reduce((t, p) => t + (Number(p.amount_due) || 0), 0);
 
   async function pay() {
     if (!picked.length) { Alert.alert('Nothing ticked', 'Tick at least one payout.'); return; }
     setBusy(true);
     let done = 0;
     for (const p of picked) {
-      const res = await apiFetch(CLUB1000_ENDPOINTS.payoutMarkPaid(p.id), { method: 'POST', body: JSON.stringify({ amount: amounts[p.id], notes }) }).catch(() => null);
+      const l = lines[p.id];
+      const res = await apiFetch(CLUB1000_ENDPOINTS.payoutMarkPaid(p.id), {
+        method: 'POST', body: JSON.stringify({ amount: l.amount, paid_date: l.date, notes: l.notes }),
+      }).catch(() => null);
       if (!res || !res.ok) {
         const d = res ? await res.json().catch(() => ({})) : {};
         Alert.alert('Could not finish', `${done} of ${picked.length} paid — ${errText(d, 'the next one could not be saved.')}`);
@@ -258,27 +264,60 @@ function PaySheet({ row, today, onClose, onDone }) {
         </View>
         <TouchableOpacity onPress={onClose} style={s.back}><Ionicons name="close" size={18} color={COLORS.textPrimary} /></TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={s.sheetBody}>
+      <ScrollView contentContainerStyle={s.sheetBody} keyboardShouldPersistTaps="handled">
         <Text style={s.section}>PENDING PAYOUTS</Text>
         {row.pending.map((p) => {
-          const on = !!sel[p.id];
+          const l = lines[p.id] || {};
+          const on = !!l.on;
+          const late = p.due_date < today;
+          const gap = Number(l.amount) - Number(p.amount_due);
           return (
-            <View key={p.id} style={s.payRow}>
-              <TouchableOpacity onPress={() => setSel((x) => ({ ...x, [p.id]: !on }))} style={s.payTick}>
+            <View key={p.id} style={[s.payCard, !on && s.payCardOff]}>
+              <TouchableOpacity onPress={() => setLine(p.id, { on: !on })} style={s.payTop}>
                 <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? COLORS.link : COLORS.textSecondary} />
+                <View style={s.flex}>
+                  <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}</Text>
+                  <Text style={[s.payWhen, late && s.payLate]}>Due {formatDMY(p.due_date)}{late ? ' · late' : ''}</Text>
+                </View>
+                <View style={s.payTarget}>
+                  <Text style={s.payLbl}>TARGET</Text>
+                  <Text style={s.payTargetAmt}>{rupee(p.amount_due)}</Text>
+                </View>
               </TouchableOpacity>
-              <View style={s.flex}>
-                <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}</Text>
-                <Text style={[s.payWhen, p.due_date < today && s.payLate]}>Due {formatDMY(p.due_date)}{p.due_date < today ? ' · late' : ''}</Text>
-              </View>
-              <TextInput value={amounts[p.id]} editable={on} keyboardType="decimal-pad"
-                onChangeText={(t) => setAmounts((a) => ({ ...a, [p.id]: t }))} style={[s.payAmt, !on && s.payAmtOff]} />
+              {on && (
+                <View style={s.payFields}>
+                  <View style={s.payPair}>
+                    <View style={s.flex}>
+                      <Text style={s.payLbl}>ACTUAL PAID (₹)</Text>
+                      <TextInput value={l.amount} keyboardType="decimal-pad" onChangeText={(t) => setLine(p.id, { amount: t })} style={s.payInput} />
+                    </View>
+                    <View style={s.flex}>
+                      <Text style={s.payLbl}>PAID ON</Text>
+                      <TouchableOpacity onPress={() => setPicking(p.id)} style={s.payInput}>
+                        <Text style={s.payDateText}>{formatDMY(l.date)}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  {gap !== 0 && !Number.isNaN(gap) && <Text style={s.payDiff}>{gap < 0 ? 'Short' : 'More'} by {rupee(Math.abs(gap))}</Text>}
+                  <Text style={s.payLbl}>REMARKS</Text>
+                  <TextInput value={l.notes} onChangeText={(t) => setLine(p.id, { notes: t })} placeholder="UTR / cheque no." placeholderTextColor={COLORS.text3} style={s.payInput} />
+                </View>
+              )}
             </View>
           );
         })}
-        <View style={s.payTotal}><Text style={s.payTotalText}>To pay now</Text><Text style={s.payTotalText}>{rupee(total)}</Text></View>
-        <Text style={s.section}>NOTES</Text>
-        <TextInput value={notes} onChangeText={setNotes} placeholder="Cheque / UTR no., bank…" placeholderTextColor={COLORS.text3} style={s.notes} />
+        {picking != null && lines[picking] && (
+          <DateTimePicker value={new Date(`${lines[picking].date}T00:00:00`)} mode="date" maximumDate={new Date()}
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            onChange={(_, d) => { const id = picking; setPicking(null); if (d) setLine(id, { date: iso(d) }); }} />
+        )}
+        <View style={s.payTotal}>
+          <Text style={s.payTotalText}>To pay now{picked.length ? ` · ${picked.length}` : ''}</Text>
+          <View style={s.payTotalRight}>
+            <Text style={s.payTotalText}>{rupee(total)}</Text>
+            {picked.length > 0 && total !== target && <Text style={s.payDiff}>of {rupee(target)} due</Text>}
+          </View>
+        </View>
         <TouchableOpacity onPress={pay} disabled={busy || !picked.length} style={[s.payBtn, (busy || !picked.length) && s.dim]}>
           {busy ? <ActivityIndicator color={COLORS.btnText} /> : <Text style={s.payBtnText}>Mark {picked.length || ''} paid · {rupee(total)}</Text>}
         </TouchableOpacity>
@@ -341,16 +380,23 @@ const s = StyleSheet.create({
   sheetSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   sheetBody: { padding: 16, paddingBottom: 40 },
   section: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: COLORS.link, marginBottom: 8, marginTop: 4 },
-  payRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.border },
-  payTick: { padding: 2 },
   payWhat: { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary },
   payWhen: { fontSize: 11.5, color: COLORS.textSecondary },
   payLate: { color: COLORS.error },
-  payAmt: { width: 110, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 13, color: COLORS.textPrimary, textAlign: 'right', backgroundColor: COLORS.surface },
-  payAmtOff: { opacity: 0.5 },
+  payCard: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: 10, marginBottom: 10, backgroundColor: COLORS.surface },
+  payCardOff: { opacity: 0.6 },
+  payTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  payTarget: { alignItems: 'flex-end' },
+  payTargetAmt: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary },
+  payFields: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border, gap: 4 },
+  payPair: { flexDirection: 'row', gap: 10, marginBottom: 6 },
+  payLbl: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary, marginBottom: 3 },
+  payInput: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: COLORS.textPrimary, backgroundColor: COLORS.cardBg, minHeight: 38, justifyContent: 'center' },
+  payDateText: { fontSize: 13, color: COLORS.textPrimary },
+  payDiff: { fontSize: 11, fontWeight: '700', color: COLORS.warning },
+  payTotalRight: { alignItems: 'flex-end' },
   payTotal: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderTopWidth: 1, borderTopColor: COLORS.border, marginBottom: 12 },
   payTotalText: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary },
-  notes: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.surface, marginBottom: 16 },
   payBtn: { backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center' },
   payBtnText: { color: COLORS.btnText, fontSize: 15, fontWeight: '800' },
   dim: { opacity: 0.5 },
