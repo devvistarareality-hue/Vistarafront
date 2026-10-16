@@ -1039,6 +1039,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   // added the investor, and its renewal / maturity tiles open the rows they counted.
   const [range, setRange] = useState({ from: '', to: '' });
   const [payoutFilter, setPayoutFilter] = useState('');
+  // Scheme filter — the server's scheme_id, as on the website.
+  const [schemeFilter, setSchemeFilter] = useState('');
   const [addedByFilter, setAddedByFilter] = useState('');
   const [bucket, setBucket] = useState(route?.params?.bucket || '');
   React.useEffect(() => { if (route?.params?.bucket !== undefined) setBucket(route.params.bucket || ''); }, [route?.params?.bucket]);
@@ -1082,6 +1084,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       if (search) params.set('search', search);
       if (bucket) params.set('bucket', bucket);
       if (payoutFilter) params.set('interest_payout', payoutFilter);
+      if (schemeFilter) params.set('scheme_id', schemeFilter);
       if (addedByFilter) params.set('added_by', addedByFilter);
       if (range.from) params.set('date_from', range.from);
       if (range.to) params.set('date_to', range.to);
@@ -1099,7 +1102,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   }
 
   useFocusEffect(React.useCallback(() => { load(); },
-    [statusFilter, search, bucket, payoutFilter, addedByFilter, range.from, range.to]));
+    [statusFilter, search, bucket, payoutFilter, schemeFilter, addedByFilter, range.from, range.to]));
 
   function redeem(id) {
     Alert.alert('Redeem investment?', 'This applies the premature-redemption rate for the elapsed period.', [
@@ -1194,6 +1197,10 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         )}
         <PeriodFilter value={range} onChange={setRange} anyLabel="Any investment date" />
         <View style={invF.row}>
+          {schemes.length > 1 && (
+            <FilterSelect label="All schemes" value={schemeFilter} onChange={setSchemeFilter} style={invF.cell}
+              options={[{ value: '', label: 'All schemes' }, ...schemes.map((sc) => ({ value: String(sc.id), label: sc.name }))]} />
+          )}
           <FilterSelect label="All payouts" value={payoutFilter} onChange={setPayoutFilter} style={invF.cell}
             options={[{ value: '', label: 'All payouts' }, ...[['quarterly', 'Quarterly'], ['monthly', 'Monthly'], ['yearly', 'Yearly'], ['maturity', 'At maturity']]
               .filter(([v]) => !facets?.payouts || facets.payouts.includes(v) || payoutFilter === v).map(([v, l]) => ({ value: v, label: l }))]} />
@@ -1206,8 +1213,17 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <AppLoader style={{ marginTop: 24 }} /> : investors.length === 0 ? (
-          <Text style={{ textAlign: 'center', color: MUTED, marginTop: 30 }}>{search ? 'No investors match your search.' : 'No investors yet.'}</Text>
+        {/* The book on screen: how many investors and how much. Same as the website. */}
+        {!loading && investors.length > 0 && (
+          <View style={ClubInvestorsScreenS.totalBanner}>
+            <Text style={ClubInvestorsScreenS.totalLabel}>
+              TOTAL · {investors.length} INVESTOR{investors.length === 1 ? '' : 'S'} · {new Set(investors.map((i) => i.scheme_name)).size} SCHEME{new Set(investors.map((i) => i.scheme_name)).size === 1 ? '' : 'S'}
+            </Text>
+            <Text style={ClubInvestorsScreenS.totalAmt}>{fmtMoney(investors.reduce((t, i) => t + (Number(i.amount_invested) || 0), 0))}</Text>
+          </View>
+        )}
+        {loading ? <AppLoader style={ClubInvestorsScreenS.listLoader} /> : investors.length === 0 ? (
+          <Text style={ClubInvestorsScreenS.listEmpty}>{search ? 'No investors match your search.' : 'No investors yet.'}</Text>
         ) : investors.map((inv) => {
           const sc = STATUS_COLOR[inv.status] || { bg: COLORS.surfaceAlt, fg: MUTED };
           return (
@@ -1303,6 +1319,11 @@ const ClubInvestorsScreenS = StyleSheet.create({
   btn3Dim: { opacity: 0.5 },
   // Revise LOI header: the R-number title and who it is for.
   reviseHead: { flex: 1 },
+  totalBanner: { backgroundColor: COLORS.link, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 },
+  totalLabel: { color: COLORS.accentSoft, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  totalAmt: { color: '#fff', fontSize: 21, fontWeight: '800', marginTop: 4 },
+  listLoader: { marginTop: 24 },
+  listEmpty: { textAlign: 'center', color: COLORS.textSecondary, marginTop: 30 },
   loiBtnText: { color: COLORS.success, fontSize: 13, fontWeight: '700' },
   reviseSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   // A small action chip in an investor row (Revise LOI).

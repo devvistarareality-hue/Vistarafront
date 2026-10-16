@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, RefreshControl, Platform, StyleSheet } from 'react-native';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -182,6 +183,7 @@ export default function Club1000FollowUpsScreen({ navigation }) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter,     setFilter]     = useState('today');
+  const [schemeSel,  setSchemeSel]  = useState([]);
   const [completing, setCompleting] = useState(null);
 
   const load = useCallback(async (refresh = false) => {
@@ -203,8 +205,11 @@ export default function Club1000FollowUpsScreen({ navigation }) {
   }
 
   const now = new Date();
+  // Scheme filter — the lead's scheme, as on the other Club 1000 screens. Same as the website.
+  const schemeOptions = [...new Set(items.map((fu) => fu.lead_scheme_name).filter(Boolean))].sort();
   const visible = items.filter((fu) => {
     const at = new Date(fu.scheduled_at);
+    if (schemeSel.length && !schemeSel.includes(fu.lead_scheme_name)) return false;
     if (filter === 'all')     return true;
     if (filter === 'pending') return fu.status === 'pending';
     if (filter === 'today')   return fu.status === 'pending' && at >= startOfToday() && at <= endOfToday();
@@ -243,6 +248,12 @@ export default function Club1000FollowUpsScreen({ navigation }) {
           );
         })}
       </View>
+      {schemeOptions.length > 1 && (
+        <View style={fuS.schemeRow}>
+          <MultiFilterSelect label="All Schemes" noun="schemes" value={schemeSel} onChange={setSchemeSel}
+            options={schemeOptions.map((n) => ({ value: n, label: n }))} />
+        </View>
+      )}
 
       {loading ? (
         <AppLoader style={{ marginTop: 24 }} />
@@ -287,3 +298,7 @@ export default function Club1000FollowUpsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+const fuS = StyleSheet.create({
+  schemeRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 10 },
+});

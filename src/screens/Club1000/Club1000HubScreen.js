@@ -13,6 +13,7 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import { DashHero, DashKpi, DashKpiGrid, DashAlerts, DashCard, DashBars } from '../../components/Dash';
 import { inrShort, pct } from '../../lib/inr';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { canUseAI } from '../Sales/AskNexoraScreen';
 
 const NAVY  = COLORS.navy;
@@ -65,6 +66,12 @@ export default function Club1000HubScreen({ navigation, route }) {
   visibleMenu = visibleMenu.filter((m) => (!m.adminOnly || isLogAdmin) && (!m.aiOnly || canUseAI(user)));
 
   const [stats,      setStats]      = useState(null);
+  // Scheme filter: every figure below for just these schemes (names here, ids to the API).
+  const [schemes,    setSchemes]    = useState([]);
+  const [schemeSel,  setSchemeSel]  = useState([]);
+  useEffect(() => {
+    apiFetch(CLUB1000_ENDPOINTS.schemes).then((r) => (r.ok ? r.json() : [])).then((d) => setSchemes(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [companyId]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -151,6 +158,8 @@ export default function Club1000HubScreen({ navigation, route }) {
       if (companyId) params.set('company_id', companyId);
       if (effectiveDates.from) params.set('date_from', effectiveDates.from);
       if (effectiveDates.to)   params.set('date_to', effectiveDates.to);
+      const ids = schemes.filter((sc) => schemeSel.includes(sc.name)).map((sc) => sc.id);
+      if (ids.length) params.set('scheme', ids.join(','));
       const qs = params.toString() ? `?${params.toString()}` : '';
       const res = await apiFetch(`${CLUB1000_ENDPOINTS.stats}${qs}`);
       if (res.ok) setStats(await res.json());
@@ -158,7 +167,7 @@ export default function Club1000HubScreen({ navigation, route }) {
     setLoading(false); setRefreshing(false);
   }
 
-  useEffect(() => { loadStats(); }, [companyId, dateFrom, dateTo, selectedMonths, selectedQuarter, selectedFyYear]);
+  useEffect(() => { loadStats(); }, [companyId, dateFrom, dateTo, selectedMonths, selectedQuarter, selectedFyYear, schemeSel.join('|')]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
@@ -338,6 +347,12 @@ export default function Club1000HubScreen({ navigation, route }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadStats(true)} colors={[NAVY]} tintColor={NAVY} />}>
 
         <View style={ClubHubScreenS.dash}>
+          {schemes.length > 1 && (
+            <View style={ClubHubScreenS.schemeRow}>
+              <MultiFilterSelect label="All Schemes" noun="schemes" value={schemeSel} onChange={setSchemeSel}
+                options={schemes.map((sc) => ({ value: sc.name, label: sc.name }))} />
+            </View>
+          )}
           {loading ? (
             <AppLoader size={0.7} style={ClubHubScreenS.loader} />
           ) : (
@@ -378,16 +393,32 @@ export default function Club1000HubScreen({ navigation, route }) {
                   { label: 'Premature redeemed', value: stats?.investor_status_breakdown?.premature_redeemed || 0, tone: 'bad' },
                 ]} />
               </DashCard>
-              {/* Pending payouts by month — the same "Falling due" chart AR has; the
-                  server builds the months from today. Same as the website. */}
+              {manager && (stats?.by_scheme || []).length > 0 && (
+                <DashCard title="By scheme" sub="Amount invested" total={inrShort(stats?.total_invested)}>
+                  <DashBars empty="No investors yet." rows={(stats.by_scheme || []).map((r) => ({
+                    label: r.scheme, value: Number(r.amount) || 0, display: inrShort(r.amount), tone: 'info' }))} />
+                </DashCard>
+              )}
+              {/* Pending payouts by month — AR's "Falling due" columns; the server builds
+                  the months from today. Same as the website. */}
               {(stats?.payout_forecast || []).length > 0 && (
                 <DashCard title="Falling due" sub="Payouts not yet due, by month"
                   total={inrShort((stats.payout_forecast || []).reduce((t, r) => t + (Number(r.amount) || 0), 0))}>
-                  {/* One bar a month, like "By scheme" — readable on any width. Same as the website. */}
-                  <DashBars empty="No payouts falling due." rows={stats.payout_forecast.map((m) => ({
-                    label: m.label, value: Number(m.amount) || 0, display: inrShort(m.amount),
-                    tone: m.label === 'No date' ? 'muted' : 'info',
-                  }))} />
+                  <PayoutColumns rows={stats.payout_forecast} />
+                </DashCard>
+              )}
+              {manager && (stats?.top_investors || []).length > 0 && (
+                <DashCard title="Top investors" sub="By amount invested">
+                  {stats.top_investors.map((inv, i) => (
+                    <View key={`${inv.name}-${i}`} style={ClubHubScreenS.topRow}>
+                      <Text style={ClubHubScreenS.topRank}>{i + 1}</Text>
+                      <View style={ClubHubScreenS.flex}>
+                        <Text style={ClubHubScreenS.topName} numberOfLines={1}>{inv.name}</Text>
+                        <Text style={ClubHubScreenS.topSub} numberOfLines={1}>{inv.scheme} · {inv.status}</Text>
+                      </View>
+                      <Text style={ClubHubScreenS.topAmt}>{inrShort(inv.amount)}</Text>
+                    </View>
+                  ))}
                 </DashCard>
               )}
             </>
@@ -417,8 +448,45 @@ export default function Club1000HubScreen({ navigation, route }) {
   );
 }
 
+// Column chart of pending payouts per month (AR's "Falling due" columns).
+function PayoutColumns({ rows }) {
+  const max = Math.max(1, ...rows.map((m) => Number(m.amount) || 0));
+  return (
+    <View style={ClubHubScreenS.cols}>
+      {rows.map((m) => {
+        const amount = Number(m.amount) || 0;
+        return (
+          <View key={m.label} style={ClubHubScreenS.col}>
+            <Text style={ClubHubScreenS.colValue} numberOfLines={1} adjustsFontSizeToFit>{amount ? inrShort(amount) : '—'}</Text>
+            <View style={ClubHubScreenS.colTrack}>
+              {amount > 0 && <View style={[ClubHubScreenS.colBar, m.label === 'No date' && ClubHubScreenS.colMuted, { height: `${Math.max(6, (amount / max) * 100)}%` }]} />}{/* inline-ok: column height from data */}
+            </View>
+            <Text style={ClubHubScreenS.colLabel} numberOfLines={2}>{m.label}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubHubScreenS = StyleSheet.create({
+  flex: { flex: 1 },
+  schemeRow: { flexDirection: 'row', marginBottom: 10 },
+  // "Falling due" columns — same sizes as the AR dashboard's.
+  cols: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, height: 170 },
+  col: { flex: 1, height: '100%', alignItems: 'center', gap: 6 },
+  colValue: { fontSize: 11, fontWeight: '800', color: COLORS.textPrimary },
+  colTrack: { flex: 1, width: '100%', maxWidth: 46, justifyContent: 'flex-end', borderRadius: 10, backgroundColor: COLORS.surfaceAlt, overflow: 'hidden' },
+  colBar: { width: '100%', borderRadius: 10, backgroundColor: COLORS.primaryTop },
+  colMuted: { backgroundColor: COLORS.textTertiary },
+  colLabel: { fontSize: 10.5, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
+  // Top investors rows.
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
+  topRank: { width: 18, fontSize: 12, fontWeight: '800', color: COLORS.textSecondary },
+  topName: { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary },
+  topSub: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 1 },
+  topAmt: { fontSize: 13.5, fontWeight: '800', color: COLORS.success },
   dash: { paddingHorizontal: 16, paddingTop: 12, marginBottom: 4 },
   loader: { marginVertical: 20 },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4, borderWidth: 1, borderColor: COLORS.btnBorder },
