@@ -11,6 +11,7 @@ import { isClub1000Manager } from '../../utils/club1000Access';
 import FormSheet from '../../components/FormSheet';
 import { TextField } from '../../components/Field';
 import AppLoader from '../../components/AppLoader';
+import { inrShort } from '../../lib/inr';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -176,12 +177,15 @@ export default function Club1000SchemesScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [showNew,    setShowNew]    = useState(false);
   const [editing,    setEditing]    = useState(null);
+  // How much of the book sits in each scheme (from the dashboard figures).
+  const [book,       setBook]       = useState({});
 
   async function load(refresh = false) {
     if (refresh) setRefreshing(true); else setLoading(true);
     try {
-      const res = await apiFetch(CLUB1000_ENDPOINTS.schemes);
+      const [res, st] = await Promise.all([apiFetch(CLUB1000_ENDPOINTS.schemes), apiFetch(CLUB1000_ENDPOINTS.stats)]);
       if (res.ok) setSchemes(await res.json());
+      if (st.ok) { const d = await st.json(); setBook(Object.fromEntries((d.by_scheme || []).map((r) => [r.scheme, r]))); }
     } catch (_) {}
     setLoading(false); setRefreshing(false);
   }
@@ -199,16 +203,19 @@ export default function Club1000SchemesScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+    <SafeAreaView style={sc.safe} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       {manager && <NewSchemeSheet visible={showNew} onClose={() => setShowNew(false)} onSaved={() => load()} />}
       {manager && <NewSchemeSheet visible={!!editing} scheme={editing} onClose={() => setEditing(null)} onSaved={() => load()} />}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={sc.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={sc.back}>
           <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: TEXT }}>Schemes</Text>
+        <View style={sc.flex}>
+          <Text style={sc.title}>Schemes</Text>
+          {schemes.length > 0 && <Text style={sc.subtitle}>{schemes.length} scheme{schemes.length === 1 ? '' : 's'}</Text>}
+        </View>
         {manager && (
           <TouchableOpacity onPress={() => setShowNew(true)} style={ClubSchemesScreenS.btn2}>
             <Ionicons name="add" size={16} color={COLORS.btnTextSuccess} />
@@ -217,37 +224,74 @@ export default function Club1000SchemesScreen({ navigation }) {
         )}
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
+      <ScrollView contentContainerStyle={sc.scroll} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
-        {loading ? <AppLoader style={{ marginTop: 24 }} /> : schemes.length === 0 ? (
-          <Text style={{ textAlign: 'center', color: MUTED, marginTop: 30 }}>No schemes yet — create one to get started.</Text>
-        ) : schemes.map((s) => (
-          <View key={s.id} style={[CARD, { padding: 14, marginBottom: 10 }]}>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 6 }}>{s.name}</Text>
-            <Text style={{ fontSize: 12, color: MUTED, marginBottom: 4 }}>
-              {s.tenure_months}mo · Min ₹{Number(s.min_ticket_size).toLocaleString('en-IN')} · {s.premature_redemption_allowed ? `Exit after ${s.premature_redemption_lock_months || 0}mo` : 'No premature exit'}
-            </Text>
-            <Text style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}>
-              {(s.interest_payout_options || []).length
-                ? (s.interest_payout_options || []).map((k) => `${INTEREST_PAYOUT_LABELS[k] || k}: ${s.payout_rates?.[k] ?? '—'}%`).join('  ·  ')
-                : '—'}
-            </Text>
-            {manager && (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity onPress={() => setEditing(s)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => disableScheme(s.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.errorBg }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.error }}>Disable</Text>
-                </TouchableOpacity>
+        {loading ? <AppLoader style={sc.loader} /> : schemes.length === 0 ? (
+          <Text style={sc.empty}>No schemes yet — create one to get started.</Text>
+        ) : schemes.map((s) => {
+          const b = book[s.name] || { investors: 0, amount: 0 };
+          return (
+            <View key={s.id} style={sc.card}>
+              <View style={sc.head}>
+                <View style={sc.icon}><Ionicons name="layers-outline" size={18} color={COLORS.link} /></View>
+                <View style={sc.flex}>
+                  <Text style={sc.name}>{s.name}</Text>
+                  <Text style={sc.meta}>{s.tenure_months} months · min ₹{Number(s.min_ticket_size).toLocaleString('en-IN')}</Text>
+                </View>
               </View>
-            )}
-          </View>
-        ))}
+              <View style={sc.rates}>
+                {(s.interest_payout_options || []).length ? (s.interest_payout_options || []).map((k) => (
+                  <View key={k} style={sc.rate}><Text style={sc.rateLabel}>{INTEREST_PAYOUT_LABELS[k] || k}</Text><Text style={sc.rateVal}>{s.payout_rates?.[k] ?? '—'}%</Text></View>
+                )) : <Text style={sc.meta}>No payout options set</Text>}
+              </View>
+              <View style={sc.figs}>
+                <View style={sc.fig}><Text style={sc.figLabel}>INVESTORS</Text><Text style={sc.figVal}>{b.investors || 0}</Text></View>
+                <View style={sc.fig}><Text style={sc.figLabel}>INVESTED</Text><Text style={sc.figVal}>{b.amount ? inrShort(b.amount) : '—'}</Text></View>
+                <View style={sc.fig}><Text style={sc.figLabel}>EARLY EXIT</Text><Text style={sc.figVal}>{s.premature_redemption_allowed ? `After ${s.premature_redemption_lock_months || 0} mo` : 'No'}</Text></View>
+              </View>
+              {manager && (
+                <View style={sc.foot}>
+                  <TouchableOpacity onPress={() => setEditing(s)} style={sc.btn}><Text style={sc.btnText}>Edit</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => disableScheme(s.id)} style={[sc.btn, sc.btnDanger]}><Text style={sc.btnDangerText}>Disable</Text></TouchableOpacity>
+                </View>
+              )}
+            </View>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const sc = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: 'transparent' },
+  flex: { flex: 1, minWidth: 0 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14 },
+  back: { width: 36, height: 36, borderRadius: 18, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 18, fontWeight: '800', color: TEXT },
+  subtitle: { fontSize: 12, color: MUTED, marginTop: 1 },
+  scroll: { padding: 16, paddingBottom: 40 },
+  loader: { marginTop: 24 },
+  empty: { textAlign: 'center', color: MUTED, marginTop: 30 },
+  card: { ...CARD, padding: 14, marginBottom: 12, gap: 12 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  icon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.accentSoft },
+  name: { fontSize: 15.5, fontWeight: '800', color: TEXT },
+  meta: { fontSize: 12, color: MUTED, marginTop: 1 },
+  rates: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  rate: { flexDirection: 'row', gap: 6, alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: COLORS.successBg },
+  rateLabel: { fontSize: 12, color: COLORS.text2 },
+  rateVal: { fontSize: 12, fontWeight: '800', color: TEAL },
+  figs: { flexDirection: 'row', gap: 8, paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border },
+  fig: { flex: 1 },
+  figLabel: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.3, color: MUTED },
+  figVal: { fontSize: 14, fontWeight: '800', color: TEXT, marginTop: 2 },
+  foot: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
+  btn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  btnText: { fontSize: 13, fontWeight: '700', color: TEXT },
+  btnDanger: { backgroundColor: COLORS.errorBg, borderColor: 'transparent' },
+  btnDangerText: { fontSize: 13, fontWeight: '700', color: COLORS.error },
+});
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubSchemesScreenS = StyleSheet.create({

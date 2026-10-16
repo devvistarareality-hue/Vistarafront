@@ -25,6 +25,8 @@ import { onlyPresent } from '../../lib/presentOptions';
 import { errText } from '../../lib/apiError';
 import PeriodFilter from '../../components/PeriodFilter';
 import FilterSelect from '../../components/FilterSelect';
+// The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
+export { LedgerModal };
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
