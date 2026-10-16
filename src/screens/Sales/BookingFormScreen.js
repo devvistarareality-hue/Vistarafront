@@ -1387,7 +1387,7 @@ export default function BookingFormScreen({ navigation, route }) {
                   Sale Deed % = Unit Price / (Plot Basic + Dev + Construction + PLC). Both are
                   results here — change one of the three above to change them. */}
               <View style={BookingFormScreenS.kalField}>
-                <Text style={BookingFormScreenS.kalLabel}>Sale Deed %</Text>
+                <Text style={BookingFormScreenS.kalLabel}>Documentation %</Text>
                 <TextInput style={inpS} editable={false} value={v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '0'} />
               </View>
               <View style={BookingFormScreenS.kalField}>
@@ -1402,7 +1402,7 @@ export default function BookingFormScreen({ navigation, route }) {
               {/* Industrial: Unit Price = (Sale Deed Rate + Dev Agreement Rate) × Area, and
                   Sale Deed % = Unit Price ÷ Plot Basic. Both are results — change a rate above. */}
               <View style={BookingFormScreenS.kalField}>
-                <Text style={BookingFormScreenS.kalLabel}>Sale Deed %</Text>
+                <Text style={BookingFormScreenS.kalLabel}>Documentation %</Text>
                 <TextInput style={inpS} editable={false} value={v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '0'} />
               </View>
               <View style={BookingFormScreenS.kalField}>
@@ -1413,7 +1413,7 @@ export default function BookingFormScreen({ navigation, route }) {
           )}
           {hasSaleDeedSplit && formulaSet !== 'kalrav' && formulaSet !== 'industrial' && (
             <>
-              <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => setF((s) => ({ ...s, sale_deed_pct: t, sale_deed_amount: '' }))} kb="numeric" />
+              <Fld l="Documentation %" val={f.sale_deed_pct} on={(t) => setF((s) => ({ ...s, sale_deed_pct: t, sale_deed_amount: '' }))} kb="numeric" />
               <View style={{ marginBottom: 10 }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>Unit Price (₹)</Text>
                 <TextInput
