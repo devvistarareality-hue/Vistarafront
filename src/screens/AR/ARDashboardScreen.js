@@ -107,7 +107,7 @@ export default function ARDashboardScreen({ navigation }) {
         <View style={s.quick}>
           {canSee(me, 'ar.screen.collections') ? <Quick icon="notifications-outline" label="Collections" onPress={() => go('ARCollections', { project })} /> : null}
           {canSee(me, 'ar.screen.register') ? <Quick icon="book-outline" label="Register" onPress={() => go('ARRegister', { project })} /> : null}
-          {canSee(me, 'ar.screen.import') ? <Quick icon="cloud-upload-outline" label="Import receipts" onPress={() => go('ARImport', { project: project.length === 1 ? project[0] : '' })} /> : null}
+          {canSee(me, 'ar.screen.import') ? <Quick icon="cloud-upload-outline" label="Import" onPress={() => go('ARImport', { project: project.length === 1 ? project[0] : '' })} /> : null}
           {canSee(me, 'ar.screen.cancellations') ? <Quick icon="close-circle-outline" label="Cancellations" onPress={() => go('ARCancellations')} /> : null}
           {/* Bank Master is its own module — only for people it is ticked for. */}
           {hasBankMaster(me) ? <Quick icon="business-outline" label="Bank Master" onPress={() => go('ARBanks')} /> : null}
@@ -191,8 +191,8 @@ export default function ARDashboardScreen({ navigation }) {
 function Quick({ icon, label, onPress }) {
   return (
     <TouchableOpacity style={s.quickBtn} activeOpacity={0.8} onPress={onPress}>
-      <Ionicons name={icon} size={17} color={COLORS.link} />
-      <Text style={s.quickText} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
+      <Ionicons name={icon} size={20} color={COLORS.link} />
+      <Text style={s.quickText} numberOfLines={1}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -580,10 +580,13 @@ const s = StyleSheet.create({
   dim: { opacity: 0.5 },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   asOf: { marginLeft: 'auto', minWidth: 132 },
-  quick: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  quickBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: RADIUS.md,
+  // Up to six shortcuts: three to a row, icon over label, so none is squeezed and
+  // every label reads at the same size (one row of six crushed them together).
+  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+  quickBtn: { flexGrow: 1, flexBasis: '30%', alignItems: 'center', justifyContent: 'center', gap: 5,
+              paddingVertical: 12, paddingHorizontal: 6, borderRadius: RADIUS.md,
               backgroundColor: COLORS.accentSoft, borderWidth: 1, borderColor: withAlpha(COLORS.link, '30') },
-  quickText: { fontSize: 13.5, fontWeight: '700', color: COLORS.link },
+  quickText: { fontSize: 12.5, fontWeight: '700', color: COLORS.link, textAlign: 'center' },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 24, padding: 20, marginBottom: 12, overflow: 'hidden', ...SHADOWS.md },
   heroGlow: { position: 'absolute', right: -60, bottom: -90, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(255,255,255,0.05)' },
   heroLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: 'rgba(255,255,255,0.75)' },
