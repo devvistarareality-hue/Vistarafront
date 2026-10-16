@@ -665,10 +665,10 @@ export default function BookingFormScreen({ navigation, route }) {
       : '18% of Construction + Development Agreement');
   const maintSub = formulaSet === 'ankhol' ? 'Construction Area × Rate × Months'
     : formulaSet === 'industrial' ? 'Plot Area × Rate' : 'Plot Area × Rate × Months';
-  const depSub = formulaSet === 'industrial' ? 'Plot Area × Deposit Rate'
-    : formulaSet === 'kalrav' ? 'Plot Area × Deposit Rate × Deposit Months' : maintSub;
-  const advSub = formulaSet === 'industrial' ? 'Plot Area × Advance Rate'
-    : formulaSet === 'kalrav' ? 'Plot Area × Advance Rate × Advance Months' : maintSub;
+  const depSub = formulaSet === 'industrial' ? 'Plot Area × Rate'
+    : formulaSet === 'kalrav' ? 'Plot Area × Rate × Months' : maintSub;
+  const advSub = formulaSet === 'industrial' ? 'Plot Area × Rate'
+    : formulaSet === 'kalrav' ? 'Plot Area × Rate × Months' : maintSub;
   function buildEw(n) { n = parseInt(n, 10) || 0; setEwInsts(Array.from({ length: n }, (_, i) => ewInsts[i] || { date: '', pct: '', amt: '' })); }
   function setEwInst(i, k, val) {
     setEwInsts((arr) => {
@@ -1468,21 +1468,21 @@ export default function BookingFormScreen({ navigation, route }) {
                 Deposit Rate → Deposit, Advance Rate → Advance (Plot Area × its rate). Same as the website. */}
             {formulaSet === 'industrial' ? (
               <>
-                <Fld l={`Maintenance Deposit Rate (₹/${unit})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
-                <Calc l="Maintenance Deposit" sub={depSub} val={v.maintDeposit} />
-                <Fld l={`Maintenance Advance Rate (₹/${unit})`} val={f.maint_advance_rate} on={(t) => set('maint_advance_rate', t)} kb="numeric" />
-                <Calc l="Maintenance Advance" sub={advSub} val={v.maintAdvance} />
+                {/* Industrial: one line each — Rate = amount (Plot Area × Rate). */}
+                <MaintRow l="Maintenance Deposit" sub={depSub} unit={unit} val={v.maintDeposit}
+                  rate={f.maint_rate} onRate={(t) => set('maint_rate', t)} />
+                <MaintRow l="Maintenance Advance" sub={advSub} unit={unit} val={v.maintAdvance}
+                  rate={f.maint_advance_rate} onRate={(t) => set('maint_advance_rate', t)} />
               </>
             ) : formulaSet === 'kalrav' ? (
               <>
-                {/* Kalrav: Deposit and Advance each have their own rate and months —
-                    Plot Area × Rate × Months. Same as the website. */}
-                <Fld l={`Maintenance Deposit Rate (₹/${unit}/mo)`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
-                <Fld l="Maintenance Deposit Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />
-                <Calc l="Maintenance Deposit" sub={depSub} val={v.maintDeposit} />
-                <Fld l={`Maintenance Advance Rate (₹/${unit}/mo)`} val={f.maint_advance_rate} on={(t) => set('maint_advance_rate', t)} kb="numeric" />
-                <Fld l="Maintenance Advance Months" val={f.maint_advance_months} on={(t) => set('maint_advance_months', t)} kb="numeric" />
-                <Calc l="Maintenance Advance" sub={advSub} val={v.maintAdvance} />
+                {/* Kalrav: one line each — Rate × Months = amount. Same as the website. */}
+                <MaintRow l="Maintenance Deposit" sub={depSub} unit={`${unit}/mo`} val={v.maintDeposit}
+                  rate={f.maint_rate} onRate={(t) => set('maint_rate', t)}
+                  months={f.maint_months} onMonths={(t) => set('maint_months', t)} />
+                <MaintRow l="Maintenance Advance" sub={advSub} unit={`${unit}/mo`} val={v.maintAdvance}
+                  rate={f.maint_advance_rate} onRate={(t) => set('maint_advance_rate', t)}
+                  months={f.maint_advance_months} onMonths={(t) => set('maint_advance_months', t)} />
               </>
             ) : (
               <>
@@ -1710,6 +1710,31 @@ const devRateOf = (b) => ((b.formula_set || 'kalrav') === 'kalrav' && Number(b.d
   ? String(Number(b.dev_agreement) / Number(b.area)) : b.dev_agreement_rate);
 const stageOf = (r) => ((r && String(r.stage || '').trim()) ? { stage: String(r.stage).trim() } : {});
 
+// One maintenance line: [Rate] × [Months] = amount (months left out for Industrial).
+const MaintRow = ({ l, sub, unit, rate, onRate, months, onMonths, val }) => (
+  <View style={BookingFormScreenS.mRow}>
+    <Text style={BookingFormScreenS.kalLabel}>{l}</Text>
+    {!!sub && <Text style={BookingFormScreenS.mSub}>{sub}</Text>}
+    <View style={BookingFormScreenS.mEq}>
+      <View style={BookingFormScreenS.mBox}>
+        <Text style={BookingFormScreenS.mCap}>RATE (₹/{unit})</Text>
+        <TextInput style={inpS} value={rate} onChangeText={onRate} keyboardType="numeric" />
+      </View>
+      {onMonths ? (
+        <>
+          <Text style={BookingFormScreenS.mOp}>×</Text>
+          <View style={BookingFormScreenS.mBox}>
+            <Text style={BookingFormScreenS.mCap}>MONTHS</Text>
+            <TextInput style={inpS} value={months} onChangeText={onMonths} keyboardType="numeric" />
+          </View>
+        </>
+      ) : null}
+      <Text style={BookingFormScreenS.mOp}>=</Text>
+      <View style={BookingFormScreenS.mRes}><Text style={BookingFormScreenS.mResText}>{rupee(val)}</Text></View>
+    </View>
+  </View>
+);
+
 const Fld = ({ l, val, on, kb, ph, invalid, ro }) => (
   <View style={{ marginBottom: 10 }}>
     <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 }}>{l}</Text>
@@ -1805,6 +1830,16 @@ const BookingFormScreenS = StyleSheet.create({
   loanClearText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   stageIn: { ...inpS, marginTop: 4, marginLeft: 24 },
   kalField: { marginBottom: 10 },
+  // One maintenance line: [Rate] × [Months] = amount.
+  mRow: { marginBottom: 12 },
+  mSub: { fontSize: 10, color: COLORS.textTertiary, fontStyle: 'italic', marginBottom: 4 },
+  mEq: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
+  mBox: { flex: 1 },
+  mCap: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.4, color: COLORS.textSecondary, marginBottom: 3 },
+  mOp: { fontSize: 15, fontWeight: '800', color: COLORS.textSecondary, paddingBottom: 9 },
+  mRes: { minWidth: 92, backgroundColor: COLORS.accentSofter, borderWidth: 1.5, borderColor: COLORS.blue2, borderRadius: 8,
+          paddingHorizontal: 8, paddingVertical: 9, alignItems: 'center' },
+  mResText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
   kalLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text2, marginBottom: 4 },
   flatPriceInput: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
                     fontSize: 14, marginBottom: 10, color: COLORS.textPrimary, backgroundColor: COLORS.surface },
