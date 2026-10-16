@@ -1469,18 +1469,18 @@ export default function BookingFormScreen({ navigation, route }) {
             {formulaSet === 'industrial' ? (
               <>
                 {/* Industrial: one line each — Rate = amount (Plot Area × Rate). */}
-                <MaintRow l="Maintenance Deposit" sub={depSub} unit={unit} val={v.maintDeposit}
+                <MaintRow l="Maintenance Deposit" sub={depSub} area={v.area} areaUnit={unit} unit={unit} val={v.maintDeposit}
                   rate={f.maint_rate} onRate={(t) => set('maint_rate', t)} />
-                <MaintRow l="Maintenance Advance" sub={advSub} unit={unit} val={v.maintAdvance}
+                <MaintRow l="Maintenance Advance" sub={advSub} area={v.area} areaUnit={unit} unit={unit} val={v.maintAdvance}
                   rate={f.maint_advance_rate} onRate={(t) => set('maint_advance_rate', t)} />
               </>
             ) : formulaSet === 'kalrav' ? (
               <>
                 {/* Kalrav: one line each — Rate × Months = amount. Same as the website. */}
-                <MaintRow l="Maintenance Deposit" sub={depSub} unit={`${unit}/mo`} val={v.maintDeposit}
+                <MaintRow l="Maintenance Deposit" sub={depSub} area={v.area} areaUnit={unit} unit={`${unit}/mo`} val={v.maintDeposit}
                   rate={f.maint_rate} onRate={(t) => set('maint_rate', t)}
                   months={f.maint_months} onMonths={(t) => set('maint_months', t)} />
-                <MaintRow l="Maintenance Advance" sub={advSub} unit={`${unit}/mo`} val={v.maintAdvance}
+                <MaintRow l="Maintenance Advance" sub={advSub} area={v.area} areaUnit={unit} unit={`${unit}/mo`} val={v.maintAdvance}
                   rate={f.maint_advance_rate} onRate={(t) => set('maint_advance_rate', t)}
                   months={f.maint_advance_months} onMonths={(t) => set('maint_advance_months', t)} />
               </>
@@ -1711,11 +1711,17 @@ const devRateOf = (b) => ((b.formula_set || 'kalrav') === 'kalrav' && Number(b.d
 const stageOf = (r) => ((r && String(r.stage || '').trim()) ? { stage: String(r.stage).trim() } : {});
 
 // One maintenance line: [Rate] × [Months] = amount (months left out for Industrial).
-const MaintRow = ({ l, sub, unit, rate, onRate, months, onMonths, val }) => (
+const MaintRow = ({ l, sub, area, areaUnit, unit, rate, onRate, months, onMonths, val }) => (
   <View style={BookingFormScreenS.mRow}>
     <Text style={BookingFormScreenS.kalLabel}>{l}</Text>
     {!!sub && <Text style={BookingFormScreenS.mSub}>{sub}</Text>}
     <View style={BookingFormScreenS.mEq}>
+      {/* The plot area it is charged on — shown, not edited here. */}
+      <View style={BookingFormScreenS.mBox}>
+        <Text style={BookingFormScreenS.mCap}>AREA ({areaUnit})</Text>
+        <TextInput style={inpS} value={String(area || 0)} editable={false} />
+      </View>
+      <Text style={BookingFormScreenS.mOp}>×</Text>
       <View style={BookingFormScreenS.mBox}>
         <Text style={BookingFormScreenS.mCap}>RATE (₹/{unit})</Text>
         <TextInput style={inpS} value={rate} onChangeText={onRate} keyboardType="numeric" />
