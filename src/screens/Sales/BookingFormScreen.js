@@ -955,8 +955,12 @@ export default function BookingFormScreen({ navigation, route }) {
       dev_agreement_rate: Math.round((Number(f.dev_agreement_rate) || 0) * 100) / 100,
       lsd_rate: rateOf(f.land_sale_deed, Number(f.area) || 0) || 0,
       const_agreement_rate: rateOf(f.const_agreement, Number(f.const_area) || 0) || 0,
-      sale_deed_pct: f.sale_deed_pct === '' || f.sale_deed_pct == null ? 60 : f.sale_deed_pct,
-      sale_deed_amount: f.sale_deed_amount || 0,
+      // Kalrav and Industrial work the % out from their parts — save that, not the
+      // form's untouched default. Same as the website.
+      sale_deed_pct: (formulaSet === 'kalrav' || formulaSet === 'industrial')
+        ? Math.round((v.saleDeedPct || 0) * 100) / 100
+        : (f.sale_deed_pct === '' || f.sale_deed_pct == null ? 60 : f.sale_deed_pct),
+      sale_deed_amount: formulaSet === 'industrial' ? 0 : (f.sale_deed_amount || 0),
       maint_rate: f.maint_rate || 0, maint_months: f.maint_months || 0,
       plot_basic: Math.round(v.plotBasic), plot_dev: Math.round(v.plotDev), const_amt: Math.round(v.constAmt),
       sale_deed: Math.round(v.saleDeed), dev_agreement: Math.round(v.devAgreement),
@@ -1393,7 +1397,21 @@ export default function BookingFormScreen({ navigation, route }) {
             </>
           )}
           </View>
-          {hasSaleDeedSplit && formulaSet !== 'kalrav' && (
+          {formulaSet === 'industrial' && (
+            <>
+              {/* Industrial: Unit Price = (Sale Deed Rate + Dev Agreement Rate) × Area, and
+                  Sale Deed % = Unit Price ÷ Plot Basic. Both are results — change a rate above. */}
+              <View style={BookingFormScreenS.kalField}>
+                <Text style={BookingFormScreenS.kalLabel}>Sale Deed %</Text>
+                <TextInput style={inpS} editable={false} value={v.saleDeedPct ? v.saleDeedPct.toFixed(2) : '0'} />
+              </View>
+              <View style={BookingFormScreenS.kalField}>
+                <Text style={BookingFormScreenS.kalLabel}>Unit Price (₹)</Text>
+                <TextInput style={inpS} editable={false} value={String(Math.round(v.saleDeed) || 0)} />
+              </View>
+            </>
+          )}
+          {hasSaleDeedSplit && formulaSet !== 'kalrav' && formulaSet !== 'industrial' && (
             <>
               <Fld l="Sale Deed %" val={f.sale_deed_pct} on={(t) => setF((s) => ({ ...s, sale_deed_pct: t, sale_deed_amount: '' }))} kb="numeric" />
               <View style={{ marginBottom: 10 }}>
