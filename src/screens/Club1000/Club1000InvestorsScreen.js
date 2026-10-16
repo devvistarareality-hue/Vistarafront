@@ -668,17 +668,26 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
   const [loiDone, setLoiDone] = useState(false);
   const [loiDownloading, setLoiDownloading] = useState(false);
   const [loiFile, setLoiFile] = useState(null);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [showRevDate, setShowRevDate] = useState(false);
 
   useEffect(() => {
     if (visible && investor) {
+      // A revision typed but never submitted comes back here, so the signed-LOI round
+      // trip does not cost the work. It wins over the live values — the draft IS what
+      // was last typed. Same as the website.
+      const draft = investor.revision_draft || null;
       setForm({
-        name: investor.name || '',
-        phone: investor.phone || '',
-        amount_invested: String(investor.amount_invested || ''),
-        interest_payout: investor.interest_payout || 'maturity',
-        total_return_pct: String(investor.total_return_pct ?? ''),
-        security: investor.security || '',
-        notes: investor.notes || '',
+        name: draft?.name ?? investor.name ?? '',
+        phone: draft?.phone ?? investor.phone ?? '',
+        amount_invested: String(draft?.amount_invested ?? investor.amount_invested ?? ''),
+        interest_payout: draft?.interest_payout ?? investor.interest_payout ?? 'maturity',
+        total_return_pct: String(draft?.total_return_pct ?? investor.total_return_pct ?? ''),
+        security: draft?.security ?? investor.security ?? '',
+        notes: draft?.notes ?? investor.notes ?? '',
+        // When the revised terms were agreed. Not the investment date, which a revision
+        // never moves — maturity and the payout schedule stay put.
+        revision_date: draft?.revision_date ?? toISODate(new Date()),
       });
       setSchedule([]); setScheduleDirty(false); setLoiDone(false); setLoiFile(null);
     }
@@ -759,6 +768,23 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
     }
   }
 
+  // Saveable without the signed LOI — that file is exactly what a draft waits for.
+  async function saveDraft() {
+    setSavingDraft(true);
+    try {
+      const payload = { ...form };
+      if ((form.interest_payout === 'quarterly' || form.interest_payout === 'monthly') && schedule.length) payload.payout_schedule = schedule;
+      const res = await apiFetch(CLUB1000_ENDPOINTS.investorReviseDraft(investor.id), { method: 'POST', body: JSON.stringify(payload) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { Alert.alert('Could not save the draft', errText(d, 'Please try again.')); return; }
+      // Hand the fresh row back so reopening Revise finds what was just saved.
+      if (d && d.id) onSaved(d);
+      Alert.alert('Draft saved', 'Reopen Revise LOI to carry on once the signed LOI is back.');
+    } finally {
+      setSavingDraft(false);
+    }
+  }
+
   async function submit() {
     if (Number(form.amount_invested) < Number(scheme.min_ticket_size)) {
       Alert.alert('Amount too low', `Minimum ticket size for ${scheme.name} is ${fmtMoney(scheme.min_ticket_size)}.`);
@@ -800,6 +826,19 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         <Text style={{ fontSize: 11, color: MUTED, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 16 }}>
           Scheme and investment date stay fixed across a revision — name, mobile number and the terms below can change. Matures {maturityDate ? formatDMY(toISODate(maturityDate)) : '—'}.
         </Text>
+
+        <View style={ClubInvestorsScreenS.revDateWrap}>
+          <Text style={ClubInvestorsScreenS.revDateLabel}>Revision Date *</Text>
+          <TouchableOpacity onPress={() => setShowRevDate(true)} style={inputStyle}>
+            <Text style={ClubInvestorsScreenS.revDateText}>{form.revision_date ? formatDMY(form.revision_date) : 'Pick a date'}</Text>
+          </TouchableOpacity>
+          <Text style={ClubInvestorsScreenS.revHint}>When these revised terms were agreed. The investment date, maturity and the payout dates do not move.</Text>
+        </View>
+        {showRevDate && (
+          <DateTimePicker value={form.revision_date ? new Date(`${form.revision_date}T00:00:00`) : new Date()} mode="date"
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            onChange={(_, d) => { setShowRevDate(false); if (d) set('revision_date', toISODate(d)); }} />
+        )}
 
         <TextField label="Investor Name" required value={form.name} onChangeText={(v) => set('name', v)} />
         <TextField label="Mobile Number" required value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" />
@@ -863,10 +902,16 @@ function ReviseInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
           </TouchableOpacity>
         </View>
 
+        {/* Save Draft: keeps what is typed while the signed LOI is out for signature. */}
+        <TouchableOpacity onPress={saveDraft} disabled={saving || savingDraft}
+          style={[ClubInvestorsScreenS.revDraftBtn, (saving || savingDraft) && ClubInvestorsScreenS.btn3Dim]}>
+          {savingDraft ? <ActivityIndicator color={COLORS.link} /> : <Ionicons name="bookmark-outline" size={17} color={COLORS.link} />}
+          <Text style={ClubInvestorsScreenS.revDraftText}>{savingDraft ? 'Saving…' : 'Save Draft'}</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
           style={[ClubInvestorsScreenS.btn3, (saving || !loiFile) && ClubInvestorsScreenS.btn3Dim]}>
           {saving ? <ActivityIndicator color={COLORS.btnText} /> : <Ionicons name="save-outline" size={17} color={COLORS.btnText} />}
-          <Text style={ClubInvestorsScreenS.box5}>Submit Revision for Approval</Text>
+          <Text style={ClubInvestorsScreenS.box5}>Submit for Approval</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -1492,6 +1537,14 @@ const ClubInvestorsScreenS = StyleSheet.create({
   box4: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
   btn3: { backgroundColor: COLORS.btnTint, borderWidth: 1, borderColor: COLORS.btnBorder, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
   btn3Dim: { opacity: 0.5 },
+  // Revise LOI: the Revision Date and the Save Draft button.
+  revDateWrap: { marginBottom: 16 },
+  revDateLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 6 },
+  revDateText: { fontSize: 15, color: COLORS.textPrimary },
+  revHint: { fontSize: 11, color: COLORS.textTertiary, marginTop: 5, lineHeight: 15 },
+  revDraftBtn: { borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface, borderRadius: 16, height: 46,
+                 alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 4 },
+  revDraftText: { color: COLORS.link, fontSize: 14, fontWeight: '800' },
   // A small action chip in an investor row (Revise LOI).
   rowBtnPurple: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.purpleBg },
   rowBtnPurpleText: { fontSize: 11, fontWeight: '700', color: COLORS.purple },
