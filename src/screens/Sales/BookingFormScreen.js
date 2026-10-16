@@ -1456,18 +1456,23 @@ export default function BookingFormScreen({ navigation, route }) {
           <Calc l="Registration Fees" sub={regSub} val={v.regFees} />
           {hasSaleDeedSplit && <Pick l="Apply GST?" val={f.apply_gst} on={(x) => set('apply_gst', x)} opts={['Yes', 'No']} />}
           <Calc l="GST" sub={gstSub} val={v.gst} />
-          {/* Industrial: the Deposit and the Advance each have their own rate × Plot Area. */}
+          {/* Industrial: each rate sits right above the amount it makes —
+              Deposit Rate → Deposit, Advance Rate → Advance (Plot Area × its rate). Same as the website. */}
           {formulaSet === 'industrial' ? (
             <>
               <Fld l={`Maintenance Deposit Rate (₹/${unit})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
+              <Calc l="Maintenance Deposit" sub={depSub} val={v.maintDeposit} />
               <Fld l={`Maintenance Advance Rate (₹/${unit})`} val={f.maint_advance_rate} on={(t) => set('maint_advance_rate', t)} kb="numeric" />
+              <Calc l="Maintenance Advance" sub={advSub} val={v.maintAdvance} />
             </>
           ) : (
-            <Fld l={`Maintenance Rate (₹/${unit}/mo)`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
+            <>
+              <Fld l={`Maintenance Rate (₹/${unit}/mo)`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
+              <Fld l="Maintenance Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />
+              {(flags.hasMaintDeposit || v.isKalrav3) && <Calc l="Maintenance Deposit" sub={v.isKalrav3 ? '½ × Maintenance Amount' : depSub} val={v.maintDeposit} />}
+              {(flags.hasMaintAdvance || v.isKalrav3) && <Calc l="Maintenance Advance" sub={v.isKalrav3 ? '½ × Maintenance Amount' : advSub} val={v.maintAdvance} />}
+            </>
           )}
-          {formulaSet !== 'industrial' && <Fld l="Maintenance Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />}
-          {(flags.hasMaintDeposit || v.isKalrav3) && <Calc l="Maintenance Deposit" sub={v.isKalrav3 ? '½ × Maintenance Amount' : depSub} val={v.maintDeposit} />}
-          {(flags.hasMaintAdvance || v.isKalrav3) && <Calc l="Maintenance Advance" sub={v.isKalrav3 ? '½ × Maintenance Amount' : advSub} val={v.maintAdvance} />}
           <Calc l="Maintenance Amount" sub={(flags.hasMaintDeposit || flags.hasMaintAdvance || v.isKalrav3) ? '= Maintenance Deposit + Maintenance Advance' : maintSub} val={v.maint} />
           <Fld l="Legal Documentation charge (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
         </Sec>
