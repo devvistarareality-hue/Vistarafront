@@ -150,7 +150,7 @@ const s = StyleSheet.create({
   cardTotal: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
   dot: { width: 9, height: 9, borderRadius: 5 },
-  barLabel: { width: 118, fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  barLabel: { width: 138, fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },   // fits "Premature redeemed"
   barTrack: { flex: 1, height: 7, borderRadius: 999, backgroundColor: COLORS.surfaceAlt, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 999 },
   barValue: { minWidth: 44, textAlign: 'right', fontSize: 13.5, fontWeight: '800', color: COLORS.textPrimary },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, Linking, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, Linking, RefreshControl, StyleSheet } from 'react-native';
 import { AddInvestorSheet } from './Club1000InvestorsScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,7 +8,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { CLUB1000_ENDPOINTS, SALES_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-import { isManagerRole } from '../../lib/roles';
+import { isManagerRole, can } from '../../lib/roles';
+import MultiFilterSelect from '../../components/MultiFilterSelect';
+import PeriodFilter, { inRange } from '../../components/PeriodFilter';
+import { formatDMY } from '../../utils/dateFormat';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
@@ -40,6 +43,13 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   // A draft is edited from here, because it deliberately does not appear in the
   // Investors list — there is nowhere else to open it from.
   const [editDraft, setEditDraft] = useState(null);
+  // An approved investor opened in Revise LOI — the Add Investor form, prefilled.
+  const [revising, setRevising] = useState(null);
+  // Filters, as on Sales' Booking Approvals: investment-date range, schemes, added by.
+  const [range, setRange] = useState({ from: '', to: '' });
+  const [schemeSel, setSchemeSel] = useState([]);
+  const [addedBySel, setAddedBySel] = useState([]);
+  const [openGroup, setOpenGroup] = useState({});
   const [managers, setManagers] = useState([]);
   const [schemes, setSchemes] = useState([]);
   const [cfgOpen, setCfgOpen] = useState(false);
@@ -181,6 +191,22 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
     }).join(' · ');
   }
 
+  // Filtered list and its scheme groups, as Sales groups bookings by project.
+  const schemeOptions = [...new Set(rows.map((i) => i.scheme_name).filter(Boolean))].sort();
+  const addedByOptions = [...new Set(rows.map((i) => i.added_by_name).filter(Boolean))].sort();
+  const visible = rows.filter((i) => inRange(i.investment_date, range)
+    && (!schemeSel.length || schemeSel.includes(i.scheme_name))
+    && (!addedBySel.length || addedBySel.includes(i.added_by_name)));
+  const narrowed = !!(range.from || range.to || schemeSel.length || addedBySel.length || search);
+  const groups = {};
+  visible.forEach((i) => { const k = i.scheme_name || '—'; (groups[k] = groups[k] || []).push(i); });
+  const groupNames = Object.keys(groups).sort();
+  groupNames.forEach((g) => groups[g].sort((x, y) => String(y.investment_date || '').localeCompare(String(x.investment_date || ''))));
+  const grandTotal = visible.reduce((t, i) => t + (Number(i.amount_invested) || 0), 0);
+  const tabLabel = (TABS.find(([k]) => k === tab) || ['', 'All'])[1];
+  // Short lists open by default; a long one starts folded so the scheme totals read first.
+  const isOpen = (g) => (openGroup[g] === undefined ? (narrowed || visible.length <= 12) : openGroup[g]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
@@ -245,42 +271,85 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
           ))}
         </View>
 
-        {loading ? <AppLoader style={{ marginTop: 24 }} /> : rows.length === 0 ? (
-          <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>{search ? 'No investors match your search.' : 'No investors here.'}</Text></View>
-        ) : rows.map((inv) => {
+        {/* Investment-date range and the scheme / added-by pickers — as on Sales. */}
+        <PeriodFilter value={range} onChange={setRange} anyLabel="Any investment date" />
+        {(schemeOptions.length > 1 || addedByOptions.length > 1) && (
+          <View style={st.filterRow}>
+            {schemeOptions.length > 1 && (
+              <MultiFilterSelect label="All Schemes" noun="schemes" value={schemeSel} onChange={(v) => { setSchemeSel(v); setOpenGroup({}); }}
+                options={schemeOptions.map((n) => ({ value: n, label: n }))} />
+            )}
+            {addedByOptions.length > 1 && (
+              <MultiFilterSelect label="All Added By" noun="people" value={addedBySel} onChange={(v) => { setAddedBySel(v); setOpenGroup({}); }}
+                options={addedByOptions.map((n) => ({ value: n, label: n }))} />
+            )}
+          </View>
+        )}
+
+        {!loading && visible.length > 0 && (
+          <View style={st.banner}>
+            <Text style={st.bannerLabel}>
+              {(narrowed ? 'MATCHING ' : 'TOTAL ') + String(tabLabel).toUpperCase()} · {visible.length} INVESTOR{visible.length === 1 ? '' : 'S'} · {groupNames.length} SCHEME{groupNames.length === 1 ? '' : 'S'}
+            </Text>
+            <Text style={st.bannerAmt}>{fmtMoney(grandTotal)}</Text>
+          </View>
+        )}
+
+        {loading ? <AppLoader style={st.loader} /> : visible.length === 0 ? (
+          <View style={[CARD, st.empty]}><Text style={st.emptyText}>{search ? 'No investors match your search.' : narrowed ? 'No investors match these filters.' : 'No investors here.'}</Text></View>
+        ) : groupNames.map((gn) => (
+          <View key={gn} style={st.group}>
+            <TouchableOpacity onPress={() => setOpenGroup((o) => ({ ...o, [gn]: !isOpen(gn) }))}
+              style={[st.groupHead, isOpen(gn) && st.groupHeadOpen]}>
+              <View style={st.flex}>
+                <Text style={st.groupName} numberOfLines={1}>{String(gn).toUpperCase()}</Text>
+                <Text style={st.groupCount}>{groups[gn].length} investor{groups[gn].length === 1 ? '' : 's'}</Text>
+              </View>
+              <Text style={st.groupAmt}>{fmtMoney(groups[gn].reduce((t, i) => t + (Number(i.amount_invested) || 0), 0))}</Text>
+              <Ionicons name={isOpen(gn) ? 'chevron-down' : 'chevron-forward'} size={16} color={MUTED} />
+            </TouchableOpacity>
+            {isOpen(gn) && groups[gn].map((inv) => {
           const ac = APPROVAL_BADGE_COLOR[inv.approval_status] || { bg: COLORS.surfaceAlt, fg: MUTED };
           const isRevision = !!inv.pending_revision;
           const isRenewal = isRevision && inv.pending_revision_type === 'renew';
           const accent = isRenewal ? AMBER : PURPLE;
           return (
-            <View key={inv.id} style={[CARD, { marginBottom: 12 }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{inv.name}</Text>
+            <View key={inv.id} style={[CARD, st.card]}>
+              <View style={st.cardTop}>
+                <View style={st.flex}>
+                  <View style={st.nameRow}>
+                    <Text style={st.name}>{inv.name}</Text>
                     {inv.revision_no > 0 && (
-                      <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: isRenewal ? COLORS.warningBg : COLORS.accentSoft }}>
-                        <Text style={{ fontSize: 10, fontWeight: '800', color: accent }}>{isRenewal ? 'RENEW' : `R${inv.revision_no}`}</Text>
+                      <View style={[st.rev, isRenewal && st.revRenew]}>
+                        <Text style={[st.revText, isRenewal && st.revTextRenew]}>{isRenewal ? 'RENEW' : `R${inv.revision_no}`}</Text>
                       </View>
                     )}
                   </View>
-                  <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{inv.phone || '—'} · {inv.scheme_name} · Added by {inv.added_by_name || '—'}</Text>
-                  {isRevision && <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>Proposed: {revisionSummary(inv)}</Text>}
+                  <Text style={st.sub}>{inv.phone || '—'}{inv.loi_no ? ` · LOI ${inv.loi_no}` : ''}</Text>
+                  <Text style={st.sub2}>Added by {inv.added_by_name || '—'} · Invested {inv.investment_date ? formatDMY(inv.investment_date) : '—'}</Text>
+                  {inv.approval_status === 'approved' && (
+                    <Text style={st.decided}>Approved by {inv.approved_by_name || '—'}{inv.approved_at ? ` · ${formatDMY(String(inv.approved_at).slice(0, 10))}` : ''}</Text>
+                  )}
+                  {isRevision && <Text style={st.proposed}>Proposed: {revisionSummary(inv)}</Text>}
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ fontSize: 15, fontWeight: '800', color: COLORS.accentDeep }}>{fmtMoney(inv.amount_invested)}</Text>
-                  <View style={{ marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, backgroundColor: ac.bg }}>
-                    <Text style={{ fontSize: 10, fontWeight: '800', color: ac.fg, textTransform: 'uppercase' }}>{inv.approval_status}</Text>
+                <View style={st.side}>
+                  <Text style={st.amt}>{fmtMoney(inv.amount_invested)}</Text>
+                  <View style={[st.badge, { backgroundColor: ac.bg }]}>{/* inline-ok: colour per status */}
+                    <Text style={[st.badgeText, { color: ac.fg }]}>{isRevision && inv.approval_status === 'pending' ? (isRenewal ? 'RENEWAL PENDING' : `R${inv.revision_no} PENDING`) : inv.approval_status}</Text>{/* inline-ok: colour per status */}
                   </View>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                {isRevision
-                  ? (!!inv.pending_loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, { backgroundColor: isRenewal ? COLORS.warningBg : COLORS.accentSoft }]}><Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)
-                  : (!!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, { backgroundColor: COLORS.linkBg }]}><Text style={{ color: COLORS.link, fontWeight: '700', fontSize: 13 }}><AppIcon name="file" size={13} /> Signed LOI</Text></TouchableOpacity>)}
+              <View style={st.actions}>
+                {isRevision && !!inv.pending_loi_document_url && (<TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, isRenewal ? st.loiRenew : st.loiRev]}><Text style={[st.loiText, { color: accent }]}><AppIcon name="file" size={13} /> {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)}{/* inline-ok: accent per kind */}
+                {!isRevision && !!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, st.loiSigned]}><Text style={st.loiSignedText}><AppIcon name="file" size={13} /> Signed LOI</Text></TouchableOpacity>}
                 {inv.approval_status === 'draft' && (
                   <TouchableOpacity onPress={() => setEditDraft(inv)} style={[btn, btnDraft]}>
                     <Text style={draftBtnText}><AppIcon name="pencil" size={13} /> Edit & Submit</Text>
+                  </TouchableOpacity>
+                )}
+                {inv.approval_status === 'approved' && can(user, 'club.investor.manage') && (
+                  <TouchableOpacity onPress={() => setRevising(inv)} style={[btn, st.revise]}>
+                    <Text style={st.reviseText}>↻ Revise LOI</Text>
                   </TouchableOpacity>
                 )}
                 {inv.approval_status === 'pending' && (
@@ -289,12 +358,14 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                       <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, btnOk]}><Text style={btnTOk}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
                       <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, btnBad]}><Text style={btnTBad}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
                     </>
-                  ) : <Text style={{ fontSize: 11, color: MUTED, alignSelf: 'center' }}>Not an approver</Text>
+                  ) : <Text style={st.note}>Not an approver</Text>
                 )}
               </View>
             </View>
           );
-        })}
+            })}
+          </View>
+        ))}
       </ScrollView>
 
       <AddInvestorSheet
@@ -304,6 +375,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
         onClose={() => setEditDraft(null)}
         onSaved={() => { setEditDraft(null); load(); }}
       />
+      {/* Revise LOI is the Add Investor form, prefilled — every field can change. */}
+      <AddInvestorSheet visible={!!revising} revise={revising} schemes={schemes}
+        onClose={() => setRevising(null)} onSaved={() => { setRevising(null); load(); }} />
     </SafeAreaView>
   );
 }
@@ -318,3 +392,47 @@ const draftBtnText = { color: COLORS.link, fontWeight: '700', fontSize: 13 };
 const btnT   = { color: COLORS.btnTextSuccess, fontWeight: '700', fontSize: 13 };
 const btnTOk  = { ...btnT, color: COLORS.btnTextSuccess };
 const btnTBad = { ...btnT, color: COLORS.btnTextDanger };
+
+// The approvals list, laid out like Sales' Booking Approvals.
+const st = StyleSheet.create({
+  flex: { flex: 1 },
+  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  banner: { backgroundColor: COLORS.link, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 },
+  bannerLabel: { color: COLORS.accentSoft, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  bannerAmt: { color: '#fff', fontSize: 21, fontWeight: '800', marginTop: 4 },
+  loader: { marginTop: 24 },
+  empty: { alignItems: 'center', padding: 30 },
+  emptyText: { color: COLORS.textSecondary, textAlign: 'center' },
+  group: { marginBottom: 12 },
+  groupHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, backgroundColor: COLORS.cardBg,
+    borderRadius: 22, paddingHorizontal: 14, paddingVertical: 13, borderWidth: 1.5, borderColor: 'transparent', ...CARD_SHADOW },
+  groupHeadOpen: { borderColor: COLORS.blue2 },
+  groupName: { fontSize: 12, fontWeight: '800', color: COLORS.link, letterSpacing: 0.4 },
+  groupCount: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
+  groupAmt: { fontSize: 13, fontWeight: '800', color: COLORS.accentDeep },
+  card: { marginTop: 10 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  name: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, flexShrink: 1 },
+  rev: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.accentSoft },
+  revRenew: { backgroundColor: COLORS.warningBg },
+  revText: { fontSize: 10, fontWeight: '800', color: COLORS.link },
+  revTextRenew: { color: COLORS.warning },
+  sub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  sub2: { fontSize: 11, color: COLORS.text3, marginTop: 3 },
+  decided: { fontSize: 11.5, fontWeight: '600', color: COLORS.success, marginTop: 3 },
+  proposed: { fontSize: 11, color: COLORS.textSecondary, marginTop: 3 },
+  side: { alignItems: 'flex-end' },
+  amt: { fontSize: 15, fontWeight: '800', color: COLORS.accentDeep },
+  badge: { marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  badgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' },
+  loiRev: { backgroundColor: COLORS.accentSoft },
+  loiRenew: { backgroundColor: COLORS.warningBg },
+  loiText: { fontWeight: '700', fontSize: 13 },
+  loiSigned: { backgroundColor: COLORS.linkBg },
+  loiSignedText: { color: COLORS.link, fontWeight: '700', fontSize: 13 },
+  revise: { backgroundColor: COLORS.accentSoft, borderWidth: 1, borderColor: COLORS.blue2 },
+  reviseText: { color: COLORS.link, fontWeight: '700', fontSize: 13 },
+  note: { fontSize: 11, color: COLORS.textSecondary, alignSelf: 'center' },
+});

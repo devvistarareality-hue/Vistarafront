@@ -383,7 +383,11 @@ export default function Club1000HubScreen({ navigation, route }) {
               {(stats?.payout_forecast || []).length > 0 && (
                 <DashCard title="Falling due" sub="Payouts not yet due, by month"
                   total={inrShort((stats.payout_forecast || []).reduce((t, r) => t + (Number(r.amount) || 0), 0))}>
-                  <PayoutColumns rows={stats.payout_forecast} />
+                  {/* One bar a month, like "By scheme" — readable on any width. Same as the website. */}
+                  <DashBars empty="No payouts falling due." rows={stats.payout_forecast.map((m) => ({
+                    label: m.label, value: Number(m.amount) || 0, display: inrShort(m.amount),
+                    tone: m.label === 'No date' ? 'muted' : 'info',
+                  }))} />
                 </DashCard>
               )}
             </>
@@ -413,37 +417,8 @@ export default function Club1000HubScreen({ navigation, route }) {
   );
 }
 
-// Column chart of pending payouts per month (AR's "Falling due" columns).
-function PayoutColumns({ rows }) {
-  const max = Math.max(1, ...rows.map((m) => Number(m.amount) || 0));
-  return (
-    <View style={ClubHubScreenS.cols}>
-      {rows.map((m) => {
-        const amount = Number(m.amount) || 0;
-        return (
-          <View key={m.label} style={ClubHubScreenS.col}>
-            <Text style={ClubHubScreenS.colValue} numberOfLines={1} adjustsFontSizeToFit>{amount ? inrShort(amount) : '—'}</Text>
-            <View style={ClubHubScreenS.colTrack}>
-              {amount > 0 && <View style={[ClubHubScreenS.colBar, m.label === 'No date' && ClubHubScreenS.colMuted, { height: `${Math.max(4, (amount / max) * 100)}%` }]} />}{/* inline-ok: column height from data */}
-            </View>
-            <Text style={ClubHubScreenS.colLabel} numberOfLines={2}>{m.label}</Text>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubHubScreenS = StyleSheet.create({
-  // "Falling due" columns — same sizes as the AR dashboard's.
-  cols: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 170 },
-  col: { flex: 1, height: '100%', alignItems: 'center', gap: 6 },
-  colValue: { fontSize: 11, fontWeight: '800', color: COLORS.textPrimary },
-  colTrack: { flex: 1, width: '100%', maxWidth: 46, justifyContent: 'flex-end', borderRadius: 10, backgroundColor: COLORS.surfaceAlt, overflow: 'hidden' },
-  colBar: { width: '100%', borderRadius: 10, backgroundColor: COLORS.primaryTop },
-  colMuted: { backgroundColor: COLORS.textTertiary },
-  colLabel: { fontSize: 10.5, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
   dash: { paddingHorizontal: 16, paddingTop: 12, marginBottom: 4 },
   loader: { marginVertical: 20 },
   btn: { backgroundColor: COLORS.btnTint, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', marginTop: 4, borderWidth: 1, borderColor: COLORS.btnBorder },
