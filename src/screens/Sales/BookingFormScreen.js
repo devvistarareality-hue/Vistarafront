@@ -32,6 +32,15 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE 
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, marginBottom: 12, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const safeDate = (s) => { const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s || '')); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; };
 
+// The Advance rate of a saved booking. Industrial bookings from before it had its own
+// rate charged the one Maintenance Rate for both, so they open with that rate here
+// rather than 0 — a revision keeps charging what was agreed. Same as the website.
+function advRateOf(b) {
+  const own = Number(b.maint_advance_rate) || 0;
+  if (own > 0) return String(b.maint_advance_rate);
+  return b.formula_set === 'industrial' && Number(b.maint_advance) > 0 ? String(b.maint_rate) : '';
+}
+
 export default function BookingFormScreen({ navigation, route }) {
   const me = useSelector((s) => s.auth.user);
   const companyId = useSelector((s) => s.adminFilter?.companyId);
@@ -123,7 +132,7 @@ export default function BookingFormScreen({ navigation, route }) {
     land_sale_deed: '', const_agreement: '', premium_location: '',
     // Kalrav PLC: whether each applies and the amount charged (as on the web).
     plc_corner_on: false, plc_corner: '', plc_clubhouse_on: false, plc_clubhouse: '',
-    discount: '0', legal_charges: '', maint_rate: '', maint_months: '',
+    discount: '0', legal_charges: '', maint_rate: '', maint_advance_rate: '', maint_months: '',
     apply_reg_fee: 'Yes', apply_page_fee: 'Yes', apply_stamp_duty: 'Yes', apply_gst: 'Yes',
     booking_date: new Date().toISOString().slice(0, 10), cp_name: '',
   });
@@ -214,7 +223,7 @@ export default function BookingFormScreen({ navigation, route }) {
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         sale_deed_amount: b.sale_deed_amount ? String(b.sale_deed_amount) : '',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
-        discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
+        discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_advance_rate: advRateOf(b), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
@@ -256,7 +265,7 @@ export default function BookingFormScreen({ navigation, route }) {
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         sale_deed_amount: b.sale_deed_amount ? String(b.sale_deed_amount) : '',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
-        discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
+        discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_advance_rate: advRateOf(b), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
@@ -286,7 +295,7 @@ export default function BookingFormScreen({ navigation, route }) {
         land_rate: String(b.land_rate), dev_rate: String(b.dev_rate), const_rate: String(b.const_rate), sale_deed_rate: String(b.sale_deed_rate), dev_agreement_rate: String(devRateOf(b)),
         sale_deed_pct: b.sale_deed_pct != null ? String(b.sale_deed_pct) : '60',
         land_sale_deed: String(b.land_sale_deed), const_agreement: String(b.const_agreement), premium_location: String(b.premium_location), plc_corner: Number(b.plc_corner) > 0 ? String(b.plc_corner) : '', plc_corner_on: Number(b.plc_corner) > 0, plc_clubhouse: Number(b.plc_clubhouse) > 0 ? String(b.plc_clubhouse) : '', plc_clubhouse_on: Number(b.plc_clubhouse) > 0,
-        discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_months: String(b.maint_months),
+        discount: String(b.discount), legal_charges: String(b.legal_charges), maint_rate: String(b.maint_rate), maint_advance_rate: advRateOf(b), maint_months: String(b.maint_months),
         apply_reg_fee: b.apply_reg_fee || 'Yes', apply_page_fee: b.apply_page_fee || 'Yes', apply_stamp_duty: b.apply_stamp_duty || 'Yes', apply_gst: b.apply_gst || 'Yes',
         booking_date: safeDate(b.booking_date) || s.booking_date, cp_name: b.cp_name || '' }));
       if (Array.isArray(b.installments)) {
@@ -527,7 +536,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const v = useMemo(() => computeFormulas({
     formulaSet, projectName: project?.name, loiVariant: project?.loi_variant,
     area: f.area, landRate: f.land_rate, devRate: f.dev_rate, constArea: f.const_area, constRate: f.const_rate,
-    discount: f.discount, legalCharges: f.legal_charges, maintRate: f.maint_rate, maintMonths: f.maint_months,
+    discount: f.discount, legalCharges: f.legal_charges, maintRate: f.maint_rate, maintAdvanceRate: f.maint_advance_rate, maintMonths: f.maint_months,
     gender: f.gender, landSaleDeed: f.land_sale_deed, constAgreement: f.const_agreement,
     premiumLocation: f.premium_location, saleDeedRate: f.sale_deed_rate, devAgreementRate: f.dev_agreement_rate,
     plcCorner: f.plc_corner_on ? f.plc_corner : 0, plcClubhouse: f.plc_clubhouse_on ? f.plc_clubhouse : 0,
@@ -656,6 +665,8 @@ export default function BookingFormScreen({ navigation, route }) {
       : '18% of Construction + Development Agreement');
   const maintSub = formulaSet === 'ankhol' ? 'Construction Area × Rate × Months'
     : formulaSet === 'industrial' ? 'Plot Area × Rate' : 'Plot Area × Rate × Months';
+  const depSub = formulaSet === 'industrial' ? 'Plot Area × Deposit Rate' : maintSub;
+  const advSub = formulaSet === 'industrial' ? 'Plot Area × Advance Rate' : maintSub;
   function buildEw(n) { n = parseInt(n, 10) || 0; setEwInsts(Array.from({ length: n }, (_, i) => ewInsts[i] || { date: '', pct: '', amt: '' })); }
   function setEwInst(i, k, val) {
     setEwInsts((arr) => {
@@ -962,6 +973,7 @@ export default function BookingFormScreen({ navigation, route }) {
         : (f.sale_deed_pct === '' || f.sale_deed_pct == null ? 60 : f.sale_deed_pct),
       sale_deed_amount: formulaSet === 'industrial' ? 0 : (f.sale_deed_amount || 0),
       maint_rate: f.maint_rate || 0, maint_months: f.maint_months || 0,
+      maint_advance_rate: formulaSet === 'industrial' ? (f.maint_advance_rate || 0) : 0,
       plot_basic: Math.round(v.plotBasic), plot_dev: Math.round(v.plotDev), const_amt: Math.round(v.constAmt),
       sale_deed: Math.round(v.saleDeed), dev_agreement: Math.round(v.devAgreement),
       land_sale_deed: f.land_sale_deed || 0, const_agreement: f.const_agreement || 0,
@@ -1444,10 +1456,18 @@ export default function BookingFormScreen({ navigation, route }) {
           <Calc l="Registration Fees" sub={regSub} val={v.regFees} />
           {hasSaleDeedSplit && <Pick l="Apply GST?" val={f.apply_gst} on={(x) => set('apply_gst', x)} opts={['Yes', 'No']} />}
           <Calc l="GST" sub={gstSub} val={v.gst} />
-          <Fld l={`Maintenance Rate (₹/${unit}${formulaSet === 'industrial' ? '' : '/mo'})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
+          {/* Industrial: the Deposit and the Advance each have their own rate × Plot Area. */}
+          {formulaSet === 'industrial' ? (
+            <>
+              <Fld l={`Maintenance Deposit Rate (₹/${unit})`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
+              <Fld l={`Maintenance Advance Rate (₹/${unit})`} val={f.maint_advance_rate} on={(t) => set('maint_advance_rate', t)} kb="numeric" />
+            </>
+          ) : (
+            <Fld l={`Maintenance Rate (₹/${unit}/mo)`} val={f.maint_rate} on={(t) => set('maint_rate', t)} kb="numeric" />
+          )}
           {formulaSet !== 'industrial' && <Fld l="Maintenance Months" val={f.maint_months} on={(t) => set('maint_months', t)} kb="numeric" />}
-          {(flags.hasMaintDeposit || v.isKalrav3) && <Calc l="Maintenance Deposit" sub={v.isKalrav3 ? '½ × Maintenance Amount' : maintSub} val={v.maintDeposit} />}
-          {(flags.hasMaintAdvance || v.isKalrav3) && <Calc l="Maintenance Advance" sub={v.isKalrav3 ? '½ × Maintenance Amount' : maintSub} val={v.maintAdvance} />}
+          {(flags.hasMaintDeposit || v.isKalrav3) && <Calc l="Maintenance Deposit" sub={v.isKalrav3 ? '½ × Maintenance Amount' : depSub} val={v.maintDeposit} />}
+          {(flags.hasMaintAdvance || v.isKalrav3) && <Calc l="Maintenance Advance" sub={v.isKalrav3 ? '½ × Maintenance Amount' : advSub} val={v.maintAdvance} />}
           <Calc l="Maintenance Amount" sub={(flags.hasMaintDeposit || flags.hasMaintAdvance || v.isKalrav3) ? '= Maintenance Deposit + Maintenance Advance' : maintSub} val={v.maint} />
           <Fld l="Legal Documentation charge (₹)" val={f.legal_charges} on={(t) => set('legal_charges', t)} kb="numeric" />
         </Sec>
