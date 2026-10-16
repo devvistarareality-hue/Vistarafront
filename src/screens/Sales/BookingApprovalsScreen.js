@@ -316,15 +316,31 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // Sales names the regular ones. Same panel, different field — as on the web.
   const approverField = cpMode ? 'cp_booking_approvers' : 'booking_approvers';
 
+  // Sends the ONE id being toggled, never the computed list — PATCHing the whole list
+  // raced two quick taps against each other and the later one silently overwrote the
+  // other (that is how every Sales and CP list was emptied). The server serializes
+  // toggles on the project's row lock and returns the true list. Same as the website.
   async function toggleApprover(projId, mgrId) {
-    let next = [];
+    let prev = [];
     setProjects((ps) => ps.map((p) => {
       if (p.id !== projId) return p;
-      const arr = p[approverField] || [];
-      next = arr.includes(mgrId) ? arr.filter((x) => x !== mgrId) : [...arr, mgrId];
+      prev = p[approverField] || [];
+      const next = prev.includes(mgrId) ? prev.filter((x) => x !== mgrId) : [...prev, mgrId];
       return { ...p, [approverField]: next };
     }));
-    await apiFetch(SALES_ENDPOINTS.project(projId) + cq('?'), { method: 'PATCH', body: JSON.stringify({ [approverField]: next }) }).catch(() => {});
+    const r = await apiFetch(SALES_ENDPOINTS.projectToggleApprover(projId) + cq('?'), {
+      method: 'POST', body: JSON.stringify({ user_id: mgrId, field: approverField }),
+    }).catch(() => null);
+    if (!r || !r.ok) {
+      // Undo the optimistic tick — a save that never reached the server must not look saved.
+      setProjects((ps) => ps.map((p) => (p.id === projId ? { ...p, [approverField]: prev } : p)));
+      Alert.alert('Could not save this approver', 'Please try again.');
+      return;
+    }
+    const saved = await r.json().catch(() => null);
+    if (saved && Array.isArray(saved[approverField])) {
+      setProjects((ps) => ps.map((p) => (p.id === projId ? { ...p, [approverField]: saved[approverField] } : p)));
+    }
   }
 
   return (
