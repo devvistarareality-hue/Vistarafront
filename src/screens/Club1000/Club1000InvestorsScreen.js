@@ -286,6 +286,10 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form?.interest_payout, form?.scheme, form?.investment_date, form?.total_return_pct, form?.amount_invested]);
 
+  const [draftId, setDraftId] = useState(null);
+  useEffect(() => { if (visible) setDraftId(revise ? null : (draft?.id || null)); }, [visible, savedDraft, revise]);
+  const [savingDraft, setSavingDraft] = useState(false);
+
   if (!form) return null;
 
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
@@ -374,9 +378,6 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
   // whole point is never to lose a long form because one field is missing. The
   // row it writes is the one submitting later promotes, so saving twice never
   // leaves two investors behind.
-  const [draftId, setDraftId] = useState(null);
-  useEffect(() => { if (visible) setDraftId(revise ? null : (draft?.id || null)); }, [visible, savedDraft, revise]);
-  const [savingDraft, setSavingDraft] = useState(false);
 
   async function saveDraft() {
     if (!form.scheme) { Alert.alert('Pick a scheme', 'A draft needs a scheme — the maturity date comes from it.'); return; }
@@ -1180,11 +1181,11 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, gap: 8, alignItems: 'center' }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={ClubInvestorsScreenS.chipScroll} contentContainerStyle={ClubInvestorsScreenS.chipRow}>
         {[{ key: '', label: 'All' }, ...onlyPresent([{ value: 'active', label: 'Active' }, { value: 'matured', label: 'Matured' }, { value: 'redeemed', label: 'Redeemed' }, { value: 'premature_redeemed', label: 'Premature' }], facets?.statuses ?? null, statusFilter).map((o) => ({ key: o.value, label: o.label }))].map((f) => (
           <TouchableOpacity key={f.key} onPress={() => setStatusFilter(f.key)}
-            style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: statusFilter === f.key ? NAVY : COLORS.surface, borderWidth: 1, borderColor: statusFilter === f.key ? NAVY : COLORS.border }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: statusFilter === f.key ? COLORS.white : MUTED }}>{f.label}</Text>
+            style={[ClubInvestorsScreenS.chip, statusFilter === f.key && ClubInvestorsScreenS.chipOn]}>
+            <Text style={[ClubInvestorsScreenS.chipText, statusFilter === f.key && ClubInvestorsScreenS.chipTextOn]}>{f.label}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -1322,7 +1323,15 @@ const ClubInvestorsScreenS = StyleSheet.create({
   // Revise LOI header: the R-number title and who it is for.
   reviseHead: { flex: 1 },
   totalBanner: { backgroundColor: COLORS.link, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 },
-  totalLabel: { color: COLORS.accentSoft, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  totalLabel: { color: '#fff', opacity: 0.85, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  chipScroll: { flexGrow: 0, flexShrink: 0 },
+  chipRow: { paddingHorizontal: 16, paddingTop: 12, gap: 8, alignItems: 'center' },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, minHeight: 34, justifyContent: 'center', borderRadius: 20, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+  chipOn: { backgroundColor: NAVY, borderColor: NAVY },
+  chipText: { fontSize: 12, fontWeight: '700', color: MUTED },
+  chipTextOn: { color: '#fff' },
+  box23: { opacity: 1 },
+  box24: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
   totalAmt: { color: '#fff', fontSize: 21, fontWeight: '800', marginTop: 4 },
   listLoader: { marginTop: 24 },
   listEmpty: { textAlign: 'center', color: COLORS.textSecondary, marginTop: 30 },
