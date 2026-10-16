@@ -130,14 +130,32 @@ function computeMonthlyDates(investmentDate, tenureMonths) {
 // the first one) — so the first instalment is usually a stub.
 // `investmentDate`/`maturityDate` are Date objects; `dates` are 'YYYY-MM-DD'
 // strings.
+// The last day an instalment's interest accrues to. A payout DATE is when the
+// money is handed over, not the period it covers: investing 1 Jul with
+// quarterly payouts, the instalment due 10 Oct pays the quarter that ENDED
+// 30 Sep, so accruing to the 10th charged ten days belonging to the next
+// quarter. The final instalment is capped at maturity, which is a real end
+// rather than a payment day, so it accrues to itself.
+// Mirrors backend/club1000/services.py::accrual_end.
+function accrualEnd(due, maturity) {
+  if (due >= maturity) return maturity;
+  // Day 0 of the due month is the last day of the month before it.
+  return new Date(due.getFullYear(), due.getMonth(), 0);
+}
+
 function prorateInstalments(dates, investmentDate, maturityDate, principal, totalReturnPct) {
   const tenureDays = Math.round((maturityDate - investmentDate) / 86400000);
   const dailyRate = tenureDays > 0 ? (principal * totalReturnPct) / 100 / tenureDays : 0;
   let prev = investmentDate;
   return dates.map((due_date) => {
-    const cur = new Date(`${due_date}T00:00:00`);
-    const days = Math.round((cur - prev) / 86400000);
-    prev = cur;
+    // Accrue to the end of the period this instalment pays for, not to the day
+    // it is handed over — see accrualEnd.
+    const periodEnd = accrualEnd(new Date(`${due_date}T00:00:00`), maturityDate);
+    const days = Math.round((periodEnd - prev) / 86400000);
+    // Invested on or after this period's own end: nothing has accrued yet, and
+    // prev stays put so the next instalment runs from the investment date.
+    if (days <= 0) return 0;
+    prev = periodEnd;
     return +((dailyRate * days).toFixed(2));
   });
 }
