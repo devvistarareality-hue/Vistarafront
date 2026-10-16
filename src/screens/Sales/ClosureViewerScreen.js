@@ -54,6 +54,10 @@ const isHold = (plot) => !!(plot.pending_booking_id
   || (plot.status === 'hold' && plot.manual_hold && !plot.held_by_name));
 // Visual state for a plot, folding in the drafted override — everywhere the map colours
 // a unit should go through this instead of indexing STATUS[plot.status] directly.
+// How the salesperson's name is introduced: Sold by / Booked by (submitted, waiting
+// for approval — "Hold") / In progress by (still being worked on). Same as the website.
+const agentLabel = (plot) => (
+  plot.status === 'sold' ? 'Sold by' : isHold(plot) ? 'Booked by' : 'In progress by');
 const plotCfg = (plot) => (
   isHold(plot) ? STATUS.pending
     : plot.drafted_booking_id ? STATUS.drafted
@@ -362,8 +366,10 @@ export default function ClosureViewerScreen({ navigation, route }) {
     // A sold unit isn't for booking, but a Manager/Director/Admin can open it to
     // put it back on the market — same "Move to Resale" action as Manage Plots,
     // just reachable straight from this map instead of a separate admin screen.
-    if (plot.status === 'sold') {
-      if (isManager) setSoldPanelPlot(plot);
+    // Anyone else gets the same panel read-only: who sold it, and to whom — the app's
+    // version of the website's hover card. A submitted booking (Hold) opens it too.
+    if (plot.status === 'sold' || (isHold(plot) && !plot.can_cancel_hold)) {
+      setSoldPanelPlot(plot);
       return;
     }
     // Somebody else's live selection. Anyone allowed to clear it gets the panel; for
@@ -586,7 +592,7 @@ export default function ClosureViewerScreen({ navigation, route }) {
                   const isSel = selectedSet.has(plot.id);
                   // Any drafted unit is tappable — it opens the draft panel for everyone,
                   // just with different actions inside depending on who's looking.
-                  const clickable = plot.status === 'available' || plot.status === 'resale' || isSel || !!plot.drafted_booking_id || !!plot.can_cancel_hold || (plot.status === 'sold' && isManager);
+                  const clickable = plot.status === 'available' || plot.status === 'resale' || isSel || !!plot.drafted_booking_id || !!plot.can_cancel_hold || plot.status === 'sold' || isHold(plot);
                   return (
                     <TouchableOpacity key={plot.id} disabled={!clickable} onPress={() => pickPlot(plot)}
                       style={{ minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1.5, borderColor: isSel ? COLORS.textPrimary : cfg.dot, backgroundColor: isSel ? COLORS.primaryButton : cfg.bg, opacity: clickable ? 1 : 0.55, alignItems: 'center' }}>
@@ -600,7 +606,8 @@ export default function ClosureViewerScreen({ navigation, route }) {
                       {!!(plot.terrace_area || '').trim() && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? COLORS.accentSoft : MUTED }}>Terrace {plot.terrace_area} sq.yd</Text>}
                       {!!plcLabel(plot) && <Text style={[cvS.chipPlc, isSel && cvS.chipPlcSel]}>{plcLabel(plot)}</Text>}
                       {/* Who is on a booked unit, so the team can see it without opening the plot. */}
-                      {!!plot.agent_name && <Text style={{ fontSize: 10, fontWeight: '600', color: isSel ? COLORS.accentSoft : MUTED }}>{plot.status === 'hold' ? 'In progress by' : 'Sold by'} {plot.agent_name}</Text>}
+                      {!!plot.agent_name && <Text style={[cvS.chipWho, isSel && cvS.chipPlcSel]}>{agentLabel(plot)} {plot.agent_name}</Text>}
+                      {!!plot.client_name && <Text style={[cvS.chipWho, isSel && cvS.chipPlcSel]}>{plot.client_name}</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -729,8 +736,9 @@ export default function ClosureViewerScreen({ navigation, route }) {
         );
       })()}
 
-      {/* Sold-unit panel — Manager/Director/Admin only: put the unit back on the
-          market for resale without touching the original booking or its LOI. */}
+      {/* Sold / Hold unit panel — anyone sees who booked it and for which client;
+          Manager/Director/Admin can also put a sold unit back on the market for
+          resale without touching the original booking or its LOI. */}
       {!!soldPanelPlot && (() => {
         const p = soldPanelPlot;
         return (
@@ -739,18 +747,20 @@ export default function ClosureViewerScreen({ navigation, route }) {
               style={{ flex: 1, backgroundColor: `rgba(${COLORS.inkRgb},0.5)`, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <TouchableOpacity activeOpacity={1} onPress={() => {}}
                 style={{ backgroundColor: COLORS.surface, borderRadius: 22, padding: 22, width: '100%', maxWidth: 360 , borderWidth: 1, borderColor: COLORS.cardBorder }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>Unit {p.number} · Sold</Text>
-                <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4, marginBottom: 18 }}>
-                  {p.agent_name ? `Sold by ${p.agent_name}` : 'Sold'}
+                <Text style={cvS.panelKicker}>Unit {p.number} · {p.status === 'sold' ? 'Sold' : 'Hold'}</Text>
+                <Text style={cvS.panelTitle}>
+                  {p.agent_name ? `${agentLabel(p)} ${p.agent_name}` : (p.status === 'sold' ? 'Sold' : 'Hold')}
                 </Text>
-                <View style={{ gap: 10 }}>
-                  <TouchableOpacity onPress={() => Alert.alert('Move to Resale?', 'This unit becomes bookable again. The original booking and its LOI are left untouched.', [
+                {!!p.client_name && <Text style={cvS.panelClient}>Client: {p.client_name}</Text>}
+                <View style={cvS.panelActions}>
+                  {/* Putting a unit back on the market stays with Manager/Director/Admin. */}
+                  {p.status === 'sold' && isManager && <TouchableOpacity onPress={() => Alert.alert('Move to Resale?', 'This unit becomes bookable again. The original booking and its LOI are left untouched.', [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Move to Resale', onPress: () => moveToResaleFromPanel(p.id) },
                   ])} disabled={resaleBusy}
                     style={[ClosureViewerScreenS.btn3, (resaleBusy) && ClosureViewerScreenS.btn3Dim]}>
                     <Text style={ClosureViewerScreenS.box2}>{resaleBusy ? 'Moving…' : '↻ Move to Resale'}</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity>}
                   <TouchableOpacity onPress={() => setSoldPanelPlot(null)} disabled={resaleBusy}
                     style={{ paddingVertical: 10, borderRadius: 14, backgroundColor: COLORS.surfaceAlt, alignItems: 'center' }}>
                     <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Close</Text>
@@ -984,4 +994,9 @@ const ClosureViewerScreenS = StyleSheet.create({
 const cvS = StyleSheet.create({
   chipPlc: { fontSize: 10, fontWeight: '700', color: COLORS.warning },
   chipPlcSel: { color: COLORS.accentSoft },
+  chipWho: { fontSize: 10, fontWeight: '600', color: MUTED },
+  panelKicker: { fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 },
+  panelTitle: { fontSize: 18, fontWeight: '800', color: TEXT, marginTop: 4, marginBottom: 6 },
+  panelClient: { fontSize: 14, fontWeight: '700', color: TEXT, marginBottom: 18 },
+  panelActions: { gap: 10, marginTop: 12 },
 });
