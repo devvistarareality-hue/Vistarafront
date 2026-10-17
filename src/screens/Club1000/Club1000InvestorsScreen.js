@@ -1362,6 +1362,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                 <TouchableOpacity onPress={() => setPortfolioFor(inv.id)} style={ClubInvestorsScreenS.historyChip}>
                   <Text style={ClubInvestorsScreenS.historyChipText}>Portfolio</Text>
                 </TouchableOpacity>
+                {/* Viewing on the left; what changes the investment on the right. */}
+                <View style={ClubInvestorsScreenS.actionsGap} />
                 {can(user, 'club.investor.manage') && (
                   <TouchableOpacity onPress={() => setRevising(inv)} style={ClubInvestorsScreenS.rowBtnPurple}>
                     <Text style={ClubInvestorsScreenS.rowBtnPurpleText}>↻ Revise LOI</Text>
@@ -1502,6 +1504,7 @@ const ClubInvestorsScreenS = StyleSheet.create({
   bulkDelOff: { opacity: 0.45 },
   bulkSpacer: { height: 70 },
   bulkDelText: { fontSize: 12.5, fontWeight: '800', color: '#fff' },
+  actionsGap: { flexGrow: 1, minWidth: 8 },
   historyChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border },
   historyChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textPrimary },
   importBtn: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
