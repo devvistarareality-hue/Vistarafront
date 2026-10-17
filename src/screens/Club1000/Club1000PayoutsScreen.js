@@ -22,6 +22,7 @@ import { errText } from '../../lib/apiError';
 import { LedgerModal } from './Club1000InvestorsScreen';
 import { isClub1000Manager } from '../../utils/club1000Access';
 import { confirmAsk } from '../../lib/confirmAsk';
+import PeriodFilter from '../../components/PeriodFilter';
 
 const TYPE_LABELS = { interest: 'Interest', maturity: 'Principal', premature_redemption: 'Premature redemption' };
 const DUE_SOON_DAYS = 30;
@@ -68,6 +69,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
   const [schemes, setSchemes] = useState([]);
   const [schemeSel, setSchemeSel] = useState([]);
   const [q, setQ] = useState('');
+  const [range, setRange] = useState({ from: '', to: '' });   // Year / Month / Quarter / dates
   const [refreshing, setRefreshing] = useState(false);
   const [paying, setPaying] = useState(null);
   const [ledgerFor, setLedgerFor] = useState(null);
@@ -91,7 +93,13 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
 
   const today = iso(new Date());
   const soon = iso(new Date(Date.now() + DUE_SOON_DAYS * 86400000));
-  const investors = useMemo(() => byInvestor(payouts || [], today, soon), [payouts, today, soon]);
+  // The period picked: unpaid payouts by due date, paid ones by paid date (same as the website).
+  const inPeriod = (p) => {
+    const d = String((p.status === 'paid' ? p.paid_date : p.due_date) || '').slice(0, 10);
+    return (!range.from || d >= range.from) && (!range.to || d <= range.to);
+  };
+  const investors = useMemo(() => byInvestor((payouts || []).filter(inPeriod), today, soon),
+    [payouts, today, soon, range.from, range.to]);
   const scoped = investors.filter((r) => (!schemeSel.length || schemeSel.includes(r.scheme))
     && (!q.trim() || `${r.name} ${r.phone} ${r.loi_no}`.toLowerCase().includes(q.trim().toLowerCase())));
   const lists = {
@@ -136,6 +144,9 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
           <View style={s.searchRow}>
             <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} />
             <TextInput value={q} onChangeText={setQ} placeholder="Search investor, phone or LOI no…" placeholderTextColor={COLORS.text3} style={s.search} />
+          </View>
+          <View style={s.filterRow}>
+            <PeriodFilter value={range} onChange={setRange} anyLabel="Any date" />
           </View>
           {schemes.length > 1 && (
             <View style={s.filterRow}>
