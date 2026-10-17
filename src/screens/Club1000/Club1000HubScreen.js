@@ -15,6 +15,7 @@ import { DashHero, DashKpi, DashKpiGrid, DashAlerts, DashCard, DashBars } from '
 import { inrShort, pct } from '../../lib/inr';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { canUseAI } from '../Sales/AskNexoraScreen';
+import PayoutsAheadCard from './PayoutsAheadCard';
 
 const NAVY  = COLORS.navy;
 const TEAL  = COLORS.success;
@@ -421,6 +422,7 @@ export default function Club1000HubScreen({ navigation, route }) {
                   ))}
                 </DashCard>
               )}
+              {manager && <PayoutsAheadCard schemeSel={schemeSel} />}
             </>
           )}
         </View>
