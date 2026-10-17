@@ -24,7 +24,7 @@ function span(from, to) {
 // The bar's fill is the period's share of the term — a width from data.
 const barFill = (pct) => ({ width: `${pct}%` });
 
-export default function ScheduleList({ schedule, periods, principal, pct, from, to, onAmount, onPickDate, onReset }) {
+export default function ScheduleList({ schedule, periods, principal, pct, from, to, onAmount, onPickDate, onReset, readOnly = false }) {
   const [editing, setEditing] = useState(null);
   const perDay = perDayInterest(principal, pct, from, to);
   const days = tenureDays(from, to);
@@ -43,7 +43,7 @@ export default function ScheduleList({ schedule, periods, principal, pct, from, 
         <View style={s.stat}>
           <Text style={s.statLbl}>TOTAL INTEREST</Text>
           <Text style={s.statVal}>₹{inr(totalInterest, 0)}</Text>
-          <Text style={s.statSub}>{interestRows.length} payouts · {days} days</Text>
+          <Text style={s.statSub}>{readOnly ? 'paid at maturity' : `${interestRows.length} payouts`} · {days} days</Text>
         </View>
         <View style={[s.stat, s.statGood]}>
           <Text style={[s.statLbl, s.statLblGood]}>AT MATURITY</Text>
@@ -78,9 +78,11 @@ export default function ScheduleList({ schedule, periods, principal, pct, from, 
                   <Text style={s.amt}>₹{inr(row.amount_due)}</Text>
                   {!!per && <Text style={[s.why, edited && s.whyEdited]}>{edited ? `edited · worked out ₹${inr(per.computed)}` : `${per.days} × ₹${inr(perDay)}`}</Text>}
                 </View>
-                <TouchableOpacity onPress={() => setEditing(open ? null : idx)} style={[s.edit, open && s.editOn]}>
-                  <Text style={[s.editText, open && s.editTextOn]}>{open ? '✓' : '✎'}</Text>
-                </TouchableOpacity>
+                {!readOnly && (
+                  <TouchableOpacity onPress={() => setEditing(open ? null : idx)} style={[s.edit, open && s.editOn]}>
+                    <Text style={[s.editText, open && s.editTextOn]}>{open ? '✓' : '✎'}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               {open && (
                 <View style={s.editor}>

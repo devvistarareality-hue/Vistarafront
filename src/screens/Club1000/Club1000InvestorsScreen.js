@@ -26,7 +26,7 @@ import { errText } from '../../lib/apiError';
 import PeriodFilter from '../../components/PeriodFilter';
 import FilterSelect from '../../components/FilterSelect';
 import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestmentSheets';
-import { schedulePeriods, perDayInterest, tenureDays } from '../../lib/c1Periods';
+import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
 import ScheduleList from './ScheduleList';
 // The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
@@ -590,6 +590,16 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
         )}
 
         {/* Quarterly/monthly schedule preview */}
+        {form.interest_payout === 'maturity' && !!maturityDate && Number(form.amount_invested) > 0 && (() => {
+          const mw = maturityWorking(form.amount_invested, form.total_return_pct, isoOf(form.investment_date), isoOf(maturityDate));
+          return mw.rows.length ? (
+            <View style={ClubInvestorsScreenS.fBlock}>
+              <Text style={ClubInvestorsScreenS.formSection}>INTEREST WORKING — PAID AT MATURITY</Text>
+              <ScheduleList readOnly schedule={mw.rows} periods={mw.periods} principal={form.amount_invested} pct={form.total_return_pct}
+                from={isoOf(form.investment_date)} to={isoOf(maturityDate)} onAmount={() => {}} onReset={() => {}} />
+            </View>
+          ) : null;
+        })()}
         {(form.interest_payout === 'quarterly' || form.interest_payout === 'monthly') && schedule.length > 0 && (
           <View style={ClubInvestorsScreenS.fBlock}>
             <Text style={ClubInvestorsScreenS.formSection}>PAYOUT SCHEDULE — CONFIRM OR EDIT</Text>
@@ -873,6 +883,16 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
           </View>
         </View>
 
+        {form.interest_payout === 'maturity' && !!maturityDate && Number(form.amount_invested) > 0 && (() => {
+          const mw = maturityWorking(form.amount_invested, form.total_return_pct, isoOf(form.investment_date), isoOf(maturityDate));
+          return mw.rows.length ? (
+            <View style={ClubInvestorsScreenS.fBlock}>
+              <Text style={ClubInvestorsScreenS.formSection}>INTEREST WORKING — PAID AT MATURITY</Text>
+              <ScheduleList readOnly schedule={mw.rows} periods={mw.periods} principal={form.amount_invested} pct={form.total_return_pct}
+                from={isoOf(form.investment_date)} to={isoOf(maturityDate)} onAmount={() => {}} onReset={() => {}} />
+            </View>
+          ) : null;
+        })()}
         {(form.interest_payout === 'quarterly' || form.interest_payout === 'monthly') && schedule.length > 0 && (
           <View style={ClubInvestorsScreenS.fBlock}>
             <Text style={ClubInvestorsScreenS.formSection}>PAYOUT SCHEDULE — CONFIRM OR EDIT</Text>
