@@ -408,20 +408,6 @@ export default function Club1000HubScreen({ navigation, route }) {
                   <PayoutColumns rows={stats.payout_forecast} />
                 </DashCard>
               )}
-              {manager && (stats?.top_investors || []).length > 0 && (
-                <DashCard title="Top investors" sub="By amount invested">
-                  {stats.top_investors.map((inv, i) => (
-                    <View key={`${inv.name}-${i}`} style={ClubHubScreenS.topRow}>
-                      <Text style={ClubHubScreenS.topRank}>{i + 1}</Text>
-                      <View style={ClubHubScreenS.flex}>
-                        <Text style={ClubHubScreenS.topName} numberOfLines={1}>{inv.name}</Text>
-                        <Text style={ClubHubScreenS.topSub} numberOfLines={1}>{inv.scheme} · {inv.status}</Text>
-                      </View>
-                      <Text style={ClubHubScreenS.topAmt}>{inrShort(inv.amount)}</Text>
-                    </View>
-                  ))}
-                </DashCard>
-              )}
               {manager && <PayoutsAheadCard schemeSel={schemeSel} />}
             </>
           )}

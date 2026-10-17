@@ -37,6 +37,7 @@ function nextBuckets(grain, n, today) {
   }
   return out;
 }
+const OVERDUE = COLORS.isDark ? '#e0604f' : '#d64838';
 // Heights and segment shares come from the data.
 const heightOf = (pct) => ({ height: `${pct}%` });
 const shareOf = (v, color) => ({ flexGrow: v, backgroundColor: color });
@@ -58,7 +59,7 @@ export default function PayoutsAheadCard({ schemeSel = [] }) {
   }, []);
 
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-  const { columns, schemes, max, total } = useMemo(() => {
+  const { columns, schemes, max, total, stats } = useMemo(() => {
     const rows = (payouts || []).filter((p) => (!schemeSel.length || schemeSel.includes(p.scheme_name))
       && (kind === 'both' || (kind === 'principal' ? p.payout_type !== 'interest' : p.payout_type === 'interest')));
     const names = [...new Set((payouts || []).map((p) => p.scheme_name || '—'))].sort();
@@ -74,7 +75,16 @@ export default function PayoutsAheadCard({ schemeSel = [] }) {
       col.by[s] = (col.by[s] || 0) + amt; col.sum += amt;
     }
     const shown = cols.filter((c) => !c.overdue || c.sum > 0);
-    return { columns: shown, schemes: names, max: Math.max(1, ...shown.map((c) => c.sum)), total: shown.reduce((t, c) => t + c.sum, 0) };
+    const lastKey = cols.length ? cols[cols.length - 1].key : null;
+    const inWindow = (payouts || []).filter((p) => (!schemeSel.length || schemeSel.includes(p.scheme_name))
+      && (p.due_date < today || (lastKey != null && bucketOf(p.due_date, grain).key <= lastKey)));
+    const sumOf = (f) => inWindow.filter(f).reduce((t, p) => t + (Number(p.amount_due) || 0), 0);
+    const stats = {
+      interest: sumOf((p) => p.payout_type === 'interest'),
+      principal: sumOf((p) => p.payout_type !== 'interest'),
+      overdue: byKey.overdue.sum,
+    };
+    return { columns: shown, schemes: names, max: Math.max(1, ...shown.map((c) => c.sum)), total: shown.reduce((t, c) => t + c.sum, 0), stats };
   }, [payouts, grain, kind, schemeSel.join('|'), today]);
 
   const colorOf = (name) => SERIES[schemes.indexOf(name) % SERIES.length];
@@ -99,6 +109,14 @@ export default function PayoutsAheadCard({ schemeSel = [] }) {
         </View>
       </View>
       {payouts === null ? <Text style={s.empty}>Loading…</Text> : total === 0 ? <Text style={s.empty}>Nothing to pay in this window.</Text> : <>
+        <View style={s.stats}>
+          {[['TOTAL', total], ['INTEREST', stats.interest], ['PRINCIPAL', stats.principal], ['OVERDUE', stats.overdue]].map(([lbl, v]) => (
+            <View key={lbl} style={s.stat}>
+              <Text style={s.statLbl}>{lbl}</Text>
+              <Text style={[s.statVal, lbl === 'OVERDUE' && v > 0 && s.statBad]}>{v ? inrShort(v) : '—'}</Text>
+            </View>
+          ))}
+        </View>
         <View style={s.chart}>
           {columns.map((c) => {
             const h = c.sum ? Math.max(3, (c.sum / max) * 100) : 0;
@@ -106,7 +124,7 @@ export default function PayoutsAheadCard({ schemeSel = [] }) {
               <TouchableOpacity key={c.key} activeOpacity={0.7} onPress={() => setPicked(picked === c.key ? null : c.key)} style={[s.col, picked === c.key && s.colOn]}>
                 <View style={s.bar}>
                   <View style={[s.stack, heightOf(h)]}>
-                    {schemes.filter((n) => c.by[n]).map((n) => <View key={n} style={[s.seg2, shareOf(c.by[n], colorOf(n))]} />)}
+                    {schemes.filter((n) => c.by[n]).map((n) => <View key={n} style={[s.seg2, shareOf(c.by[n], c.overdue ? OVERDUE : colorOf(n))]} />)}
                   </View>
                 </View>
                 <Text style={[s.lbl, c.overdue && s.lblBad]} numberOfLines={1}>{c.overdue ? 'Due' : c.label.replace(' FY', '\nFY')}</Text>
@@ -140,12 +158,17 @@ const s = StyleSheet.create({
   segOn: { backgroundColor: COLORS.surface },
   segText: { fontSize: 11.5, fontWeight: '700', color: COLORS.textSecondary },
   segTextOn: { color: COLORS.link },
-  chart: { flexDirection: 'row', alignItems: 'stretch', height: 170, gap: 3 },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  stat: { flexGrow: 1, flexBasis: '46%', backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 8 },
+  statLbl: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
+  statVal: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary, marginTop: 1 },
+  statBad: { color: COLORS.error },
+  chart: { flexDirection: 'row', alignItems: 'stretch', height: 170, gap: 4 },
   col: { flex: 1, minWidth: 0, alignItems: 'center', borderRadius: 6, paddingTop: 2 },
   colOn: { backgroundColor: COLORS.surfaceAlt },
-  bar: { flex: 1, width: '80%', justifyContent: 'flex-end', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  bar: { flex: 1, width: '64%', justifyContent: 'flex-end', borderBottomWidth: 1, borderBottomColor: COLORS.border },
   stack: { width: '100%', flexDirection: 'column-reverse', gap: 1 },
-  seg2: { minHeight: 2, borderRadius: 2 },
+  seg2: { minHeight: 2, borderTopLeftRadius: 4, borderTopRightRadius: 4 },
   lbl: { fontSize: 8.5, color: COLORS.textSecondary, marginTop: 3, textAlign: 'center' },
   lblBad: { color: COLORS.error, fontWeight: '800' },
   detail: { marginTop: 12, gap: 5 },
