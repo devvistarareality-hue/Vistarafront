@@ -946,8 +946,8 @@ const LEDGER_TYPE_COLOR = {
 const LEDGER_STATUS_COLOR = {
   completed: { bg: COLORS.successBg, fg: COLORS.success },
   paid: { bg: COLORS.successBg, fg: COLORS.success },
-  pending: { bg: COLORS.warningBg, fg: AMBER },
-  overdue: { bg: COLORS.errorBg, fg: COLORS.error },
+  pending: { bg: COLORS.errorBg, fg: COLORS.error },     // due, not yet paid
+  upcoming: { bg: COLORS.warningBg, fg: AMBER },         // not yet due
 };
 
 function LedgerBadge({ label, color }) {
@@ -1005,23 +1005,24 @@ function LedgerModal({ investorId, onClose }) {
               <>
                 <View style={ClubInvestorsScreenS.lgCards}>
                   {[
-                    ['Principal', s.principal ?? s.total_invested, null],
+                    ['Principal', s.principal ?? s.total_invested, null, inv?.investment_date ? `invested ${formatDMY(inv.investment_date)}` : ''],
                     ['Interest', s.interest, null],
                     ['Total', s.total ?? s.total_payout_due, 'sum'],
                     ['Due till today', s.due_till_today, 'info'],
                     ['Paid out', s.paid_out ?? s.total_paid, 'good'],
                     ['Upcoming interest', s.upcoming_interest, 'warn'],
-                  ].map(([label, val, tone]) => (
+                  ].map(([label, val, tone, hint]) => (
                     <View key={label} style={[ClubInvestorsScreenS.lgCard, tone === 'sum' && ClubInvestorsScreenS.lgCardSum]}>
                       <Text style={ClubInvestorsScreenS.lgCardLbl}>{label.toUpperCase()}</Text>
                       <Text style={[ClubInvestorsScreenS.lgCardVal, tone && LG_TONE[tone]]}>{fmtMoney(val)}</Text>
+                      {!!hint && <Text style={ClubInvestorsScreenS.lgCardHint}>{hint}</Text>}
                     </View>
                   ))}
                 </View>
 
-                {(data.entries || []).map((e, i) => {
-                  const isInv = e.type === 'investment';
-                  const st = !isInv && e.status === 'pending' && (e.due_date || e.date) < todayIso ? 'overdue' : e.status;
+                {(data.entries || []).filter((e) => e.type !== 'investment').map((e, i) => {
+                  // Unpaid: Pending once its date has come, Upcoming before that.
+                  const st = e.status === 'pending' && (e.due_date || e.date) > todayIso ? 'upcoming' : e.status;
                   return (
                     <View key={i} style={[ClubInvestorsScreenS.lgRow, i > 0 && ClubInvestorsScreenS.lgRowSep]}>
                       <View style={ClubInvestorsScreenS.lgTop}>
@@ -1402,6 +1403,7 @@ const ClubInvestorsScreenS = StyleSheet.create({
   lgCard: { flexBasis: '31%', flexGrow: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10 },
   lgCardSum: { backgroundColor: COLORS.linkBg },
   lgCardLbl: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.4, color: COLORS.textSecondary },
+  lgCardHint: { fontSize: 10, color: COLORS.textSecondary, marginTop: 1 },
   lgCardVal: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
   lgRow: { paddingVertical: 10 },
   lgRowSep: { borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
