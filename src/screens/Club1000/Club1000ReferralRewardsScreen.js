@@ -165,6 +165,22 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
   const activeCount = Object.values(filters).filter(Boolean).length
     - (filters.date_from && filters.date_to ? 1 : 0);
 
+  // A reward marked paid by mistake goes back to pending.
+  function undoPaid(r) {
+    Alert.alert('Undo this payment?', `The reward for ${r.investor_name} goes back to pending.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Undo', style: 'destructive', onPress: async () => {
+        const res = await apiFetch(CLUB1000_ENDPOINTS.referralRewardMarkUnpaid(r.id), { method: 'POST' }).catch(() => null);
+        if (!res || !res.ok) {
+          const d = res ? await res.json().catch(() => ({})) : {};
+          Alert.alert('Could not undo', errText(d, 'Please try again.'));
+          return;
+        }
+        load();
+      } },
+    ]);
+  }
+
   // Cards from everything the filters allow, before the referrer choice, so a
   // picked card reads as one of a set rather than the only one there is.
   const referrers = groupByReferrer(rewards);
@@ -266,6 +282,11 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
                   {manager && r.status === 'pending' && can(user, 'club.payout.mark_paid') && (
                     <TouchableOpacity onPress={() => setPaying(r)} style={ClubReferralRewardsScreenS.btn}>
                       <Text style={ClubReferralRewardsScreenS.box}>Mark Paid</Text>
+                    </TouchableOpacity>
+                  )}
+                  {manager && r.status === 'paid' && can(user, 'club.payout.mark_paid') && (
+                    <TouchableOpacity onPress={() => undoPaid(r)} style={ClubReferralRewardsScreenS.undoBtn}>
+                      <Text style={ClubReferralRewardsScreenS.undoText}>Undo paid</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -380,6 +401,8 @@ const ClubReferralRewardsScreenS = StyleSheet.create({
   payBtn: { marginTop: 18, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center' },
   payBtnText: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
   dim: { opacity: 0.5 },
+  undoBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error },
+  undoText: { fontSize: 12, fontWeight: '700', color: COLORS.error },
 
   titleWrap: { flex: 1 },
   title: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },

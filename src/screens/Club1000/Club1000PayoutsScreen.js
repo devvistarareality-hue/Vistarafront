@@ -20,6 +20,7 @@ import FormSheet from '../../components/FormSheet';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { errText } from '../../lib/apiError';
 import { LedgerModal } from './Club1000InvestorsScreen';
+import { isClub1000Manager } from '../../utils/club1000Access';
 
 const TYPE_LABELS = { interest: 'Interest', maturity: 'Principal', premature_redemption: 'Premature redemption' };
 const DUE_SOON_DAYS = 30;
@@ -55,6 +56,7 @@ function byInvestor(payouts, today, soon) {
 export default function Club1000PayoutsScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
   const canPay = can(user, 'club.payout.mark_paid');
+  const canUndo = canPay && isClub1000Manager(user);
   const initial = route?.params?.initialFilter;
   const [tab, setTab] = useState(initial === 'paid' ? 'paid' : initial === 'pending' ? 'pending' : 'overdue');
   const [payouts, setPayouts] = useState(null);
@@ -64,6 +66,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [paying, setPaying] = useState(null);
   const [ledgerFor, setLedgerFor] = useState(null);
+  const [paidFor, setPaidFor] = useState(null);   // the investor whose paid payouts are listed
 
   const reqRef = useRef(0);
   const load = useCallback(async () => {
@@ -174,6 +177,9 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
                   {r.pending.length ? `${rupee(r.pendingAmt)} still to pay` : 'All paid'}
                 </Text>
                 <TouchableOpacity onPress={() => setLedgerFor(r.id)} style={s.btn}><Text style={s.btnText}>Ledger</Text></TouchableOpacity>
+                {r.paid.length > 0 && (
+                  <TouchableOpacity onPress={() => setPaidFor(r.id)} style={s.btn}><Text style={s.btnText}>Paid ({r.paid.length})</Text></TouchableOpacity>
+                )}
                 {canPay && r.pending.length > 0 && (
                   <TouchableOpacity onPress={() => setPaying(r)} style={[s.btn, s.btnPrimary]}><Text style={s.btnPrimaryText}>Pay</Text></TouchableOpacity>
                 )}
@@ -184,6 +190,8 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
       </ScrollView>
 
       <PaySheet row={paying} today={today} onClose={() => setPaying(null)} onDone={() => { setPaying(null); load(); }} />
+      <PaidSheet row={paidFor ? investors.find((x) => x.id === paidFor) || null : null} canUndo={canUndo}
+        onClose={() => setPaidFor(null)} onChanged={load} />
       {!!ledgerFor && <LedgerModal investorId={ledgerFor} onClose={() => setLedgerFor(null)} />}
     </SafeAreaView>
   );
@@ -326,7 +334,68 @@ function PaySheet({ row, today, onClose, onDone }) {
   );
 }
 
+// What has been paid to one investor, newest first. A payment marked by mistake can
+// be undone (back to pending). Same as the website.
+function PaidSheet({ row, canUndo, onClose, onChanged }) {
+  const [busyId, setBusyId] = useState(null);
+  if (!row) return null;
+  function undo(p) {
+    Alert.alert('Undo this payment?', `${TYPE_LABELS[p.payout_type] || p.payout_type} due ${formatDMY(p.due_date)} goes back to pending.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Undo', style: 'destructive', onPress: async () => {
+        setBusyId(p.id);
+        const res = await apiFetch(CLUB1000_ENDPOINTS.payoutMarkUnpaid(p.id), { method: 'POST' }).catch(() => null);
+        setBusyId(null);
+        if (!res || !res.ok) {
+          const d = res ? await res.json().catch(() => ({})) : {};
+          Alert.alert('Could not undo', errText(d, 'Please try again.'));
+          return;
+        }
+        onChanged();
+      } },
+    ]);
+  }
+  return (
+    <FormSheet visible={!!row} onClose={onClose}>
+      <View style={s.sheetHead}>
+        <View style={s.flex}>
+          <Text style={s.sheetTitle}>Paid payouts</Text>
+          <Text style={s.sheetSub} numberOfLines={1}>{row.name} · {row.scheme}{row.loi_no ? ` · ${row.loi_no}` : ''}</Text>
+        </View>
+        <TouchableOpacity onPress={onClose} style={s.back}><Ionicons name="close" size={18} color={COLORS.textPrimary} /></TouchableOpacity>
+      </View>
+      <ScrollView contentContainerStyle={s.sheetBody}>
+        <Text style={s.section}>PAID · {rupee(row.paidAmt)}</Text>
+        {row.paid.length === 0 && <Text style={s.payWhen}>Nothing paid.</Text>}
+        {row.paid.map((p) => (
+          <View key={p.id} style={s.payCard}>
+            <View style={s.payTop}>
+              <View style={s.flex}>
+                <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}</Text>
+                <Text style={s.payWhen}>Due {formatDMY(p.due_date)} · target {rupee(p.amount_due)}</Text>
+              </View>
+              <View style={s.payTarget}>
+                <Text style={s.payTargetAmt}>{rupee(p.paid_amount ?? p.amount_due)}</Text>
+                <Text style={s.payWhen}>{p.paid_date ? formatDMY(p.paid_date) : '—'}</Text>
+              </View>
+            </View>
+            {!!p.notes && <Text style={s.paidNotes}>{p.notes}</Text>}
+            {canUndo && (
+              <TouchableOpacity onPress={() => undo(p)} disabled={busyId === p.id} style={[s.undoBtn, busyId === p.id && s.dim]}>
+                <Text style={s.undoText}>{busyId === p.id ? 'Undoing…' : 'Undo payment'}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+    </FormSheet>
+  );
+}
+
 const s = StyleSheet.create({
+  paidNotes: { fontSize: 12, color: COLORS.textSecondary, marginTop: 6 },
+  undoBtn: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error },
+  undoText: { fontSize: 12, fontWeight: '700', color: COLORS.error },
   safe: { flex: 1, backgroundColor: 'transparent' },
   flex: { flex: 1, minWidth: 0 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12 },
