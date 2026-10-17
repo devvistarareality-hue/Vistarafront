@@ -21,6 +21,7 @@ import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { errText } from '../../lib/apiError';
 import { LedgerModal } from './Club1000InvestorsScreen';
 import { isClub1000Manager } from '../../utils/club1000Access';
+import { confirmAsk } from '../../lib/confirmAsk';
 
 const TYPE_LABELS = { interest: 'Interest', maturity: 'Principal', premature_redemption: 'Premature redemption' };
 const DUE_SOON_DAYS = 30;
@@ -39,7 +40,11 @@ function byInvestor(payouts, today, soon) {
     (p.status === 'paid' ? r.paid : r.pending).push(p);
   }
   for (const r of map.values()) {
-    r.pending.sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+    // By due date; on the same day interest comes before the principal it is paid with.
+    const order = (a, b) => String(a.due_date).localeCompare(String(b.due_date))
+      || (a.payout_type === 'maturity') - (b.payout_type === 'maturity');
+    r.pending.sort(order);
+    r.schedulePaid = [...r.paid].sort(order);
     r.paid.sort((a, b) => String(b.paid_date || '').localeCompare(String(a.paid_date || '')));
     r.overdue = r.pending.filter((p) => p.due_date < today);
     r.overdueAmt = r.overdue.reduce((t, p) => t + (Number(p.amount_due) || 0), 0);
@@ -339,23 +344,34 @@ function PaySheet({ row, today, onClose, onDone }) {
 // be undone (back to pending). Same as the website.
 function PaidSheet({ row, canUndo, onClose, onChanged }) {
   const [busyId, setBusyId] = useState(null);
+  const [editing, setEditing] = useState(null);   // { id, amount, date, notes }
+  const [picking, setPicking] = useState(false);
   if (!row) return null;
-  function undo(p) {
-    Alert.alert('Undo this payment?', `${TYPE_LABELS[p.payout_type] || p.payout_type} due ${formatDMY(p.due_date)} goes back to pending.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Undo', style: 'destructive', onPress: async () => {
-        setBusyId(p.id);
-        const res = await apiFetch(CLUB1000_ENDPOINTS.payoutMarkUnpaid(p.id), { method: 'POST' }).catch(() => null);
-        setBusyId(null);
-        if (!res || !res.ok) {
-          const d = res ? await res.json().catch(() => ({})) : {};
-          Alert.alert('Could not undo', errText(d, 'Please try again.'));
-          return;
-        }
-        onChanged();
-      } },
-    ]);
+  const today = iso(new Date());
+
+  async function save() {
+    const e = editing;
+    if (e.amount === '' || Number.isNaN(Number(e.amount)) || Number(e.amount) < 0) { Alert.alert('Amount', 'Enter the amount paid.'); return; }
+    setBusyId(e.id);
+    const res = await apiFetch(CLUB1000_ENDPOINTS.payoutPayment(e.id), { method: 'PATCH', body: JSON.stringify({ amount: e.amount, paid_date: e.date, notes: e.notes }) }).catch(() => null);
+    setBusyId(null);
+    if (!res || !res.ok) { Alert.alert('Not saved', errText(res ? await res.json().catch(() => ({})) : {}, 'Please try again.')); return; }
+    setEditing(null); onChanged();
   }
+
+  async function remove(p) {
+    const ok = await confirmAsk('Delete payment?',
+      `Delete the ${rupee(p.paid_amount ?? p.amount_due)} payment of ${formatDMY(p.paid_date)}? ${TYPE_LABELS[p.payout_type] || p.payout_type}${p.period ? ` · ${p.period.label}` : ''} goes back to pending.`,
+      'Delete', true);
+    if (!ok) return;
+    setBusyId(p.id);
+    const res = await apiFetch(CLUB1000_ENDPOINTS.payoutPayment(p.id), { method: 'DELETE' }).catch(() => null);
+    setBusyId(null);
+    if (!res || !res.ok) { Alert.alert('Not deleted', errText(res ? await res.json().catch(() => ({})) : {}, 'Please try again.')); return; }
+    onChanged();
+  }
+
+  const list = row.schedulePaid || row.paid;
   return (
     <FormSheet visible={!!row} onClose={onClose}>
       <View style={s.sheetHead}>
@@ -365,10 +381,12 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
         </View>
         <TouchableOpacity onPress={onClose} style={s.back}><Ionicons name="close" size={18} color={COLORS.textPrimary} /></TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={s.sheetBody}>
+      <ScrollView contentContainerStyle={s.sheetBody} keyboardShouldPersistTaps="handled">
         <Text style={s.section}>PAID · {rupee(row.paidAmt)}</Text>
-        {row.paid.length === 0 && <Text style={s.payWhen}>Nothing paid.</Text>}
-        {row.paid.map((p) => (
+        {list.length === 0 && <Text style={s.payWhen}>Nothing paid.</Text>}
+        {list.map((p) => {
+          const ed = editing && editing.id === p.id ? editing : null;
+          return (
           <View key={p.id} style={s.payCard}>
             <View style={s.payTop}>
               <View style={s.flex}>
@@ -376,19 +394,48 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
                 {!!p.period && <Text style={s.payWhy}>{formatDMY(p.period.from)} – {formatDMY(p.period.to)} · {p.period.days} days × ₹{Number(p.period.per_day).toLocaleString('en-IN')}/day</Text>}
                 <Text style={s.payWhen}>Due {formatDMY(p.due_date)} · target {rupee(p.amount_due)}</Text>
               </View>
-              <View style={s.payTarget}>
-                <Text style={s.payTargetAmt}>{rupee(p.paid_amount ?? p.amount_due)}</Text>
-                <Text style={s.payWhen}>{p.paid_date ? formatDMY(p.paid_date) : '—'}</Text>
-              </View>
+              {!ed && (
+                <View style={s.payTarget}>
+                  <Text style={s.payTargetAmt}>{rupee(p.paid_amount ?? p.amount_due)}</Text>
+                  <Text style={s.payWhen}>{p.paid_date ? formatDMY(p.paid_date) : '—'}</Text>
+                </View>
+              )}
             </View>
-            {!!p.notes && <Text style={s.paidNotes}>{p.notes}</Text>}
-            {canUndo && (
-              <TouchableOpacity onPress={() => undo(p)} disabled={busyId === p.id} style={[s.undoBtn, busyId === p.id && s.dim]}>
-                <Text style={s.undoText}>{busyId === p.id ? 'Undoing…' : 'Undo payment'}</Text>
-              </TouchableOpacity>
+            {!ed && !!p.notes && <Text style={s.paidNotes}>{p.notes}</Text>}
+            {ed ? (
+              <View style={s.payFields}>
+                <Text style={s.payLbl}>ACTUAL PAID (₹)</Text>
+                <TextInput value={ed.amount} keyboardType="decimal-pad" onChangeText={(t) => setEditing({ ...ed, amount: t })} style={s.payInput} />
+                <Text style={s.payLbl}>PAID ON</Text>
+                <TouchableOpacity onPress={() => setPicking(true)} style={s.payInput}><Text style={s.payDateText}>{formatDMY(ed.date)}</Text></TouchableOpacity>
+                {picking && (
+                  <DateTimePicker value={new Date(`${ed.date}T00:00:00`)} mode="date" maximumDate={new Date()}
+                    display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                    onChange={(_, d) => { setPicking(false); if (d) setEditing({ ...ed, date: iso(d) }); }} />
+                )}
+                <Text style={s.payLbl}>REMARKS</Text>
+                <TextInput value={ed.notes} onChangeText={(t) => setEditing({ ...ed, notes: t })} placeholder="UTR / cheque no." placeholderTextColor={COLORS.text3} style={s.payInput} />
+                <View style={s.rowActs}>
+                  <TouchableOpacity onPress={() => setEditing(null)} disabled={busyId === p.id} style={s.ghostBtn}><Text style={s.ghostText}>Cancel</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={save} disabled={busyId === p.id} style={s.saveBtn}>
+                    {busyId === p.id ? <ActivityIndicator size="small" color={COLORS.btnTextSuccess} /> : <Text style={s.saveText}>Save</Text>}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : canUndo && (
+              <View style={s.rowActs}>
+                <TouchableOpacity disabled={busyId === p.id || !!editing} style={s.ghostBtn}
+                  onPress={() => setEditing({ id: p.id, amount: String(Number(p.paid_amount ?? p.amount_due) || 0), date: p.paid_date || today, notes: p.notes || '' })}>
+                  <Text style={s.ghostText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => remove(p)} disabled={busyId === p.id || !!editing} style={s.undoBtn}>
+                  {busyId === p.id ? <ActivityIndicator size="small" color={COLORS.error} /> : <Text style={s.undoText}>Delete</Text>}
+                </TouchableOpacity>
+              </View>
             )}
           </View>
-        ))}
+          );
+        })}
       </ScrollView>
     </FormSheet>
   );
@@ -397,7 +444,12 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
 const s = StyleSheet.create({
   payWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 1 },
   paidNotes: { fontSize: 12, color: COLORS.textSecondary, marginTop: 6 },
-  undoBtn: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error },
+  rowActs: { flexDirection: 'row', gap: 8, marginTop: 10, justifyContent: 'flex-end' },
+  ghostBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  ghostText: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
+  saveBtn: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 8, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, minWidth: 64, alignItems: 'center' },
+  saveText: { fontSize: 12, fontWeight: '800', color: COLORS.btnTextSuccess },
+  undoBtn: { minWidth: 64, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error },
   undoText: { fontSize: 12, fontWeight: '700', color: COLORS.error },
   safe: { flex: 1, backgroundColor: 'transparent' },
   flex: { flex: 1, minWidth: 0 },

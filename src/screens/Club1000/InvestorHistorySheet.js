@@ -18,13 +18,13 @@ const KIND = {
   added: ['person-add-outline', 'accent'], approve: ['checkmark', 'good'], reject: ['close', 'bad'],
   revise: ['create-outline', 'accent'], 'revise-approve': ['checkmark', 'good'], 'revise-reject': ['close', 'bad'],
   renew: ['refresh', 'warn'], 'renew-approve': ['refresh', 'good'], 'renew-reject': ['close', 'bad'],
-  paid: ['checkmark-done', 'good'], undo: ['arrow-undo', 'bad'], reward: ['gift-outline', 'accent'], 'reward-paid': ['gift', 'good'],
+  paid: ['checkmark-done', 'good'], edit: ['create-outline', 'accent'], undo: ['arrow-undo', 'bad'], reward: ['gift-outline', 'accent'], 'reward-paid': ['gift', 'good'],
   redeem: ['exit-outline', 'warn'], closed: ['flag-outline', 'accent'],
 };
 const FILTERS = [['all', 'Everything'], ['terms', 'Terms'], ['money', 'Payments'], ['rewards', 'Rewards']];
 const IN_FILTER = {
   terms: (k) => /^(added|approve|reject|revise|renew|redeem|closed)/.test(k),
-  money: (k) => k === 'paid' || k === 'undo',
+  money: (k) => k === 'paid' || k === 'undo' || k === 'edit',
   rewards: (k) => k.startsWith('reward'),
 };
 

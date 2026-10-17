@@ -108,6 +108,7 @@ function groupByReferrer(rewards) {
 
 export default function Club1000ReferralRewardsScreen({ navigation }) {
   const [paying, setPaying] = useState(null);   // the reward in the Mark Paid sheet
+  const [editingPay, setEditingPay] = useState(null);   // a paid reward whose payment is being edited
   const user = useSelector((s) => s.auth.user);
   const manager = isClub1000Manager(user);
 
@@ -167,13 +168,13 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
 
   // A reward marked paid by mistake goes back to pending.
   function undoPaid(r) {
-    Alert.alert('Undo this payment?', `The reward for ${r.investor_name} goes back to pending.`, [
+    Alert.alert('Delete payment?', `Delete the ${fmtMoney(r.paid_amount ?? r.amount)} payment of ${formatDMY(r.paid_date)}? The reward for ${r.investor_name} goes back to pending.`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Undo', style: 'destructive', onPress: async () => {
-        const res = await apiFetch(CLUB1000_ENDPOINTS.referralRewardMarkUnpaid(r.id), { method: 'POST' }).catch(() => null);
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        const res = await apiFetch(CLUB1000_ENDPOINTS.referralRewardPayment(r.id), { method: 'DELETE' }).catch(() => null);
         if (!res || !res.ok) {
           const d = res ? await res.json().catch(() => ({})) : {};
-          Alert.alert('Could not undo', errText(d, 'Please try again.'));
+          Alert.alert('Not deleted', errText(d, 'Please try again.'));
           return;
         }
         load();
@@ -285,9 +286,14 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
                     </TouchableOpacity>
                   )}
                   {manager && r.status === 'paid' && can(user, 'club.payout.mark_paid') && (
-                    <TouchableOpacity onPress={() => undoPaid(r)} style={ClubReferralRewardsScreenS.undoBtn}>
-                      <Text style={ClubReferralRewardsScreenS.undoText}>Undo paid</Text>
-                    </TouchableOpacity>
+                    <View style={ClubReferralRewardsScreenS.rowActs}>
+                      <TouchableOpacity onPress={() => setEditingPay(r)} style={ClubReferralRewardsScreenS.editBtn}>
+                        <Text style={ClubReferralRewardsScreenS.editText}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => undoPaid(r)} style={ClubReferralRewardsScreenS.undoBtn}>
+                        <Text style={ClubReferralRewardsScreenS.undoText}>Delete</Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
               </View>
@@ -296,6 +302,7 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
         )}
       </ScrollView>
 
+      <PayRewardSheet edit reward={editingPay} onClose={() => setEditingPay(null)} onDone={() => { setEditingPay(null); load(); }} />
       <PayRewardSheet reward={paying} onClose={() => setPaying(null)} onDone={() => { setPaying(null); load(); }} />
       <FilterSheet visible={showFilters} onClose={() => setShowFilters(false)}
         filters={filters} setFilters={setFilters} schemes={schemes} facets={facets} />
@@ -309,7 +316,7 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
 const isoToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 const isoOf = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
-function PayRewardSheet({ reward, onClose, onDone }) {
+function PayRewardSheet({ reward, onClose, onDone, edit = false }) {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(isoToday());
   const [notes, setNotes] = useState('');
@@ -318,9 +325,9 @@ function PayRewardSheet({ reward, onClose, onDone }) {
   const [seededFor, setSeededFor] = useState(null);
   if (reward && seededFor !== reward.id) {
     setSeededFor(reward.id);
-    setAmount(String(Number(reward.amount) || 0));
-    setDate(isoToday());
-    setNotes('');
+    setAmount(String(Number(edit ? (reward.paid_amount ?? reward.amount) : reward.amount) || 0));
+    setDate(edit && reward.paid_date ? reward.paid_date : isoToday());
+    setNotes(edit ? (reward.notes || '') : '');
   }
   if (!reward) return null;
   const gap = Number(amount) - Number(reward.amount);
@@ -328,8 +335,8 @@ function PayRewardSheet({ reward, onClose, onDone }) {
   async function pay() {
     if (amount === '' || Number.isNaN(Number(amount)) || Number(amount) < 0) { Alert.alert('Amount', 'Enter the amount paid.'); return; }
     setBusy(true);
-    const res = await apiFetch(CLUB1000_ENDPOINTS.referralRewardMarkPaid(reward.id), {
-      method: 'POST', body: JSON.stringify({ amount, paid_date: date, notes }),
+    const res = await apiFetch(edit ? CLUB1000_ENDPOINTS.referralRewardPayment(reward.id) : CLUB1000_ENDPOINTS.referralRewardMarkPaid(reward.id), {
+      method: edit ? 'PATCH' : 'POST', body: JSON.stringify({ amount, paid_date: date, notes }),
     }).catch(() => null);
     setBusy(false);
     if (!res || !res.ok) {
@@ -346,7 +353,7 @@ function PayRewardSheet({ reward, onClose, onDone }) {
     <FormSheet visible={!!reward} onClose={onClose}>
       <View style={st.sheetHead}>
         <View style={st.flex}>
-          <Text style={st.title}>Mark referral reward paid</Text>
+          <Text style={st.title}>{edit ? 'Edit payment' : 'Mark referral reward paid'}</Text>
           <Text style={st.sheetSub} numberOfLines={2}>{reward.reference_name}{reward.reference_phone ? ` · ${reward.reference_phone}` : ''} → {reward.investor_name}</Text>
         </View>
         <TouchableOpacity onPress={onClose} style={st.close}><Ionicons name="close" size={18} color={COLORS.textPrimary} /></TouchableOpacity>
@@ -369,7 +376,7 @@ function PayRewardSheet({ reward, onClose, onDone }) {
         <Text style={st.lbl}>REMARKS</Text>
         <TextInput value={notes} onChangeText={setNotes} placeholder="UTR / cheque no." placeholderTextColor={COLORS.text3} style={st.input} />
         <TouchableOpacity onPress={pay} disabled={busy} style={[st.payBtn, busy && st.dim]}>
-          {busy ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Text style={st.payBtnText}>Mark paid · {fmtMoney(amount)}</Text>}
+          {busy ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Text style={st.payBtnText}>{edit ? 'Save payment' : `Mark paid · ${fmtMoney(amount)}`}</Text>}
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -401,6 +408,9 @@ const ClubReferralRewardsScreenS = StyleSheet.create({
   payBtn: { marginTop: 18, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center' },
   payBtnText: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
   dim: { opacity: 0.5 },
+  rowActs: { flexDirection: 'row', gap: 8 },
+  editBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  editText: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
   undoBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error },
   undoText: { fontSize: 12, fontWeight: '700', color: COLORS.error },
 
