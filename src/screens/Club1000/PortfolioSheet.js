@@ -106,12 +106,23 @@ export default function PortfolioSheet({ investorId, onClose }) {
             </View>
 
             <View style={s.money}>
-              <View style={s.rowBetween}>
-                <Text style={s.muted}>Paid out <Text style={s.strong}>{rupee(paid)}</Text></Text>
-                <Text style={s.muted}>To pay <Text style={s.strong}>{rupee(toPay)}</Text></Text>
+              <View style={s.piRow}>
+                <Text style={s.piLbl} />
+                <Text style={s.piHead}>PRINCIPAL</Text><Text style={s.piHead}>INTEREST</Text><Text style={s.piHead}>TOTAL</Text>
               </View>
+              {[
+                ['Amount', p.principal_total, p.interest_total, Number(p.principal_total) + Number(p.interest_total), false],
+                ['Paid out', p.principal_paid, p.interest_paid, paid, true],
+                ['To pay', p.principal_pending, p.interest_pending, toPay, false],
+              ].map(([label, a, b, c, ok]) => (
+                <View key={label} style={s.piRow}>
+                  <Text style={s.piLbl}>{label}</Text>
+                  <Text style={[s.piVal, ok && s.piOk]}>{rupee(a)}</Text>
+                  <Text style={[s.piVal, ok && s.piOk]}>{rupee(b)}</Text>
+                  <Text style={[s.piVal, s.piTotal, ok && s.piOk]}>{rupee(c)}</Text>
+                </View>
+              ))}
               <View style={s.split}><View style={[s.splitFill, { width: `${paidPct}%` }]} /></View>{/* inline-ok: paid share of all payouts */}
-              <Text style={s.small}>Interest paid {rupee(p.interest_paid)}</Text>
               <Text style={due ? s.dueNote : s.okNote}>{due ? `⏱ ${rupee(p.due_now)} is due now — date passed, not yet paid` : '✓ Nothing due today'}</Text>
               <View style={s.refLine}>
                 <Ionicons name="people-outline" size={14} color={COLORS.link} />
@@ -150,7 +161,8 @@ export default function PortfolioSheet({ investorId, onClose }) {
                   {[p.names?.length > 1 ? h.name : '', h.loi_no, PAYOUT[h.interest_payout] || h.interest_payout, h.return_pct ? `${Number(h.return_pct)}%` : '', `matures ${formatDMY(h.maturity_date)}`].filter(Boolean).join(' · ')}
                   {h.renewal_count > 0 && h.first_invested_on && h.first_invested_on !== h.investment_date ? ` · first in ${formatDMY(h.first_invested_on)}` : ''}
                 </Text>
-                <Text style={s.small}>Amount <Text style={s.strongSm}>{rupee(h.amount)}</Text> · Paid <Text style={s.strongSm}>{rupee(h.paid_out)}</Text> · To pay <Text style={s.strongSm}>{rupee(h.pending)}</Text></Text>
+                <Text style={s.small}>Principal <Text style={s.strongSm}>{rupee(h.principal)}</Text> · Interest <Text style={s.strongSm}>{rupee(h.interest)}</Text></Text>
+                <Text style={s.small}>Paid · P <Text style={s.strongSm}>{rupee(h.principal_paid)}</Text> · I <Text style={s.strongSm}>{rupee(h.interest_paid)}</Text>   To pay · P <Text style={s.strongSm}>{rupee(h.principal_pending)}</Text> · I <Text style={s.strongSm}>{rupee(h.interest_pending)}</Text></Text>
               </View>
             </View>
           );
@@ -214,6 +226,12 @@ const s = StyleSheet.create({
   val: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginTop: 3 },
   money: { marginTop: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, backgroundColor: COLORS.surface, gap: 6 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+  piRow: { flexDirection: 'row', alignItems: 'center' },
+  piLbl: { width: 62, fontSize: 11.5, color: COLORS.textSecondary },
+  piHead: { flex: 1, textAlign: 'right', fontSize: 9.5, fontWeight: '800', letterSpacing: 0.4, color: COLORS.textSecondary },
+  piVal: { flex: 1, textAlign: 'right', fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
+  piTotal: { fontWeight: '800' },
+  piOk: { color: COLORS.success },
   split: { height: 8, borderRadius: 4, backgroundColor: COLORS.warningBg, overflow: 'hidden' },
   splitFill: { height: 8, borderRadius: 4, backgroundColor: COLORS.success },
   dueNote: { fontSize: 12, fontWeight: '700', color: COLORS.warning },
