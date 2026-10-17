@@ -16,6 +16,7 @@ import { withAlpha } from '../../constants/theme';
 import AppLoader from '../../components/AppLoader';
 import { onlyPresent } from '../../lib/presentOptions';
 import { errText } from '../../lib/apiError';
+import { confirmAsk } from '../../lib/confirmAsk';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -312,7 +313,8 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
   );
 }
 
-function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, onConvert, onScheduleFollowUp, onAssigneeChange }) {
+function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, onConvert, onScheduleFollowUp, onAssigneeChange, onDelete }) {
+  const [deleting, setDeleting] = useState(false);
   const [tab, setTab] = useState('detail');
   const [detail, setDetail] = useState(null);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -498,6 +500,12 @@ function LeadDetailSheet({ lead, assignees, manager, onClose, onStatusChange, on
             <Text style={ClubLeadsScreenS.box3}>Convert to Investor</Text>
           </TouchableOpacity>
         )}
+        {manager && !!onDelete && (
+          <TouchableOpacity disabled={deleting} style={ClubLeadsScreenS.deleteBtn}
+            onPress={async () => { setDeleting(true); await onDelete(lead); setDeleting(false); }}>
+            {deleting ? <ActivityIndicator size="small" color={COLORS.error} /> : <Text style={ClubLeadsScreenS.deleteBtnText}>Delete lead</Text>}
+          </TouchableOpacity>
+        )}
         </>}
 
         {tab === 'history' && <>
@@ -627,6 +635,18 @@ export default function Club1000LeadsScreen({ navigation }) {
     }
   }
 
+  // One lead, from its detail — managers only (the server checks too).
+  async function deleteLead(lead) {
+    const ok = await confirmAsk('Delete lead?', `Delete ${lead.name}${lead.phone ? ` (${lead.phone})` : ''} permanently? Its follow-ups and history go with it.`, 'Delete', true);
+    if (!ok) return;
+    const r = await apiFetch(CLUB1000_ENDPOINTS.lead(lead.id), { method: 'DELETE' }).catch(() => null);
+    if (!r || !(r.ok || r.status === 204)) {
+      Alert.alert('Not deleted', errText(r ? await r.json().catch(() => ({})) : {}, 'Please try again.'));
+      return;
+    }
+    setSelected(null); load(true);
+  }
+
   function convert(lead) {
     setSelected(null);
     navigation.navigate('Club1000Investors', { prefillLead: lead });
@@ -652,7 +672,7 @@ export default function Club1000LeadsScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={BG} />
       <AddLeadSheet visible={showAdd} onClose={() => setShowAdd(false)} onSaved={() => load()} schemes={schemes} assignees={assignees} manager={manager} />
-      <LeadDetailSheet lead={selected} assignees={assignees} manager={manager} onClose={() => setSelected(null)} onStatusChange={changeStatus} onConvert={convert} onScheduleFollowUp={scheduleFollowUp} onAssigneeChange={changeAssignee} />
+      <LeadDetailSheet lead={selected} assignees={assignees} manager={manager} onClose={() => setSelected(null)} onStatusChange={changeStatus} onConvert={convert} onScheduleFollowUp={scheduleFollowUp} onAssigneeChange={changeAssignee} onDelete={deleteLead} />
       <FilterSheet visible={filterSheet} onClose={() => setFilterSheet(false)}
         filters={filters} setFilters={setFilters} schemes={schemes} assignees={assignees} showAssignees={manager} facets={facets} />
 
@@ -737,6 +757,8 @@ export default function Club1000LeadsScreen({ navigation }) {
 
 // Styles moved out of JSX (see AGENTS.md: no inline styles).
 const ClubLeadsScreenS = StyleSheet.create({
+  deleteBtn: { marginTop: 10, borderWidth: 1, borderColor: COLORS.error, borderRadius: 14, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.errorBg },
+  deleteBtnText: { color: COLORS.error, fontSize: 14, fontWeight: '800' },
   btn: { backgroundColor: COLORS.btnTint, paddingVertical: 14, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: COLORS.btnBorder },
   btn2: { backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 8, opacity: 1 },
   btn2Dim: { opacity: 0.7 },

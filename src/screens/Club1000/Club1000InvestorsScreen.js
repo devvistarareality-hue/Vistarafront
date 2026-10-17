@@ -29,6 +29,7 @@ import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestm
 import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
 import ScheduleList from './ScheduleList';
+import { confirmAsk } from '../../lib/confirmAsk';
 // The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
 export { LedgerModal };
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
@@ -1070,6 +1071,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [redeeming, setRedeeming] = useState(null);   // Redeem sheet (before maturity)
   const [payingOut, setPayingOut] = useState(null);   // Payout sheet (at maturity)
   const [historyFor, setHistoryFor] = useState(null); // History sheet
+  const [deletingId, setDeletingId] = useState(null); // investor being deleted
   const [ledgerFor,  setLedgerFor]  = useState(null);
   // Opened from an investor notification (openInvestorId): that investor's ledger.
   useEffect(() => {
@@ -1119,6 +1121,22 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
 
   useFocusEffect(React.useCallback(() => { load(); },
     [statusFilter, search, bucket, payoutFilter, schemeFilter, addedByFilter, range.from, range.to]));
+
+  // Delete an investment — managers only; the server refuses once money has moved.
+  async function deleteInvestor(inv) {
+    const ok = await confirmAsk('Delete investor?',
+      `Delete ${inv.name}${inv.loi_no ? ` (LOI ${inv.loi_no})` : ''} · ${fmtMoney(inv.amount_invested)} permanently? Its payout schedule and referral rewards go with it. This can't be undone.`,
+      'Delete', true);
+    if (!ok) return;
+    setDeletingId(inv.id);
+    const r = await apiFetch(CLUB1000_ENDPOINTS.investor(inv.id), { method: 'DELETE' }).catch(() => null);
+    setDeletingId(null);
+    if (!r || !(r.ok || r.status === 204)) {
+      Alert.alert('Not deleted', errText(r ? await r.json().catch(() => ({})) : {}, 'Please try again.'));
+      return;
+    }
+    load();
+  }
 
   async function viewLoi(id) {
     try {
@@ -1294,6 +1312,12 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                     </TouchableOpacity>
                   )
                 )}
+                {manager && (
+                  <TouchableOpacity onPress={() => deleteInvestor(inv)} disabled={deletingId === inv.id} style={ClubInvestorsScreenS.deleteChip}>
+                    {deletingId === inv.id ? <ActivityIndicator size="small" color={COLORS.error} />
+                      : <Text style={ClubInvestorsScreenS.deleteChipText}>Delete</Text>}
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           );
@@ -1363,6 +1387,8 @@ const ClubInvestorsScreenS = StyleSheet.create({
   ledgerChipText: { fontSize: 11, fontWeight: '700', color: COLORS.success },
   historyChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border },
   historyChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textPrimary },
+  deleteChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.errorBg, minWidth: 54, alignItems: 'center' },
+  deleteChipText: { fontSize: 11, fontWeight: '700', color: COLORS.error },
   renewNote: { fontSize: 11, color: COLORS.textSecondary, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 10 },
   warnChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg },
   warnChipText: { fontSize: 11, fontWeight: '700', color: COLORS.warning },
