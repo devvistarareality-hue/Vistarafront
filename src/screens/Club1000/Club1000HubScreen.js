@@ -28,6 +28,7 @@ const MENU = [
   { screen: 'club.screen.leads', key: 'Club1000Leads',      label: 'Leads',        icon: 'person-add-outline',    color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },
   { screen: 'club.screen.followups', key: 'Club1000FollowUps',  label: 'Follow-Ups',   icon: 'calendar-outline',      color: COLORS.warning,  bg: COLORS.warningBg, managerOnly: false },
   { screen: 'club.screen.investors', key: 'Club1000Investors',  label: 'Investors',   icon: 'people-outline',        color: TEAL,           bg: COLORS.successBg,        managerOnly: false },
+  { screen: 'club.screen.investors', key: 'Club1000Portfolios', label: 'Portfolios',  icon: 'briefcase-outline',     color: COLORS.link,     bg: COLORS.linkBg,    managerOnly: false },
   { screen: 'club.screen.approvals', key: 'Club1000InvestorApprovals', label: 'Approvals', icon: 'checkmark-done-outline', color: COLORS.success, bg: COLORS.successBg, managerOnly: true },
   { screen: 'club.screen.schemes', key: 'Club1000Schemes',    label: 'Schemes',      icon: 'layers-outline',        color: COLORS.link,     bg: COLORS.linkBg,   managerOnly: false },
   { screen: 'club.screen.payouts', key: 'Club1000Payouts',    label: 'Payouts',      icon: 'wallet-outline',        color: COLORS.success,  bg: COLORS.successBg, managerOnly: true },

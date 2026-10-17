@@ -29,6 +29,7 @@ import Club1000SchemesScreen from '../screens/Club1000/Club1000SchemesScreen';
 import Club1000InvestorsScreen from '../screens/Club1000/Club1000InvestorsScreen';
 import Club1000PayoutsScreen from '../screens/Club1000/Club1000PayoutsScreen';
 import Club1000ReferralRewardsScreen from '../screens/Club1000/Club1000ReferralRewardsScreen';
+import Club1000PortfoliosScreen from '../screens/Club1000/Club1000PortfoliosScreen';
 import Club1000LeadsScreen from '../screens/Club1000/Club1000LeadsScreen';
 import Club1000FollowUpsScreen from '../screens/Club1000/Club1000FollowUpsScreen';
 import Club1000InvestorApprovalsScreen from '../screens/Club1000/Club1000InvestorApprovalsScreen';
@@ -76,6 +77,7 @@ function ModulesNavigator() {
       <ModulesStack.Screen name="Club1000Investors" component={Club1000InvestorsScreen} />
       <ModulesStack.Screen name="Club1000Payouts" component={Club1000PayoutsScreen} />
       <ModulesStack.Screen name="Club1000ReferralRewards" component={Club1000ReferralRewardsScreen} />
+      <ModulesStack.Screen name="Club1000Portfolios" component={Club1000PortfoliosScreen} />
       <ModulesStack.Screen name="Club1000Leads" component={Club1000LeadsScreen} />
       <ModulesStack.Screen name="Club1000FollowUps" component={Club1000FollowUpsScreen} />
       <ModulesStack.Screen name="Club1000InvestorApprovals" component={Club1000InvestorApprovalsScreen} />

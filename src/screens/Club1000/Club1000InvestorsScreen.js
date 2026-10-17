@@ -28,6 +28,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestmentSheets';
 import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
+import PortfolioSheet from './PortfolioSheet';
 import ImportInvestorsSheet from './ImportInvestorsSheet';
 import ScheduleList from './ScheduleList';
 import { confirmAsk } from '../../lib/confirmAsk';
@@ -1087,6 +1088,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [redeeming, setRedeeming] = useState(null);   // Redeem sheet (before maturity)
   const [payingOut, setPayingOut] = useState(null);   // Payout sheet (at maturity)
   const [historyFor, setHistoryFor] = useState(null); // History sheet
+  const [portfolioFor, setPortfolioFor] = useState(null); // the person's whole portfolio
   const [deletingId, setDeletingId] = useState(null); // investor being deleted
   const [showImport, setShowImport] = useState(false); // Import from Excel
   const [ledgerFor,  setLedgerFor]  = useState(null);
@@ -1173,6 +1175,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         onClose={() => setRevising(null)} onSaved={() => load()} />
       <ImportInvestorsSheet visible={showImport} onClose={() => setShowImport(false)} onDone={() => { setShowImport(false); load(); }} />
       <InvestorHistorySheet investor={historyFor} onClose={() => setHistoryFor(null)} />
+      <PortfolioSheet investorId={portfolioFor} onClose={() => setPortfolioFor(null)} />
       <RedeemSheet investor={redeeming} onClose={() => setRedeeming(null)} onDone={() => { setRedeeming(null); load(); }} />
       <MaturityPayoutSheet investor={payingOut} onClose={() => setPayingOut(null)} onDone={() => { setPayingOut(null); load(); }} />
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
@@ -1311,6 +1314,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setHistoryFor(inv)} style={ClubInvestorsScreenS.historyChip}>
                   <Text style={ClubInvestorsScreenS.historyChipText}>History</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setPortfolioFor(inv.id)} style={ClubInvestorsScreenS.historyChip}>
+                  <Text style={ClubInvestorsScreenS.historyChipText}>Portfolio</Text>
                 </TouchableOpacity>
                 {can(user, 'club.investor.manage') && (
                   <TouchableOpacity onPress={() => setRevising(inv)} style={ClubInvestorsScreenS.rowBtnPurple}>
