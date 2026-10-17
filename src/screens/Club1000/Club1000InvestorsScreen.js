@@ -26,6 +26,7 @@ import { errText } from '../../lib/apiError';
 import PeriodFilter from '../../components/PeriodFilter';
 import FilterSelect from '../../components/FilterSelect';
 import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestmentSheets';
+import InvestorHistorySheet from './InvestorHistorySheet';
 // The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
 export { LedgerModal };
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
@@ -1061,6 +1062,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [renewing,   setRenewing]   = useState(null);
   const [redeeming, setRedeeming] = useState(null);   // Redeem sheet (before maturity)
   const [payingOut, setPayingOut] = useState(null);   // Payout sheet (at maturity)
+  const [historyFor, setHistoryFor] = useState(null); // History sheet
   const [ledgerFor,  setLedgerFor]  = useState(null);
   // Opened from an investor notification (openInvestorId): that investor's ledger.
   useEffect(() => {
@@ -1127,6 +1129,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       {/* Revise LOI is the Add Investor form, prefilled — every field can change. */}
       <AddInvestorSheet visible={!!revising} revise={revising} schemes={schemes}
         onClose={() => setRevising(null)} onSaved={() => load()} />
+      <InvestorHistorySheet investor={historyFor} onClose={() => setHistoryFor(null)} />
       <RedeemSheet investor={redeeming} onClose={() => setRedeeming(null)} onDone={() => { setRedeeming(null); load(); }} />
       <MaturityPayoutSheet investor={payingOut} onClose={() => setPayingOut(null)} onDone={() => { setPayingOut(null); load(); }} />
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
@@ -1223,8 +1226,13 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                       </View>
                     )}
                     {inv.is_matured && (
-                      <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.warningBg }}>
-                        <Text style={{ fontSize: 10, fontWeight: '800', color: AMBER }}>MATURED</Text>
+                      <View style={ClubInvestorsScreenS.maturedTag}>
+                        <Text style={ClubInvestorsScreenS.maturedTagText}>MATURED</Text>
+                      </View>
+                    )}
+                    {inv.renewal_count > 0 && (
+                      <View style={ClubInvestorsScreenS.renewedTag}>
+                        <Text style={ClubInvestorsScreenS.renewedTagText}>RENEWED {inv.renewal_count}×</Text>
                       </View>
                     )}
                   </View>
@@ -1250,8 +1258,11 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                     <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.link }}>View LOI</Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: TEAL }}><AppIcon name="book" size={11} /> Ledger</Text>
+                <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={ClubInvestorsScreenS.ledgerChip}>
+                  <Text style={ClubInvestorsScreenS.ledgerChipText}><AppIcon name="book" size={11} /> Ledger</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setHistoryFor(inv)} style={ClubInvestorsScreenS.historyChip}>
+                  <Text style={ClubInvestorsScreenS.historyChipText}>History</Text>
                 </TouchableOpacity>
                 {can(user, 'club.investor.manage') && (
                   <TouchableOpacity onPress={() => setRevising(inv)} style={ClubInvestorsScreenS.rowBtnPurple}>
@@ -1304,6 +1315,14 @@ const ClubInvestorsScreenS = StyleSheet.create({
   btn3Dim: { opacity: 0.5 },
   // Revise LOI header: the R-number title and who it is for.
   reviseHead: { flex: 1 },
+  maturedTag: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.warningBg },
+  maturedTagText: { fontSize: 10, fontWeight: '800', color: COLORS.warningAlt },
+  renewedTag: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.linkBg },
+  renewedTagText: { fontSize: 10, fontWeight: '800', color: COLORS.link },
+  ledgerChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg },
+  ledgerChipText: { fontSize: 11, fontWeight: '700', color: COLORS.success },
+  historyChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border },
+  historyChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textPrimary },
   renewNote: { fontSize: 11, color: COLORS.textSecondary, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 10 },
   warnChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg },
   warnChipText: { fontSize: 11, fontWeight: '700', color: COLORS.warning },
