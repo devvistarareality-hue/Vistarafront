@@ -197,7 +197,7 @@ function exitTerm(scheme) {
 // The terms for one LOI — term 1 follows its scheme.
 function sectionsFor(scheme) {
   return [
-    { title: '1. PREMATURE EXIT OPTION:', lines: [`${scheme?.name ? `${scheme.name} — ` : ''}${exitTerm(scheme)}`] },
+    { title: '1. PREMATURE EXIT OPTION:', lines: [exitTerm(scheme)] },
     { title: '2. TENURE AND LOCK-IN PERIOD:', lines: [
       '- The tenure of investment shall be as mentioned above from the date of receipt of funds',
       '- The Investment shall be subject to a lock-in period as mentioned above, during which the Investor shall not withdraw the Investment Amount',
