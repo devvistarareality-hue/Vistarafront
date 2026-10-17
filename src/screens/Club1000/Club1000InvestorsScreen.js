@@ -946,6 +946,7 @@ const LEDGER_TYPE_COLOR = {
 const LEDGER_STATUS_COLOR = {
   completed: { bg: COLORS.successBg, fg: COLORS.success },
   paid: { bg: COLORS.successBg, fg: COLORS.success },
+  'paid early': { bg: COLORS.linkBg, fg: COLORS.link },  // paid before its due date
   pending: { bg: COLORS.errorBg, fg: COLORS.error },     // due, not yet paid
   upcoming: { bg: COLORS.warningBg, fg: AMBER },         // not yet due
 };
@@ -1022,7 +1023,9 @@ function LedgerModal({ investorId, onClose }) {
 
                 {(data.entries || []).filter((e) => e.type !== 'investment').map((e, i) => {
                   // Unpaid: Pending once its date has come, Upcoming before that.
-                  const st = e.status === 'pending' && (e.due_date || e.date) > todayIso ? 'upcoming' : e.status;
+                  const due = e.due_date || e.date;
+                  const st = e.status === 'pending' ? (due > todayIso ? 'upcoming' : 'pending')
+                    : e.status === 'paid' && e.paid_date && e.paid_date < due ? 'paid early' : e.status;
                   return (
                     <View key={i} style={[ClubInvestorsScreenS.lgRow, i > 0 && ClubInvestorsScreenS.lgRowSep]}>
                       <View style={ClubInvestorsScreenS.lgTop}>
