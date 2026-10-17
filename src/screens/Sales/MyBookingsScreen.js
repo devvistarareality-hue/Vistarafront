@@ -18,6 +18,7 @@ import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { isManagerRole } from '../../lib/roles';
 import BookFilter, { useBook } from '../../components/BookFilter';
 import PeriodFilter, { inRange } from '../../components/PeriodFilter';
+import BookingReasons from '../../components/BookingReasons';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -123,6 +124,7 @@ function DecidedBy({ b }) {
           {b.accounts_rejected_reason ? ` · ${b.accounts_rejected_reason}` : ''}
         </Text>
       ) : null}
+      <BookingReasons b={b} />
     </View>
   );
 }

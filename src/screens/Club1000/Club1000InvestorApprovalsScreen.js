@@ -17,6 +17,7 @@ import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import { errText } from '../../lib/apiError';
 import { confirmAsk } from '../../lib/confirmAsk';
+import { useReasonPrompt } from '../../components/ReasonPrompt';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const TEAL = COLORS.success; const PURPLE = COLORS.link; const AMBER = COLORS.warning;
 
 function fmtMoney(n) {
@@ -41,6 +42,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(null);
+  const [askReason, reasonUI] = useReasonPrompt();   // reject always says why
   const [busyAct, setBusyAct] = useState('');   // which action the busy row is running
   // A draft is edited from here, because it deliberately does not appear in the
   // Investors list — there is nowhere else to open it from.
@@ -86,13 +88,17 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
 
   async function act(id, action) {
     const inv = (rows || []).find((x) => x.id === id);
-    const ok = await confirmAsk(action === 'approve' ? 'Approve investor?' : 'Reject investor?',
-      `${action === 'approve' ? 'Approve' : 'Reject'} ${inv ? inv.name : 'this investor'}${inv?.scheme_name ? ` · ${inv.scheme_name}` : ''}?`,
-      action === 'approve' ? 'Approve' : 'Reject', action !== 'approve');
-    if (!ok) return;
+    const who = `${inv ? inv.name : 'this investor'}${inv?.scheme_name ? ` · ${inv.scheme_name}` : ''}`;
+    let reason = '';
+    if (action === 'approve') {
+      if (!(await confirmAsk('Approve investor?', `Approve ${who}?`, 'Approve'))) return;
+    } else {
+      reason = await askReason({ title: 'Reject investor', message: `Reject ${who}? Write why — whoever added it sees this.`, confirmText: 'Reject', placeholder: 'e.g. Signed LOI missing, KYC unclear' });
+      if (!reason) return;
+    }
     setBusy(id); setBusyAct(action);
     try {
-      const res = await apiFetch(CLUB1000_ENDPOINTS.investorAction(id), { method: 'POST', body: JSON.stringify({ action }) });
+      const res = await apiFetch(CLUB1000_ENDPOINTS.investorAction(id), { method: 'POST', body: JSON.stringify(reason ? { action, reason } : { action }) });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         alert(errText(d, `Could not ${action} this investor.`));
@@ -217,6 +223,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
+      {reasonUI}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
@@ -338,6 +345,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                     <Text style={st.decided}>Approved by {inv.approved_by_name || '—'}{inv.approved_at ? ` · ${formatDMY(String(inv.approved_at).slice(0, 10))}` : ''}</Text>
                   )}
                   {isRevision && <Text style={st.proposed}>Proposed: {revisionSummary(inv)}</Text>}
+                  {inv.approval_status === 'rejected' && !!inv.rejected_reason && (
+                    <View style={st.reasonBox}><Text style={st.reasonHead}>REJECTED — REASON</Text><Text style={st.reasonBody}>{inv.rejected_reason}</Text></View>
+                  )}
                 </View>
                 <View style={st.side}>
                   <Text style={st.amt}>{fmtMoney(inv.amount_invested)}</Text>
@@ -402,6 +412,9 @@ const btnTBad = { ...btnT, color: COLORS.btnTextDanger };
 
 // The approvals list, laid out like Sales' Booking Approvals.
 const st = StyleSheet.create({
+  reasonBox: { marginTop: 8, padding: 10, borderRadius: 10, backgroundColor: COLORS.errorBg },
+  reasonHead: { fontSize: 10, fontWeight: '800', letterSpacing: 0.4, color: COLORS.error },
+  reasonBody: { fontSize: 13, color: COLORS.textPrimary, marginTop: 2 },
   flex: { flex: 1 },
   filterRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   banner: { backgroundColor: COLORS.link, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 },

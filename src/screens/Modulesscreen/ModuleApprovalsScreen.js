@@ -22,6 +22,8 @@ import MultiFilterSelect from '../../components/MultiFilterSelect';
 import PeriodFilter, { inRange } from '../../components/PeriodFilter';
 import { errText } from '../../lib/apiError';
 import { confirmAsk } from '../../lib/confirmAsk';
+import { useReasonPrompt } from '../../components/ReasonPrompt';
+import BookingReasons from '../../components/BookingReasons';
 const TEAL = COLORS.success;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -135,6 +137,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   const [err, setErr] = useState('');
   const [tab, setTab] = useState(TABS.some(([k]) => k === route?.params?.tab) ? route.params.tab : 'pending');
   const [busy, setBusy] = useState(null);
+  const [askReason, reasonUI] = useReasonPrompt();   // cancel always says why
   const [toReject, setToReject] = useState(null);
   const [toCancel, setToCancel] = useState(null);  // approved booking awaiting cancel confirmation
   const [q, setQ] = useState('');
@@ -193,10 +196,13 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   // same endpoint Sales' own Cancel Booking uses, reachable by an Accounts approver
   // for the booking's project (see ClosureCancelView's dual-authority gate).
   async function cancelBooking(b) {
+    setToCancel(null);
+    const reason = await askReason({ title: 'Reason for cancelling', message: `Cancel the booking of ${b.client_name || 'this client'}? Write why.`, confirmText: 'Cancel booking', placeholder: 'e.g. Client backed out, payment not received' });
+    if (!reason) return;
     setBusy(b.id);
     try {
       const r = await apiFetch(SALES_ENDPOINTS.closureCancel(b.closure)
-        + (companyId ? `?company_id=${companyId}` : ''), { method: 'POST' });
+        + (companyId ? `?company_id=${companyId}` : ''), { method: 'POST', body: JSON.stringify({ reason }) });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
         Alert.alert('Cancel failed', errText(d, `HTTP ${r.status}`));
@@ -261,6 +267,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.screenBg} />
+      {reasonUI}
       <View style={s.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="chevron-back" size={20} color={COLORS.textPrimary} />
@@ -393,6 +400,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                         <Text style={{ fontSize: 13, color: COLORS.errorStrong, marginTop: 2 }}>{b.accounts_rejected_reason}</Text>
                       </View>
                     ) : null}
+                    <BookingReasons b={b} />
 
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                       {b.loi_document ? (

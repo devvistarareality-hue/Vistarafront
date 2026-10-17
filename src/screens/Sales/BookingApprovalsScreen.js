@@ -24,6 +24,8 @@ import MultiFilterSelect from '../../components/MultiFilterSelect';
 import PeriodFilter, { inRange } from '../../components/PeriodFilter';
 import { confirmAsk } from '../../lib/confirmAsk';
 import { errText } from '../../lib/apiError';
+import { useReasonPrompt } from '../../components/ReasonPrompt';
+import BookingReasons from '../../components/BookingReasons';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -88,6 +90,7 @@ function DecidedBy({ b }) {
           {b.accounts_rejected_reason ? ` · ${b.accounts_rejected_reason}` : ''}
         </Text>
       ) : null}
+      <BookingReasons b={b} />
     </View>
   );
 }
@@ -153,6 +156,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   }, [focusId, loading, tab, rows]);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(null);
+  const [askReason, reasonUI] = useReasonPrompt();   // reject / cancel always say why
   const [busyAct, setBusyAct] = useState('');   // which action the busy row is running
   const [managers, setManagers] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -237,12 +241,15 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   async function act(id, action) {
     const b = (rows || []).find((x) => x.id === id);
     const who = b ? `${b.client_name}${b.plot_numbers || b.plot_number ? ` · Unit ${b.plot_numbers || b.plot_number}` : ''}` : 'this booking';
-    const ok = await confirmAsk(action === 'approve' ? 'Approve booking?' : 'Reject booking?',
-      action === 'approve' ? `Approve the booking of ${who}?` : `Reject the booking of ${who}? The unit is released.`,
-      action === 'approve' ? 'Approve' : 'Reject', action !== 'approve');
-    if (!ok) return;
+    let reason = '';
+    if (action === 'approve') {
+      if (!(await confirmAsk('Approve booking?', `Approve the booking of ${who}?`, 'Approve'))) return;
+    } else {
+      reason = await askReason({ title: 'Reject booking', message: `Reject the booking of ${who}? The unit is released. Write why — the STM sees it.`, confirmText: 'Reject', placeholder: 'e.g. LOI uploaded is for a different unit' });
+      if (!reason) return;
+    }
     setBusy(id); setBusyAct(action);
-    const r = await apiFetch(`${SALES_ENDPOINTS.bookings}${id}/action/${cq('?')}`, { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
+    const r = await apiFetch(`${SALES_ENDPOINTS.bookings}${id}/action/${cq('?')}`, { method: 'POST', body: JSON.stringify(reason ? { action, reason } : { action }) }).catch(() => null);
     if (!r || !r.ok) Alert.alert(action === 'approve' ? 'Not approved' : 'Not rejected', errText(r ? await r.json().catch(() => ({})) : {}, 'Please try again.'));
     setBusy(null); setBusyAct(''); load();
   }
@@ -264,9 +271,12 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   // plot(s), purges the signed LOI from storage and marks the booking CANCELLED.
   // Irreversible, so it always runs behind the confirmation modal below.
   async function cancelBooking(b) {
+    setToCancel(null);
+    const reason = await askReason({ title: 'Reason for cancelling', message: `Cancel the booking of ${b.client_name || 'this client'}? Write why.`, confirmText: 'Cancel booking', placeholder: 'e.g. Client backed out, payment not received' });
+    if (!reason) return;
     setBusy(b.id);
     try {
-      const r = await apiFetch(SALES_ENDPOINTS.closureCancel(b.closure) + cq('?'), { method: 'POST' });
+      const r = await apiFetch(SALES_ENDPOINTS.closureCancel(b.closure) + cq('?'), { method: 'POST', body: JSON.stringify({ reason }) });
       if (!r.ok) { const d = await r.json().catch(() => ({})); Alert.alert('Cancel failed', String(d.detail || r.status)); }
     } catch (e) { Alert.alert('Cancel failed', e.message); }
     setToCancel(null); setBusy(null); load();
@@ -361,6 +371,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
+      {reasonUI}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />

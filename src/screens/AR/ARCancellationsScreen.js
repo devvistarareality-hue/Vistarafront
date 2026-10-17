@@ -14,6 +14,7 @@ import FormSheet from '../../components/FormSheet';
 import { Button } from '../../components/ui';
 import { rupee, withCompany, today, cleanAmount, groupINR, DateField, shareCancellationLetter } from './arShared';
 import { errText } from '../../lib/apiError';
+import { useReasonPrompt } from '../../components/ReasonPrompt';
 
 const STAGES = [['pending', 'Awaiting approval'], ['refund_pending', 'Refund pending'], ['refunded', 'Settled'], ['rejected', 'Rejected'], ['all', 'All']];
 const BADGE = {
@@ -40,6 +41,7 @@ export default function ARCancellationsScreen({ navigation }) {
   const [refund, setRefund] = useState(null);
   const [refundErr, setRefundErr] = useState({});
   const [busy, setBusy] = useState(false);
+  const [askReason, reasonUI] = useReasonPrompt();   // rejecting a cancellation says why
   const [busyKey, setBusyKey] = useState('');   // `${id}:${action}` while it runs
 
   const loadBanks = useCallback(() => {
@@ -64,14 +66,19 @@ export default function ARCancellationsScreen({ navigation }) {
     || (stage === 'refunded' && c.stage === 'closed')), [rows, stage]);
 
   async function decide(c, action) {
-    const ok = await ask(action === 'approve' ? 'Approve cancellation?' : 'Reject cancellation?',
+    let note = '';
+    if (action === 'reject') {
+      note = await askReason({ title: 'Reject cancellation', message: 'The booking stays as it is. Write why — the requester sees it.', confirmText: 'Reject' });
+      if (!note) return;
+    }
+    const ok = action === 'reject' ? true : await ask(action === 'approve' ? 'Approve cancellation?' : 'Reject cancellation?',
       action === 'approve'
         ? `Plot ${c.plots} (${c.client}) goes back on sale in Sales immediately and the account is frozen. Refund due: ${rupee(c.refund_due)}.`
         : 'The booking stays as it is.',
       action === 'approve' ? 'Approve' : 'Reject', action === 'approve');
     if (!ok) return;
     setBusy(true); setBusyKey(`${c.id}:${action}`);
-    const r = await apiFetch(withCompany(AR_ENDPOINTS.cancellationDecide(c.id), companyId), { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
+    const r = await apiFetch(withCompany(AR_ENDPOINTS.cancellationDecide(c.id), companyId), { method: 'POST', body: JSON.stringify(note ? { action, note } : { action }) }).catch(() => null);
     const d = r ? await r.json().catch(() => ({})) : {};
     setBusy(false); setBusyKey('');
     if (!r?.ok) { Alert.alert('Not saved', errText(d, 'Could not save the decision.')); return; }
@@ -104,6 +111,7 @@ export default function ARCancellationsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
+      {reasonUI}
       <View style={common.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={common.iconBtn}>
           <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
