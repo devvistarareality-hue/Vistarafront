@@ -1043,6 +1043,9 @@ export default function BookingFormScreen({ navigation, route }) {
         return;
       }
       const errData = await res.json().catch(() => null);
+      // Nothing was submitted. A signed LOI the server could not find (one carried
+      // over from a draft) must be attached again — it is not really on file.
+      if (res.status === 400 && /signed LOI/i.test(errData?.detail || '')) setSavedLoiPath('');
       setMsg(explainApiError(res, errData));
     } catch (e) { setMsg(explainNetworkError(e)); }
     setSaving(false);
@@ -1061,7 +1064,10 @@ export default function BookingFormScreen({ navigation, route }) {
         setSavedDraftId(String(data.id));
         if (data.loi_document) setSavedLoiPath(data.loi_document);
         const conflicts = data.plot_conflicts || [];
-        setMsg(conflicts.length
+        if (data.loi_not_saved) {
+          setSavedLoiPath(''); setLoiFile(null);
+          setMsg('⚠️ Draft saved, but the signed LOI could not be stored — attach it again before submitting.');
+        } else setMsg(conflicts.length
           ? `✅ Draft saved — but Plot ${conflicts.map((c) => c.number).join(', ')} is no longer held for you.`
           : '✅ Draft saved — safe to come back later.');
       } else {
