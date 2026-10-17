@@ -67,7 +67,7 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
       </View>
       <ScrollView contentContainerStyle={s.body}>
         <Text style={s.section}>1 · GET THE TEMPLATE</Text>
-        <Text style={s.help}>One row per investment — a renewed investment is still one row: today’s amount, with Times Renewed filled in. Red columns marked * must be filled; a row missing one is not imported.</Text>
+        <Text style={s.help}>One row per investment — a renewed investment is one row with today’s principal; its finished terms go on the Past Terms sheet (type Mobile, Name and each term’s Principal — the rest fills itself). Red columns marked * must be filled; a row missing one is not imported.</Text>
         <TouchableOpacity onPress={template} disabled={!!busy} style={s.ghostBtn}>
           {busy === 'template' ? <ActivityIndicator size="small" color={COLORS.link} /> : <Text style={s.ghostText}>⬇ Download template</Text>}
         </TouchableOpacity>
@@ -88,13 +88,16 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
             )}
           </View>
           {rows.map((r) => (
-            <View key={r.row} style={[s.row, !r.ok && s.rowBad]}>
+            <View key={`${r.sheet || 'i'}-${r.row}`} style={[s.row, !r.ok && s.rowBad]}>
               <View style={s.rowTop}>
-                <Text style={s.rowNo}>Row {r.row}</Text>
+                <Text style={s.rowNo}>{r.sheet ? `${r.sheet} ` : ''}Row {r.row}</Text>
                 <Text style={s.rowName} numberOfLines={1}>{r.preview.name || '—'}</Text>
                 <Text style={s.rowAmt}>{r.preview.amount ? inrShort(r.preview.amount) : '—'}</Text>
               </View>
               <Text style={s.rowSub}>{r.preview.scheme || '—'} · {r.preview.interest_payout}{r.preview.investment_date ? ` · ${formatDMY(r.preview.investment_date)} → ${formatDMY(r.preview.maturity_date)}` : ''}{r.preview.renewal_count ? ` · renewed ${r.preview.renewal_count}×` : ''}</Text>
+              {r.preview.past_terms?.length > 0 && (
+                <Text style={s.past}>Past: {r.preview.past_terms.map((t) => `${inrShort(t.principal)} (${formatDMY(t.start)})`).join(' → ')}</Text>
+              )}
               {r.ok ? <Text style={s.ok}>Ready</Text> : r.errors.map((e) => <Text key={e} style={s.bad}>• {e}</Text>)}
               {r.warnings.map((w) => <Text key={w} style={s.warn}>• {w}</Text>)}
             </View>
@@ -139,6 +142,7 @@ const s = StyleSheet.create({
   rowName: { flex: 1, fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   rowAmt: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
   rowSub: { fontSize: 11, color: COLORS.textSecondary, marginTop: 3, marginBottom: 3 },
+  past: { fontSize: 11.5, color: COLORS.link, marginTop: 3 },
   ok: { fontSize: 11.5, fontWeight: '700', color: COLORS.success },
   bad: { fontSize: 11.5, fontWeight: '700', color: COLORS.error },
   warn: { fontSize: 11.5, fontWeight: '700', color: COLORS.warning },

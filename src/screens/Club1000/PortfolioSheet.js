@@ -161,6 +161,15 @@ export default function PortfolioSheet({ investorId, onClose }) {
                   {[p.names?.length > 1 ? h.name : '', h.loi_no, PAYOUT[h.interest_payout] || h.interest_payout, h.return_pct ? `${Number(h.return_pct)}%` : '', `matures ${formatDMY(h.maturity_date)}`].filter(Boolean).join(' · ')}
                   {h.renewal_count > 0 && h.first_invested_on && h.first_invested_on !== h.investment_date ? ` · first in ${formatDMY(h.first_invested_on)}` : ''}
                 </Text>
+                {h.past_terms?.length > 0 && (
+                  <View style={s.terms}>
+                    {h.past_terms.map((t, n) => (
+                      <Text key={t.start} style={s.small}>Term {n + 1} · {formatDMY(t.start)} · <Text style={s.strongSm}>{rupee(t.principal)}</Text> → {rupee(t.renewed_with)}
+                        {Number(t.taken_out) > 0 ? ` · ${rupee(t.taken_out)} taken out` : Number(t.taken_out) < 0 ? ` · ${rupee(-Number(t.taken_out))} added` : ''}</Text>
+                    ))}
+                    <Text style={s.small}>Now · {formatDMY(h.investment_date)} · <Text style={s.strongSm}>{rupee(h.amount)}</Text></Text>
+                  </View>
+                )}
                 <Text style={s.small}>Principal <Text style={s.strongSm}>{rupee(h.principal)}</Text> · Interest <Text style={s.strongSm}>{rupee(h.interest)}</Text></Text>
                 <Text style={s.small}>Paid · P <Text style={s.strongSm}>{rupee(h.principal_paid)}</Text> · I <Text style={s.strongSm}>{rupee(h.interest_paid)}</Text>   To pay · P <Text style={s.strongSm}>{rupee(h.principal_pending)}</Text> · I <Text style={s.strongSm}>{rupee(h.interest_pending)}</Text></Text>
               </View>
@@ -226,6 +235,7 @@ const s = StyleSheet.create({
   val: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginTop: 3 },
   money: { marginTop: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, backgroundColor: COLORS.surface, gap: 6 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+  terms: { marginTop: 4, paddingVertical: 6, paddingHorizontal: 8, borderLeftWidth: 3, borderLeftColor: COLORS.linkBg, backgroundColor: COLORS.surfaceAlt, borderRadius: 6 },
   piRow: { flexDirection: 'row', alignItems: 'center' },
   piLbl: { width: 62, fontSize: 11.5, color: COLORS.textSecondary },
   piHead: { flex: 1, textAlign: 'right', fontSize: 9.5, fontWeight: '800', letterSpacing: 0.4, color: COLORS.textSecondary },
