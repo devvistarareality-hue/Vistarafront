@@ -40,6 +40,7 @@ export default function PortfolioSheet({ investorId, onClose }) {
   const [p, setP] = useState(null);
   const [err, setErr] = useState('');
   const [tab, setTab] = useState('investments');
+  const [allNames, setAllNames] = useState(false);
   useEffect(() => {
     if (!investorId) { setP(null); return undefined; }
     let alive = true;
@@ -82,7 +83,12 @@ export default function PortfolioSheet({ investorId, onClose }) {
             {p.names?.length > 1 && (
               <View style={s.names}>
                 <Text style={s.muted}>Also under this number:</Text>
-                {p.names.slice(1).map((n) => <Text key={n} style={s.nameChip}>{n}</Text>)}
+                {p.names.slice(1, allNames ? undefined : 5).map((n) => <Text key={n} style={s.nameChip}>{n}</Text>)}
+                {p.names.length > 5 && (
+                  <TouchableOpacity onPress={() => setAllNames((v) => !v)}>
+                    <Text style={s.moreBtn}>{allNames ? 'Show less' : `+${p.names.length - 5} more`}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
             {p.awaiting_approval > 0 && <Text style={s.await}>{p.awaiting_approval} awaiting approval</Text>}
@@ -198,6 +204,7 @@ const s = StyleSheet.create({
   strongSm: { fontWeight: '800', color: COLORS.textPrimary },
   names: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 10 },
   nameChip: { fontSize: 11, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, overflow: 'hidden', backgroundColor: COLORS.surfaceAlt, color: COLORS.textPrimary },
+  moreBtn: { fontSize: 11.5, fontWeight: '800', color: COLORS.link, paddingHorizontal: 4 },
   await: { alignSelf: 'flex-start', marginTop: 8, fontSize: 11, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden', backgroundColor: COLORS.warningBg, color: COLORS.warning },
   bigBox: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, backgroundColor: COLORS.surface },
   bigHero: { marginTop: 14, backgroundColor: COLORS.linkBg, borderColor: COLORS.linkBg },
