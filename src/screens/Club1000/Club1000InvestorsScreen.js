@@ -28,6 +28,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestmentSheets';
 import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
+import ImportInvestorsSheet from './ImportInvestorsSheet';
 import ScheduleList from './ScheduleList';
 import { confirmAsk } from '../../lib/confirmAsk';
 // The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
@@ -1072,6 +1073,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [payingOut, setPayingOut] = useState(null);   // Payout sheet (at maturity)
   const [historyFor, setHistoryFor] = useState(null); // History sheet
   const [deletingId, setDeletingId] = useState(null); // investor being deleted
+  const [showImport, setShowImport] = useState(false); // Import from Excel
   const [ledgerFor,  setLedgerFor]  = useState(null);
   // Opened from an investor notification (openInvestorId): that investor's ledger.
   useEffect(() => {
@@ -1154,6 +1156,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       {/* Revise LOI is the Add Investor form, prefilled — every field can change. */}
       <AddInvestorSheet visible={!!revising} revise={revising} schemes={schemes}
         onClose={() => setRevising(null)} onSaved={() => load()} />
+      <ImportInvestorsSheet visible={showImport} onClose={() => setShowImport(false)} onDone={() => { setShowImport(false); load(); }} />
       <InvestorHistorySheet investor={historyFor} onClose={() => setHistoryFor(null)} />
       <RedeemSheet investor={redeeming} onClose={() => setRedeeming(null)} onDone={() => { setRedeeming(null); load(); }} />
       <MaturityPayoutSheet investor={payingOut} onClose={() => setPayingOut(null)} onDone={() => { setPayingOut(null); load(); }} />
@@ -1170,6 +1173,11 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
           <Text style={{ fontSize: 18, fontWeight: '800', color: TEXT }}>Investors</Text>
           <Text style={{ fontSize: 12, color: MUTED }}>{manager ? 'All investors' : 'Investors you\'ve added'}</Text>
         </View>
+        {manager && can(user, 'club.investor.manage') && (
+          <TouchableOpacity onPress={() => setShowImport(true)} disabled={!schemes.length} style={ClubInvestorsScreenS.importBtn}>
+            <Ionicons name="cloud-upload-outline" size={16} color={COLORS.link} />
+          </TouchableOpacity>
+        )}
         {can(user, 'club.investor.manage') && <TouchableOpacity onPress={() => setShowAdd(true)} disabled={!schemes.length}
           style={[ClubInvestorsScreenS.btn2, (schemes.length) && ClubInvestorsScreenS.box23]}>
           <Ionicons name="add" size={16} color={COLORS.btnTextSuccess} />
@@ -1387,6 +1395,7 @@ const ClubInvestorsScreenS = StyleSheet.create({
   ledgerChipText: { fontSize: 11, fontWeight: '700', color: COLORS.success },
   historyChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border },
   historyChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textPrimary },
+  importBtn: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
   deleteChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.errorBg, minWidth: 54, alignItems: 'center' },
   deleteChipText: { fontSize: 11, fontWeight: '700', color: COLORS.error },
   renewNote: { fontSize: 11, color: COLORS.textSecondary, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 10 },
