@@ -6,6 +6,8 @@
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const money = (n) => Math.round(Number(n) || 0).toLocaleString('en-IN');
 
+import { schedulePeriods, maturityWorking, perDayInterest, tenureDays } from './c1Periods';
+
 function fmtDate(iso) {
   if (!iso) return '—';
   const [y, m, d] = String(iso).split('-');
@@ -129,22 +131,58 @@ function buildScheduleRows(investor, scheme, providedSchedule) {
     const dates = investor.interest_payout === 'quarterly'
       ? computeQuarterlyDates(investor.investment_date, scheme.tenure_months)
       : computeMonthlyDates(investor.investment_date, scheme.tenure_months);
-    const amounts = prorateInstalments(dates, investor.investment_date, maturityDateStr, principal, pct);
-    entries = dates.map((due_date, i) => ({ due_date, amount_due: amounts[i], payout_type: 'interest' }));
+    // Same day-count working the forms and the server use (c1Periods / services.py).
+    const draft = dates.map((due_date) => ({ due_date, payout_type: 'interest' }));
+    const pers = schedulePeriods(draft, investor.investment_date, maturityDateStr, principal, pct, investor.interest_payout);
+    entries = draft.map((e, i) => ({ ...e, amount_due: pers[i] ? pers[i].computed : 0 })).filter((e) => e.amount_due > 0);
     entries.push({ due_date: maturityDateStr, amount_due: principal, payout_type: 'maturity' });
   } else {
     // Maturity cadence — a single lump-sum instalment (principal + full return).
     entries = [{ due_date: maturityDateStr, amount_due: totalValue, payout_type: 'maturity' }];
   }
 
+  // The working behind each row: the period it pays for, its days, interest a day.
+  const periods = isRecurring
+    ? schedulePeriods(entries, investor.investment_date, maturityDateStr, principal, pct, investor.interest_payout)
+    : entries.map(() => maturityWorking(principal, pct, investor.investment_date, maturityDateStr).periods[0] || null);
   let n = 0;
-  return entries.map((e) => {
+  return entries.map((e, i) => {
     const amt = Number(e.amount_due) || 0;
     const isPrincipalRow = e.payout_type === 'maturity' && isRecurring;
     if (!isPrincipalRow) n += 1;
-    return { no: isPrincipalRow ? 'P' : n, date: e.due_date, amt };
+    const per = periods[i];
+    return {
+      no: isPrincipalRow ? 'P' : n, date: e.due_date, amt,
+      title: isPrincipalRow ? 'Principal returned' : per ? per.label : (isRecurring ? 'Interest' : 'Principal + interest'),
+      working: per ? `${spanLabel(per.from, per.to)} · ${per.days} days × Rs. ${per.perDay.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '',
+    };
   });
 }
+
+// The headline of the working: interest a day and the total interest.
+function interestBasis(investor, scheme) {
+  const principal = Number(investor.amount_invested) || 0;
+  const pct = Number(investor.total_return_pct) || 0;
+  const maturityDateStr = investor.maturity_date || addMonthsISO(investor.investment_date, scheme.tenure_months);
+  const days = tenureDays(investor.investment_date, maturityDateStr);
+  const perDay = perDayInterest(principal, pct, investor.investment_date, maturityDateStr);
+  const f2 = (v) => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const f0 = (v) => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  return {
+    line: `Interest a day: Rs. ${f2(perDay)}  (Rs. ${f0(principal)} × ${pct}% ÷ ${days} days)`,
+    total: `Total interest: Rs. ${f0(perDay * days)}`,
+  };
+}
+
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// "18 Oct – 31 Dec 2026" (or with both years when the period crosses one).
+function spanLabel(from, to) {
+  const [ay, am, ad] = String(from).split('-').map(Number);
+  const [by, bm, bd] = String(to).split('-').map(Number);
+  if (!ay || !by) return '';
+  return ay === by ? `${ad} ${MON[am - 1]} – ${bd} ${MON[bm - 1]} ${by}` : `${ad} ${MON[am - 1]} ${ay} – ${bd} ${MON[bm - 1]} ${by}`;
+}
+
 
 const SECTIONS = [
   { title: '1. PREMATURE EXIT OPTION:', lines: [
@@ -210,9 +248,11 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
   // markup needed, it just renders as a one-row table.
   const scheduleRows = buildScheduleRows(investor, scheme, opts.schedule);
   const totalValue = computeMaturityValue(investor, scheme);
+  const basis = interestBasis(investor, scheme);
   const scheduleRowsHtml = scheduleRows.map((r) => `
     <tr>
       <td class="sched-no">${esc(r.no)}</td>
+      <td><div class="per">${esc(r.title || '')}</div>${r.working ? `<div class="why">${esc(r.working)}</div>` : ''}</td>
       <td>${esc(fmtDate(r.date))}</td>
       <td class="amt">Rs. ${esc(money(r.amt))}</td>
     </tr>
@@ -240,6 +280,9 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     table.sched td { border: 1px solid #ccc; padding: 5px 8px; font-size: 10px; }
     table.sched td.sched-no { text-align: center; font-weight: 700; color: #2e4a78; width: 30px; }
     table.sched td.amt { text-align: right; font-weight: 700; }
+    table.sched .per { font-weight: 700; }
+    table.sched .why { font-size: 9px; color: #64708a; margin-top: 2px; }
+    .basis { display: flex; justify-content: space-between; gap: 10px; background: #edf2f9; color: #2e4a78; font-size: 10px; padding: 6px 8px; margin-top: 10px; border-radius: 4px; }
     table.sched tr.subtotal td { background: #edf2f9; border: 1px solid #5c7cac; font-weight: 700; color: #2e4a78; font-size: 11px; }
     .tc-box { border: 1px solid #000; border-top: none; padding: 6px 8px 8px; }
     .tc-title { font-weight: 700; margin-bottom: 4px; }
@@ -256,11 +299,12 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     <div class="title">INVESTMENT PROPOSAL FORM</div>
     <table class="hdr">${rowsHtml}</table>
     <div class="tc-header">Payout Schedule:</div>
+    <div class="basis"><b>${esc(basis.line)}</b><span>${esc(basis.total)}</span></div>
     <table class="sched">
-      <thead><tr><th>#</th><th>Due Date</th><th style="text-align:right">Amount (Rs.)</th></tr></thead>
+      <thead><tr><th>#</th><th>Period · working</th><th>Due Date</th><th style="text-align:right">Amount (Rs.)</th></tr></thead>
       <tbody>
         ${scheduleRowsHtml}
-        <tr class="subtotal"><td colspan="2">MATURITY VALUE</td><td class="amt">Rs. ${esc(money(totalValue))}</td></tr>
+        <tr class="subtotal"><td colspan="3">MATURITY VALUE</td><td class="amt">Rs. ${esc(money(totalValue))}</td></tr>
       </tbody>
     </table>
     <div class="tc-header">Terms &amp; Conditions:</div>
