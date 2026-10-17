@@ -1,5 +1,5 @@
 // Investor Portfolios — one ranked line per mobile number: everything invested under
-// it (each reinvestment counted), its schemes, what is active and due, and the people
+// it (each renewal counted), its schemes, what is active and due, and the people
 // it brought in; tap for the full portfolio. Same as the website's portfolios page.
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput, StatusBar, RefreshControl, StyleSheet } from 'react-native';

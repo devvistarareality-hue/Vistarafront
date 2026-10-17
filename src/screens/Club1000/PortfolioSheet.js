@@ -1,5 +1,5 @@
 // One mobile number's whole relationship with the club — same as the website's
-// _PortfolioModal.js side panel: every investment under it (each reinvestment
+// _PortfolioModal.js side panel: every investment under it (each renewal
 // counted), the names it was entered under, active and ever invested, paid out and
 // still due, and the people it brought in, in Investments / Referred / Schemes tabs.
 import React, { useEffect, useState } from 'react';
@@ -95,7 +95,7 @@ export default function PortfolioSheet({ investorId, onClose }) {
               <View style={s.bigBox}><Text style={s.lbl}>EVER INVESTED</Text><Text style={s.val}>{rupee(p.total_invested)}</Text></View>
               <View style={s.bigBox}>
                 <Text style={s.lbl}>TIMES INVESTED</Text><Text style={s.val}>{p.times_invested}×</Text>
-                <Text style={s.small}>{p.investments} investment{p.investments === 1 ? '' : 's'}{p.renewals ? ` + ${p.renewals} reinvested` : ''}</Text>
+                <Text style={s.small}>{p.investments} investment{p.investments === 1 ? '' : 's'}{p.renewals ? ` + ${p.renewals} renewed` : ''}</Text>
               </View>
             </View>
 
@@ -136,7 +136,7 @@ export default function PortfolioSheet({ investorId, onClose }) {
               <View style={s.flex}>
                 <View style={s.invTop}>
                   <Text style={s.strong}>{h.scheme}</Text>
-                  {h.renewal_count > 0 && <Text style={s.tag}>Reinvested {h.renewal_count}×</Text>}
+                  {h.renewal_count > 0 && <Text style={s.tag}>Renewed {h.renewal_count}×</Text>}
                   <View style={s.flex} />
                   <Text style={[s.badge, wait ? s.badgeWait : BADGE[h.status]]}>{wait ? 'Awaiting' : (STATUS[h.status] || h.status)}</Text>
                 </View>
