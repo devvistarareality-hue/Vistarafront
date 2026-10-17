@@ -40,6 +40,7 @@ export default function ARCancellationsScreen({ navigation }) {
   const [refund, setRefund] = useState(null);
   const [refundErr, setRefundErr] = useState({});
   const [busy, setBusy] = useState(false);
+  const [busyKey, setBusyKey] = useState('');   // `${id}:${action}` while it runs
 
   const loadBanks = useCallback(() => {
     apiFetch(withCompany(AR_ENDPOINTS.banks, companyId)).then((r) => (r.ok ? r.json() : { results: [] }))
@@ -69,10 +70,10 @@ export default function ARCancellationsScreen({ navigation }) {
         : 'The booking stays as it is.',
       action === 'approve' ? 'Approve' : 'Reject', action === 'approve');
     if (!ok) return;
-    setBusy(true);
+    setBusy(true); setBusyKey(`${c.id}:${action}`);
     const r = await apiFetch(withCompany(AR_ENDPOINTS.cancellationDecide(c.id), companyId), { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
     const d = r ? await r.json().catch(() => ({})) : {};
-    setBusy(false);
+    setBusy(false); setBusyKey('');
     if (!r?.ok) { Alert.alert('Not saved', errText(d, 'Could not save the decision.')); return; }
     load();
   }
@@ -160,8 +161,8 @@ export default function ARCancellationsScreen({ navigation }) {
                 <View style={s.actions}>
                   <Button title="Ledger" size="sm" variant="secondary" onPress={() => navigation.navigate('ARLedger', { id: c.account_id })} />
                   {c.status === 'approved' ? <Button title="Letter" icon="file" size="sm" variant="secondary" onPress={() => letter(c)} /> : null}
-                  {c.can_decide ? <Button title="Reject" size="sm" variant="secondary" disabled={busy} onPress={() => decide(c, 'reject')} /> : null}
-                  {c.can_decide ? <Button title="Approve" size="sm" variant="danger" disabled={busy} onPress={() => decide(c, 'approve')} /> : null}
+                  {c.can_decide ? <Button title="Reject" size="sm" variant="secondary" disabled={busy} loading={busyKey === `${c.id}:reject`} onPress={() => decide(c, 'reject')} /> : null}
+                  {c.can_decide ? <Button title="Approve" size="sm" variant="danger" disabled={busy} loading={busyKey === `${c.id}:approve`} onPress={() => decide(c, 'approve')} /> : null}
                   {c.stage === 'refund_pending' && canRefund ? (
                     <Button title="Record refund" size="sm" variant="primary"
                       onPress={() => { setRefundErr({}); setRefund({ c, paid_on: today(), amount: String(c.refund_balance), bank: '', reference: '' }); }} />

@@ -22,6 +22,8 @@ import AppLoader from '../../components/AppLoader';
 import LeadTransfersPanel from './LeadTransfersPanel';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import PeriodFilter, { inRange } from '../../components/PeriodFilter';
+import { confirmAsk } from '../../lib/confirmAsk';
+import { errText } from '../../lib/apiError';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
@@ -151,6 +153,7 @@ export default function BookingApprovalsScreen({ navigation, route }) {
   }, [focusId, loading, tab, rows]);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(null);
+  const [busyAct, setBusyAct] = useState('');   // which action the busy row is running
   const [managers, setManagers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [cfgOpen, setCfgOpen] = useState(false);
@@ -230,7 +233,19 @@ export default function BookingApprovalsScreen({ navigation, route }) {
 
 
 
-  async function act(id, action) { setBusy(id); await apiFetch(`${SALES_ENDPOINTS.bookings}${id}/action/${cq('?')}`, { method: 'POST', body: JSON.stringify({ action }) }).catch(() => {}); setBusy(null); load(); }
+  // Approve / Reject: asked first, then the button spins until the server answers.
+  async function act(id, action) {
+    const b = (rows || []).find((x) => x.id === id);
+    const who = b ? `${b.client_name}${b.plot_numbers || b.plot_number ? ` · Unit ${b.plot_numbers || b.plot_number}` : ''}` : 'this booking';
+    const ok = await confirmAsk(action === 'approve' ? 'Approve booking?' : 'Reject booking?',
+      action === 'approve' ? `Approve the booking of ${who}?` : `Reject the booking of ${who}? The unit is released.`,
+      action === 'approve' ? 'Approve' : 'Reject', action !== 'approve');
+    if (!ok) return;
+    setBusy(id); setBusyAct(action);
+    const r = await apiFetch(`${SALES_ENDPOINTS.bookings}${id}/action/${cq('?')}`, { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
+    if (!r || !r.ok) Alert.alert(action === 'approve' ? 'Not approved' : 'Not rejected', errText(r ? await r.json().catch(() => ({})) : {}, 'Please try again.'));
+    setBusy(null); setBusyAct(''); load();
+  }
 
   // Discarding a draft releases whatever plot(s) it still holds and deletes the row —
   // irreversible, but a draft is scratch work, not a real submission.
@@ -557,8 +572,8 @@ export default function BookingApprovalsScreen({ navigation, route }) {
                   themselves. Offering the buttons anyway made the tap fail silently. */}
               {b.status === 'pending' && isApprover && b.can_approve && (
                 <>
-                  <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, btnOk]}><Text style={btnTOk}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, btnBad]}><Text style={btnTBad}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => act(b.id, 'approve')} disabled={busy === b.id} style={[btn, btnOk]}>{busy === b.id && busyAct === 'approve' ? <ActivityIndicator size="small" color={COLORS.btnTextSuccess} /> : <Text style={btnTOk}><AppIcon name="check" size={15} /> Approve</Text>}</TouchableOpacity>
+                  <TouchableOpacity onPress={() => act(b.id, 'reject')} disabled={busy === b.id} style={[btn, btnBad]}>{busy === b.id && busyAct === 'reject' ? <ActivityIndicator size="small" color={COLORS.btnTextDanger} /> : <Text style={btnTBad}><AppIcon name="x" size={15} /> Reject</Text>}</TouchableOpacity>
                 </>
               )}
               {b.status === 'sold' && (() => {

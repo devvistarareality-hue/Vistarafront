@@ -37,6 +37,7 @@ export default function LeadTransfersPanel({ companyId, cpOnly, pendingCount, on
   const [status, setStatus] = useState('pending');
   const [rows, setRows] = useState(null);
   const [busy, setBusy] = useState(null);
+  const [busyAct, setBusyAct] = useState('');   // which action the busy row is running
 
   const load = useCallback(() => {
     setRows(null);
@@ -54,7 +55,7 @@ export default function LeadTransfersPanel({ companyId, cpOnly, pendingCount, on
       `${approve ? 'Approve' : 'Reject'} moving ${x.lead_name || 'this lead'} from ${x.from_stm_name || 'unassigned'} to ${x.to_stm_name}?`, [
         { text: 'Cancel', style: 'cancel' },
         { text: approve ? 'Approve' : 'Reject', style: approve ? 'default' : 'destructive', onPress: async () => {
-          setBusy(x.id);
+          setBusy(x.id); setBusyAct(action);
           const r = await apiFetch(SALES_ENDPOINTS.leadTransferAction(x.id), { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
           setBusy(null);
           if (!r?.ok) Alert.alert('Not updated', errText(await r?.json().catch(() => ({})), 'Could not update the transfer.'));
@@ -102,8 +103,8 @@ export default function LeadTransfersPanel({ companyId, cpOnly, pendingCount, on
               </Text>
             ) : (
               <View style={s.actions}>
-                <Button title="Reject" icon="x" variant="dangerSoft" size="sm" onPress={() => act(x, 'reject')} disabled={busy === x.id} style={s.flex} />
-                <Button title="Approve" icon="check" variant="success" size="sm" onPress={() => act(x, 'approve')} loading={busy === x.id} style={s.flex} />
+                <Button title="Reject" icon="x" variant="dangerSoft" size="sm" onPress={() => act(x, 'reject')} disabled={busy === x.id} loading={busy === x.id && busyAct === 'reject'} style={s.flex} />
+                <Button title="Approve" icon="check" variant="success" size="sm" onPress={() => act(x, 'approve')} disabled={busy === x.id} loading={busy === x.id && busyAct === 'approve'} style={s.flex} />
               </View>
             )}
           </View>

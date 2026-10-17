@@ -22,6 +22,7 @@ import { COLORS, CARD_SHADOW } from '../constants/theme';
 import AppLoader from './AppLoader';
 import { errText } from '../lib/apiError';
 import FocusChip from './FocusChip';
+import { confirmAsk } from '../lib/confirmAsk';
 
 const TABS = [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']];
 
@@ -65,6 +66,7 @@ export default function ProjectApprovalsPanel({ isAdmin, refreshKey, focusId = '
   useEffect(() => { load(); loadApprovers(); }, [load, loadApprovers, refreshKey]);
 
   async function act(project, action, why = '') {
+    if (action === 'approve' && !(await confirmAsk('Approve project?', `Approve ${project.name}? It becomes visible to the team.`, 'Approve'))) return;
     setBusy(project.id);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.projectApproval(project.id), {

@@ -9,6 +9,7 @@ import Toast from '../../../../components/Toast';
 import styles from '../HistoryScreen/styles';
 import LeaveDetailModal from '../HistoryScreen/LeaveDetailModal';
 import AppLoader from '../../../../components/AppLoader';
+import { confirmAsk } from '../../../../lib/confirmAsk';
 
 const getStatusStyle = (status) => {
   switch (status) {
@@ -86,8 +87,14 @@ const ApprovalsScreen = () => {
   }, [actionError, dispatch]);
 
   const handleCardPress = (item) => { setSelectedLeave(item); setModalVisible(true); };
-  const handleApprove = () => { if (selectedLeave) dispatch(updateLeaveStatus(selectedLeave.id, 'approved')); };
-  const handleReject  = () => { if (selectedLeave) dispatch(updateLeaveStatus(selectedLeave.id, 'rejected')); };
+  const handleApprove = async () => {
+    if (!selectedLeave || !(await confirmAsk('Approve leave?', `Approve ${selectedLeave.employee_name || selectedLeave.user_name || 'this'} leave?`, 'Approve'))) return;
+    dispatch(updateLeaveStatus(selectedLeave.id, 'approved'));
+  };
+  const handleReject = async () => {
+    if (!selectedLeave || !(await confirmAsk('Reject leave?', `Reject ${selectedLeave.employee_name || selectedLeave.user_name || 'this'} leave?`, 'Reject', true))) return;
+    dispatch(updateLeaveStatus(selectedLeave.id, 'rejected'));
+  };
   const handleClose   = () => { if (actionLoading) return; setModalVisible(false); setSelectedLeave(null); };
 
   const handleLoadMore = () => {

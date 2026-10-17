@@ -21,6 +21,7 @@ import AppLoader from '../../components/AppLoader';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import PeriodFilter, { inRange } from '../../components/PeriodFilter';
 import { errText } from '../../lib/apiError';
+import { confirmAsk } from '../../lib/confirmAsk';
 const TEAL = COLORS.success;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
@@ -166,6 +167,10 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   async function act(id, action, reason) {
+    if (action === 'approve') {
+      const b = (rows || []).find((x) => x.id === id);
+      if (!(await confirmAsk('Approve booking?', `Approve the booking${b ? ` of ${b.client_name}` : ''}? It moves on to AR.`, 'Approve'))) return;
+    }
     setBusy(id);
     try {
       const res = await apiFetch(SALES_ENDPOINTS.bookingAccountsAction(id) + cq('?'), {
@@ -414,7 +419,7 @@ export default function ModuleApprovalsScreen({ navigation, route }) {
                           <TouchableOpacity disabled={busy === b.id} onPress={() => act(b.id, 'approve')}
                             style={s.okBtn}>
                             <Text style={s.okBtnText}>
-                              {busy === b.id ? 'Working…' : <><AppIcon name="check" size={13} /> Approve</>}
+                              {busy === b.id ? 'Approving…' : <><AppIcon name="check" size={13} /> Approve</>}
                             </Text>
                           </TouchableOpacity>
                           <TouchableOpacity disabled={busy === b.id} onPress={() => setToReject(b)}

@@ -16,6 +16,7 @@ import { formatDMY } from '../../utils/dateFormat';
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
 import { errText } from '../../lib/apiError';
+import { confirmAsk } from '../../lib/confirmAsk';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const TEAL = COLORS.success; const PURPLE = COLORS.link; const AMBER = COLORS.warning;
 
 function fmtMoney(n) {
@@ -40,6 +41,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(null);
+  const [busyAct, setBusyAct] = useState('');   // which action the busy row is running
   // A draft is edited from here, because it deliberately does not appear in the
   // Investors list — there is nowhere else to open it from.
   const [editDraft, setEditDraft] = useState(null);
@@ -83,7 +85,12 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   }, []);
 
   async function act(id, action) {
-    setBusy(id);
+    const inv = (rows || []).find((x) => x.id === id);
+    const ok = await confirmAsk(action === 'approve' ? 'Approve investor?' : 'Reject investor?',
+      `${action === 'approve' ? 'Approve' : 'Reject'} ${inv ? inv.name : 'this investor'}${inv?.scheme_name ? ` · ${inv.scheme_name}` : ''}?`,
+      action === 'approve' ? 'Approve' : 'Reject', action !== 'approve');
+    if (!ok) return;
+    setBusy(id); setBusyAct(action);
     try {
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorAction(id), { method: 'POST', body: JSON.stringify({ action }) });
       if (!res.ok) {
@@ -91,7 +98,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
         alert(errText(d, `Could not ${action} this investor.`));
       }
     } finally {
-      setBusy(null);
+      setBusy(null); setBusyAct('');
       load();
     }
   }
@@ -355,8 +362,8 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                 {inv.approval_status === 'pending' && (
                   canApprove(inv) ? (
                     <>
-                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, btnOk]}><Text style={btnTOk}><AppIcon name="check" size={15} /> Approve</Text></TouchableOpacity>
-                      <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, btnBad]}><Text style={btnTBad}><AppIcon name="x" size={15} /> Reject</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, btnOk]}>{busy === inv.id && busyAct === 'approve' ? <ActivityIndicator size="small" color={COLORS.btnTextSuccess} /> : <Text style={btnTOk}><AppIcon name="check" size={15} /> Approve</Text>}</TouchableOpacity>
+                      <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, btnBad]}>{busy === inv.id && busyAct === 'reject' ? <ActivityIndicator size="small" color={COLORS.btnTextDanger} /> : <Text style={btnTBad}><AppIcon name="x" size={15} /> Reject</Text>}</TouchableOpacity>
                     </>
                   ) : <Text style={st.note}>Not an approver</Text>
                 )}
