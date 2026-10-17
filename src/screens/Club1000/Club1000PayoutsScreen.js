@@ -70,6 +70,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
   const [schemeSel, setSchemeSel] = useState([]);
   const [q, setQ] = useState('');
   const [range, setRange] = useState({ from: '', to: '' });   // Year / Month / Quarter / dates
+  const [kind, setKind] = useState('both');   // interest / principal / both
   const [refreshing, setRefreshing] = useState(false);
   const [paying, setPaying] = useState(null);
   const [ledgerFor, setLedgerFor] = useState(null);
@@ -96,10 +97,11 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
   // The period picked: unpaid payouts by due date, paid ones by paid date (same as the website).
   const inPeriod = (p) => {
     const d = String((p.status === 'paid' ? p.paid_date : p.due_date) || '').slice(0, 10);
-    return (!range.from || d >= range.from) && (!range.to || d <= range.to);
+    return (!range.from || d >= range.from) && (!range.to || d <= range.to)
+      && (kind === 'both' || (kind === 'interest' ? p.payout_type === 'interest' : p.payout_type !== 'interest'));
   };
   const investors = useMemo(() => byInvestor((payouts || []).filter(inPeriod), today, soon),
-    [payouts, today, soon, range.from, range.to]);
+    [payouts, today, soon, range.from, range.to, kind]);
   const scoped = investors.filter((r) => (!schemeSel.length || schemeSel.includes(r.scheme))
     && (!q.trim() || `${r.name} ${r.phone} ${r.loi_no}`.toLowerCase().includes(q.trim().toLowerCase())));
   const lists = {
@@ -147,6 +149,13 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
           </View>
           <View style={s.filterRow}>
             <PeriodFilter value={range} onChange={setRange} anyLabel="Any date" />
+          </View>
+          <View style={s.kindRow}>
+            {[['both', 'Int + Principal'], ['interest', 'Interest'], ['principal', 'Principal']].map(([k, label]) => (
+              <TouchableOpacity key={k} onPress={() => setKind(k)} style={[s.kindBtn, kind === k && s.kindOn]}>
+                <Text style={[s.kindText, kind === k && s.kindTextOn]}>{label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
           {schemes.length > 1 && (
             <View style={s.filterRow}>
@@ -453,6 +462,11 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
 }
 
 const s = StyleSheet.create({
+  kindRow: { flexDirection: 'row', alignSelf: 'flex-start', padding: 3, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border, marginBottom: 10 },
+  kindBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  kindOn: { backgroundColor: COLORS.surface },
+  kindText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  kindTextOn: { color: COLORS.link },
   payWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 1 },
   paidNotes: { fontSize: 12, color: COLORS.textSecondary, marginTop: 6 },
   rowActs: { flexDirection: 'row', gap: 8, marginTop: 10, justifyContent: 'flex-end' },
