@@ -25,7 +25,7 @@ import { onlyPresent } from '../../lib/presentOptions';
 import { errText } from '../../lib/apiError';
 import PeriodFilter from '../../components/PeriodFilter';
 import FilterSelect from '../../components/FilterSelect';
-import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestmentSheets';
+import { RedeemSheet, RenewalSummary } from './CloseInvestmentSheets';
 import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
 import PortfolioSheet from './PortfolioSheet';
@@ -1086,7 +1086,6 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [revising,   setRevising]   = useState(null);
   const [renewing,   setRenewing]   = useState(null);
   const [redeeming, setRedeeming] = useState(null);   // Redeem sheet (before maturity)
-  const [payingOut, setPayingOut] = useState(null);   // Payout sheet (at maturity)
   const [historyFor, setHistoryFor] = useState(null); // History sheet
   const [portfolioFor, setPortfolioFor] = useState(null); // the person's whole portfolio
   const [selecting, setSelecting] = useState(false);     // pick several to delete at once
@@ -1211,7 +1210,6 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       <InvestorHistorySheet investor={historyFor} onClose={() => setHistoryFor(null)} />
       <PortfolioSheet investorId={portfolioFor} onClose={() => setPortfolioFor(null)} />
       <RedeemSheet investor={redeeming} onClose={() => setRedeeming(null)} onDone={() => { setRedeeming(null); load(); }} />
-      <MaturityPayoutSheet investor={payingOut} onClose={() => setPayingOut(null)} onDone={() => { setPayingOut(null); load(); }} />
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
         scheme={schemes.find((s) => String(s.id) === String(renewing?.scheme))}
         onClose={() => setRenewing(null)} onSaved={() => load()} />
@@ -1375,7 +1373,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                       <Text style={ClubInvestorsScreenS.renewChipText}>↻ Renew</Text>
                     </TouchableOpacity>
                     {manager && (
-                      <TouchableOpacity onPress={() => setPayingOut(inv)} style={ClubInvestorsScreenS.warnChip}>
+                      <TouchableOpacity onPress={() => navigation.navigate('Club1000Payouts', { investorId: inv.id })} style={ClubInvestorsScreenS.warnChip}>
                         <Text style={ClubInvestorsScreenS.warnChipText}>Payout</Text>
                       </TouchableOpacity>
                     )}

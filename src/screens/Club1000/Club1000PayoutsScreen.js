@@ -2,7 +2,7 @@
 // principal TO investors. One card per investor (not one row per payout): what is
 // overdue to them, what falls due next, what they have been paid, and a Pay sheet
 // that settles any of their pending payouts at once. Same as the website.
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -64,7 +64,12 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
   const canPay = can(user, 'club.payout.mark_paid');
   const canUndo = canPay && isClub1000Manager(user);
   const initial = route?.params?.initialFilter;
-  const [tab, setTab] = useState(initial === 'paid' ? 'paid' : initial === 'pending' ? 'pending' : 'overdue');
+  const [tab, setTab] = useState(initial === 'paid' ? 'paid' : initial === 'pending' || route?.params?.investorId ? 'pending' : 'overdue');
+  // The Payout button on an investor's card opens here on just that investment.
+  const [onlyInv, setOnlyInv] = useState(route?.params?.investorId || null);
+  useEffect(() => {
+    if (route?.params?.investorId) { setOnlyInv(route.params.investorId); setTab('pending'); }
+  }, [route?.params?.investorId]);
   const [payouts, setPayouts] = useState(null);
   const [schemes, setSchemes] = useState([]);
   const [schemeSel, setSchemeSel] = useState([]);
@@ -102,7 +107,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
   };
   const investors = useMemo(() => byInvestor((payouts || []).filter(inPeriod), today, soon),
     [payouts, today, soon, range.from, range.to, kind]);
-  const scoped = investors.filter((r) => (!schemeSel.length || schemeSel.includes(r.scheme))
+  const scoped = investors.filter((r) => (!onlyInv || r.id === onlyInv) && (!schemeSel.length || schemeSel.includes(r.scheme))
     && (!q.trim() || `${r.name} ${r.phone} ${r.loi_no}`.toLowerCase().includes(q.trim().toLowerCase())));
   const lists = {
     overdue: scoped.filter((r) => r.overdue.length).sort((a, b) => b.daysLate - a.daysLate || b.overdueAmt - a.overdueAmt),
@@ -147,6 +152,12 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
             <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} />
             <TextInput value={q} onChangeText={setQ} placeholder="Search investor, phone or LOI no…" placeholderTextColor={COLORS.text3} style={s.search} />
           </View>
+          {!!onlyInv && (
+            <TouchableOpacity style={s.onlyChip} onPress={() => { setOnlyInv(null); navigation.setParams({ investorId: undefined }); }}>
+              <Text style={s.onlyChipText} numberOfLines={1}>Only {investors.find((r) => r.id === onlyInv)?.name || 'this investor'}{investors.find((r) => r.id === onlyInv)?.loi_no ? ` · ${investors.find((r) => r.id === onlyInv).loi_no}` : ''}</Text>
+              <Ionicons name="close" size={14} color={COLORS.warning} />
+            </TouchableOpacity>
+          )}
           <View style={s.filterRow}>
             <PeriodFilter value={range} onChange={setRange} anyLabel="Any date" />
           </View>
@@ -462,6 +473,8 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
 }
 
 const s = StyleSheet.create({
+  onlyChip: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: COLORS.warningBg },
+  onlyChipText: { fontSize: 12, fontWeight: '700', color: COLORS.warning, maxWidth: 260 },
   kindRow: { flexDirection: 'row', alignSelf: 'flex-start', padding: 3, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border, marginBottom: 10 },
   kindBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   kindOn: { backgroundColor: COLORS.surface },
