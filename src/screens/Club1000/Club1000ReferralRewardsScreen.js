@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, StatusBar, RefreshControl, StyleSheet, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { errText } from '../../lib/apiError';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -105,6 +107,7 @@ function groupByReferrer(rewards) {
 }
 
 export default function Club1000ReferralRewardsScreen({ navigation }) {
+  const [paying, setPaying] = useState(null);   // the reward in the Mark Paid sheet
   const user = useSelector((s) => s.auth.user);
   const manager = isClub1000Manager(user);
 
@@ -161,16 +164,6 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
   const narrowed = !!(referrer || search || Object.values(filters).some(Boolean) || filter !== 'pending');
   const activeCount = Object.values(filters).filter(Boolean).length
     - (filters.date_from && filters.date_to ? 1 : 0);
-
-  function markPaid(id) {
-    Alert.alert('Mark as paid?', 'This confirms the referral reward has been disbursed.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Mark Paid', onPress: async () => {
-        const res = await apiFetch(CLUB1000_ENDPOINTS.referralRewardMarkPaid(id), { method: 'POST' });
-        if (res.ok) load();
-      } },
-    ]);
-  }
 
   // Cards from everything the filters allow, before the referrer choice, so a
   // picked card reads as one of a set rather than the only one there is.
@@ -258,13 +251,20 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
                   <Text style={{ fontSize: 16, fontWeight: '800', color: TEAL }}>{fmtMoney(r.amount)}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-                  <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: r.status === 'paid' ? COLORS.successBg : COLORS.warningBg }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: r.status === 'paid' ? COLORS.success : COLORS.warning }}>
-                      {r.status === 'paid' ? 'Paid' : 'Pending'}
-                    </Text>
+                  <View style={ClubReferralRewardsScreenS.flex}>
+                    <View style={[ClubReferralRewardsScreenS.pill, r.status === 'paid' ? ClubReferralRewardsScreenS.pillPaid : ClubReferralRewardsScreenS.pillPending]}>
+                      <Text style={[ClubReferralRewardsScreenS.pillText, r.status === 'paid' ? ClubReferralRewardsScreenS.pillTextPaid : ClubReferralRewardsScreenS.pillTextPending]}>
+                        {r.status === 'paid' ? 'Paid' : 'Pending'}
+                      </Text>
+                    </View>
+                    {r.status === 'paid' && (
+                      <Text style={ClubReferralRewardsScreenS.paidLine}>
+                        {fmtMoney(r.paid_amount ?? r.amount)}{r.paid_date ? ` on ${formatDMY(r.paid_date)}` : ''}{r.notes ? ` · ${r.notes}` : ''}
+                      </Text>
+                    )}
                   </View>
                   {manager && r.status === 'pending' && can(user, 'club.payout.mark_paid') && (
-                    <TouchableOpacity onPress={() => markPaid(r.id)} style={ClubReferralRewardsScreenS.btn}>
+                    <TouchableOpacity onPress={() => setPaying(r)} style={ClubReferralRewardsScreenS.btn}>
                       <Text style={ClubReferralRewardsScreenS.box}>Mark Paid</Text>
                     </TouchableOpacity>
                   )}
@@ -275,9 +275,83 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
         )}
       </ScrollView>
 
+      <PayRewardSheet reward={paying} onClose={() => setPaying(null)} onDone={() => { setPaying(null); load(); }} />
       <FilterSheet visible={showFilters} onClose={() => setShowFilters(false)}
         filters={filters} setFilters={setFilters} schemes={schemes} facets={facets} />
     </SafeAreaView>
+  );
+}
+
+
+// Mark a reward paid: how much went out (the reward unless changed), the day it went
+// out (today unless changed, never later) and remarks. Same as the website.
+const isoToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+const isoOf = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+
+function PayRewardSheet({ reward, onClose, onDone }) {
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(isoToday());
+  const [notes, setNotes] = useState('');
+  const [picking, setPicking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [seededFor, setSeededFor] = useState(null);
+  if (reward && seededFor !== reward.id) {
+    setSeededFor(reward.id);
+    setAmount(String(Number(reward.amount) || 0));
+    setDate(isoToday());
+    setNotes('');
+  }
+  if (!reward) return null;
+  const gap = Number(amount) - Number(reward.amount);
+
+  async function pay() {
+    if (amount === '' || Number.isNaN(Number(amount)) || Number(amount) < 0) { Alert.alert('Amount', 'Enter the amount paid.'); return; }
+    setBusy(true);
+    const res = await apiFetch(CLUB1000_ENDPOINTS.referralRewardMarkPaid(reward.id), {
+      method: 'POST', body: JSON.stringify({ amount, paid_date: date, notes }),
+    }).catch(() => null);
+    setBusy(false);
+    if (!res || !res.ok) {
+      const d = res ? await res.json().catch(() => ({})) : {};
+      Alert.alert('Could not mark it paid', errText(d, 'Please try again.'));
+      return;
+    }
+    setSeededFor(null);
+    onDone();
+  }
+
+  const st = ClubReferralRewardsScreenS;
+  return (
+    <FormSheet visible={!!reward} onClose={onClose}>
+      <View style={st.sheetHead}>
+        <View style={st.flex}>
+          <Text style={st.title}>Mark referral reward paid</Text>
+          <Text style={st.sheetSub} numberOfLines={2}>{reward.reference_name}{reward.reference_phone ? ` · ${reward.reference_phone}` : ''} → {reward.investor_name}</Text>
+        </View>
+        <TouchableOpacity onPress={onClose} style={st.close}><Ionicons name="close" size={18} color={COLORS.textPrimary} /></TouchableOpacity>
+      </View>
+      <ScrollView contentContainerStyle={st.sheetBody} keyboardShouldPersistTaps="handled">
+        <View style={st.targetRow}>
+          <Text style={st.lbl}>REWARD (TARGET)</Text>
+          <Text style={st.targetAmt}>{fmtMoney(reward.amount)}</Text>
+        </View>
+        <Text style={st.lbl}>ACTUAL PAID (₹) *</Text>
+        <TextInput value={amount} onChangeText={setAmount} keyboardType="decimal-pad" style={st.input} />
+        {gap !== 0 && !Number.isNaN(gap) && <Text style={st.diff}>{gap < 0 ? 'Short' : 'More'} by {fmtMoney(Math.abs(gap))}</Text>}
+        <Text style={st.lbl}>PAID ON *</Text>
+        <TouchableOpacity onPress={() => setPicking(true)} style={st.input}><Text style={st.inputText}>{formatDMY(date)}</Text></TouchableOpacity>
+        {picking && (
+          <DateTimePicker value={new Date(`${date}T00:00:00`)} mode="date" maximumDate={new Date()}
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            onChange={(_, d) => { setPicking(false); if (d) setDate(isoOf(d)); }} />
+        )}
+        <Text style={st.lbl}>REMARKS</Text>
+        <TextInput value={notes} onChangeText={setNotes} placeholder="UTR / cheque no." placeholderTextColor={COLORS.text3} style={st.input} />
+        <TouchableOpacity onPress={pay} disabled={busy} style={[st.payBtn, busy && st.dim]}>
+          {busy ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Text style={st.payBtnText}>Mark paid · {fmtMoney(amount)}</Text>}
+        </TouchableOpacity>
+      </ScrollView>
+    </FormSheet>
   );
 }
 
@@ -285,6 +359,27 @@ export default function Club1000ReferralRewardsScreen({ navigation }) {
 const ClubReferralRewardsScreenS = StyleSheet.create({
   btn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess },
   box: { fontSize: 12, fontWeight: '700', color: COLORS.btnTextSuccess },
+  flex: { flex: 1, minWidth: 0 },
+  pill: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  pillPaid: { backgroundColor: COLORS.successBg },
+  pillPending: { backgroundColor: COLORS.warningBg },
+  pillText: { fontSize: 11, fontWeight: '700' },
+  pillTextPaid: { color: COLORS.success },
+  pillTextPending: { color: COLORS.warning },
+  paidLine: { fontSize: 11, color: COLORS.textSecondary, marginTop: 4 },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10 },
+  sheetSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  close: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.screenBg, justifyContent: 'center', alignItems: 'center' },
+  sheetBody: { paddingHorizontal: 16, paddingBottom: 30 },
+  targetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  targetAmt: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  lbl: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary, marginTop: 10, marginBottom: 4 },
+  input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.surface, minHeight: 44, justifyContent: 'center' },
+  inputText: { fontSize: 14, color: COLORS.textPrimary },
+  diff: { fontSize: 11, fontWeight: '700', color: COLORS.warning, marginTop: 4 },
+  payBtn: { marginTop: 18, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center' },
+  payBtnText: { color: COLORS.btnTextSuccess, fontSize: 15, fontWeight: '800' },
+  dim: { opacity: 0.5 },
 
   titleWrap: { flex: 1 },
   title: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
