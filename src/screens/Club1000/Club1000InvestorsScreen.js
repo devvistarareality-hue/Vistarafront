@@ -1010,7 +1010,7 @@ function LedgerModal({ investorId, onClose }) {
                     ['Total', s.total ?? s.total_payout_due, 'sum'],
                     ['Due till today', s.due_till_today, 'info'],
                     ['Paid out', s.paid_out ?? s.total_paid, 'good'],
-                    ['Pending', s.pending ?? s.total_pending, 'warn'],
+                    ['Upcoming interest', s.upcoming_interest, 'warn'],
                   ].map(([label, val, tone]) => (
                     <View key={label} style={[ClubInvestorsScreenS.lgCard, tone === 'sum' && ClubInvestorsScreenS.lgCardSum]}>
                       <Text style={ClubInvestorsScreenS.lgCardLbl}>{label.toUpperCase()}</Text>
