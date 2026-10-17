@@ -482,6 +482,62 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
       </View>
       <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
 
+        {/* Investor first, then where they came from — same order as the website. */}
+        <Text style={ClubInvestorsScreenS.formSection}>INVESTOR</Text>
+        <TextField label="Investor Name" required value={form.name} onChangeText={(v) => set('name', v)} />
+        <View style={ClubInvestorsScreenS.fRow}>
+          <View style={ClubInvestorsScreenS.flex1}>
+            <TextField label="Mobile Number" required value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" />
+          </View>
+          <View style={ClubInvestorsScreenS.flex1}>
+            <TextField label="Email" value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" />
+          </View>
+        </View>
+        <TextField label="PAN" value={form.pan} onChangeText={(v) => set('pan', v.toUpperCase())} autoCapitalize="characters" />
+
+        <Text style={ClubInvestorsScreenS.formSection}>SOURCE</Text>
+        <View style={ClubInvestorsScreenS.fBlock}>
+          <Text style={ClubInvestorsScreenS.fLabel}>Source</Text>
+          <View style={ClubInvestorsScreenS.fSeg}>
+            {Object.entries(SOURCE_LABELS).map(([v, label]) => (
+              <TouchableOpacity key={v} onPress={() => set('source', v)}
+                style={[ClubInvestorsScreenS.fSegBtn, form.source === v && ClubInvestorsScreenS.fSegBtnOn]}>
+                <Text style={[ClubInvestorsScreenS.fSegText, form.source === v && ClubInvestorsScreenS.fSegTextOn]}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Reference name (autocompletes from prior references) & number — only for referrals */}
+        {form.source === 'referral' && (
+          <View style={ClubInvestorsScreenS.fRow}>
+            <View style={ClubInvestorsScreenS.fColMb}>
+              <Text style={ClubInvestorsScreenS.fLabel}>Reference Name</Text>
+              <TextInput
+                value={form.reference_name}
+                onChangeText={(v) => { set('reference_name', v); setRefOpen(true); }}
+                onFocus={() => setRefOpen(true)}
+                style={inputStyle}
+                placeholderTextColor={COLORS.text3}
+              />
+              {refOpen && filteredRefSuggestions.length > 0 && (
+                <View style={ClubInvestorsScreenS.fSuggest}>
+                  {filteredRefSuggestions.map((r, i) => (
+                    <TouchableOpacity key={`${r.reference_phone}-${i}`} onPress={() => selectReferenceSuggestion(r)}
+                      style={[ClubInvestorsScreenS.fSuggestRow, i > 0 && ClubInvestorsScreenS.fSuggestSep]}>
+                      <Text style={ClubInvestorsScreenS.fSuggestText}>{r.reference_name}{r.reference_phone ? ` — ${r.reference_phone}` : ''}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+            <View style={ClubInvestorsScreenS.flex1}>
+              <TextField label="Reference Number" value={form.reference_phone} onChangeText={(v) => set('reference_phone', v)} keyboardType="phone-pad" />
+            </View>
+          </View>
+        )}
+
+        <Text style={ClubInvestorsScreenS.formSection}>INVESTMENT</Text>
         {/* Scheme picker */}
         <View style={{ marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Scheme <Text style={{ color: COLORS.error }}>*</Text></Text>
@@ -546,11 +602,17 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
               {schedule.map((row, idx) => {
                 const per = periods[idx];
                 return (
-                <View key={idx} style={[ClubInvestorsScreenS.schedItem, idx > 0 && ClubInvestorsScreenS.schedItemSep]}>
-                <View style={ClubInvestorsScreenS.schedRow}>
+                <View key={idx} style={[ClubInvestorsScreenS.schedItem, idx > 0 && ClubInvestorsScreenS.schedItemSep, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedItemPrincipal]}>
+                <View style={ClubInvestorsScreenS.schedTop}>
                   <Text style={[ClubInvestorsScreenS.schedTag, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedTagPrincipal]}>
-                    {row.payout_type === 'maturity' ? 'Principal' : per ? per.label : 'Interest'}
+                    {row.payout_type === 'maturity' ? 'Principal' : per ? per.label.replace(' (part)', '') : 'Interest'}
                   </Text>
+                  {!!per && per.label.includes('(part)') && <Text style={ClubInvestorsScreenS.schedPart}>PART</Text>}
+                  <View style={ClubInvestorsScreenS.flex1} />
+                  {!!per && <Text style={ClubInvestorsScreenS.schedDays}>{per.days} days</Text>}
+                </View>
+                {!!per && <Text style={ClubInvestorsScreenS.schedCovers}>{formatDMY(per.from)} – {formatDMY(per.to)}</Text>}
+                <View style={ClubInvestorsScreenS.schedRow}>
                   <TouchableOpacity onPress={() => setOpenScheduleIdx(openScheduleIdx === idx ? null : idx)} style={ClubInvestorsScreenS.schedDate}>
                     <Text style={ClubInvestorsScreenS.schedDateText}>{formatDMY(row.due_date)}</Text>
                   </TouchableOpacity>
@@ -558,9 +620,10 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
                     style={ClubInvestorsScreenS.schedAmt} />
                 </View>
                 {per && (
-                  <Text style={ClubInvestorsScreenS.schedWhy}>
-                    {formatDMY(per.from)} – {formatDMY(per.to)} · {per.days} days × ₹{per.perDay.toLocaleString('en-IN', { maximumFractionDigits: 2 })}/day = ₹{per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                    {Math.abs(Number(row.amount_due) - per.computed) > 0.5 ? ' · edited' : ''}
+                  <Text style={[ClubInvestorsScreenS.schedWhy, Math.abs(Number(row.amount_due) - per.computed) > 0.5 && ClubInvestorsScreenS.schedWhyEdited]}>
+                    {Math.abs(Number(row.amount_due) - per.computed) > 0.5
+                      ? `Edited · worked out ₹${per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+                      : `${per.days} × ₹${per.perDay.toLocaleString('en-IN', { maximumFractionDigits: 2 })} = ₹${per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
                   </Text>
                 )}
                 </View>
@@ -583,57 +646,6 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
         )}
 
         {/* Source (mirrors the Lead form) */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Source</Text>
-          <View style={{ flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border }}>
-            {Object.entries(SOURCE_LABELS).map(([v, label]) => (
-              <TouchableOpacity key={v} onPress={() => set('source', v)}
-                style={{ flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: form.source === v ? TEAL : COLORS.surface }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: form.source === v ? COLORS.white : MUTED }}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Reference name (autocompletes from prior references) & number — only for referrals */}
-        {form.source === 'referral' && (
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1, marginBottom: 16 }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Reference Name</Text>
-              <TextInput
-                value={form.reference_name}
-                onChangeText={(v) => { set('reference_name', v); setRefOpen(true); }}
-                onFocus={() => setRefOpen(true)}
-                style={inputStyle}
-                placeholderTextColor={COLORS.text3}
-              />
-              {refOpen && filteredRefSuggestions.length > 0 && (
-                <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' }}>
-                  {filteredRefSuggestions.map((r, i) => (
-                    <TouchableOpacity key={`${r.reference_phone}-${i}`} onPress={() => selectReferenceSuggestion(r)}
-                      style={{ padding: 10, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
-                      <Text style={{ fontSize: 13, color: TEXT }}>{r.reference_name}{r.reference_phone ? ` — ${r.reference_phone}` : ''}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-            <View style={{ flex: 1 }}>
-              <TextField label="Reference Number" value={form.reference_phone} onChangeText={(v) => set('reference_phone', v)} keyboardType="phone-pad" />
-            </View>
-          </View>
-        )}
-
-        <TextField label="Investor Name" required value={form.name} onChangeText={(v) => set('name', v)} />
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <TextField label="Mobile Number" required value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <TextField label="Email" value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" />
-          </View>
-        </View>
-        <TextField label="PAN" value={form.pan} onChangeText={(v) => set('pan', v.toUpperCase())} autoCapitalize="characters" />
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, marginBottom: 16 }}>
@@ -908,19 +920,26 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
               {schedule.map((row, idx) => {
                 const per = periods[idx];
                 return (
-                <View key={idx} style={[ClubInvestorsScreenS.schedItem, idx > 0 && ClubInvestorsScreenS.schedItemSep]}>
-                <View style={ClubInvestorsScreenS.schedRow}>
+                <View key={idx} style={[ClubInvestorsScreenS.schedItem, idx > 0 && ClubInvestorsScreenS.schedItemSep, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedItemPrincipal]}>
+                <View style={ClubInvestorsScreenS.schedTop}>
                   <Text style={[ClubInvestorsScreenS.schedTag, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedTagPrincipal]}>
-                    {row.payout_type === 'maturity' ? 'Principal' : per ? per.label : 'Interest'}
+                    {row.payout_type === 'maturity' ? 'Principal' : per ? per.label.replace(' (part)', '') : 'Interest'}
                   </Text>
+                  {!!per && per.label.includes('(part)') && <Text style={ClubInvestorsScreenS.schedPart}>PART</Text>}
+                  <View style={ClubInvestorsScreenS.flex1} />
+                  {!!per && <Text style={ClubInvestorsScreenS.schedDays}>{per.days} days</Text>}
+                </View>
+                {!!per && <Text style={ClubInvestorsScreenS.schedCovers}>{formatDMY(per.from)} – {formatDMY(per.to)}</Text>}
+                <View style={ClubInvestorsScreenS.schedRow}>
                   <Text style={ClubInvestorsScreenS.schedDateFlat}>{formatDMY(row.due_date)}</Text>
                   <TextInput value={String(row.amount_due)} onChangeText={(v) => updateScheduleRow(idx, 'amount_due', v)} keyboardType="decimal-pad"
                     style={ClubInvestorsScreenS.schedAmt} />
                 </View>
                 {per && (
-                  <Text style={ClubInvestorsScreenS.schedWhy}>
-                    {formatDMY(per.from)} – {formatDMY(per.to)} · {per.days} days × ₹{per.perDay.toLocaleString('en-IN', { maximumFractionDigits: 2 })}/day = ₹{per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                    {Math.abs(Number(row.amount_due) - per.computed) > 0.5 ? ' · edited' : ''}
+                  <Text style={[ClubInvestorsScreenS.schedWhy, Math.abs(Number(row.amount_due) - per.computed) > 0.5 && ClubInvestorsScreenS.schedWhyEdited]}>
+                    {Math.abs(Number(row.amount_due) - per.computed) > 0.5
+                      ? `Edited · worked out ₹${per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+                      : `${per.days} × ₹${per.perDay.toLocaleString('en-IN', { maximumFractionDigits: 2 })} = ₹${per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
                   </Text>
                 )}
                 </View>
@@ -1350,18 +1369,39 @@ const ClubInvestorsScreenS = StyleSheet.create({
   btn3Dim: { opacity: 0.5 },
   // Revise LOI header: the R-number title and who it is for.
   reviseHead: { flex: 1 },
+  fRow: { flexDirection: 'row', gap: 10 },
+  fColMb: { flex: 1, marginBottom: 16 },
+  fBlock: { marginBottom: 16 },
+  fLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 6 },
+  fSeg: { flexDirection: 'row', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+  fSegBtn: { flex: 1, paddingVertical: 11, alignItems: 'center', backgroundColor: COLORS.surface },
+  fSegBtnOn: { backgroundColor: COLORS.success },
+  fSegText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  fSegTextOn: { color: COLORS.white },
+  fSuggest: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginTop: 6, overflow: 'hidden' },
+  fSuggestRow: { padding: 10 },
+  fSuggestSep: { borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
+  fSuggestText: { fontSize: 13, color: COLORS.textPrimary },
+  formSection: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: COLORS.link, marginTop: 6, marginBottom: 10 },
+  flex1: { flex: 1 },
+  schedItemPrincipal: { backgroundColor: COLORS.surfaceAlt },
+  schedTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  schedPart: { fontSize: 9, fontWeight: '800', color: COLORS.warning, backgroundColor: COLORS.warningBg, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1, overflow: 'hidden' },
+  schedDays: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary },
+  schedCovers: { fontSize: 11, color: COLORS.textSecondary, marginBottom: 2 },
+  schedWhyEdited: { color: COLORS.warning, fontWeight: '700' },
   schedBox: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' },
   schedBasis: { fontSize: 11.5, color: COLORS.textSecondary, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 8, marginBottom: 8 },
   schedItem: { padding: 10, gap: 4 },
   schedItemSep: { borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
   schedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  schedTag: { fontSize: 11, fontWeight: '700', color: COLORS.success, width: 92 },
+  schedTag: { fontSize: 12.5, fontWeight: '800', color: COLORS.success },
   schedTagPrincipal: { color: COLORS.purple },
   schedDate: { flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', paddingHorizontal: 10 },
   schedDateText: { fontSize: 12, color: COLORS.textPrimary },
   schedDateFlat: { flex: 1, fontSize: 12, color: COLORS.textPrimary },
   schedAmt: { flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 10, fontSize: 12, color: COLORS.textPrimary },
-  schedWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 2 },
+  schedWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 2, textAlign: 'right' },
   maturedTag: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.warningBg },
   maturedTagText: { fontSize: 10, fontWeight: '800', color: COLORS.warningAlt },
   renewedTag: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.linkBg },
