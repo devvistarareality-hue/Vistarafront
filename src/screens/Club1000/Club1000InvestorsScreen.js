@@ -25,6 +25,7 @@ import { onlyPresent } from '../../lib/presentOptions';
 import { errText } from '../../lib/apiError';
 import PeriodFilter from '../../components/PeriodFilter';
 import FilterSelect from '../../components/FilterSelect';
+import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestmentSheets';
 // The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
 export { LedgerModal };
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
@@ -832,9 +833,10 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         </TouchableOpacity>
       </View>
       <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <Text style={{ fontSize: 11, color: MUTED, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 16 }}>
+        <Text style={ClubInvestorsScreenS.renewNote}>
           This investment matured on {formatDMY(investor.maturity_date)}. Set the renewal terms below — amount can go up or down.
         </Text>
+        <RenewalSummary investorId={investor.id} newAmount={form.amount_invested} />
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, marginBottom: 16 }}>
@@ -1057,6 +1059,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [showAdd,    setShowAdd]    = useState(false);
   const [revising,   setRevising]   = useState(null);
   const [renewing,   setRenewing]   = useState(null);
+  const [redeeming, setRedeeming] = useState(null);   // Redeem sheet (before maturity)
+  const [payingOut, setPayingOut] = useState(null);   // Payout sheet (at maturity)
   const [ledgerFor,  setLedgerFor]  = useState(null);
   // Opened from an investor notification (openInvestorId): that investor's ledger.
   useEffect(() => {
@@ -1107,30 +1111,6 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   useFocusEffect(React.useCallback(() => { load(); },
     [statusFilter, search, bucket, payoutFilter, schemeFilter, addedByFilter, range.from, range.to]));
 
-  function redeem(id) {
-    Alert.alert('Redeem investment?', 'This applies the premature-redemption rate for the elapsed period.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Redeem', style: 'destructive', onPress: async () => {
-        const res = await apiFetch(CLUB1000_ENDPOINTS.investorRedeem(id), { method: 'POST' });
-        const d = await res.json();
-        if (!res.ok) { Alert.alert('Could not redeem', errText(d, 'Please try again.')); return; }
-        load();
-      } },
-    ]);
-  }
-
-  function maturePayout(id) {
-    Alert.alert('Pay out this investment?', 'The investor will be marked redeemed. Mark the scheduled maturity payout paid separately from the Payouts screen.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Payout', style: 'destructive', onPress: async () => {
-        const res = await apiFetch(CLUB1000_ENDPOINTS.investorMaturePayout(id), { method: 'POST' });
-        const d = await res.json();
-        if (!res.ok) { Alert.alert('Could not process the payout', errText(d, 'Please try again.')); return; }
-        load();
-      } },
-    ]);
-  }
-
   async function viewLoi(id) {
     try {
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorLoiUrl(id));
@@ -1147,6 +1127,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       {/* Revise LOI is the Add Investor form, prefilled — every field can change. */}
       <AddInvestorSheet visible={!!revising} revise={revising} schemes={schemes}
         onClose={() => setRevising(null)} onSaved={() => load()} />
+      <RedeemSheet investor={redeeming} onClose={() => setRedeeming(null)} onDone={() => { setRedeeming(null); load(); }} />
+      <MaturityPayoutSheet investor={payingOut} onClose={() => setPayingOut(null)} onDone={() => { setPayingOut(null); load(); }} />
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
         scheme={schemes.find((s) => String(s.id) === String(renewing?.scheme))}
         onClose={() => setRenewing(null)} onSaved={() => load()} />
@@ -1278,19 +1260,19 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                 )}
                 {inv.is_matured ? (can(user, 'club.investor.manage') && (
                   <>
-                    <TouchableOpacity onPress={() => setRenewing(inv)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: AMBER }}>↻ Renew</Text>
+                    <TouchableOpacity onPress={() => setRenewing(inv)} style={ClubInvestorsScreenS.warnChip}>
+                      <Text style={ClubInvestorsScreenS.renewChipText}>↻ Renew</Text>
                     </TouchableOpacity>
                     {manager && (
-                      <TouchableOpacity onPress={() => maturePayout(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg }}>
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.warning }}>Payout</Text>
+                      <TouchableOpacity onPress={() => setPayingOut(inv)} style={ClubInvestorsScreenS.warnChip}>
+                        <Text style={ClubInvestorsScreenS.warnChipText}>Payout</Text>
                       </TouchableOpacity>
                     )}
                   </>
                 )) : (
                   manager && inv.status === 'active' && can(user, 'club.investor.manage') && (
-                    <TouchableOpacity onPress={() => redeem(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.warning }}>Redeem</Text>
+                    <TouchableOpacity onPress={() => setRedeeming(inv)} style={ClubInvestorsScreenS.warnChip}>
+                      <Text style={ClubInvestorsScreenS.warnChipText}>Redeem</Text>
                     </TouchableOpacity>
                   )
                 )}
@@ -1322,6 +1304,10 @@ const ClubInvestorsScreenS = StyleSheet.create({
   btn3Dim: { opacity: 0.5 },
   // Revise LOI header: the R-number title and who it is for.
   reviseHead: { flex: 1 },
+  renewNote: { fontSize: 11, color: COLORS.textSecondary, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10, marginBottom: 10 },
+  warnChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.warningBg },
+  warnChipText: { fontSize: 11, fontWeight: '700', color: COLORS.warning },
+  renewChipText: { fontSize: 11, fontWeight: '700', color: COLORS.warningAlt },
   totalBanner: { backgroundColor: COLORS.link, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 },
   totalLabel: { color: '#fff', opacity: 0.85, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   chipScroll: { flexGrow: 0, flexShrink: 0 },
