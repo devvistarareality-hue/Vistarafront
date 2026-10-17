@@ -22,10 +22,10 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE 
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 const rupee = (n) => '₹ ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-// Same tabs as Bookings & Approvals, minus Drafts: this list is what you submitted,
-// and a draft has not been. Values are the stored statuses — 'sold' is an approved
+// Same tabs as Bookings & Approvals. Drafts are your own unfinished bookings —
+// Resume one to finish and submit it. Values are the stored statuses — 'sold' is an approved
 // booking, which is why the label and the value differ.
-const TABS = [['', 'All'], ['pending', 'Pending'], ['accounts', 'Pending from Accounts'],
+const TABS = [['', 'All'], ['draft', 'Drafts'], ['pending', 'Pending'], ['accounts', 'Pending from Accounts'],
               ['sold', 'Approved'], ['rejected', 'Rejected'], ['cancelled', 'Cancelled']];
 
 // A cancelled booking and a rejected one are both stored at status='rejected'; the
@@ -254,6 +254,8 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
   // Counting over all rows instead kept the numbers still as you switched tabs, but
   // on Approved they then summed to the full 244 next to a list of 229 — a filter
   // that misreports its own result is worse than one that moves.
+  // Your unfinished bookings, counted on the Drafts tab so none is forgotten.
+  const draftCount = rows.filter((b) => b.status === 'draft').length;
   const preWho = rows.filter((b) => inTab(b, tab) && matches(b) && inRange(b.booking_date, range)
     && (!proj.length || proj.includes(projName(b))));
 
@@ -369,9 +371,8 @@ export function MyBookingsList({navigation, cpOnly = false, initialTab = '', ini
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         {TABS.map(([k, label]) => (
           <TouchableOpacity key={k} onPress={() => { setTab(k); setOpen({}); }}
-            style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8,
-              backgroundColor: tab === k ? BLUE : COLORS.surfaceAlt }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: tab === k ? '#fff' : MUTED }}>{label}</Text>
+            style={[mb.tab, tab === k && mb.tabOn, k === 'draft' && draftCount > 0 && tab !== k && mb.tabDraft]}>
+            <Text style={[mb.tabText, tab === k && mb.tabTextOn]}>{k === 'draft' && draftCount ? `${label} · ${draftCount}` : label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -564,5 +565,10 @@ const btn = { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 };
 const btnT = { color: '#fff', fontWeight: '700', fontSize: 13 };
 
 const mb = StyleSheet.create({
+  tab: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, backgroundColor: COLORS.surfaceAlt },
+  tabOn: { backgroundColor: COLORS.link },
+  tabDraft: { borderWidth: 1, borderColor: COLORS.link },
+  tabText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  tabTextOn: { color: '#fff' },
   projPick: { alignSelf: 'flex-start', marginBottom: 12 },
 });
