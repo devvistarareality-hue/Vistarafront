@@ -26,6 +26,7 @@ import { errText } from '../../lib/apiError';
 import PeriodFilter from '../../components/PeriodFilter';
 import FilterSelect from '../../components/FilterSelect';
 import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestmentSheets';
+import { schedulePeriods, perDayInterest, tenureDays } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
 // The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
 export { LedgerModal };
@@ -52,6 +53,8 @@ function toISODate(d) {
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+// A form date (a Date here, a string from the server) as YYYY-MM-DD.
+const isoOf = (d) => (d instanceof Date ? toISODate(d) : d ? String(d).slice(0, 10) : '');
 
 function addMonths(d, n) {
   const r = new Date(d);
@@ -293,6 +296,7 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
   const [savingDraft, setSavingDraft] = useState(false);
 
   if (!form) return null;
+  const periods = schedulePeriods(schedule, isoOf(form.investment_date), isoOf(maturityDate), form.amount_invested, form.total_return_pct, form.interest_payout);
 
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
 
@@ -535,20 +539,33 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Payout Schedule (confirm or edit)</Text>
               <TouchableOpacity onPress={resetSchedule}><Text style={{ fontSize: 12, fontWeight: '700', color: TEAL }}>Reset</Text></TouchableOpacity>
             </View>
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' }}>
-              {schedule.map((row, idx) => (
-                <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderTopWidth: idx > 0 ? 1 : 0, borderTopColor: COLORS.surfaceAlt }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: row.payout_type === 'maturity' ? COLORS.purple : TEAL, width: 56 }}>
-                    {row.payout_type === 'maturity' ? 'Principal' : form.interest_payout === 'monthly' ? `M${idx + 1}` : `Q${idx + 1}`}
+            <Text style={ClubInvestorsScreenS.schedBasis}>
+              Interest per day = ₹{Number(form.amount_invested || 0).toLocaleString('en-IN')} × {Number(form.total_return_pct) || 0}% ÷ {tenureDays(isoOf(form.investment_date), isoOf(maturityDate))} days = ₹{perDayInterest(form.amount_invested, form.total_return_pct, isoOf(form.investment_date), isoOf(maturityDate)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+            </Text>
+            <View style={ClubInvestorsScreenS.schedBox}>
+              {schedule.map((row, idx) => {
+                const per = periods[idx];
+                return (
+                <View key={idx} style={[ClubInvestorsScreenS.schedItem, idx > 0 && ClubInvestorsScreenS.schedItemSep]}>
+                <View style={ClubInvestorsScreenS.schedRow}>
+                  <Text style={[ClubInvestorsScreenS.schedTag, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedTagPrincipal]}>
+                    {row.payout_type === 'maturity' ? 'Principal' : per ? per.label : 'Interest'}
                   </Text>
-                  <TouchableOpacity onPress={() => setOpenScheduleIdx(openScheduleIdx === idx ? null : idx)}
-                    style={{ flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', paddingHorizontal: 10 }}>
-                    <Text style={{ fontSize: 12, color: TEXT }}>{formatDMY(row.due_date)}</Text>
+                  <TouchableOpacity onPress={() => setOpenScheduleIdx(openScheduleIdx === idx ? null : idx)} style={ClubInvestorsScreenS.schedDate}>
+                    <Text style={ClubInvestorsScreenS.schedDateText}>{formatDMY(row.due_date)}</Text>
                   </TouchableOpacity>
                   <TextInput value={String(row.amount_due)} onChangeText={(v) => updateScheduleRow(idx, 'amount_due', v)} keyboardType="decimal-pad"
-                    style={{ flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 10, fontSize: 12, color: TEXT }} />
+                    style={ClubInvestorsScreenS.schedAmt} />
                 </View>
-              ))}
+                {per && (
+                  <Text style={ClubInvestorsScreenS.schedWhy}>
+                    {formatDMY(per.from)} – {formatDMY(per.to)} · {per.days} days × ₹{per.perDay.toLocaleString('en-IN', { maximumFractionDigits: 2 })}/day = ₹{per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    {Math.abs(Number(row.amount_due) - per.computed) > 0.5 ? ' · edited' : ''}
+                  </Text>
+                )}
+                </View>
+                );
+              })}
             </View>
             {openScheduleIdx !== null && (
               <DateTimePicker
@@ -746,6 +763,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
   }, [form?.interest_payout, form?.total_return_pct, form?.amount_invested, form?.investment_date]);
 
   if (!investor || !form) return null;
+  const periods = schedulePeriods(schedule, isoOf(form.investment_date), isoOf(maturityDate), form.amount_invested, form.total_return_pct, form.interest_payout);
 
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
 
@@ -883,17 +901,31 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
               <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Payout Schedule (confirm or edit)</Text>
               <TouchableOpacity onPress={resetSchedule}><Text style={{ fontSize: 12, fontWeight: '700', color: TEAL }}>Reset</Text></TouchableOpacity>
             </View>
-            <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' }}>
-              {schedule.map((row, idx) => (
-                <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderTopWidth: idx > 0 ? 1 : 0, borderTopColor: COLORS.surfaceAlt }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: row.payout_type === 'maturity' ? AMBER : TEAL, width: 56 }}>
-                    {row.payout_type === 'maturity' ? 'Principal' : form.interest_payout === 'monthly' ? `M${idx + 1}` : `Q${idx + 1}`}
+            <Text style={ClubInvestorsScreenS.schedBasis}>
+              Interest per day = ₹{Number(form.amount_invested || 0).toLocaleString('en-IN')} × {Number(form.total_return_pct) || 0}% ÷ {tenureDays(isoOf(form.investment_date), isoOf(maturityDate))} days = ₹{perDayInterest(form.amount_invested, form.total_return_pct, isoOf(form.investment_date), isoOf(maturityDate)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+            </Text>
+            <View style={ClubInvestorsScreenS.schedBox}>
+              {schedule.map((row, idx) => {
+                const per = periods[idx];
+                return (
+                <View key={idx} style={[ClubInvestorsScreenS.schedItem, idx > 0 && ClubInvestorsScreenS.schedItemSep]}>
+                <View style={ClubInvestorsScreenS.schedRow}>
+                  <Text style={[ClubInvestorsScreenS.schedTag, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedTagPrincipal]}>
+                    {row.payout_type === 'maturity' ? 'Principal' : per ? per.label : 'Interest'}
                   </Text>
-                  <Text style={{ flex: 1, fontSize: 12, color: TEXT }}>{formatDMY(row.due_date)}</Text>
+                  <Text style={ClubInvestorsScreenS.schedDateFlat}>{formatDMY(row.due_date)}</Text>
                   <TextInput value={String(row.amount_due)} onChangeText={(v) => updateScheduleRow(idx, 'amount_due', v)} keyboardType="decimal-pad"
-                    style={{ flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 10, fontSize: 12, color: TEXT }} />
+                    style={ClubInvestorsScreenS.schedAmt} />
                 </View>
-              ))}
+                {per && (
+                  <Text style={ClubInvestorsScreenS.schedWhy}>
+                    {formatDMY(per.from)} – {formatDMY(per.to)} · {per.days} days × ₹{per.perDay.toLocaleString('en-IN', { maximumFractionDigits: 2 })}/day = ₹{per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    {Math.abs(Number(row.amount_due) - per.computed) > 0.5 ? ' · edited' : ''}
+                  </Text>
+                )}
+                </View>
+                );
+              })}
             </View>
           </View>
         )}
@@ -1011,6 +1043,9 @@ function LedgerModal({ investorId, onClose }) {
                     <View style={{ flex: 1 }}>
                       <LedgerBadge label={e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
                       <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{formatDMY(e.date)}{e.paid_date && e.type !== 'investment' ? ` · Paid ${formatDMY(e.paid_date)}` : ''}</Text>
+                      {!!e.period && (
+                        <Text style={ClubInvestorsScreenS.schedWhy}>{e.period.label} · {formatDMY(e.period.from)} – {formatDMY(e.period.to)} · {e.period.days} days × ₹{Number(e.period.per_day).toLocaleString('en-IN')}/day</Text>
+                      )}
                       {!!e.notes && <Text style={{ fontSize: 11, color: MUTED, marginTop: 2, fontStyle: 'italic' }}>"{e.notes}"</Text>}
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
@@ -1315,6 +1350,18 @@ const ClubInvestorsScreenS = StyleSheet.create({
   btn3Dim: { opacity: 0.5 },
   // Revise LOI header: the R-number title and who it is for.
   reviseHead: { flex: 1 },
+  schedBox: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, overflow: 'hidden' },
+  schedBasis: { fontSize: 11.5, color: COLORS.textSecondary, backgroundColor: COLORS.surfaceAlt, borderRadius: 10, padding: 8, marginBottom: 8 },
+  schedItem: { padding: 10, gap: 4 },
+  schedItemSep: { borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
+  schedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  schedTag: { fontSize: 11, fontWeight: '700', color: COLORS.success, width: 92 },
+  schedTagPrincipal: { color: COLORS.purple },
+  schedDate: { flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', paddingHorizontal: 10 },
+  schedDateText: { fontSize: 12, color: COLORS.textPrimary },
+  schedDateFlat: { flex: 1, fontSize: 12, color: COLORS.textPrimary },
+  schedAmt: { flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 10, fontSize: 12, color: COLORS.textPrimary },
+  schedWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 2 },
   maturedTag: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.warningBg },
   maturedTagText: { fontSize: 10, fontWeight: '800', color: COLORS.warningAlt },
   renewedTag: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.linkBg },

@@ -284,7 +284,8 @@ function PaySheet({ row, today, onClose, onDone }) {
               <TouchableOpacity onPress={() => setLine(p.id, { on: !on })} style={s.payTop}>
                 <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? COLORS.link : COLORS.textSecondary} />
                 <View style={s.flex}>
-                  <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}</Text>
+                  <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}{p.period ? ` · ${p.period.label}` : ''}</Text>
+                {!!p.period && <Text style={s.payWhy}>{formatDMY(p.period.from)} – {formatDMY(p.period.to)} · {p.period.days} days × ₹{Number(p.period.per_day).toLocaleString('en-IN')}/day</Text>}
                   <Text style={[s.payWhen, late && s.payLate]}>Due {formatDMY(p.due_date)}{late ? ' · late' : ''}</Text>
                 </View>
                 <View style={s.payTarget}>
@@ -371,7 +372,8 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
           <View key={p.id} style={s.payCard}>
             <View style={s.payTop}>
               <View style={s.flex}>
-                <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}</Text>
+                <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}{p.period ? ` · ${p.period.label}` : ''}</Text>
+                {!!p.period && <Text style={s.payWhy}>{formatDMY(p.period.from)} – {formatDMY(p.period.to)} · {p.period.days} days × ₹{Number(p.period.per_day).toLocaleString('en-IN')}/day</Text>}
                 <Text style={s.payWhen}>Due {formatDMY(p.due_date)} · target {rupee(p.amount_due)}</Text>
               </View>
               <View style={s.payTarget}>
@@ -393,6 +395,7 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
 }
 
 const s = StyleSheet.create({
+  payWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 1 },
   paidNotes: { fontSize: 12, color: COLORS.textSecondary, marginTop: 6 },
   undoBtn: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: COLORS.errorBg, borderWidth: 1, borderColor: COLORS.error },
   undoText: { fontSize: 12, fontWeight: '700', color: COLORS.error },
