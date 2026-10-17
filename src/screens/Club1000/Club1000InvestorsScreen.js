@@ -28,6 +28,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { RedeemSheet, MaturityPayoutSheet, RenewalSummary } from './CloseInvestmentSheets';
 import { schedulePeriods, perDayInterest, tenureDays } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
+import ScheduleList from './ScheduleList';
 // The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
 export { LedgerModal };
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
@@ -590,46 +591,11 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
 
         {/* Quarterly/monthly schedule preview */}
         {(form.interest_payout === 'quarterly' || form.interest_payout === 'monthly') && schedule.length > 0 && (
-          <View style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Payout Schedule (confirm or edit)</Text>
-              <TouchableOpacity onPress={resetSchedule}><Text style={{ fontSize: 12, fontWeight: '700', color: TEAL }}>Reset</Text></TouchableOpacity>
-            </View>
-            <Text style={ClubInvestorsScreenS.schedBasis}>
-              Interest per day = ₹{Number(form.amount_invested || 0).toLocaleString('en-IN')} × {Number(form.total_return_pct) || 0}% ÷ {tenureDays(isoOf(form.investment_date), isoOf(maturityDate))} days = ₹{perDayInterest(form.amount_invested, form.total_return_pct, isoOf(form.investment_date), isoOf(maturityDate)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-            </Text>
-            <View style={ClubInvestorsScreenS.schedBox}>
-              {schedule.map((row, idx) => {
-                const per = periods[idx];
-                return (
-                <View key={idx} style={[ClubInvestorsScreenS.schedItem, idx > 0 && ClubInvestorsScreenS.schedItemSep, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedItemPrincipal]}>
-                <View style={ClubInvestorsScreenS.schedTop}>
-                  <Text style={[ClubInvestorsScreenS.schedTag, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedTagPrincipal]}>
-                    {row.payout_type === 'maturity' ? 'Principal' : per ? per.label.replace(' (part)', '') : 'Interest'}
-                  </Text>
-                  {!!per && per.label.includes('(part)') && <Text style={ClubInvestorsScreenS.schedPart}>PART</Text>}
-                  <View style={ClubInvestorsScreenS.flex1} />
-                  {!!per && <Text style={ClubInvestorsScreenS.schedDays}>{per.days} days</Text>}
-                </View>
-                {!!per && <Text style={ClubInvestorsScreenS.schedCovers}>{formatDMY(per.from)} – {formatDMY(per.to)}</Text>}
-                <View style={ClubInvestorsScreenS.schedRow}>
-                  <TouchableOpacity onPress={() => setOpenScheduleIdx(openScheduleIdx === idx ? null : idx)} style={ClubInvestorsScreenS.schedDate}>
-                    <Text style={ClubInvestorsScreenS.schedDateText}>{formatDMY(row.due_date)}</Text>
-                  </TouchableOpacity>
-                  <TextInput value={String(row.amount_due)} onChangeText={(v) => updateScheduleRow(idx, 'amount_due', v)} keyboardType="decimal-pad"
-                    style={ClubInvestorsScreenS.schedAmt} />
-                </View>
-                {per && (
-                  <Text style={[ClubInvestorsScreenS.schedWhy, Math.abs(Number(row.amount_due) - per.computed) > 0.5 && ClubInvestorsScreenS.schedWhyEdited]}>
-                    {Math.abs(Number(row.amount_due) - per.computed) > 0.5
-                      ? `Edited · worked out ₹${per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
-                      : `${per.days} × ₹${per.perDay.toLocaleString('en-IN', { maximumFractionDigits: 2 })} = ₹${per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
-                  </Text>
-                )}
-                </View>
-                );
-              })}
-            </View>
+          <View style={ClubInvestorsScreenS.fBlock}>
+            <Text style={ClubInvestorsScreenS.formSection}>PAYOUT SCHEDULE — CONFIRM OR EDIT</Text>
+            <ScheduleList schedule={schedule} periods={periods} principal={form.amount_invested} pct={form.total_return_pct}
+              from={isoOf(form.investment_date)} to={isoOf(maturityDate)}
+              onAmount={(idx, v) => updateScheduleRow(idx, 'amount_due', v)} onReset={resetSchedule} onPickDate={(idx) => setOpenScheduleIdx(idx)} />
             {openScheduleIdx !== null && (
               <DateTimePicker
                 value={new Date(`${schedule[openScheduleIdx].due_date}T00:00:00`)}
@@ -908,44 +874,11 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         </View>
 
         {(form.interest_payout === 'quarterly' || form.interest_payout === 'monthly') && schedule.length > 0 && (
-          <View style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED }}>Payout Schedule (confirm or edit)</Text>
-              <TouchableOpacity onPress={resetSchedule}><Text style={{ fontSize: 12, fontWeight: '700', color: TEAL }}>Reset</Text></TouchableOpacity>
-            </View>
-            <Text style={ClubInvestorsScreenS.schedBasis}>
-              Interest per day = ₹{Number(form.amount_invested || 0).toLocaleString('en-IN')} × {Number(form.total_return_pct) || 0}% ÷ {tenureDays(isoOf(form.investment_date), isoOf(maturityDate))} days = ₹{perDayInterest(form.amount_invested, form.total_return_pct, isoOf(form.investment_date), isoOf(maturityDate)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-            </Text>
-            <View style={ClubInvestorsScreenS.schedBox}>
-              {schedule.map((row, idx) => {
-                const per = periods[idx];
-                return (
-                <View key={idx} style={[ClubInvestorsScreenS.schedItem, idx > 0 && ClubInvestorsScreenS.schedItemSep, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedItemPrincipal]}>
-                <View style={ClubInvestorsScreenS.schedTop}>
-                  <Text style={[ClubInvestorsScreenS.schedTag, row.payout_type === 'maturity' && ClubInvestorsScreenS.schedTagPrincipal]}>
-                    {row.payout_type === 'maturity' ? 'Principal' : per ? per.label.replace(' (part)', '') : 'Interest'}
-                  </Text>
-                  {!!per && per.label.includes('(part)') && <Text style={ClubInvestorsScreenS.schedPart}>PART</Text>}
-                  <View style={ClubInvestorsScreenS.flex1} />
-                  {!!per && <Text style={ClubInvestorsScreenS.schedDays}>{per.days} days</Text>}
-                </View>
-                {!!per && <Text style={ClubInvestorsScreenS.schedCovers}>{formatDMY(per.from)} – {formatDMY(per.to)}</Text>}
-                <View style={ClubInvestorsScreenS.schedRow}>
-                  <Text style={ClubInvestorsScreenS.schedDateFlat}>{formatDMY(row.due_date)}</Text>
-                  <TextInput value={String(row.amount_due)} onChangeText={(v) => updateScheduleRow(idx, 'amount_due', v)} keyboardType="decimal-pad"
-                    style={ClubInvestorsScreenS.schedAmt} />
-                </View>
-                {per && (
-                  <Text style={[ClubInvestorsScreenS.schedWhy, Math.abs(Number(row.amount_due) - per.computed) > 0.5 && ClubInvestorsScreenS.schedWhyEdited]}>
-                    {Math.abs(Number(row.amount_due) - per.computed) > 0.5
-                      ? `Edited · worked out ₹${per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
-                      : `${per.days} × ₹${per.perDay.toLocaleString('en-IN', { maximumFractionDigits: 2 })} = ₹${per.computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
-                  </Text>
-                )}
-                </View>
-                );
-              })}
-            </View>
+          <View style={ClubInvestorsScreenS.fBlock}>
+            <Text style={ClubInvestorsScreenS.formSection}>PAYOUT SCHEDULE — CONFIRM OR EDIT</Text>
+            <ScheduleList schedule={schedule} periods={periods} principal={form.amount_invested} pct={form.total_return_pct}
+              from={isoOf(form.investment_date)} to={isoOf(maturityDate)}
+              onAmount={(idx, v) => updateScheduleRow(idx, 'amount_due', v)} onReset={resetSchedule} />
           </View>
         )}
 
