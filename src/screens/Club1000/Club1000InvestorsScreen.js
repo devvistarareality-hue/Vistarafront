@@ -947,6 +947,7 @@ const LEDGER_STATUS_COLOR = {
   completed: { bg: COLORS.successBg, fg: COLORS.success },
   paid: { bg: COLORS.successBg, fg: COLORS.success },
   pending: { bg: COLORS.warningBg, fg: AMBER },
+  overdue: { bg: COLORS.errorBg, fg: COLORS.error },
 };
 
 function LedgerBadge({ label, color }) {
@@ -956,6 +957,9 @@ function LedgerBadge({ label, color }) {
     </View>
   );
 }
+
+// Card value colour per tone (a lookup, so no style is built inline).
+const LG_TONE = { info: { color: COLORS.link }, good: { color: COLORS.success }, warn: { color: COLORS.warning } };
 
 function LedgerModal({ investorId, onClose }) {
   const [data, setData] = useState(null);
@@ -979,6 +983,7 @@ function LedgerModal({ investorId, onClose }) {
 
   const inv = data?.investor;
   const s = data?.summary;
+  const todayIso = toISODate(new Date());
 
   return (
     <Modal visible={!!investorId} transparent animationType="slide" onRequestClose={onClose}>
@@ -998,39 +1003,45 @@ function LedgerModal({ investorId, onClose }) {
               <Text style={{ textAlign: 'center', color: COLORS.error, marginTop: 30 }}>{err}</Text>
             ) : (
               <>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                <View style={ClubInvestorsScreenS.lgCards}>
                   {[
-                    ['Invested', s.total_invested, COLORS.link],
-                    ['Scheduled', s.total_payout_due, COLORS.purple],
-                    ['Paid Out', s.total_paid, COLORS.success],
-                    ['Pending', s.total_pending, AMBER],
-                  ].map(([label, val, color]) => (
-                    <View key={label} style={{ flexBasis: '47%', flexGrow: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10 }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, textTransform: 'uppercase' }}>{label}</Text>
-                      <Text style={{ fontSize: 15, fontWeight: '800', color, marginTop: 2 }}>{fmtMoney(val)}</Text>
+                    ['Principal', s.principal ?? s.total_invested, null],
+                    ['Interest', s.interest, null],
+                    ['Total', s.total ?? s.total_payout_due, 'sum'],
+                    ['Due till today', s.due_till_today, 'info'],
+                    ['Paid out', s.paid_out ?? s.total_paid, 'good'],
+                    ['Pending', s.pending ?? s.total_pending, 'warn'],
+                  ].map(([label, val, tone]) => (
+                    <View key={label} style={[ClubInvestorsScreenS.lgCard, tone === 'sum' && ClubInvestorsScreenS.lgCardSum]}>
+                      <Text style={ClubInvestorsScreenS.lgCardLbl}>{label.toUpperCase()}</Text>
+                      <Text style={[ClubInvestorsScreenS.lgCardVal, tone && LG_TONE[tone]]}>{fmtMoney(val)}</Text>
                     </View>
                   ))}
                 </View>
 
-                {(data.entries || []).map((e, i) => (
-                  <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt }}>
-                    <View style={{ flex: 1 }}>
-                      <LedgerBadge label={e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
-                      <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{formatDMY(e.date)}{e.paid_date && e.type !== 'investment' ? ` · Paid ${formatDMY(e.paid_date)}` : ''}</Text>
-                      {!!e.period && (
-                        <Text style={ClubInvestorsScreenS.schedWhy}>{e.period.label} · {formatDMY(e.period.from)} – {formatDMY(e.period.to)} · {e.period.days} days × ₹{Number(e.period.per_day).toLocaleString('en-IN')}/day</Text>
-                      )}
-                      {!!e.notes && <Text style={{ fontSize: 11, color: MUTED, marginTop: 2, fontStyle: 'italic' }}>"{e.notes}"</Text>}
+                {(data.entries || []).map((e, i) => {
+                  const isInv = e.type === 'investment';
+                  const st = !isInv && e.status === 'pending' && (e.due_date || e.date) < todayIso ? 'overdue' : e.status;
+                  return (
+                    <View key={i} style={[ClubInvestorsScreenS.lgRow, i > 0 && ClubInvestorsScreenS.lgRowSep]}>
+                      <View style={ClubInvestorsScreenS.lgTop}>
+                        <View style={ClubInvestorsScreenS.flex1}>
+                          <LedgerBadge label={e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
+                          {!!e.period && <Text style={ClubInvestorsScreenS.schedWhy}>{e.period.label} · {e.period.days} days × ₹{Number(e.period.per_day).toLocaleString('en-IN')}</Text>}
+                        </View>
+                        <View style={ClubInvestorsScreenS.lgRight}>
+                          <Text style={ClubInvestorsScreenS.lgAmt}>{fmtMoney(e.amount)}</Text>
+                          {e.paid_amount != null && Number(e.paid_amount) !== Number(e.amount) && <Text style={ClubInvestorsScreenS.lgPaid}>Paid {fmtMoney(e.paid_amount)}</Text>}
+                        </View>
+                      </View>
+                      <View style={ClubInvestorsScreenS.lgBottom}>
+                        <Text style={ClubInvestorsScreenS.lgDates}>Due {formatDMY(e.due_date || e.date)}{e.paid_date ? ` · Paid ${formatDMY(e.paid_date)}` : ''}</Text>
+                        <LedgerBadge label={st} color={LEDGER_STATUS_COLOR[st] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
+                      </View>
+                      {!!e.notes && !e.is_balance && <Text style={ClubInvestorsScreenS.lgNote}>{e.notes}</Text>}
                     </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ fontSize: 14, fontWeight: '800', color: TEXT }}>{fmtMoney(e.amount)}</Text>
-                      {e.paid_amount != null && Number(e.paid_amount) !== Number(e.amount) && (
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: AMBER }}>Paid {fmtMoney(e.paid_amount)}</Text>
-                      )}
-                      <LedgerBadge label={e.status} color={LEDGER_STATUS_COLOR[e.status] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
-                    </View>
-                  </View>
-                ))}
+                  );
+                })}
               </>
             )}
           </ScrollView>
@@ -1387,6 +1398,20 @@ const ClubInvestorsScreenS = StyleSheet.create({
   schedDateFlat: { flex: 1, fontSize: 12, color: COLORS.textPrimary },
   schedAmt: { flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 10, fontSize: 12, color: COLORS.textPrimary },
   schedWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 2, textAlign: 'right' },
+  lgCards: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  lgCard: { flexBasis: '31%', flexGrow: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10 },
+  lgCardSum: { backgroundColor: COLORS.linkBg },
+  lgCardLbl: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.4, color: COLORS.textSecondary },
+  lgCardVal: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
+  lgRow: { paddingVertical: 10 },
+  lgRowSep: { borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
+  lgTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  lgRight: { alignItems: 'flex-end' },
+  lgAmt: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary },
+  lgPaid: { fontSize: 11, fontWeight: '700', color: COLORS.warning },
+  lgBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
+  lgDates: { fontSize: 11, color: COLORS.textSecondary },
+  lgNote: { fontSize: 11, color: COLORS.textSecondary, marginTop: 3 },
   maturedTag: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.warningBg },
   maturedTagText: { fontSize: 10, fontWeight: '800', color: COLORS.warningAlt },
   renewedTag: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 20, backgroundColor: COLORS.linkBg },
