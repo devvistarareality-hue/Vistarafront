@@ -184,30 +184,33 @@ function spanLabel(from, to) {
 }
 
 
-const SECTIONS = [
-  { title: '1. PREMATURE EXIT OPTION:', lines: [
-    'Rise - No premature redumption can be made during tenure of investment',
-    'BuyBack - Premature redumption can be made after completion of 1 year from date of innvestment*',
-    'Equity - No premature redumption can be made during tenure of investment',
-    '',
-    '*Wherever premature redemption is applicable & client excercised the same then ROI is set to 1% per month',
-    'receivable to investor from the date of investment till the date of early redumption',
-  ] },
-  { title: '2. TENURE AND LOCK-IN PERIOD:', lines: [
-    '- The tenure of investment shall be as mentioned above from the date of receipt of funds',
-    '- The Investment shall be subject to a lock-in period as mentioned above, during which the Investor shall not withdraw the Investment Amount',
-    '- Upon completion of tenure as mentioned above, investment may be renewed on mutually agreed terms through written consent of both Parties',
-  ] },
-  { title: '3. INTEREST AND PAYOUT TERMS:', lines: [
-    '- The Borrower agrees to pay interest at the rate as mentioned above on the Investment Amount',
-    '- Interest shall be payable at a frequency as mentioned above',
-    '- Interest shall be paid within 7 days from the end of frequency period of interest amount as mentioned above',
-    '- Principal amount shall be paid within 7 days from the end of frequency period of principal amount as mentioned above',
-  ] },
-  { title: '4. DEFAULT:', lines: [
-    'In case of Failure to pay interest, or Failure to repay principal upon maturity, the Investor shall have the right to Present the Post-Dated Cheque (PDC) for encashment',
-  ] },
-];
+// Term 1 — the premature-exit rule for this LOI's scheme only (wording from Vistara).
+function exitTerm(scheme) {
+  const n = String(scheme?.name || '').toUpperCase();
+  const none = 'No premature redemption can be made during the tenure of the investment.';
+  const after1y = 'Premature redemption can be made after completion of 1 year from the date of investment. In that case the ROI is set to 1% per month, receivable by the investor from the date of investment till the date of early redemption.';
+  if (/BUY\s*-?\s*BACK|GROWTH/.test(n)) return after1y;
+  if (/RISE|EQUITY|FORTUNE|LEGACY/.test(n)) return none;
+  return scheme?.premature_redemption_allowed ? after1y : none;
+}
+
+// The terms for one LOI — term 1 follows its scheme.
+function sectionsFor(scheme) {
+  return [
+    { title: '1. PREMATURE EXIT OPTION:', lines: [`${scheme?.name ? `${scheme.name} — ` : ''}${exitTerm(scheme)}`] },
+    { title: '2. TENURE AND LOCK-IN PERIOD:', lines: [
+      '- The tenure of investment shall be as mentioned above from the date of receipt of funds',
+      '- The Investment shall be subject to a lock-in period as mentioned above, during which the Investor shall not withdraw the Investment Amount',
+      '- Upon completion of tenure as mentioned above, investment may be renewed on mutually agreed terms through written consent of both Parties',
+    ] },
+    { title: '3. INTEREST AND PAYOUT TERMS:', lines: [
+      '- The Borrower agrees to pay interest at the rate as mentioned above on the Investment Amount',
+      '- Interest shall be payable at a frequency as mentioned above',
+      '- Interest shall be paid within 10 days from the end of frequency period of interest amount as mentioned above',
+      '- Principal amount shall be paid within 10 days from the end of frequency period of principal amount as mentioned above',
+    ] },
+  ];
+}
 
 // investor: InvestorListSerializer shape (plus a reserved loi_no). scheme: SchemeSerializer shape.
 // opts.revisionNo: when set, stamps a "REVISED LOI · Rn" watermark (this LOI
@@ -218,7 +221,6 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
   const prematureExit = scheme.premature_redemption_allowed
     ? `AFTER ${scheme.premature_redemption_lock_months || 0} MONTHS (${scheme.premature_redemption_rate_pct_per_month}%/MONTH)`
     : 'NA';
-  const security = investor.security || 'NA';
 
   const rows = [
     ['LOI NO', investor.loi_no || '—', 'NAME', investor.name || '—'],
@@ -229,7 +231,7 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     ['ROI (PER ANNUM)', `${investor.total_return_pct}%`, '', ''],
     null,
     ['TENURE', tenureLabel(scheme.tenure_months), 'PREMATURE EXIT OPTION', prematureExit],
-    ['LOCK IN PERIOD', tenureLabel(scheme.premature_redemption_lock_months), 'SECURITY', security],
+    ['LOCK IN PERIOD', tenureLabel(scheme.premature_redemption_lock_months), '', ''],
   ];
 
   const rowsHtml = rows.map((r) => {
@@ -258,7 +260,7 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     </tr>
   `).join('');
 
-  const termsHtml = SECTIONS.map((sec) => `
+  const termsHtml = sectionsFor(scheme).map((sec) => `
     <div class="tc-box">
       <div class="tc-title">${esc(sec.title)}</div>
       ${sec.lines.map((l) => l ? `<div class="tc-line">${esc(l)}</div>` : '<div class="tc-gap"></div>').join('')}
