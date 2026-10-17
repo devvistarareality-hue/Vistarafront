@@ -1027,7 +1027,9 @@ export default function BookingFormScreen({ navigation, route }) {
         // re-fire submit before the screen navigates away, producing an
         // identical duplicate booking (confirmed in production).
         submittedRef.current = true;
-        Alert.alert('Booking submitted', 'Your booking has been submitted and sent for approval.', [
+        const saved = await res.clone().json().catch(() => ({}));
+        Alert.alert(saved.warning ? 'Booking submitted — LOI not uploaded' : 'Booking submitted',
+          saved.warning || 'Your booking has been submitted and sent for approval.', [
           // popTo, not navigate: in React Navigation 7 navigate pushes a fresh copy on
           // top, which left this form underneath with its "Submitting booking…" overlay
           // still up — Back landed on it and the overlay swallowed every further Back.
