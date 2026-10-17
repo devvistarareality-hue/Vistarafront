@@ -20,10 +20,10 @@ const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
 const STATUS_COLOR = { pending: COLORS.warning, completed: COLORS.success, missed: COLORS.error, rescheduled: COLORS.info };
-const STATUS_OPTIONS = ['new', 'contacted', 'interested', 'not_interested', 'converted', 'lost'];
+const STATUS_OPTIONS = ['new', 'contacted', 'interested', 'not_interested', 'converted', 'lost', 'investor_deleted'];
 // A lead in one of these has nothing left to follow up on — matches the backend's
 // terminal-status handling in LeadDetailView.patch (clears next_follow_up_date).
-const TERMINAL_STATUSES = ['not_interested', 'lost', 'converted'];
+const TERMINAL_STATUSES = ['not_interested', 'lost', 'converted', 'investor_deleted'];
 
 const TABS = [
   { key: 'today',   label: "Today's" },

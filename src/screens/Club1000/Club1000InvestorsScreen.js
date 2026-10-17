@@ -1089,6 +1089,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [payingOut, setPayingOut] = useState(null);   // Payout sheet (at maturity)
   const [historyFor, setHistoryFor] = useState(null); // History sheet
   const [portfolioFor, setPortfolioFor] = useState(null); // the person's whole portfolio
+  const [selecting, setSelecting] = useState(false);     // pick several to delete at once
+  const [picked, setPicked] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [deletingId, setDeletingId] = useState(null); // investor being deleted
   const [showImport, setShowImport] = useState(false); // Import from Excel
   const [ledgerFor,  setLedgerFor]  = useState(null);
@@ -1157,6 +1160,37 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     load();
   }
 
+  const togglePick = (ids, on) => setPicked((prev) => {
+    const next = new Set(prev);
+    ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
+    return next;
+  });
+  const stopSelecting = () => { setSelecting(false); setPicked(new Set()); };
+
+  // Delete every picked investment; any with money already paid are kept and named.
+  async function bulkDelete() {
+    const list = investors.filter((i) => picked.has(i.id));
+    if (!list.length) return;
+    const sum = list.reduce((t, i) => t + (Number(i.amount_invested) || 0), 0);
+    const ok = await confirmAsk(`Delete ${list.length} investor${list.length === 1 ? '' : 's'}?`,
+      `${fmtMoney(sum)} in all, permanently. Their payout schedules and referral rewards go with them, and their leads will read Investor Deleted. Any with a payment already made are kept. This can't be undone.`,
+      'Delete', true);
+    if (!ok) return;
+    setBulkBusy(true);
+    const r = await apiFetch(CLUB1000_ENDPOINTS.investorBulkDelete, { method: 'POST', body: JSON.stringify({ ids: list.map((i) => i.id) }) }).catch(() => null);
+    const d = r ? await r.json().catch(() => ({})) : {};
+    setBulkBusy(false);
+    if (!r || !r.ok) { Alert.alert('Not deleted', errText(d, 'Please try again.')); return; }
+    const kept = d.refused || [];
+    if (kept.length) {
+      Alert.alert(`${d.deleted?.length || 0} deleted · ${kept.length} kept`,
+        `${kept.map((k) => k.name || `#${k.id}`).join(', ')} — a payment is already made. Undo it first, or close with Redeem / Payout.`);
+    }
+    setPicked(new Set(kept.map((k) => k.id)));
+    if (!kept.length) setSelecting(false);
+    load();
+  }
+
   async function viewLoi(id) {
     try {
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorLoiUrl(id));
@@ -1194,6 +1228,11 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         {manager && can(user, 'club.investor.manage') && (
           <TouchableOpacity onPress={() => setShowImport(true)} disabled={!schemes.length} style={ClubInvestorsScreenS.importBtn}>
             <Ionicons name="cloud-upload-outline" size={16} color={COLORS.link} />
+          </TouchableOpacity>
+        )}
+        {manager && investors.length > 0 && (
+          <TouchableOpacity onPress={() => (selecting ? stopSelecting() : setSelecting(true))} style={[ClubInvestorsScreenS.importBtn, selecting && ClubInvestorsScreenS.selectBtnOn]}>
+            <Ionicons name={selecting ? 'close' : 'checkbox-outline'} size={16} color={selecting ? COLORS.error : COLORS.link} />
           </TouchableOpacity>
         )}
         {can(user, 'club.investor.manage') && <TouchableOpacity onPress={() => setShowAdd(true)} disabled={!schemes.length}
@@ -1266,8 +1305,13 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         ) : investors.map((inv) => {
           const sc = STATUS_COLOR[inv.status] || { bg: COLORS.surfaceAlt, fg: MUTED };
           return (
-            <View key={inv.id} style={[CARD, { padding: 14, marginBottom: 10 }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View key={inv.id} style={[CARD, ClubInvestorsScreenS.invCard, selecting && picked.has(inv.id) && ClubInvestorsScreenS.invCardPicked]}>
+              <View style={ClubInvestorsScreenS.invCardTop}>
+                {selecting && (
+                  <TouchableOpacity onPress={() => togglePick([inv.id], !picked.has(inv.id))} hitSlop={10} style={ClubInvestorsScreenS.pickBox}>
+                    <Ionicons name={picked.has(inv.id) ? 'checkbox' : 'square-outline'} size={22} color={picked.has(inv.id) ? COLORS.error : MUTED} />
+                  </TouchableOpacity>
+                )}
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={{ fontSize: 15, fontWeight: '800', color: TEXT }}>{inv.name}</Text>
@@ -1351,7 +1395,22 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
             </View>
           );
         })}
+        {selecting && <View style={ClubInvestorsScreenS.bulkSpacer} />}
       </ScrollView>
+      {selecting && (
+        <View style={ClubInvestorsScreenS.bulkBar}>
+          <Text style={ClubInvestorsScreenS.bulkText}>
+            <Text style={ClubInvestorsScreenS.bulkCount}>{picked.size}</Text> selected{picked.size ? ` · ${fmtMoney(investors.filter((i) => picked.has(i.id)).reduce((t, i) => t + (Number(i.amount_invested) || 0), 0))}` : ''}
+          </Text>
+          <TouchableOpacity onPress={() => togglePick(investors.map((i) => i.id), picked.size !== investors.length)} style={ClubInvestorsScreenS.bulkAll}>
+            <Text style={ClubInvestorsScreenS.bulkAllText}>{picked.size === investors.length ? 'Clear' : 'All'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={bulkDelete} disabled={!picked.size || bulkBusy} style={[ClubInvestorsScreenS.bulkDel, (!picked.size || bulkBusy) && ClubInvestorsScreenS.bulkDelOff]}>
+            {bulkBusy ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="trash-outline" size={15} color="#fff" />}
+            <Text style={ClubInvestorsScreenS.bulkDelText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -1429,6 +1488,20 @@ const ClubInvestorsScreenS = StyleSheet.create({
   renewedTagText: { fontSize: 10, fontWeight: '800', color: COLORS.link },
   ledgerChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg },
   ledgerChipText: { fontSize: 11, fontWeight: '700', color: COLORS.success },
+  selectBtnOn: { backgroundColor: COLORS.errorBg },
+  invCard: { padding: 14, marginBottom: 10 },
+  invCardPicked: { borderColor: COLORS.error, borderWidth: 2 },
+  invCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  pickBox: { marginRight: 10, marginTop: 1 },
+  bulkBar: { position: 'absolute', left: 16, right: 16, bottom: 20, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingLeft: 16, paddingRight: 10, borderRadius: 28, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, ...CARD_SHADOW },
+  bulkText: { flex: 1, fontSize: 13, color: COLORS.textSecondary },
+  bulkCount: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
+  bulkAll: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18, backgroundColor: COLORS.surfaceAlt },
+  bulkAllText: { fontSize: 12.5, fontWeight: '700', color: COLORS.textPrimary },
+  bulkDel: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: COLORS.error },
+  bulkDelOff: { opacity: 0.45 },
+  bulkSpacer: { height: 70 },
+  bulkDelText: { fontSize: 12.5, fontWeight: '800', color: '#fff' },
   historyChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border },
   historyChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textPrimary },
   importBtn: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', marginRight: 8 },

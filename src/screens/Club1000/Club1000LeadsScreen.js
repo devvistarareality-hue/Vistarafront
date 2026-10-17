@@ -29,12 +29,13 @@ const STATUS_COLOR = {
   not_interested: { bg: COLORS.surfaceAlt, fg: MUTED },
   converted: { bg: COLORS.purpleBg, fg: COLORS.purple },
   lost: { bg: COLORS.errorBg, fg: COLORS.error },
+  investor_deleted: { bg: COLORS.errorBg, fg: COLORS.error },   // was converted; the investment was deleted
 };
 const SOURCE_LABELS = { referral: 'Referral', walk_in: 'Walk-in', website: 'Website', other: 'Other' };
-const STATUS_OPTIONS = ['new', 'contacted', 'interested', 'not_interested', 'converted', 'lost'];
+const STATUS_OPTIONS = ['new', 'contacted', 'interested', 'not_interested', 'converted', 'lost', 'investor_deleted'];
 // A lead in one of these has nothing left to follow up on — matches the backend's
 // terminal-status handling in LeadDetailView.patch (clears next_follow_up_date).
-const TERMINAL_STATUSES = ['not_interested', 'lost', 'converted'];
+const TERMINAL_STATUSES = ['not_interested', 'lost', 'converted', 'investor_deleted'];
 const EMPTY_FILTERS = { status: '', source: '', scheme_interest: '', assigned_to: '', date_from: '', date_to: '' };
 
 const HISTORY_LABEL = { created: 'Lead Created', status: 'Status', assigned_to: 'Assigned To' };

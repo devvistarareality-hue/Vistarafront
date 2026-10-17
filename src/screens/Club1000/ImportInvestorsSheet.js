@@ -67,7 +67,7 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
       </View>
       <ScrollView contentContainerStyle={s.body}>
         <Text style={s.section}>1 · GET THE TEMPLATE</Text>
-        <Text style={s.help}>One row per investment. Scheme, payout and source are dropdowns; the Help sheet explains every column.</Text>
+        <Text style={s.help}>One row per investment — reinvested money is still one row: today’s amount, with Times Reinvested filled in. Red columns marked * must be filled; a row missing one is not imported.</Text>
         <TouchableOpacity onPress={template} disabled={!!busy} style={s.ghostBtn}>
           {busy === 'template' ? <ActivityIndicator size="small" color={COLORS.link} /> : <Text style={s.ghostText}>⬇ Download template</Text>}
         </TouchableOpacity>
@@ -94,7 +94,7 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
                 <Text style={s.rowName} numberOfLines={1}>{r.preview.name || '—'}</Text>
                 <Text style={s.rowAmt}>{r.preview.amount ? inrShort(r.preview.amount) : '—'}</Text>
               </View>
-              <Text style={s.rowSub}>{r.preview.scheme || '—'} · {r.preview.interest_payout}{r.preview.investment_date ? ` · ${formatDMY(r.preview.investment_date)} → ${formatDMY(r.preview.maturity_date)}` : ''}</Text>
+              <Text style={s.rowSub}>{r.preview.scheme || '—'} · {r.preview.interest_payout}{r.preview.investment_date ? ` · ${formatDMY(r.preview.investment_date)} → ${formatDMY(r.preview.maturity_date)}` : ''}{r.preview.renewal_count ? ` · reinvested ${r.preview.renewal_count}×` : ''}</Text>
               {r.ok ? <Text style={s.ok}>Ready</Text> : r.errors.map((e) => <Text key={e} style={s.bad}>• {e}</Text>)}
               {r.warnings.map((w) => <Text key={w} style={s.warn}>• {w}</Text>)}
             </View>
