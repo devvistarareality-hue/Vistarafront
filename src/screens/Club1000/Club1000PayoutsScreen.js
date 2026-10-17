@@ -312,7 +312,7 @@ function PaySheet({ row, today, onClose, onDone }) {
                       </TouchableOpacity>
                     </View>
                   </View>
-                  {gap !== 0 && !Number.isNaN(gap) && <Text style={s.payDiff}>{gap < 0 ? 'Short' : 'More'} by {rupee(Math.abs(gap))}</Text>}
+                  {gap !== 0 && !Number.isNaN(gap) && <Text style={s.payDiff}>{gap < 0 ? `${rupee(Math.abs(gap))} stays due as a balance` : `More by ${rupee(gap)}`}</Text>}
                   <Text style={s.payLbl}>REMARKS</Text>
                   <TextInput value={l.notes} onChangeText={(t) => setLine(p.id, { notes: t })} placeholder="UTR / cheque no." placeholderTextColor={COLORS.text3} style={s.payInput} />
                 </View>
