@@ -255,18 +255,40 @@ export function MaturityPayoutSheet({ investor, onClose, onDone }) {
   );
 }
 
-// What becomes of the term that ended — same as the website: its unpaid interest is
-// paid to the investor (stays due on Payouts) or added to the renewal (settled).
-export function RenewalSummary({ investorId, newAmount, choice, onChoice, onAmount }) {
+// The term that ended, and how he is renewing it — same as the website: four plain
+// choices that fill in the new amount and say where every rupee goes.
+export function RenewalSummary({ investorId, newAmount, onRenewal }) {
   const [st] = useSettlement(investorId);
+  const [how, setHow] = useState('');
+  const [take, setTake] = useState('');
+  const [extra, setExtra] = useState('');
   if (!st) return null;
   const principal = Number(st.principal) || 0;
-  const next = Number(newAmount) || 0;
   const atMaturity = st.pending.filter((p) => p.payout_type === 'maturity').reduce((t, p) => t + (Number(p.amount_due) || 0), 0);
-  const unpaid = st.pending.filter((p) => p.payout_type === 'interest').reduce((t, p) => t + (Number(p.amount_due) || 0), 0)
-    + Math.max(atMaturity - principal, 0);
-  const mode = choice || (next > principal ? 'reinvest' : 'pay');
-  const rolled = mode === 'reinvest' ? Math.min(unpaid, Math.max(next - principal, 0)) : 0;
+  const unpaid = Math.round((st.pending.filter((p) => p.payout_type === 'interest').reduce((t, p) => t + (Number(p.amount_due) || 0), 0)
+    + Math.max(atMaturity - principal, 0)) * 100) / 100;
+  const plan = (mode, t = take, e = extra) => {
+    const tk = mode === 'interest_out' ? unpaid : mode === 'take' ? Math.max(Number(t) || 0, 0) : 0;
+    const ex = mode === 'more' ? Math.max(Number(e) || 0, 0) : 0;
+    return { amount: Math.max(Math.round((principal + unpaid + ex - tk) * 100) / 100, 0), added: Math.max(unpaid - tk, 0) };
+  };
+  const choose = (mode, t = take, e = extra) => {
+    setHow(mode);
+    const p = plan(mode, t, e);
+    onRenewal && onRenewal({ amount: p.amount, interest_added: p.added, interest_choice: p.added > 0 ? 'reinvest' : 'pay' });
+  };
+  const next = Number(newAmount) || 0;
+  const custom = !how || Math.abs(plan(how).amount - next) > 0.5;
+  const added = custom ? Math.min(unpaid, Math.max(next - principal, 0)) : plan(how).added;
+  const toHim = Math.max(unpaid - added, 0);
+  const back = Math.max(principal - next, 0);
+  const fresh = Math.max(next - principal - added, 0);
+  const OPTS = [
+    ['all', 'Renew everything', `principal + interest → ${rupee(principal + unpaid)}`],
+    ['interest_out', 'He takes the interest, principal renewed', `${rupee(unpaid)} paid to him → ${rupee(principal)}`],
+    ['take', 'He takes some money out', 'enter how much he takes'],
+    ['more', 'Renew everything and he adds more', 'enter the extra he adds'],
+  ];
   return (
     <View style={s.summary}>
       <Text style={s.section}>THE TERM THAT ENDED</Text>
@@ -274,37 +296,40 @@ export function RenewalSummary({ investorId, newAmount, choice, onChoice, onAmou
         <Line label="Principal of the term" value={rupee(principal)} />
         <Line label="Interest paid so far" value={rupee(st.interest_paid)} />
         <Line label="Interest still unpaid" value={rupee(unpaid)} />
+        <Line label="Principal + unpaid interest" value={rupee(principal + unpaid)} total />
       </View>
-      {unpaid > 0 && !!onChoice && (
+      {!!onRenewal && (
         <View style={s.choice}>
-          <Text style={s.choiceHead}>ITS UNPAID INTEREST ({rupee(unpaid)})</Text>
-          {[['pay', 'Pay it to him', 'stays due on Payouts'], ['reinvest', 'Add it to the renewal', 'settled into the new principal']].map(([k, label, hint]) => (
-            <TouchableOpacity key={k} onPress={() => onChoice(k)} style={[s.choiceRow, mode === k && s.choiceRowOn]}>
-              <Ionicons name={mode === k ? 'radio-button-on' : 'radio-button-off'} size={18} color={mode === k ? COLORS.link : COLORS.textSecondary} />
-              <Text style={s.choiceText}>{label} <Text style={s.choiceHint}>— {hint}</Text></Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-      {!!onAmount && (
-        <View style={s.quick}>
-          <TouchableOpacity style={s.quickBtn} onPress={() => { onAmount(principal); onChoice && onChoice('pay'); }}>
-            <Text style={s.quickText}>Principal only · {rupee(principal)}</Text>
-          </TouchableOpacity>
-          {unpaid > 0 && (
-            <TouchableOpacity style={s.quickBtn} onPress={() => { onAmount(Math.round((principal + unpaid) * 100) / 100); onChoice && onChoice('reinvest'); }}>
-              <Text style={s.quickText}>Principal + interest · {rupee(principal + unpaid)}</Text>
-            </TouchableOpacity>
-          )}
+          <Text style={s.choiceHead}>HOW IS HE RENEWING?</Text>
+          {OPTS.map(([k, label, hint]) => {
+            const on = !custom && how === k;
+            return (
+              <View key={k} style={[s.choiceRow, s.choiceCol, on && s.choiceRowOn]}>
+                <TouchableOpacity style={s.choiceTop} onPress={() => choose(k)}>
+                  <Ionicons name={on ? 'radio-button-on' : 'radio-button-off'} size={18} color={on ? COLORS.link : COLORS.textSecondary} />
+                  <Text style={s.choiceText}>{label}{'\n'}<Text style={s.choiceHint}>{hint}</Text></Text>
+                </TouchableOpacity>
+                {how === 'take' && k === 'take' && (
+                  <TextInput style={s.choiceInput} keyboardType="decimal-pad" placeholder="Amount he takes (₹)" placeholderTextColor={COLORS.textTertiary}
+                    value={take} onChangeText={(v) => { setTake(v); choose('take', v); }} />
+                )}
+                {how === 'more' && k === 'more' && (
+                  <TextInput style={s.choiceInput} keyboardType="decimal-pad" placeholder="Extra he adds (₹)" placeholderTextColor={COLORS.textTertiary}
+                    value={extra} onChangeText={(v) => { setExtra(v); choose('more', take, v); }} />
+                )}
+              </View>
+            );
+          })}
         </View>
       )}
       {next > 0 && (
         <View style={[s.card, s.outCard]}>
+          <Line label="New amount invested" value={rupee(next)} total />
           <Line label="Principal renewed" value={rupee(Math.min(next, principal))} />
-          {rolled > 0 && <Line label="Interest added to the renewal" value={rupee(rolled)} />}
-          {next > principal + rolled && <Line label="Fresh money added" value={rupee(next - principal - rolled)} total />}
-          {next < principal && <Line label="Principal paid back to him" value={rupee(principal - next)} total />}
-          {unpaid - rolled > 0 && <Line label="Interest paid to him" value={rupee(unpaid - rolled)} total />}
+          {added > 0 && <Line label="Interest added into the renewal" value={rupee(added)} />}
+          {fresh > 0 && <Line label="Fresh money he adds" value={rupee(fresh)} />}
+          {toHim > 0 && <Line label="Interest paid to him" value={rupee(toHim)} />}
+          {back > 0 && <Line label="Principal paid back to him" value={rupee(back)} />}
         </View>
       )}
     </View>
@@ -315,6 +340,9 @@ const s = StyleSheet.create({
   choice: { marginTop: 10, gap: 6 },
   choiceHead: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
   choiceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  choiceCol: { flexDirection: 'column', alignItems: 'stretch' },
+  choiceTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  choiceInput: { marginTop: 8, marginLeft: 26, height: 40, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 10, fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.surface },
   choiceRowOn: { borderColor: COLORS.link, backgroundColor: COLORS.linkBg },
   choiceText: { flex: 1, fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   choiceHint: { fontWeight: '500', color: COLORS.textSecondary },
