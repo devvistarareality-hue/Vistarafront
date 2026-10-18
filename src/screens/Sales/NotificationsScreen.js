@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, StatusBar } from 'react-native';
+import React, { Fragment, useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -71,6 +71,19 @@ export default function NotificationsScreen({ navigation }) {
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // More than one module in the list → group them under a heading per module
+  // (in the order each module last had something), newest first inside each.
+  const modules = [...new Set(rows.map((n) => n.module || 'Other'))];
+  const grouped = modules.length > 1;
+  const ordered = grouped ? modules.flatMap((m) => rows.filter((n) => (n.module || 'Other') === m)) : rows;
+  const heads = {};
+  if (grouped) {
+    modules.forEach((m) => {
+      const list = rows.filter((n) => (n.module || 'Other') === m);
+      heads[list[0].id] = { name: m, count: list.length, unread: list.filter((n) => !n.is_read).length };
+    });
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
@@ -85,10 +98,18 @@ export default function NotificationsScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
         {loading ? <AppLoader style={{ marginTop: 24 }} /> : rows.length === 0 ? (
           <View style={[CARD, { alignItems: 'center', padding: 30 }]}><Text style={{ color: MUTED }}>You're all caught up <AppIcon name="party" size={15} /></Text></View>
-        ) : rows.map((n) => {
+        ) : ordered.map((n) => {
           const target = routeForNotifType(n.type, undefined, n.data);
           const st = styleFor(n.type);
+          const head = heads[n.id];
           return (
+          <Fragment key={n.id}>
+          {!!head && (
+            <View style={styles.groupHead}>
+              <Text style={styles.groupName}>{head.name}</Text>
+              <Text style={styles.groupCount}>{head.unread ? `${head.unread} new · ` : ''}{head.count}</Text>
+            </View>
+          )}
           <TouchableOpacity key={n.id} activeOpacity={target ? 0.7 : 1} onPress={() => target && openNotifRoute(target)}
             style={[CARD, { marginBottom: 10, flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14,
               borderLeftWidth: n.is_read ? 0 : 3, borderLeftColor: st.color,
@@ -104,9 +125,16 @@ export default function NotificationsScreen({ navigation }) {
             {!n.is_read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: st.color }} />}
             {!!target && <Ionicons name="chevron-forward" size={16} color={COLORS.borderStrong} />}
           </TouchableOpacity>
+          </Fragment>
           );
         })}
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  groupHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, marginBottom: 8, paddingHorizontal: 4 },
+  groupName: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  groupCount: { fontSize: 12, fontWeight: '700', color: COLORS.textTertiary },
+});
