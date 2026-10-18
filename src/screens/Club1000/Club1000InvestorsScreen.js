@@ -1038,6 +1038,17 @@ function LedgerModal({ investorId, onClose }) {
                   </ScrollView>
                 )}
                 {!!term && <Text style={ClubInvestorsScreenS.lgTermLine}>{formatDMY(term.start)} → {formatDMY(term.maturity)} · principal {fmtMoney(term.principal)}</Text>}
+                {!!term && (term.has_loi ? (
+                  <TouchableOpacity style={ClubInvestorsScreenS.lgTermLoi} onPress={async () => {
+                    try {
+                      const r = await apiFetch(`${CLUB1000_ENDPOINTS.investorLoiUrl(investorId)}${term.current ? '' : `?term=${term.no}`}`);
+                      const d = await r.json().catch(() => ({}));
+                      if (r.ok && d.url) Linking.openURL(d.url); else Alert.alert('LOI unavailable', errText(d, 'Could not open the LOI.'));
+                    } catch (e) { Alert.alert('LOI unavailable', e.message); }
+                  }}>
+                    <Text style={ClubInvestorsScreenS.lgTermLoiText}>Open this term's signed LOI</Text>
+                  </TouchableOpacity>
+                ) : !term.current && <Text style={ClubInvestorsScreenS.lgTermLine}>Its signed LOI was not kept (renewed before LOIs were kept).</Text>)}
                 <View style={ClubInvestorsScreenS.lgCards}>
                   {[
                     ['Principal', s.principal ?? s.total_invested, null, principalHint],
@@ -1253,6 +1264,25 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     load();
   }
 
+  // Undo the latest renewal — managers only; payments already made in the renewed
+  // term are named and asked about first.
+  async function undoRenewal(inv) {
+    const ok = await confirmAsk('Undo renewal?',
+      `Undo the latest renewal of ${inv.name}${inv.loi_no ? ` (LOI ${inv.loi_no})` : ''}? It goes back to the term before: the renewed term's payouts and renewal reward are removed, interest added to the renewal is due again, and the earlier LOI comes back if it was kept.`,
+      'Undo renewal', true);
+    if (!ok) return;
+    let r = await apiFetch(CLUB1000_ENDPOINTS.investorUndoRenewal(inv.id), { method: 'POST', body: JSON.stringify({}) }).catch(() => null);
+    let d = r ? await r.json().catch(() => ({})) : {};
+    if (r && r.status === 409 && d.code === 'has_paid') {
+      const again = await confirmAsk('Delete the payments too?', `${d.detail} Undoing deletes them too — the log keeps a note. This can't be undone.`, 'Undo and delete', true);
+      if (!again) return;
+      r = await apiFetch(CLUB1000_ENDPOINTS.investorUndoRenewal(inv.id), { method: 'POST', body: JSON.stringify({ confirm_paid: true }) }).catch(() => null);
+      d = r ? await r.json().catch(() => ({})) : {};
+    }
+    if (!r || !r.ok) { Alert.alert('Not undone', errText(d, 'Please try again.')); return; }
+    load();
+  }
+
   async function viewLoi(id) {
     try {
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorLoiUrl(id));
@@ -1428,6 +1458,11 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                 </TouchableOpacity>
                 {/* Viewing on the left; what changes the investment on the right. */}
                 <View style={ClubInvestorsScreenS.actionsGap} />
+                {manager && inv.renewal_count > 0 && (
+                  <TouchableOpacity onPress={() => undoRenewal(inv)} style={ClubInvestorsScreenS.deleteChip}>
+                    <Text style={ClubInvestorsScreenS.deleteChipText}>↶ Undo renewal</Text>
+                  </TouchableOpacity>
+                )}
                 {can(user, 'club.investor.manage') && schemes.length > 0 && (
                   <TouchableOpacity onPress={() => setAddMoreFor(inv)} style={ClubInvestorsScreenS.moreChip}>
                     <Text style={ClubInvestorsScreenS.moreChipText}>+ Add more</Text>
@@ -1544,6 +1579,8 @@ const ClubInvestorsScreenS = StyleSheet.create({
   lgTermOn: { backgroundColor: COLORS.link, borderColor: COLORS.link },
   lgTermText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   lgTermTextOn: { color: '#fff' },
+  lgTermLoi: { alignSelf: 'flex-start', marginBottom: 10, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, backgroundColor: COLORS.linkBg },
+  lgTermLoiText: { fontSize: 12, fontWeight: '800', color: COLORS.link },
   lgTermLine: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 8 },
   lgTermHead: { marginTop: 10, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, backgroundColor: COLORS.surfaceAlt, fontSize: 11.5, fontWeight: '800', color: COLORS.textPrimary },
   lgCards: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
