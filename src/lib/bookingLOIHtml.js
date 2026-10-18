@@ -78,12 +78,18 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
   let details;
   if (isPratishtha && pb) {
     const isShop = pb.kind === 'shop';
+    // Several units on one booking → the Details block states the total area of
+    // them all (each unit's own area is in its section below).
+    const shops = pbs.filter((b) => b.kind === 'shop'), flats = pbs.filter((b) => b.kind !== 'shop');
+    const sumOf = (list, k) => list.reduce((s2, b) => s2 + (Number(b[k]) || 0), 0);
+    const facingOf = (b) => (b.facing === 'road' ? 'Road Facing' : b.facing === 'garden' ? 'Garden Facing' : '—');
+    const shopArea = shops.length ? [[shops.length > 1 ? `Total Shop Area (${shops.length} shops)` : 'Shop Area', num(sumOf(shops, 'sq_feet')) + ' sq.ft.']] : [];
+    const flatArea = flats.length ? [
+      [flats.length > 1 ? `Total Flat Area (${flats.length} flats)` : 'Flat Area', num(sumOf(flats, 'flat_area')) + ' sq.yd.'],
+      [flats.length > 1 ? 'Total Terrace Area' : 'Terrace Area', sumOf(flats, 'terrace_area') ? num(sumOf(flats, 'terrace_area')) + ' sq.yd.' : 'Not applicable'],
+      ['Facing', [...new Set(flats.map(facingOf))].join(', ')]] : [];
     details = [
-      ...(isShop
-        ? [['Shop Area', num(pb.sq_feet) + ' sq.ft.']]
-        : [['Flat Area', num(pb.flat_area) + ' sq.yd.'],
-           ['Terrace Area', pb.terrace_area ? num(pb.terrace_area) + ' sq.yd.' : 'Not applicable'],
-           ['Facing', pb.facing === 'road' ? 'Road Facing' : pb.facing === 'garden' ? 'Garden Facing' : '—']]),
+      ...(isShop ? [...shopArea, ...flatArea] : [...flatArea, ...shopArea]),
       ...(showCp ? [[cpLabel, meta.cpName || '—']] : []),
       ['STM Name', meta.loggedInUser || '—'], ['Source of Inquiry', meta.source || '—'], ['Address', meta.address || '—']];
   } else if (isIndustrial) {
@@ -153,11 +159,12 @@ export function buildLOIHtml(meta, v, installments = [], opts = {}) {
       // The shop LOI states the area, the unit price, the charge bifurcation and the
       // extra work amount. Rate and Shop Amount are working figures, not contract terms,
       // so they stay on the booking form and off the document.
-      // Extra Work Amount prints per hundred on this document. Shop Area is already
-      // stated in the Details block above, so Deal Value carries the two money figures.
+      // Extra Work Amount prints per hundred on this document. One shop: its area is
+      // in the Details block above; several: each section states its own area.
       const ewDisp = (Number(pb.extra_work_amount) || 0) / 100;
       const ewStr = ewDisp.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       pratAgreement += sec(multi ? unitTitle(pb) : 'Deal Value') + grid([
+        ...(multi ? [['Shop Area', num(pb.sq_feet) + ' sq.ft.']] : []),
         ['Final Unit Price', 'Rs. ' + num(pb.loan_amount)], ['Extra Work Amount', 'Rs. ' + ewStr],
       ]);
       pratExtraTitle = 'Legal & Other Charges';
