@@ -698,7 +698,7 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
           style={[ClubInvestorsScreenS.btn, (saving || !loiFile) && ClubInvestorsScreenS.box2]}>
           {saving ? <ActivityIndicator color={COLORS.btnTextSuccess} /> : <Ionicons name="save-outline" size={17} color={COLORS.btnTextSuccess} />}
-          <Text style={ClubInvestorsScreenS.box2}>Submit for Approval</Text>
+          <Text style={ClubInvestorsScreenS.box2}>{saving ? 'Submitting…' : 'Submit for Approval'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -970,7 +970,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         <TouchableOpacity onPress={submit} disabled={saving || !loiFile}
           style={{ backgroundColor: AMBER, borderRadius: 16, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: (saving || !loiFile) ? 0.5 : 1, marginTop: 8 }}>
           {saving ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="save-outline" size={17} color={COLORS.white} />}
-          <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '800' }}>Submit Renewal for Approval</Text>
+          <Text style={ClubInvestorsScreenS.renewSubmitText}>{saving ? 'Submitting…' : 'Submit Renewal for Approval'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </FormSheet>
@@ -1646,6 +1646,7 @@ const ClubInvestorsScreenS = StyleSheet.create({
   bulkDelOff: { opacity: 0.45 },
   bulkSpacer: { height: 70 },
   bulkDelText: { fontSize: 12.5, fontWeight: '800', color: '#fff' },
+  renewSubmitText: { color: COLORS.white, fontSize: 15, fontWeight: '800' },
   moreChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg },
   moreChipText: { fontSize: 11, fontWeight: '700', color: COLORS.success },
   moreNote: { fontSize: 12, color: COLORS.link, backgroundColor: COLORS.linkBg, padding: 10, borderRadius: 10, marginBottom: 10, overflow: 'hidden' },
