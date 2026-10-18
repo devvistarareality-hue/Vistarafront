@@ -139,13 +139,14 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   // lost no matter how the requests interleave.
   const approverPatchSeq = useRef({});
 
-  async function toggleApprover(schemeId, mgrId) {
+  async function toggleApprover(schemeId, mgrId, level = 1) {
+    const key = level === 2 ? 'investor_approvers_l2' : 'investor_approvers';
     // Optimistic instant feedback — the atomic call below reconciles this
     // with the server's authoritative result once it returns.
     setSchemes((ss) => ss.map((s) => {
       if (s.id !== schemeId) return s;
-      const cur = s.investor_approvers || [];
-      return { ...s, investor_approvers: cur.includes(mgrId) ? cur.filter((x) => x !== mgrId) : [...cur, mgrId] };
+      const cur = s[key] || [];
+      return { ...s, [key]: cur.includes(mgrId) ? cur.filter((x) => x !== mgrId) : [...cur, mgrId] };
     }));
 
     const seq = (approverPatchSeq.current[schemeId] || 0) + 1;
@@ -153,22 +154,22 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
 
     let result = null;
     try {
-      const res = await apiFetch(CLUB1000_ENDPOINTS.schemeToggleApprover(schemeId), { method: 'POST', body: JSON.stringify({ manager_id: mgrId }) });
+      const res = await apiFetch(CLUB1000_ENDPOINTS.schemeToggleApprover(schemeId), { method: 'POST', body: JSON.stringify({ manager_id: mgrId, level }) });
       if (res.ok) result = await res.json();
     } catch { /* result stays null */ }
 
     if (approverPatchSeq.current[schemeId] !== seq) return;
 
     if (result) {
-      setSchemes((ss) => ss.map((s) => (s.id === schemeId ? { ...s, investor_approvers: result.investor_approvers } : s)));
+      setSchemes((ss) => ss.map((s) => (s.id === schemeId ? { ...s, investor_approvers: result.investor_approvers, investor_approvers_l2: result.investor_approvers_l2 } : s)));
       setSavedCfg('Saved'); setTimeout(() => setSavedCfg(''), 1500);
     } else {
       // Undo the optimistic toggle — it never actually reached the DB, so the
       // UI shouldn't keep showing it as selected.
       setSchemes((ss) => ss.map((s) => {
         if (s.id !== schemeId) return s;
-        const cur = s.investor_approvers || [];
-        return { ...s, investor_approvers: cur.includes(mgrId) ? cur.filter((x) => x !== mgrId) : [...cur, mgrId] };
+        const cur = s[key] || [];
+        return { ...s, [key]: cur.includes(mgrId) ? cur.filter((x) => x !== mgrId) : [...cur, mgrId] };
       }));
       setSavedCfg('Could not save — try again'); setTimeout(() => setSavedCfg(''), 3000);
     }
@@ -182,10 +183,19 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   // actually picked above, which only 403'd on tap instead of not being
   // offered at all.
   const isRealAdmin = user?.is_staff || user?.role === 'Admin';
+  // Two-level schemes: level 1 first; once it is done only level 2 can finish it.
   function canApprove(inv) {
-    if (isRealAdmin) return true;
     const scheme = schemes.find((s) => s.id === inv.scheme);
-    return !!scheme && (scheme.investor_approvers || []).includes(user?.id);
+    const l2 = scheme?.investor_approvers_l2 || [];
+    const inL1 = isRealAdmin || (!!scheme && (scheme.investor_approvers || []).includes(user?.id));
+    const inL2 = isRealAdmin || l2.includes(user?.id);
+    if (!l2.length) return inL1;
+    return inv.approval_step ? inL2 : inL1;
+  }
+  function approveLabel(inv) {
+    const scheme = schemes.find((s) => s.id === inv.scheme);
+    if (!(scheme?.investor_approvers_l2 || []).length) return 'Approve';
+    return inv.approval_step ? 'Final approve' : 'Approve (L1)';
   }
   // Who can SEE (let alone change) the "Investor Approvers — by scheme"
   // picker — deliberately narrower than manager-level Club 1000 access (which
@@ -281,6 +291,24 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                       })}
                     </View>
                   )}
+                  {exp && (
+                    <>
+                      <Text style={st.l2Head}>LEVEL 2 · FINAL APPROVAL {(s.investor_approvers_l2 || []).length ? '' : '(none — single step)'}</Text>
+                      <View style={st.l2Chips}>
+                        {managers.map((m) => {
+                          const on2 = (s.investor_approvers_l2 || []).includes(m.id);
+                          return (
+                            <TouchableOpacity key={m.id} onPress={() => toggleApprover(s.id, m.id, 2)} style={[st.l2Chip, on2 && st.l2ChipOn]}>
+                              <Text style={[st.l2ChipText, on2 && st.l2ChipTextOn]}>{on2 ? '✓ ' : ''}{m.name}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  )}
+                  {(s.investor_approvers_l2 || []).length > 0 && !exp && (
+                    <Text style={st.l2Names} numberOfLines={1}>Level 2: {managers.filter((m) => (s.investor_approvers_l2 || []).includes(m.id)).map((m) => m.name).join(', ')}</Text>
+                  )}
                 </View>
               );
             })}
@@ -365,6 +393,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   {inv.approval_status === 'rejected' && !!inv.rejected_reason && (
                     <View style={st.reasonBox}><Text style={st.reasonHead}>REJECTED — REASON</Text><Text style={st.reasonBody}>{inv.rejected_reason}</Text></View>
                   )}
+                  {!!inv.approval_step && (
+                    <Text style={st.l2Wait}>Level 1 approved by {inv.approval_step.by_name || '—'} — waiting for level 2</Text>
+                  )}
                   {!!inv.pending_action && (
                     <View style={st.reasonBox}>
                       <Text style={st.reasonHead}>{inv.pending_action.type === 'delete' ? 'DELETE REQUESTED' : 'UNDO RENEWAL REQUESTED'} BY {String(inv.pending_action.by_name || '—').toUpperCase()}</Text>
@@ -401,7 +432,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                 {!!inv.pending_action && (
                   canApprove(inv) ? (
                     <>
-                      <TouchableOpacity onPress={() => actRequest(inv, 'approve')} disabled={busy === inv.id} style={[btn, btnBad]}>{busy === inv.id && busyAct === 'approve' ? <ActivityIndicator size="small" color={COLORS.btnTextDanger} /> : <Text style={btnTBad}><AppIcon name="check" size={15} /> Approve {inv.pending_action.type === 'delete' ? 'delete' : 'undo'}</Text>}</TouchableOpacity>
+                      <TouchableOpacity onPress={() => actRequest(inv, 'approve')} disabled={busy === inv.id} style={[btn, btnBad]}>{busy === inv.id && busyAct === 'approve' ? <ActivityIndicator size="small" color={COLORS.btnTextDanger} /> : <Text style={btnTBad}><AppIcon name="check" size={15} /> {approveLabel(inv)} {inv.pending_action.type === 'delete' ? 'delete' : 'undo'}</Text>}</TouchableOpacity>
                       <TouchableOpacity onPress={() => actRequest(inv, 'reject')} disabled={busy === inv.id} style={btn}>{busy === inv.id && busyAct === 'reject' ? <ActivityIndicator size="small" color={COLORS.textPrimary} /> : <Text style={st.reviseText}><AppIcon name="x" size={15} /> Reject</Text>}</TouchableOpacity>
                     </>
                   ) : <Text style={st.note}>Not an approver</Text>
@@ -409,7 +440,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                 {inv.approval_status === 'pending' && (
                   canApprove(inv) ? (
                     <>
-                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, btnOk]}>{busy === inv.id && busyAct === 'approve' ? <ActivityIndicator size="small" color={COLORS.btnTextSuccess} /> : <Text style={btnTOk}><AppIcon name="check" size={15} /> Approve</Text>}</TouchableOpacity>
+                      <TouchableOpacity onPress={() => act(inv.id, 'approve')} disabled={busy === inv.id} style={[btn, btnOk]}>{busy === inv.id && busyAct === 'approve' ? <ActivityIndicator size="small" color={COLORS.btnTextSuccess} /> : <Text style={btnTOk}><AppIcon name="check" size={15} /> {approveLabel(inv)}</Text>}</TouchableOpacity>
                       <TouchableOpacity onPress={() => act(inv.id, 'reject')} disabled={busy === inv.id} style={[btn, btnBad]}>{busy === inv.id && busyAct === 'reject' ? <ActivityIndicator size="small" color={COLORS.btnTextDanger} /> : <Text style={btnTBad}><AppIcon name="x" size={15} /> Reject</Text>}</TouchableOpacity>
                     </>
                   ) : <Text style={st.note}>Not an approver</Text>
@@ -449,6 +480,14 @@ const btnTBad = { ...btnT, color: COLORS.btnTextDanger };
 
 // The approvals list, laid out like Sales' Booking Approvals.
 const st = StyleSheet.create({
+  l2Head: { marginTop: 12, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
+  l2Chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  l2Chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  l2ChipOn: { borderColor: COLORS.link, backgroundColor: COLORS.link },
+  l2ChipText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  l2ChipTextOn: { color: '#fff' },
+  l2Names: { fontSize: 11, color: COLORS.link, marginTop: 2 },
+  l2Wait: { fontSize: 12, fontWeight: '700', color: COLORS.success, marginTop: 6 },
   reasonBox: { marginTop: 8, padding: 10, borderRadius: 10, backgroundColor: COLORS.errorBg },
   reasonHead: { fontSize: 10, fontWeight: '800', letterSpacing: 0.4, color: COLORS.error },
   reasonBody: { fontSize: 13, color: COLORS.textPrimary, marginTop: 2 },
