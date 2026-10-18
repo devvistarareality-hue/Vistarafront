@@ -369,14 +369,17 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
         ({ loi_no } = noRes.ok ? await noRes.json() : { loi_no: '' });
       }
       // A renewed investment's revised LOI also states its earlier terms, as the renewal LOI does.
-      const past = revise?.renewal_count ? await earlierTerms(revise.id) : { history: [] };
-      const html = buildInvestorLOIHtml({ ...(revise || {}), ...form, investment_date: toISODate(form.investment_date), loi_no }, scheme,
-        revise ? { revisionNo: nextRevisionNo, schedule, ...(past.history.length ? { history: past.history, nextTerm: {
-          label: `${(past.current?.label || `Renewal ${revise.renewal_count}`).split(' · ')[0]} (revised R${nextRevisionNo})`,
+      // Its stamp names the term and counts revisions within it: "Renewal 2 · Revision 1".
+      const past = revise?.renewal_count ? await earlierTerms(revise.id) : { history: [], revisions: 0 };
+      const termLabel = revise?.renewal_count ? (past.current?.label || `Renewal ${revise.renewal_count}`).split(' · ')[0] : '';
+      const termRevision = revise?.renewal_count ? past.revisions + 1 : nextRevisionNo;
+      const loiOpts = revise ? { revisionNo: nextRevisionNo, termLabel, termRevision, schedule, ...(past.history.length ? { history: past.history, nextTerm: {
+          label: `${termLabel} · Revision ${termRevision}`,
           start: toISODate(form.investment_date), maturity: maturityDate ? toISODate(maturityDate) : null,
-          principal: form.amount_invested } } : {}) } : { schedule });
+          principal: form.amount_invested } } : {}) } : { schedule };
+      const html = buildInvestorLOIHtml({ ...(revise || {}), ...form, investment_date: toISODate(form.investment_date), loi_no }, scheme, loiOpts);
       const { uri } = await Print.printToFileAsync({ html });
-      await sharePdfNamed(uri, loiFileName({ loi_no, name: form.name }, revise ? { revisionNo: nextRevisionNo } : {}));
+      await sharePdfNamed(uri, loiFileName({ loi_no, name: form.name }, loiOpts));
       setLoiDone(true);
     } catch (e) {
       Alert.alert('Could not generate the LOI', e.message);
@@ -829,7 +832,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       });
       const { uri } = await Print.printToFileAsync({ html });
       await sharePdfNamed(uri, loiFileName({ loi_no: investor.loi_no, name: form.name || investor.name },
-        { nextTerm: { label: `Renewal ${(investor.renewal_count || 0) + 1}` } }));
+        { renewalNo: nextRevisionNo, nextTerm: { label: `Renewal ${(investor.renewal_count || 0) + 1}` } }));
       setLoiDone(true);
     } catch (e) {
       Alert.alert('Could not generate the LOI', e.message);

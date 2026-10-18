@@ -7,6 +7,7 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': 
 const money = (n) => Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 import { schedulePeriods, maturityWorking, perDayInterest, tenureDays } from './c1Periods';
+import { loiBadge } from './c1LoiLabel';
 
 function fmtDate(iso) {
   if (!iso) return '—';
@@ -332,7 +333,7 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     .hist-next { display: flex; justify-content: space-between; background: #edf2f9; color: #2e4a78; padding: 6px 10px; margin-top: 8px; border-radius: 4px; font-size: 11px; }
     .rev-badge { text-align: right; font-weight: 700; color: #FF6B2B; font-size: 11px; margin-bottom: 2px; }
   </style></head><body>
-    ${opts.renewalNo ? `<div class="rev-badge">RENEWED LOI · R${esc(opts.renewalNo)}</div>` : opts.revisionNo ? `<div class="rev-badge">REVISED LOI · R${esc(opts.revisionNo)}</div>` : ''}
+    ${loiBadge(opts) ? `<div class="rev-badge">${esc(loiBadge(opts))}</div>` : ''}
     <div class="title">INVESTMENT PROPOSAL FORM</div>
     <table class="hdr">${rowsHtml}</table>
     ${historyHtml}

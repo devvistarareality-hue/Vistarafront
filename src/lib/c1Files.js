@@ -5,15 +5,14 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../utils/apiFetch';
 import { CLUB1000_ENDPOINTS } from '../constants/api';
+import { loiPurpose } from './c1LoiLabel';
 
 const clean = (parts) => parts.filter(Boolean).map((x) => String(x).trim()).join('_')
   .replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_');
 
 // What the LOI is for: the renewal it starts, a revision, or a new investment.
 export function loiFileName(investor, opts = {}) {
-  const what = opts.nextTerm?.label || (opts.renewalNo ? `Renewal R${opts.renewalNo}`
-    : opts.revisionNo ? `Revision R${opts.revisionNo}` : 'New investment');
-  return `LOI_${clean([investor.loi_no, investor.name, what])}.pdf`;
+  return `LOI_${clean([investor.loi_no, investor.name, loiPurpose(opts)])}.pdf`;
 }
 
 // Share a printed PDF under `name` (expo-print gives it a random one).
