@@ -30,6 +30,7 @@ import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
 import PortfolioSheet from './PortfolioSheet';
 import { settledTo, settledRemark } from '../../lib/c1Settled';
+import { useReasonPrompt } from '../../components/ReasonPrompt';
 import ImportInvestorsSheet from './ImportInvestorsSheet';
 import ScheduleList from './ScheduleList';
 import { confirmAsk } from '../../lib/confirmAsk';
@@ -1177,6 +1178,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [selecting, setSelecting] = useState(false);     // pick several to delete at once
   const [picked, setPicked] = useState(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [working, setWorking] = useState('');            // full-screen 'Sending…' while a request goes
+  const [askReason, reasonUI] = useReasonPrompt();
   const [deletingId, setDeletingId] = useState(null); // investor being deleted
   const [showImport, setShowImport] = useState(false); // Import from Excel
   const [ledgerFor,  setLedgerFor]  = useState(null);
@@ -1230,31 +1233,28 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     [statusFilter, search, bucket, payoutFilter, schemeFilter, addedByFilter, range.from, range.to]));
 
   // Delete an investment — managers only; the server refuses once money has moved.
+  // Delete an investment — Club 1000 managers only; payments already made are named first.
   async function deleteInvestor(inv) {
     const ok = await confirmAsk('Delete investor?',
       `Delete ${inv.name}${inv.loi_no ? ` (LOI ${inv.loi_no})` : ''} · ${fmtMoney(inv.amount_invested)} permanently? Its payout schedule and referral rewards go with it. This can't be undone.`,
       'Delete', true);
     if (!ok) return;
-    setDeletingId(inv.id);
-    let r = await apiFetch(CLUB1000_ENDPOINTS.investor(inv.id), { method: 'DELETE' }).catch(() => null);
-    if (r && r.status === 409) {
-      // Payments already made on it: say exactly what goes with it, and ask again.
-      const d = await r.json().catch(() => ({}));
-      if (d.code !== 'has_paid') { setDeletingId(null); Alert.alert('Not deleted', errText(d, 'Please try again.')); return; }
-      const what = [d.paid_payouts ? `${d.paid_payouts} paid payout${d.paid_payouts === 1 ? '' : 's'} (${fmtMoney(d.paid_amount)})` : '',
-        d.paid_rewards ? `${d.paid_rewards} paid referral reward${d.paid_rewards === 1 ? '' : 's'} (${fmtMoney(d.paid_rewards_amount)})` : ''].filter(Boolean).join(' and ');
-      const again = await confirmAsk('Delete the payments too?',
-        `${inv.name} already has ${what} recorded. Deleting the investor deletes these payments too — the money stays paid in real life, but Nexora will no longer show it. The log keeps a note. This can't be undone.`,
-        'Delete with payments', true);
-      if (!again) { setDeletingId(null); return; }
-      r = await apiFetch(`${CLUB1000_ENDPOINTS.investor(inv.id)}?include_paid=1`, { method: 'DELETE' }).catch(() => null);
-    }
-    setDeletingId(null);
-    if (!r || !(r.ok || r.status === 204)) {
-      Alert.alert('Not deleted', errText(r ? await r.json().catch(() => ({})) : {}, 'Please try again.'));
-      return;
-    }
-    load();
+    setDeletingId(inv.id); setWorking('Deleting…');
+    try {
+      let r = await apiFetch(CLUB1000_ENDPOINTS.investor(inv.id), { method: 'DELETE' }).catch(() => null);
+      if (r && r.status === 409) {
+        const d = await r.json().catch(() => ({}));
+        if (d.code !== 'has_paid') { Alert.alert('Not deleted', errText(d, 'Please try again.')); return; }
+        setWorking('');
+        const what = [d.paid_payouts ? `${d.paid_payouts} paid payout${d.paid_payouts === 1 ? '' : 's'} (${fmtMoney(d.paid_amount)})` : '',
+          d.paid_rewards ? `${d.paid_rewards} paid referral reward${d.paid_rewards === 1 ? '' : 's'} (${fmtMoney(d.paid_rewards_amount)})` : ''].filter(Boolean).join(' and ');
+        if (!(await confirmAsk('Delete the payments too?', `${inv.name} already has ${what} recorded. Deleting the investor deletes these payments too — the log keeps a note. This can't be undone.`, 'Delete with payments', true))) return;
+        setWorking('Deleting…');
+        r = await apiFetch(`${CLUB1000_ENDPOINTS.investor(inv.id)}?include_paid=1`, { method: 'DELETE' }).catch(() => null);
+      }
+      if (!r || !(r.ok || r.status === 204)) { Alert.alert('Not deleted', errText(r ? await r.json().catch(() => ({})) : {}, 'Please try again.')); return; }
+      load();
+    } finally { setDeletingId(null); setWorking(''); }
   }
 
   const togglePick = (ids, on) => setPicked((prev) => {
@@ -1270,52 +1270,54 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     if (!list.length) return;
     const sum = list.reduce((t, i) => t + (Number(i.amount_invested) || 0), 0);
     const ok = await confirmAsk(`Delete ${list.length} investor${list.length === 1 ? '' : 's'}?`,
-      `${fmtMoney(sum)} in all, permanently. Their payout schedules and referral rewards go with them, and their leads will read Investor Deleted. Any with a payment already made are asked about next. This can't be undone.`,
+      `${fmtMoney(sum)} in all, permanently. Their payout schedules and referral rewards go with them. Any with a payment already made are asked about next. This can't be undone.`,
       'Delete', true);
     if (!ok) return;
-    setBulkBusy(true);
-    const r = await apiFetch(CLUB1000_ENDPOINTS.investorBulkDelete, { method: 'POST', body: JSON.stringify({ ids: list.map((i) => i.id) }) }).catch(() => null);
-    const d = r ? await r.json().catch(() => ({})) : {};
-    setBulkBusy(false);
-    if (!r || !r.ok) { Alert.alert('Not deleted', errText(d, 'Please try again.')); return; }
-    let kept = d.refused || [];
-    const paidOnes = kept.filter((k) => k.paid_payouts || k.paid_rewards);
-    if (paidOnes.length) {
-      const sumPaid = paidOnes.reduce((t, k) => t + Number(k.paid_amount || 0) + Number(k.paid_rewards_amount || 0), 0);
-      const again = await confirmAsk('Delete the payments too?',
-        `${paidOnes.length} of them already ha${paidOnes.length === 1 ? 's' : 've'} payments recorded (${fmtMoney(sumPaid)} in all) — ${paidOnes.map((k) => k.name).join(', ')}. Delete ${paidOnes.length === 1 ? 'it' : 'them'} and those payments too? The log keeps a note; this can't be undone.`,
-        'Delete with payments', true);
-      if (again) {
-        setBulkBusy(true);
-        const r2 = await apiFetch(CLUB1000_ENDPOINTS.investorBulkDelete, { method: 'POST', body: JSON.stringify({ ids: paidOnes.map((k) => k.id), include_paid: true }) }).catch(() => null);
-        const d2 = r2 ? await r2.json().catch(() => ({})) : {};
-        setBulkBusy(false);
-        if (r2 && r2.ok) kept = kept.filter((k) => !(d2.deleted || []).includes(k.id));
+    setBulkBusy(true); setWorking('Deleting…');
+    try {
+      const send = (ids, paid) => apiFetch(CLUB1000_ENDPOINTS.investorBulkDelete, { method: 'POST', body: JSON.stringify({ ids, include_paid: paid }) })
+        .then(async (r) => ({ ok: r.ok, d: await r.json().catch(() => ({})) })).catch(() => ({ ok: false, d: {} }));
+      const first = await send(list.map((i) => i.id), false);
+      if (!first.ok) { Alert.alert('Not deleted', errText(first.d, 'Please try again.')); return; }
+      let kept = first.d.refused || [];
+      const paidOnes = kept.filter((k) => k.paid_payouts || k.paid_rewards);
+      if (paidOnes.length) {
+        setWorking('');
+        if (await confirmAsk('Delete the payments too?', `${paidOnes.map((k) => k.name).join(', ')} already ha${paidOnes.length === 1 ? 's' : 've'} payments recorded. Delete ${paidOnes.length === 1 ? 'it' : 'them'} with those payments?`, 'Delete with payments', true)) {
+          setWorking('Deleting…');
+          const again = await send(paidOnes.map((k) => k.id), true);
+          if (again.ok) kept = kept.filter((k) => !(again.d.deleted || []).includes(k.id));
+        }
       }
-    }
-    if (kept.length) Alert.alert(`${kept.length} kept`, kept.map((k) => k.name || `#${k.id}`).join(', '));
-    setPicked(new Set(kept.map((k) => k.id)));
-    if (!kept.length) setSelecting(false);
-    load();
+      if (kept.length) Alert.alert(`${kept.length} kept`, kept.map((k) => k.name || `#${k.id}`).join(', '));
+      setPicked(new Set(kept.map((k) => k.id)));
+      if (!kept.length) setSelecting(false);
+      load();
+    } finally { setBulkBusy(false); setWorking(''); }
   }
 
   // Undo the latest renewal — managers only; payments already made in the renewed
   // term are named and asked about first.
   async function undoRenewal(inv) {
-    const ok = await confirmAsk('Undo renewal?',
-      `Undo the latest renewal of ${inv.name}${inv.loi_no ? ` (LOI ${inv.loi_no})` : ''}? It goes back to the term before: the renewed term's payouts and renewal reward are removed, interest added to the renewal is due again, and the earlier LOI comes back if it was kept.`,
-      'Undo renewal', true);
-    if (!ok) return;
-    let r = await apiFetch(CLUB1000_ENDPOINTS.investorUndoRenewal(inv.id), { method: 'POST', body: JSON.stringify({}) }).catch(() => null);
-    let d = r ? await r.json().catch(() => ({})) : {};
-    if (r && r.status === 409 && d.code === 'has_paid') {
-      const again = await confirmAsk('Delete the payments too?', `${d.detail} Undoing deletes them too — the log keeps a note. This can't be undone.`, 'Undo and delete', true);
-      if (!again) return;
-      r = await apiFetch(CLUB1000_ENDPOINTS.investorUndoRenewal(inv.id), { method: 'POST', body: JSON.stringify({ confirm_paid: true }) }).catch(() => null);
-      d = r ? await r.json().catch(() => ({})) : {};
-    }
-    if (!r || !r.ok) { Alert.alert('Not undone', errText(d, 'Please try again.')); return; }
-    load();
+    const reason = await askReason({ title: 'Undo renewal — send for approval',
+      message: `Ask to undo the latest renewal of ${inv.name}${inv.loi_no ? ` (LOI ${inv.loi_no})` : ''}? Once an approver approves it goes back to the term before. Write why.`,
+      confirmText: 'Send for approval', placeholder: 'e.g. Renewed by mistake' });
+    if (!reason) return;
+    setWorking('Sending for approval…');
+    try {
+      let r = await apiFetch(CLUB1000_ENDPOINTS.investorUndoRenewal(inv.id), { method: 'POST', body: JSON.stringify({ reason }) }).catch(() => null);
+      let d = r ? await r.json().catch(() => ({})) : {};
+      if (r && r.status === 409 && d.code === 'has_paid') {
+        setWorking('');
+        if (!(await confirmAsk('Delete the payments too?', `${d.detail} Once approved they are deleted too — the log keeps a note.`, 'Send for approval', true))) return;
+        setWorking('Sending for approval…');
+        r = await apiFetch(CLUB1000_ENDPOINTS.investorUndoRenewal(inv.id), { method: 'POST', body: JSON.stringify({ reason, confirm_paid: true }) }).catch(() => null);
+        d = r ? await r.json().catch(() => ({})) : {};
+      }
+      if (!r || !r.ok) { Alert.alert('Not sent', errText(d, 'Please try again.')); return; }
+      Alert.alert('Sent for approval', 'The renewal is undone once an approver approves.');
+      load();
+    } finally { setWorking(''); }
   }
 
   async function viewLoi(id) {
@@ -1493,7 +1495,10 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                 </TouchableOpacity>
                 {/* Viewing on the left; what changes the investment on the right. */}
                 <View style={ClubInvestorsScreenS.actionsGap} />
-                {manager && inv.renewal_count > 0 && (
+                {!!inv.pending_action && (
+                  <View style={ClubInvestorsScreenS.deleteChip}><Text style={ClubInvestorsScreenS.deleteChipText}>Undo requested</Text></View>
+                )}
+                {manager && inv.renewal_count > 0 && !inv.pending_action && (
                   <TouchableOpacity onPress={() => undoRenewal(inv)} style={ClubInvestorsScreenS.deleteChip}>
                     <Text style={ClubInvestorsScreenS.deleteChipText}>↶ Undo renewal</Text>
                   </TouchableOpacity>
@@ -1550,6 +1555,13 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
             {bulkBusy ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="trash-outline" size={15} color="#fff" />}
             <Text style={ClubInvestorsScreenS.bulkDelText}>Delete</Text>
           </TouchableOpacity>
+        </View>
+      )}
+      {reasonUI}
+      {!!working && (
+        <View style={ClubInvestorsScreenS.workOverlay}>
+          <ActivityIndicator size="large" color={COLORS.link} />
+          <Text style={ClubInvestorsScreenS.workText}>{working}</Text>
         </View>
       )}
     </SafeAreaView>
@@ -1654,6 +1666,8 @@ const ClubInvestorsScreenS = StyleSheet.create({
   bulkSpacer: { height: 70 },
   bulkDelText: { fontSize: 12.5, fontWeight: '800', color: '#fff' },
   renewSubmitText: { color: COLORS.white, fontSize: 15, fontWeight: '800' },
+  workOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: COLORS.overlay, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  workText: { fontSize: 14, fontWeight: '700', color: COLORS.white },
   moreChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg },
   moreChipText: { fontSize: 11, fontWeight: '700', color: COLORS.success },
   moreNote: { fontSize: 12, color: COLORS.link, backgroundColor: COLORS.linkBg, padding: 10, borderRadius: 10, marginBottom: 10, overflow: 'hidden' },

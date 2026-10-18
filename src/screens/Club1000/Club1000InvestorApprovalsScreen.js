@@ -109,6 +109,23 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
     }
   }
 
+  // A requested delete / undo-renewal: approve carries it out, reject says why.
+  async function actRequest(inv, action) {
+    const what = inv.pending_action?.type === 'delete' ? 'delete' : 'undo the renewal of';
+    let reason = '';
+    if (action === 'approve') {
+      if (!(await confirmAsk('Approve request?', `Approve: ${what} ${inv.name}? This can't be undone.`, 'Approve', true))) return;
+    } else {
+      reason = await askReason({ title: 'Reject request', message: `Reject the request to ${what} ${inv.name}? Write why — whoever asked sees this.`, confirmText: 'Reject', placeholder: 'e.g. Keep it' });
+      if (!reason) return;
+    }
+    setBusy(inv.id); setBusyAct(action);
+    try {
+      const res = await apiFetch(CLUB1000_ENDPOINTS.investorPendingAction(inv.id), { method: 'POST', body: JSON.stringify(reason ? { action, reason } : { action }) });
+      if (!res.ok) alert(errText(await res.json().catch(() => ({})), 'Could not complete it.'));
+    } finally { setBusy(null); setBusyAct(''); load(); }
+  }
+
   // Per-scheme sequence counter — purely to stop a slow, out-of-order response
   // from visually flickering the display backwards after a newer toggle for
   // the same scheme has already landed. It's cosmetic only: the actual
@@ -348,9 +365,15 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   {inv.approval_status === 'rejected' && !!inv.rejected_reason && (
                     <View style={st.reasonBox}><Text style={st.reasonHead}>REJECTED — REASON</Text><Text style={st.reasonBody}>{inv.rejected_reason}</Text></View>
                   )}
+                  {!!inv.pending_action && (
+                    <View style={st.reasonBox}>
+                      <Text style={st.reasonHead}>{inv.pending_action.type === 'delete' ? 'DELETE REQUESTED' : 'UNDO RENEWAL REQUESTED'} BY {String(inv.pending_action.by_name || '—').toUpperCase()}</Text>
+                      <Text style={st.reasonBody}>{inv.pending_action.reason}</Text>
+                    </View>
+                  )}
                   {(inv.rejections || []).slice().reverse().map((rj, k) => (
                     <View key={k} style={st.reasonBox}>
-                      <Text style={st.reasonHead}>{(rj.kind === 'renewal' ? 'RENEWAL' : 'REVISION')} R{rj.no} REJECTED{rj.by ? ` BY ${String(rj.by).toUpperCase()}` : ''}{rj.at ? ` · ${formatDMY(String(rj.at).slice(0, 10))}` : ''}</Text>
+                      <Text style={st.reasonHead}>{rj.kind === 'delete' ? 'DELETE REQUEST' : rj.kind === 'undo-renewal' ? 'UNDO-RENEWAL REQUEST' : rj.kind === 'undone-renewal' ? `RENEWAL R${rj.no}` : `${rj.kind === 'renewal' ? 'RENEWAL' : 'REVISION'} R${rj.no}`} {rj.kind === 'undone-renewal' ? 'UNDONE' : 'REJECTED'}{rj.by ? ` BY ${String(rj.by).toUpperCase()}` : ''}{rj.at ? ` · ${formatDMY(String(rj.at).slice(0, 10))}` : ''}</Text>
                       <Text style={st.reasonBody}>{rj.reason}</Text>
                     </View>
                   ))}
@@ -374,6 +397,14 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   <TouchableOpacity onPress={() => setRevising(inv)} style={[btn, st.revise]}>
                     <Text style={st.reviseText}>↻ Revise LOI</Text>
                   </TouchableOpacity>
+                )}
+                {!!inv.pending_action && (
+                  canApprove(inv) ? (
+                    <>
+                      <TouchableOpacity onPress={() => actRequest(inv, 'approve')} disabled={busy === inv.id} style={[btn, btnBad]}>{busy === inv.id && busyAct === 'approve' ? <ActivityIndicator size="small" color={COLORS.btnTextDanger} /> : <Text style={btnTBad}><AppIcon name="check" size={15} /> Approve {inv.pending_action.type === 'delete' ? 'delete' : 'undo'}</Text>}</TouchableOpacity>
+                      <TouchableOpacity onPress={() => actRequest(inv, 'reject')} disabled={busy === inv.id} style={btn}>{busy === inv.id && busyAct === 'reject' ? <ActivityIndicator size="small" color={COLORS.textPrimary} /> : <Text style={st.reviseText}><AppIcon name="x" size={15} /> Reject</Text>}</TouchableOpacity>
+                    </>
+                  ) : <Text style={st.note}>Not an approver</Text>
                 )}
                 {inv.approval_status === 'pending' && (
                   canApprove(inv) ? (
