@@ -655,7 +655,7 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
             onChange={(_, d) => { setShowDatePicker(false); if (d) set('investment_date', d); }} />
         )}
 
-        <TextField label="Amount Invested (₹)" required value={form.amount_invested} onChangeText={(v) => set('amount_invested', v)} keyboardType="number-pad" />
+        <TextField label="Amount Invested (₹)" required value={form.amount_invested} onChangeText={(v) => set('amount_invested', v)} keyboardType="decimal-pad" />
 
         <View style={{ marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 6 }}>Scan Document (KYC / ID proof)</Text>
@@ -910,7 +910,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
             onChange={(_, d) => { setShowDatePicker(false); if (d) set('investment_date', d); }} />
         )}
 
-        <TextField label="Amount Invested (₹)" required value={form.amount_invested} onChangeText={(v) => setForm((f) => ({ ...f, amount_invested: v, interest_choice: '', interest_added: '' }))} keyboardType="number-pad" />
+        <TextField label="Amount Invested (₹)" required value={form.amount_invested} onChangeText={(v) => setForm((f) => ({ ...f, amount_invested: v, interest_choice: '', interest_added: '' }))} keyboardType="decimal-pad" />
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, marginBottom: 16 }}>
