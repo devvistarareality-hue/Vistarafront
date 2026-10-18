@@ -11,6 +11,7 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { can } from '../../lib/roles';
 import { apiFetch } from '../../utils/apiFetch';
+import { settledTo, settledRemark } from '../../lib/c1Settled';
 import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { formatDMY } from '../../utils/dateFormat';
@@ -449,10 +450,11 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
                 <View style={s.payTarget}>
                   <Text style={s.payTargetAmt}>{rupee(p.paid_amount ?? p.amount_due)}</Text>
                   <Text style={s.payWhen}>{p.paid_date ? formatDMY(p.paid_date) : '—'}</Text>
+                  {!!settledTo(p.notes) && <Text style={s.settledTag}>{settledTo(p.notes)}</Text>}
                 </View>
               )}
             </View>
-            {!ed && !!p.notes && <Text style={s.paidNotes}>{p.notes}</Text>}
+            {!ed && !!(settledTo(p.notes) ? settledRemark(p.notes) : p.notes) && <Text style={s.paidNotes}>{settledTo(p.notes) ? settledRemark(p.notes) : p.notes}</Text>}
             {ed ? (
               <View style={s.payFields}>
                 <Text style={s.payLbl}>ACTUAL PAID (₹)</Text>
@@ -494,6 +496,7 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
 }
 
 const s = StyleSheet.create({
+  settledTag: { fontSize: 10.5, fontWeight: '800', color: COLORS.link, marginTop: 2 },
   termHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, marginBottom: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: COLORS.linkBg },
   termHeadText: { flex: 1, fontSize: 12.5, fontWeight: '800', color: COLORS.link },
   termHeadSum: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },

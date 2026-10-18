@@ -29,6 +29,7 @@ import { RedeemSheet, RenewalSummary } from './CloseInvestmentSheets';
 import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
 import PortfolioSheet from './PortfolioSheet';
+import { settledTo, settledRemark } from '../../lib/c1Settled';
 import ImportInvestorsSheet from './ImportInvestorsSheet';
 import ScheduleList from './ScheduleList';
 import { confirmAsk } from '../../lib/confirmAsk';
@@ -994,6 +995,7 @@ const LEDGER_STATUS_COLOR = {
   completed: { bg: COLORS.successBg, fg: COLORS.success },
   paid: { bg: COLORS.successBg, fg: COLORS.success },
   'paid early': { bg: COLORS.linkBg, fg: COLORS.link },  // paid before its due date
+  settled: { bg: COLORS.surfaceAlt, fg: COLORS.link },     // closed by a renewal
   pending: { bg: COLORS.errorBg, fg: COLORS.error },     // due, not yet paid
   upcoming: { bg: COLORS.warningBg, fg: AMBER },         // not yet due
 };
@@ -1101,7 +1103,9 @@ function LedgerModal({ investorId, onClose }) {
                 {rows.map((e, i) => {
                   // Unpaid: Pending once its date has come, Upcoming before that.
                   const due = e.due_date || e.date;
-                  const st = e.status === 'pending' ? (due > todayIso ? 'upcoming' : 'pending')
+                  const settled = e.status === 'paid' ? settledTo(e.notes) : '';
+                  const st = settled ? 'settled'
+                    : e.status === 'pending' ? (due > todayIso ? 'upcoming' : 'pending')
                     : e.status === 'paid' && e.paid_date && e.paid_date < due ? 'paid early' : e.status;
                   const head = termSel === 'all' && terms.length > 1 && (i === 0 || (rows[i - 1].term ?? 0) !== (e.term ?? 0))
                     ? terms.find((t) => t.no === (e.term ?? 0)) : null;
@@ -1121,9 +1125,9 @@ function LedgerModal({ investorId, onClose }) {
                       </View>
                       <View style={ClubInvestorsScreenS.lgBottom}>
                         <Text style={ClubInvestorsScreenS.lgDates}>Due {formatDMY(e.due_date || e.date)}{e.paid_date ? ` · Paid ${formatDMY(e.paid_date)}` : ''}</Text>
-                        <LedgerBadge label={st} color={LEDGER_STATUS_COLOR[st] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
+                        <LedgerBadge label={settled || st} color={LEDGER_STATUS_COLOR[st] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
                       </View>
-                      {!!e.notes && !e.is_balance && <Text style={ClubInvestorsScreenS.lgNote}>{e.notes}</Text>}
+                      {!!e.notes && !e.is_balance && !!(settled ? settledRemark(e.notes) : e.notes) && <Text style={ClubInvestorsScreenS.lgNote}>{settled ? settledRemark(e.notes) : e.notes}</Text>}
                     </View>
                     </View>
                   );
