@@ -310,19 +310,27 @@ function PaySheet({ row, today, onClose, onDone }) {
       </View>
       <ScrollView contentContainerStyle={s.sheetBody} keyboardShouldPersistTaps="handled">
         <Text style={s.section}>PENDING PAYOUTS</Text>
-        {row.pending.map((p) => {
+        {row.pending.map((p, i) => {
           const l = lines[p.id] || {};
+          const head = p.term_label && (i === 0 || row.pending[i - 1].term_label !== p.term_label);
+          const inTerm = head ? row.pending.filter((x) => x.term_label === p.term_label) : [];
           const on = !!l.on;
           const late = p.due_date < today;
           const gap = Number(l.amount) - Number(p.amount_due);
           return (
-            <View key={p.id} style={[s.payCard, !on && s.payCardOff]}>
+            <View key={p.id}>
+            {!!head && (
+              <TouchableOpacity style={s.termHead} onPress={() => { const all = inTerm.every((x) => lines[x.id]?.on); inTerm.forEach((x) => setLine(x.id, { on: !all })); }}>
+                <Ionicons name={inTerm.every((x) => lines[x.id]?.on) ? 'checkbox' : 'square-outline'} size={18} color={COLORS.link} />
+                <Text style={s.termHeadText}>{p.term_label}</Text>
+                <Text style={s.termHeadSum}>{inTerm.length} · {rupee(inTerm.reduce((t, x) => t + (Number(x.amount_due) || 0), 0))}</Text>
+              </TouchableOpacity>
+            )}
+            <View style={[s.payCard, !on && s.payCardOff]}>
               <TouchableOpacity onPress={() => setLine(p.id, { on: !on })} style={s.payTop}>
                 <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? COLORS.link : COLORS.textSecondary} />
                 <View style={s.flex}>
                   <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}{p.period ? ` · ${p.period.label}` : ''}</Text>
-                {!!p.term_label && <Text style={s.termTag}>{p.term_label}</Text>}
-                  {!!p.term_label && <Text style={s.termTag}>{p.term_label}</Text>}
                 {!!p.period && <Text style={s.payWhy}>{formatDMY(p.period.from)} – {formatDMY(p.period.to)} · {p.period.days} days × ₹{Number(p.period.per_day).toLocaleString('en-IN')}/day</Text>}
                   <Text style={[s.payWhen, late && s.payLate]}>Due {formatDMY(p.due_date)}{late ? ' · late' : ''}</Text>
                 </View>
@@ -350,6 +358,7 @@ function PaySheet({ row, today, onClose, onDone }) {
                   <TextInput value={l.notes} onChangeText={(t) => setLine(p.id, { notes: t })} placeholder="UTR / cheque no." placeholderTextColor={COLORS.text3} style={s.payInput} />
                 </View>
               )}
+            </View>
             </View>
           );
         })}
@@ -417,10 +426,19 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
       <ScrollView contentContainerStyle={s.sheetBody} keyboardShouldPersistTaps="handled">
         <Text style={s.section}>PAID · {rupee(row.paidAmt)}</Text>
         {list.length === 0 && <Text style={s.payWhen}>Nothing paid.</Text>}
-        {list.map((p) => {
+        {list.map((p, i) => {
           const ed = editing && editing.id === p.id ? editing : null;
+          const head = p.term_label && (i === 0 || list[i - 1].term_label !== p.term_label);
+          const inTerm = head ? list.filter((x) => x.term_label === p.term_label) : [];
           return (
-          <View key={p.id} style={s.payCard}>
+          <View key={p.id}>
+            {!!head && (
+              <View style={s.termHead}>
+                <Text style={s.termHeadText}>{p.term_label}</Text>
+                <Text style={s.termHeadSum}>{inTerm.length} paid · {rupee(inTerm.reduce((t, x) => t + (Number(x.paid_amount ?? x.amount_due) || 0), 0))}</Text>
+              </View>
+            )}
+            <View style={s.payCard}>
             <View style={s.payTop}>
               <View style={s.flex}>
                 <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}{p.period ? ` · ${p.period.label}` : ''}</Text>
@@ -467,6 +485,7 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
               </View>
             )}
           </View>
+            </View>
           );
         })}
       </ScrollView>
@@ -475,6 +494,9 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
 }
 
 const s = StyleSheet.create({
+  termHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, marginBottom: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: COLORS.linkBg },
+  termHeadText: { flex: 1, fontSize: 12.5, fontWeight: '800', color: COLORS.link },
+  termHeadSum: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   termTag: { alignSelf: 'flex-start', marginTop: 2, fontSize: 10.5, fontWeight: '800', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, overflow: 'hidden', backgroundColor: COLORS.linkBg, color: COLORS.link },
   onlyChip: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: COLORS.warningBg },
   onlyChipText: { fontSize: 12, fontWeight: '700', color: COLORS.warning, maxWidth: 260 },

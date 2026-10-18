@@ -255,34 +255,73 @@ export function MaturityPayoutSheet({ investor, onClose, onDone }) {
   );
 }
 
-export function RenewalSummary({ investorId, newAmount }) {
+// What becomes of the term that ended — same as the website: its unpaid interest is
+// paid to the investor (stays due on Payouts) or added to the renewal (settled).
+export function RenewalSummary({ investorId, newAmount, choice, onChoice, onAmount }) {
   const [st] = useSettlement(investorId);
   if (!st) return null;
   const principal = Number(st.principal) || 0;
   const next = Number(newAmount) || 0;
-  const unpaid = st.pending.filter((p) => p.payout_type === 'interest');
-  const unpaidTotal = unpaid.reduce((t, p) => t + (Number(p.amount_due) || 0), 0);
+  const atMaturity = st.pending.filter((p) => p.payout_type === 'maturity').reduce((t, p) => t + (Number(p.amount_due) || 0), 0);
+  const unpaid = st.pending.filter((p) => p.payout_type === 'interest').reduce((t, p) => t + (Number(p.amount_due) || 0), 0)
+    + Math.max(atMaturity - principal, 0);
+  const mode = choice || (next > principal ? 'reinvest' : 'pay');
+  const rolled = mode === 'reinvest' ? Math.min(unpaid, Math.max(next - principal, 0)) : 0;
   return (
     <View style={s.summary}>
-      <Text style={s.section}>THE TERM THAT MATURED</Text>
+      <Text style={s.section}>THE TERM THAT ENDED</Text>
       <View style={s.card}>
-        <Line label="Principal" value={rupee(principal)} />
+        <Line label="Principal of the term" value={rupee(principal)} />
         <Line label="Interest paid so far" value={rupee(st.interest_paid)} />
-        {next > 0 && next <= principal && <Line label="Rolls over" value={rupee(next)} />}
-        {next > 0 && next < principal && <Line label="Paid out on renewal" value={rupee(principal - next)} total />}
-        {next > principal && <Line label="Rolls over" value={rupee(principal)} />}
-        {next > principal && <Line label="Fresh money added" value={rupee(next - principal)} total />}
+        <Line label="Interest still unpaid" value={rupee(unpaid)} />
       </View>
-      {unpaid.length > 0 && (
-        <Text style={s.warn}>
-          {unpaid.length} interest payout{unpaid.length === 1 ? '' : 's'} from this term ({rupee(unpaidTotal)}) {unpaid.length === 1 ? 'is' : 'are'} still unpaid — {unpaid.length === 1 ? 'it stays' : 'they stay'} owed on Payouts after renewing.
-        </Text>
+      {unpaid > 0 && !!onChoice && (
+        <View style={s.choice}>
+          <Text style={s.choiceHead}>ITS UNPAID INTEREST ({rupee(unpaid)})</Text>
+          {[['pay', 'Pay it to him', 'stays due on Payouts'], ['reinvest', 'Add it to the renewal', 'settled into the new principal']].map(([k, label, hint]) => (
+            <TouchableOpacity key={k} onPress={() => onChoice(k)} style={[s.choiceRow, mode === k && s.choiceRowOn]}>
+              <Ionicons name={mode === k ? 'radio-button-on' : 'radio-button-off'} size={18} color={mode === k ? COLORS.link : COLORS.textSecondary} />
+              <Text style={s.choiceText}>{label} <Text style={s.choiceHint}>— {hint}</Text></Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+      {!!onAmount && (
+        <View style={s.quick}>
+          <TouchableOpacity style={s.quickBtn} onPress={() => { onAmount(principal); onChoice && onChoice('pay'); }}>
+            <Text style={s.quickText}>Principal only · {rupee(principal)}</Text>
+          </TouchableOpacity>
+          {unpaid > 0 && (
+            <TouchableOpacity style={s.quickBtn} onPress={() => { onAmount(Math.round((principal + unpaid) * 100) / 100); onChoice && onChoice('reinvest'); }}>
+              <Text style={s.quickText}>Principal + interest · {rupee(principal + unpaid)}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+      {next > 0 && (
+        <View style={[s.card, s.outCard]}>
+          <Line label="Principal renewed" value={rupee(Math.min(next, principal))} />
+          {rolled > 0 && <Line label="Interest added to the renewal" value={rupee(rolled)} />}
+          {next > principal + rolled && <Line label="Fresh money added" value={rupee(next - principal - rolled)} total />}
+          {next < principal && <Line label="Principal paid back to him" value={rupee(principal - next)} total />}
+          {unpaid - rolled > 0 && <Line label="Interest paid to him" value={rupee(unpaid - rolled)} total />}
+        </View>
       )}
     </View>
   );
 }
 
 const s = StyleSheet.create({
+  choice: { marginTop: 10, gap: 6 },
+  choiceHead: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
+  choiceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  choiceRowOn: { borderColor: COLORS.link, backgroundColor: COLORS.linkBg },
+  choiceText: { flex: 1, fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
+  choiceHint: { fontWeight: '500', color: COLORS.textSecondary },
+  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  quickBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  quickText: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
+  outCard: { marginTop: 10 },
   payWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 1 },
   flex: { flex: 1, minWidth: 0 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10 },

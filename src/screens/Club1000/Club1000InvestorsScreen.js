@@ -829,6 +829,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
     setSaving(true);
     try {
       const payload = { ...form, investment_date: toISODate(form.investment_date), loi_file: loiFile };
+      if (!payload.interest_choice) delete payload.interest_choice;
       if ((form.interest_payout === 'quarterly' || form.interest_payout === 'monthly') && schedule.length) payload.payout_schedule = schedule;
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorRenew(investor.id), { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json();
@@ -858,7 +859,9 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         <Text style={ClubInvestorsScreenS.renewNote}>
           This investment matured on {formatDMY(investor.maturity_date)}. Set the renewal terms below — amount can go up or down.
         </Text>
-        <RenewalSummary investorId={investor.id} newAmount={form.amount_invested} />
+        <RenewalSummary investorId={investor.id} newAmount={form.amount_invested}
+          choice={form.interest_choice} onChoice={(v) => setForm((f) => ({ ...f, interest_choice: v }))}
+          onAmount={(v) => setForm((f) => ({ ...f, amount_invested: String(v) }))} />
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, marginBottom: 16 }}>
