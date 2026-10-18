@@ -132,60 +132,110 @@ function initials(name) {
 }
 
 /* ── Generic bottom-sheet dropdown ── */
+// A long list (channel partners run to hundreds) gets a search box, and only the rows
+// on screen are drawn — drawing every row at once is what made opening it lag.
 function PickerDropdown({ items, value, onChange, placeholder = '— Select —', title = 'Select' }) {
   // items: [{ value, label, sublabel? }]
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
   const selected = items.find(i => String(i.value) === String(value));
+  const searchable = items.length > 8;
+  const needle = q.trim().toLowerCase();
+  const digits = needle.replace(/\D/g, '');
+  const shown = !needle ? items : items.filter((i) => `${i.label} ${i.sublabel || ''}`.toLowerCase().includes(needle)
+    || (digits.length >= 3 && String(i.sublabel || '').replace(/\D/g, '').includes(digits)));
+  const close = () => { setOpen(false); setQ(''); };
+  const pick = (v) => { onChange(v); close(); };
+  const renderItem = ({ item }) => {
+    const on = String(value) === String(item.value);
+    return (
+      <TouchableOpacity onPress={() => pick(item.value)} style={pickerS.row}>
+        <View style={pickerS.flex}>
+          <Text style={[pickerS.label, on && pickerS.labelOn]}>{item.label}</Text>
+          {!!item.sublabel && <Text style={pickerS.sub}>{item.sublabel}</Text>}
+        </View>
+        {on && <AppIcon name="check" size={16} color={COLORS.link} />}
+      </TouchableOpacity>
+    );
+  };
   return (
     <>
-      <TouchableOpacity onPress={() => setOpen(true)}
-        style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: COLORS.surface, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <View style={{ flex: 1 }}>
+      <TouchableOpacity onPress={() => setOpen(true)} style={pickerS.trigger}>
+        <View style={pickerS.flex}>
           {selected ? (
             <>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.textPrimary }}>{selected.label}</Text>
-              {!!selected.sublabel && <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 1 }}>{selected.sublabel}</Text>}
+              <Text style={pickerS.triggerText}>{selected.label}</Text>
+              {!!selected.sublabel && <Text style={pickerS.sub}>{selected.sublabel}</Text>}
             </>
           ) : (
-            <Text style={{ fontSize: 14, color: COLORS.textTertiary }}>{placeholder}</Text>
+            <Text style={pickerS.placeholder}>{placeholder}</Text>
           )}
         </View>
-        <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginLeft: 8 }}>▼</Text>
+        <Text style={pickerS.caret}>▼</Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '65%' }}>
-            <View style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary }}>{title}</Text>
-              <TouchableOpacity onPress={() => setOpen(false)} style={{ padding: 4 }}>
-                <Text style={{ fontSize: 18, color: COLORS.textSecondary }}><AppIcon name="x" size={18} /></Text>
-              </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
+        <KeyboardAvoidingView style={pickerS.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={pickerS.backdrop}>
+            <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={close} />
+            <View style={pickerS.sheet}>
+              <View style={pickerS.head}>
+                <Text style={pickerS.title}>{title}</Text>
+                <TouchableOpacity onPress={close} style={pickerS.x}><AppIcon name="x" size={18} color={COLORS.textSecondary} /></TouchableOpacity>
+              </View>
+              {searchable && (
+                <View style={pickerS.searchRow}>
+                  <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} />
+                  <TextInput value={q} onChangeText={setQ} placeholder={`Search ${title.toLowerCase()} — name, firm or phone`}
+                    placeholderTextColor={COLORS.textTertiary} style={pickerS.search} autoCorrect={false} returnKeyType="search" />
+                  {!!q && <TouchableOpacity onPress={() => setQ('')}><Ionicons name="close-circle" size={16} color={COLORS.textSecondary} /></TouchableOpacity>}
+                </View>
+              )}
+              <FlatList
+                data={shown}
+                keyExtractor={(i) => String(i.value)}
+                renderItem={renderItem}
+                keyboardShouldPersistTaps="handled"
+                initialNumToRender={15}
+                maxToRenderPerBatch={20}
+                windowSize={7}
+                ListHeaderComponent={needle ? null : (
+                  <TouchableOpacity onPress={() => pick('')} style={pickerS.row}>
+                    <Text style={pickerS.placeholder}>— None —</Text>
+                    {!value && <AppIcon name="check" size={16} color={COLORS.link} />}
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={<Text style={pickerS.empty}>No match for “{q.trim()}”.</Text>}
+                ListFooterComponent={<View style={pickerS.foot} />}
+              />
             </View>
-            <ScrollView bounces={false}>
-              <TouchableOpacity onPress={() => { onChange(''); setOpen(false); }}
-                style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 14, color: COLORS.textTertiary }}>— None —</Text>
-                {!value && <Text style={{ color: COLORS.link, fontSize: 16 }}><AppIcon name="check" size={16} /></Text>}
-              </TouchableOpacity>
-              {items.map(item => (
-                <TouchableOpacity key={item.value} onPress={() => { onChange(item.value); setOpen(false); }}
-                  style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: String(value) === String(item.value) ? '700' : '500', color: String(value) === String(item.value) ? COLORS.link : COLORS.textPrimary }}>{item.label}</Text>
-                    {!!item.sublabel && <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 1 }}>{item.sublabel}</Text>}
-                  </View>
-                  {String(value) === String(item.value) && <Text style={{ color: COLORS.link, fontSize: 16 }}><AppIcon name="check" size={16} /></Text>}
-                </TouchableOpacity>
-              ))}
-              <View style={{ height: 34 }} />
-            </ScrollView>
           </View>
-        </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );
 }
+
+const pickerS = StyleSheet.create({
+  flex: { flex: 1 },
+  trigger: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: COLORS.surface, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  triggerText: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  placeholder: { fontSize: 14, color: COLORS.textTertiary },
+  caret: { fontSize: 11, color: COLORS.textSecondary, marginLeft: 8 },
+  backdrop: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end' },
+  sheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, height: '72%' },
+  head: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  x: { padding: 4 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginVertical: 10, paddingHorizontal: 12, height: 42, borderRadius: 12, backgroundColor: COLORS.surfaceAlt },
+  search: { flex: 1, fontSize: 14, color: COLORS.textPrimary },
+  row: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  label: { fontSize: 14, fontWeight: '500', color: COLORS.textPrimary },
+  labelOn: { fontWeight: '700', color: COLORS.link },
+  sub: { fontSize: 11, color: COLORS.textSecondary, marginTop: 1 },
+  empty: { padding: 20, textAlign: 'center', fontSize: 13, color: COLORS.textSecondary },
+  foot: { height: 34 },
+});
 
 /* UserPickerDropdown — same as PickerDropdown but takes users array */
 function UserPickerDropdown({ users, value, onChange, placeholder = '— Select —', title = 'Select User' }) {
