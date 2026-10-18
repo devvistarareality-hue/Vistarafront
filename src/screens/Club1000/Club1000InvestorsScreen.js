@@ -669,7 +669,6 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
           </TouchableOpacity>
         </View>
 
-        <TextField label="Security (for LOI — optional)" value={form.security} onChangeText={(v) => set('security', v)} placeholder="NA" />
         <TextField label="Notes" value={form.notes} onChangeText={(v) => set('notes', v)} />
 
         <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 12, marginTop: 4, marginBottom: 16 }}>
@@ -953,7 +952,6 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
           </View>
         )}
 
-        <TextField label="Security (for LOI — optional)" value={form.security} onChangeText={(v) => set('security', v)} placeholder="NA" />
         <TextField label="Notes" value={form.notes} onChangeText={(v) => set('notes', v)} />
 
         <View style={{ backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 12, marginTop: 4, marginBottom: 16 }}>
