@@ -13,6 +13,9 @@ import { errText } from '../../lib/apiError';
 import AppLoader from '../../components/AppLoader';
 import FilterSelect from '../../components/FilterSelect';
 import PortfolioSheet, { Avatar } from './PortfolioSheet';
+import { AddInvestorSheet, morePrefill } from './Club1000InvestorsScreen';
+import { useSelector } from 'react-redux';
+import { can } from '../../lib/roles';
 
 const rupee = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
 const SORTS = [
@@ -31,6 +34,10 @@ export default function Club1000PortfoliosScreen({ navigation }) {
   const [scheme, setScheme] = useState('');
   const [sort, setSort] = useState('active');
   const [open, setOpen] = useState(null);
+  const [addMore, setAddMore] = useState(null);
+  const [schemeList, setSchemeList] = useState([]);
+  const user = useSelector((st) => st.auth.user);
+  const canAdd = can(user, 'club.investor.manage');
 
   const load = useCallback(async () => {
     try {
@@ -40,6 +47,10 @@ export default function Club1000PortfoliosScreen({ navigation }) {
     } catch { setErr('Could not reach the server.'); setRows((x) => x || []); }
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => {
+    if (!canAdd) return;
+    apiFetch(CLUB1000_ENDPOINTS.schemes).then((r) => (r.ok ? r.json() : [])).then((d) => setSchemeList(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [canAdd]));
 
   const schemes = useMemo(() => [...new Set((rows || []).flatMap((r) => r.schemes.map((x) => x.scheme)))].sort(), [rows]);
   const shown = useMemo(() => {
@@ -129,7 +140,10 @@ export default function Club1000PortfoliosScreen({ navigation }) {
         )}
       </ScrollView>
 
-      <PortfolioSheet investorId={open} onClose={() => setOpen(null)} />
+      <PortfolioSheet investorId={open} onClose={() => setOpen(null)}
+        onAddMore={canAdd && schemeList.length ? (pf) => { setOpen(null); setAddMore(pf); } : null} />
+      <AddInvestorSheet visible={!!addMore} prefillLead={morePrefill(addMore)} schemes={schemeList}
+        onClose={() => setAddMore(null)} onSaved={() => { setAddMore(null); load(); }} />
     </SafeAreaView>
   );
 }

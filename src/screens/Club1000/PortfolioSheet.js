@@ -36,7 +36,7 @@ const yearsSince = (d) => {
   return y >= 1 ? `${Math.floor(y)} yr${Math.floor(y) === 1 ? '' : 's'}` : `${Math.max(1, Math.floor(y * 12))} mo`;
 };
 
-export default function PortfolioSheet({ investorId, onClose }) {
+export default function PortfolioSheet({ investorId, onClose, onAddMore }) {
   const [p, setP] = useState(null);
   const [err, setErr] = useState('');
   const [tab, setTab] = useState('investments');
@@ -90,6 +90,9 @@ export default function PortfolioSheet({ investorId, onClose }) {
                   </TouchableOpacity>
                 )}
               </View>
+            )}
+            {!!onAddMore && !!p.prefill && (
+              <TouchableOpacity onPress={() => onAddMore(p.prefill)} style={s.addMore}><Text style={s.addMoreText}>+ Add more</Text></TouchableOpacity>
             )}
             {p.awaiting_approval > 0 && <Text style={s.await}>{p.awaiting_approval} awaiting approval</Text>}
 
@@ -226,6 +229,8 @@ const s = StyleSheet.create({
   names: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 10 },
   nameChip: { fontSize: 11, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, overflow: 'hidden', backgroundColor: COLORS.surfaceAlt, color: COLORS.textPrimary },
   moreBtn: { fontSize: 11.5, fontWeight: '800', color: COLORS.link, paddingHorizontal: 4 },
+  addMore: { alignSelf: 'flex-start', marginTop: 10, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, backgroundColor: COLORS.successBg },
+  addMoreText: { fontSize: 12.5, fontWeight: '800', color: COLORS.success },
   await: { alignSelf: 'flex-start', marginTop: 8, fontSize: 11, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden', backgroundColor: COLORS.warningBg, color: COLORS.warning },
   bigBox: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 12, backgroundColor: COLORS.surface },
   bigHero: { marginTop: 14, backgroundColor: COLORS.linkBg, borderColor: COLORS.linkBg },

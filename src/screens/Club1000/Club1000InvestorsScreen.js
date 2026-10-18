@@ -189,6 +189,13 @@ const SOURCE_LABELS = { referral: 'Referral', walk_in: 'Walk-in', website: 'Webs
 // with the investor — or with the revision they saved as a draft — where everything,
 // the scheme and the investment date included, can change. It submits to the revise
 // endpoint and goes for approval. Same as the website.
+// Add more: a new investment for someone who already has one — their details carried
+// over, the scheme, amount and date left to choose. Not linked to their lead.
+export function morePrefill(inv) {
+  return inv ? { more: true, name: inv.name, phone: inv.phone, email: inv.email || '', pan: inv.pan || '',
+    source: inv.source || 'referral', reference_name: inv.reference_name || '', reference_phone: inv.reference_phone || '' } : null;
+}
+
 export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeList, prefillLead, draft: savedDraft, revise }) {
   // What the form opens with: a revision's saved draft over the investor itself, or a
   // saved new-investor draft.
@@ -225,13 +232,13 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
           : schemes[0];
       setForm({
         scheme: s?.id || '',
-        source: draft?.source || 'referral',
+        source: draft?.source || prefillLead?.source || 'referral',
         reference_name: draft?.reference_name || prefillLead?.reference_name || '',
         reference_phone: draft?.reference_phone || prefillLead?.reference_phone || '',
         name: draft?.name || prefillLead?.name || '',
         phone: draft?.phone || prefillLead?.phone || '',
         email: draft?.email || prefillLead?.email || '',
-        pan: draft?.pan || '',
+        pan: draft?.pan || prefillLead?.pan || '',
         // A draft's amount may legitimately be 0 — that is "not said yet", so the
         // field reads empty rather than showing a figure nobody typed.
         amount_invested: (draft && Number(draft.amount_invested) > 0) ? String(draft.amount_invested)
@@ -478,7 +485,7 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
             <Text style={ClubInvestorsScreenS.reviseSub}>{revise.name} · {revise.phone}</Text>
           </View>
         ) : (
-          <Text style={ClubInvestorsScreenS.sheetTitle}>{draft ? 'Edit Draft Investor' : 'Add Investor'}</Text>
+          <Text style={ClubInvestorsScreenS.sheetTitle}>{draft ? 'Edit Draft Investor' : prefillLead?.more ? `Add more — ${prefillLead.name}` : 'Add Investor'}</Text>
         )}
         <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="close" size={18} color={TEXT} />
@@ -487,6 +494,9 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
       <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
 
         {/* Investor first, then where they came from — same order as the website. */}
+        {!!prefillLead?.more && !draft && (
+          <Text style={ClubInvestorsScreenS.moreNote}>A new investment for {prefillLead.name} — same or another scheme, with its own LOI, dates and payouts. It joins their portfolio; what they already hold is not changed.</Text>
+        )}
         <Text style={ClubInvestorsScreenS.formSection}>INVESTOR</Text>
         <TextField label="Investor Name" required value={form.name} onChangeText={(v) => set('name', v)} />
         <View style={ClubInvestorsScreenS.fRow}>
@@ -1114,6 +1124,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [redeeming, setRedeeming] = useState(null);   // Redeem sheet (before maturity)
   const [historyFor, setHistoryFor] = useState(null); // History sheet
   const [portfolioFor, setPortfolioFor] = useState(null); // the person's whole portfolio
+  const [addMoreFor, setAddMoreFor] = useState(null);     // a new investment for the same person
   const [selecting, setSelecting] = useState(false);     // pick several to delete at once
   const [picked, setPicked] = useState(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -1234,7 +1245,10 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         onClose={() => setRevising(null)} onSaved={() => load()} />
       <ImportInvestorsSheet visible={showImport} onClose={() => setShowImport(false)} onDone={() => { setShowImport(false); load(); }} />
       <InvestorHistorySheet investor={historyFor} onClose={() => setHistoryFor(null)} />
-      <PortfolioSheet investorId={portfolioFor} onClose={() => setPortfolioFor(null)} />
+      <PortfolioSheet investorId={portfolioFor} onClose={() => setPortfolioFor(null)}
+        onAddMore={can(user, 'club.investor.manage') && schemes.length ? (pf) => { setPortfolioFor(null); setAddMoreFor(pf); } : null} />
+      <AddInvestorSheet visible={!!addMoreFor} prefillLead={morePrefill(addMoreFor)} schemes={schemes}
+        onClose={() => setAddMoreFor(null)} onSaved={() => { setAddMoreFor(null); load(); }} />
       <RedeemSheet investor={redeeming} onClose={() => setRedeeming(null)} onDone={() => { setRedeeming(null); load(); }} />
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
         scheme={schemes.find((s) => String(s.id) === String(renewing?.scheme))}
@@ -1388,6 +1402,11 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                 </TouchableOpacity>
                 {/* Viewing on the left; what changes the investment on the right. */}
                 <View style={ClubInvestorsScreenS.actionsGap} />
+                {can(user, 'club.investor.manage') && schemes.length > 0 && (
+                  <TouchableOpacity onPress={() => setAddMoreFor(inv)} style={ClubInvestorsScreenS.moreChip}>
+                    <Text style={ClubInvestorsScreenS.moreChipText}>+ Add more</Text>
+                  </TouchableOpacity>
+                )}
                 {can(user, 'club.investor.manage') && (
                   <TouchableOpacity onPress={() => setRevising(inv)} style={ClubInvestorsScreenS.rowBtnPurple}>
                     <Text style={ClubInvestorsScreenS.rowBtnPurpleText}>↻ Revise LOI</Text>
@@ -1536,6 +1555,9 @@ const ClubInvestorsScreenS = StyleSheet.create({
   bulkDelOff: { opacity: 0.45 },
   bulkSpacer: { height: 70 },
   bulkDelText: { fontSize: 12.5, fontWeight: '800', color: '#fff' },
+  moreChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.successBg },
+  moreChipText: { fontSize: 11, fontWeight: '700', color: COLORS.success },
+  moreNote: { fontSize: 12, color: COLORS.link, backgroundColor: COLORS.linkBg, padding: 10, borderRadius: 10, marginBottom: 10, overflow: 'hidden' },
   actionsGap: { flexGrow: 1, minWidth: 8 },
   historyChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border },
   historyChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textPrimary },
