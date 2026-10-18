@@ -257,7 +257,7 @@ export function MaturityPayoutSheet({ investor, onClose, onDone }) {
 
 // The term that ended, and how he is renewing it — same as the website: four plain
 // choices that fill in the new amount and say where every rupee goes.
-export function RenewalSummary({ investorId, newAmount, onRenewal }) {
+export function RenewalSummary({ investorId, newAmount, onRenewal, payNow, onPayNow }) {
   const [st] = useSettlement(investorId);
   const [how, setHow] = useState('');
   const [take, setTake] = useState('');
@@ -331,6 +331,29 @@ export function RenewalSummary({ investorId, newAmount, onRenewal }) {
           {fresh > 0 && <Line label="Fresh money he adds" value={rupee(fresh)} />}
           {toHim > 0 && <Line label="Interest paid to him" value={rupee(toHim)} />}
           {back > 0 && <Line label="Principal paid back to him" value={rupee(back)} />}
+        </View>
+      )}
+      {next > 0 && (toHim + back) > 0 && !!onPayNow && (
+        <View style={s.choice}>
+          <Text style={s.choiceHead}>DID HE RECEIVE THIS {rupee(toHim + back)} NOW?</Text>
+          <View style={[s.choiceRow, s.choiceCol, !!payNow && s.choiceRowOn]}>
+            <TouchableOpacity style={s.choiceTop} onPress={() => onPayNow({ paid_date: payNow?.paid_date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }), notes: payNow?.notes || '' })}>
+              <Ionicons name={payNow ? 'radio-button-on' : 'radio-button-off'} size={18} color={payNow ? COLORS.link : COLORS.textSecondary} />
+              <Text style={s.choiceText}>Yes, it was paid to him{'\n'}<Text style={s.choiceHint}>marked paid when the renewal is approved</Text></Text>
+            </TouchableOpacity>
+            {!!payNow && (
+              <>
+                <TextInput style={s.choiceInput} placeholder="Paid on (YYYY-MM-DD)" placeholderTextColor={COLORS.textTertiary}
+                  value={payNow.paid_date} onChangeText={(v) => onPayNow({ ...payNow, paid_date: v })} />
+                <TextInput style={s.choiceInput} placeholder="UTR / cheque no." placeholderTextColor={COLORS.textTertiary}
+                  value={payNow.notes} onChangeText={(v) => onPayNow({ ...payNow, notes: v })} />
+              </>
+            )}
+          </View>
+          <TouchableOpacity style={[s.choiceRow, !payNow && s.choiceRowOn]} onPress={() => onPayNow(null)}>
+            <Ionicons name={!payNow ? 'radio-button-on' : 'radio-button-off'} size={18} color={!payNow ? COLORS.link : COLORS.textSecondary} />
+            <Text style={s.choiceText}>No, pay him later <Text style={s.choiceHint}>— stays due on Payouts</Text></Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>

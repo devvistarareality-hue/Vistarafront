@@ -272,10 +272,11 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
       const back = R(t.principal_returned), fresh = R(t.fresh_money), renewed = R(t.renewed_with);
       const lines = [['', 'Principal invested', principal]];
       if (earned) lines.push(['+', 'Interest earned', earned]);
-      if (toHim) lines.push(['−', 'Interest paid / payable to him', toHim]);
+      const paidOn = t.paid_at_renewal ? ` (paid ${fmtDate(t.paid_at_renewal)})` : '';
+      if (toHim) lines.push(['−', (t.paid_at_renewal ? 'Interest paid to him' : 'Interest to be paid to him') + paidOn, toHim]);
       if ((earned || toHim) && (fresh || back)) lines.push(['=', 'With us at the end of the term', principal + earned - toHim, 'sub']);
       if (fresh) lines.push(['+', 'New money added', fresh]);
-      if (back) lines.push(['−', 'Principal taken back', back]);
+      if (back) lines.push(['−', (t.paid_at_renewal ? 'Principal paid back to him' : 'Principal to be paid back to him') + paidOn, back]);
       lines.push(['=', 'Renewed with', renewed, 'total']);
       return `<div class="hist-box">
         <div class="hist-title">${esc(String(t.label || '').split(' · ')[0].toUpperCase())} · ${esc(fmtDate(t.start))} to ${esc(fmtDate(t.maturity))}</div>

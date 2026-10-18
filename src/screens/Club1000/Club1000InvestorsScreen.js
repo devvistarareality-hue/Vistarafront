@@ -731,7 +731,8 @@ async function renewalHistory(investor, form) {
       const added = form.interest_added !== '' && form.interest_added != null ? Math.min(Number(form.interest_added) || 0, unpaid)
         : reinvest ? Math.min(unpaid, Math.max(next - principal, 0)) : 0;
       rows.push({ ...cur, interest_earned: earned, interest_added: added, interest_to_investor: Math.max(earned - added, 0),
-        principal_returned: Math.max(principal - next, 0), fresh_money: Math.max(next - principal - added, 0), renewed_with: next });
+        principal_returned: Math.max(principal - next, 0), fresh_money: Math.max(next - principal - added, 0), renewed_with: next,
+        paid_at_renewal: form.pay_now?.paid_date || '' });
     }
     return rows;
   } catch { return []; }
@@ -859,6 +860,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       const payload = { ...form, investment_date: toISODate(form.investment_date), loi_file: loiFile };
       if (!payload.interest_choice) delete payload.interest_choice;
       if (payload.interest_added === '' || payload.interest_added == null) delete payload.interest_added;
+      if (!payload.pay_now) delete payload.pay_now;
       if ((form.interest_payout === 'quarterly' || form.interest_payout === 'monthly') && schedule.length) payload.payout_schedule = schedule;
       const res = await apiFetch(CLUB1000_ENDPOINTS.investorRenew(investor.id), { method: 'POST', body: JSON.stringify(payload) });
       const d = await res.json();
@@ -889,7 +891,8 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
           This investment matured on {formatDMY(investor.maturity_date)}. Set the renewal terms below — amount can go up or down.
         </Text>
         <RenewalSummary investorId={investor.id} newAmount={form.amount_invested}
-          onRenewal={(r) => setForm((f) => ({ ...f, amount_invested: String(r.amount), interest_choice: r.interest_choice, interest_added: String(r.interest_added) }))} />
+          onRenewal={(r) => setForm((f) => ({ ...f, amount_invested: String(r.amount), interest_choice: r.interest_choice, interest_added: String(r.interest_added) }))}
+          payNow={form.pay_now} onPayNow={(v) => setForm((f) => ({ ...f, pay_now: v }))} />
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, marginBottom: 16 }}>
