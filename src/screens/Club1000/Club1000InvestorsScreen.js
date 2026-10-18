@@ -30,6 +30,7 @@ import InvestorHistorySheet from './InvestorHistorySheet';
 import PortfolioSheet from './PortfolioSheet';
 import { settledTo, settledRemark } from '../../lib/c1Settled';
 import { loiFileName, sharePdfNamed, shareInvestorStatement } from '../../lib/c1Files';
+import { earlierTerms } from '../../lib/c1History';
 import { useReasonPrompt } from '../../components/ReasonPrompt';
 import ImportInvestorsSheet from './ImportInvestorsSheet';
 import ScheduleList from './ScheduleList';
@@ -367,8 +368,13 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
         const noRes = await apiFetch(`${CLUB1000_ENDPOINTS.investorNextLoiNo}?scheme_id=${scheme.id}`);
         ({ loi_no } = noRes.ok ? await noRes.json() : { loi_no: '' });
       }
+      // A renewed investment's revised LOI also states its earlier terms, as the renewal LOI does.
+      const past = revise?.renewal_count ? await earlierTerms(revise.id) : { history: [] };
       const html = buildInvestorLOIHtml({ ...(revise || {}), ...form, investment_date: toISODate(form.investment_date), loi_no }, scheme,
-        revise ? { revisionNo: nextRevisionNo, schedule } : { schedule });
+        revise ? { revisionNo: nextRevisionNo, schedule, ...(past.history.length ? { history: past.history, nextTerm: {
+          label: `${(past.current?.label || `Renewal ${revise.renewal_count}`).split(' · ')[0]} (revised R${nextRevisionNo})`,
+          start: toISODate(form.investment_date), maturity: maturityDate ? toISODate(maturityDate) : null,
+          principal: form.amount_invested } } : {}) } : { schedule });
       const { uri } = await Print.printToFileAsync({ html });
       await sharePdfNamed(uri, loiFileName({ loi_no, name: form.name }, revise ? { revisionNo: nextRevisionNo } : {}));
       setLoiDone(true);
