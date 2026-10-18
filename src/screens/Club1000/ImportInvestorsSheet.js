@@ -67,7 +67,7 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
       </View>
       <ScrollView contentContainerStyle={s.body}>
         <Text style={s.section}>1 · GET THE TEMPLATE</Text>
-        <Text style={s.help}>One row per investment that is active today: today’s amount, and the date the investor first invested. Past Terms fills itself — every year since, from the scheme’s tenure — type only a Principal (if different) for a year when the amount was not today’s. Red columns marked * must be filled.</Text>
+        <Text style={s.help}>One row per investment: its amount and its own investment date. Renewals are not imported — one that has already matured comes in due for renewal; renew it on the website after it is approved. Red columns marked * must be filled.</Text>
         <TouchableOpacity onPress={template} disabled={!!busy} style={s.ghostBtn}>
           {busy === 'template' ? <ActivityIndicator size="small" color={COLORS.link} /> : <Text style={s.ghostText}>⬇ Download template</Text>}
         </TouchableOpacity>
@@ -94,10 +94,7 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
                 <Text style={s.rowName} numberOfLines={1}>{r.preview.name || '—'}</Text>
                 <Text style={s.rowAmt}>{r.preview.amount ? inrShort(r.preview.amount) : '—'}</Text>
               </View>
-              <Text style={s.rowSub}>{r.preview.scheme || '—'} · {r.preview.interest_payout}{r.preview.investment_date ? ` · ${formatDMY(r.preview.investment_date)} → ${formatDMY(r.preview.maturity_date)}` : ''}{r.preview.renewal_count ? ` · renewed ${r.preview.renewal_count}×` : ''}</Text>
-              {r.preview.past_terms?.length > 0 && (
-                <Text style={s.past}>Past: {r.preview.past_terms.map((t) => `${inrShort(t.principal)} (${formatDMY(t.start)})`).join(' → ')}</Text>
-              )}
+              <Text style={s.rowSub}>{r.preview.scheme || '—'} · {r.preview.interest_payout}{r.preview.investment_date ? ` · ${formatDMY(r.preview.investment_date)} → ${formatDMY(r.preview.maturity_date)}` : ''}</Text>
               {r.ok ? <Text style={s.ok}>Ready</Text> : r.errors.map((e) => <Text key={e} style={s.bad}>• {e}</Text>)}
               {r.warnings.map((w) => <Text key={w} style={s.warn}>• {w}</Text>)}
             </View>
@@ -142,7 +139,6 @@ const s = StyleSheet.create({
   rowName: { flex: 1, fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   rowAmt: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
   rowSub: { fontSize: 11, color: COLORS.textSecondary, marginTop: 3, marginBottom: 3 },
-  past: { fontSize: 11.5, color: COLORS.link, marginTop: 3 },
   ok: { fontSize: 11.5, fontWeight: '700', color: COLORS.success },
   bad: { fontSize: 11.5, fontWeight: '700', color: COLORS.error },
   warn: { fontSize: 11.5, fontWeight: '700', color: COLORS.warning },
