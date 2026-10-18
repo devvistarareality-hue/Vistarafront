@@ -348,6 +348,12 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   {inv.approval_status === 'rejected' && !!inv.rejected_reason && (
                     <View style={st.reasonBox}><Text style={st.reasonHead}>REJECTED — REASON</Text><Text style={st.reasonBody}>{inv.rejected_reason}</Text></View>
                   )}
+                  {(inv.rejections || []).slice().reverse().map((rj, k) => (
+                    <View key={k} style={st.reasonBox}>
+                      <Text style={st.reasonHead}>{(rj.kind === 'renewal' ? 'RENEWAL' : 'REVISION')} R{rj.no} REJECTED{rj.by ? ` BY ${String(rj.by).toUpperCase()}` : ''}{rj.at ? ` · ${formatDMY(String(rj.at).slice(0, 10))}` : ''}</Text>
+                      <Text style={st.reasonBody}>{rj.reason}</Text>
+                    </View>
+                  ))}
                 </View>
                 <View style={st.side}>
                   <Text style={st.amt}>{fmtMoney(inv.amount_invested)}</Text>
