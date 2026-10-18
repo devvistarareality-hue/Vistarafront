@@ -967,11 +967,12 @@ function LedgerModal({ investorId, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const [termSel, setTermSel] = useState('all');   // 'all', or a term's number (0 = the original)
 
   useEffect(() => {
     if (!investorId) return;
     let cancelled = false;
-    setLoading(true); setErr('');
+    setLoading(true); setErr(''); setTermSel('all');
     apiFetch(CLUB1000_ENDPOINTS.investorLedger(investorId))
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
@@ -984,7 +985,14 @@ function LedgerModal({ investorId, onClose }) {
   }, [investorId]);
 
   const inv = data?.investor;
-  const s = data?.summary;
+  const terms = data?.terms || [];
+  const term = termSel === 'all' ? null : terms.find((t) => t.no === termSel);
+  const s = term ? term.summary : data?.summary;
+  const first = terms[0];
+  const principalHint = term ? `${term.no === 0 ? 'invested' : 'renewed'} ${formatDMY(term.start)}`
+    : first ? `${terms.length > 1 ? 'first invested' : 'invested'} ${formatDMY(first.start)}`
+    : inv?.investment_date ? `invested ${formatDMY(inv.investment_date)}` : '';
+  const rows = (data?.entries || []).filter((e) => e.type !== 'investment' && (termSel === 'all' || (e.term ?? 0) === termSel));
   const todayIso = toISODate(new Date());
 
   return (
@@ -1005,9 +1013,19 @@ function LedgerModal({ investorId, onClose }) {
               <Text style={{ textAlign: 'center', color: COLORS.error, marginTop: 30 }}>{err}</Text>
             ) : (
               <>
+                {terms.length > 1 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={ClubInvestorsScreenS.lgTermScroll} contentContainerStyle={ClubInvestorsScreenS.lgTerms}>
+                    {[{ no: 'all', label: 'All terms' }, ...terms].map((t) => (
+                      <TouchableOpacity key={String(t.no)} onPress={() => setTermSel(t.no)} style={[ClubInvestorsScreenS.lgTerm, termSel === t.no && ClubInvestorsScreenS.lgTermOn]}>
+                        <Text style={[ClubInvestorsScreenS.lgTermText, termSel === t.no && ClubInvestorsScreenS.lgTermTextOn]}>{t.label}{t.current ? '  ·  current' : ''}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+                {!!term && <Text style={ClubInvestorsScreenS.lgTermLine}>{formatDMY(term.start)} → {formatDMY(term.maturity)} · principal {fmtMoney(term.principal)}</Text>}
                 <View style={ClubInvestorsScreenS.lgCards}>
                   {[
-                    ['Principal', s.principal ?? s.total_invested, null, inv?.investment_date ? `invested ${formatDMY(inv.investment_date)}` : ''],
+                    ['Principal', s.principal ?? s.total_invested, null, principalHint],
                     ['Interest', s.interest, null],
                     ['Total', s.total ?? s.total_payout_due, 'sum'],
                     ['Due till today', s.due_till_today, 'info'],
@@ -1016,19 +1034,24 @@ function LedgerModal({ investorId, onClose }) {
                   ].map(([label, val, tone, hint]) => (
                     <View key={label} style={[ClubInvestorsScreenS.lgCard, tone === 'sum' && ClubInvestorsScreenS.lgCardSum]}>
                       <Text style={ClubInvestorsScreenS.lgCardLbl}>{label.toUpperCase()}</Text>
-                      <Text style={[ClubInvestorsScreenS.lgCardVal, tone && LG_TONE[tone]]}>{fmtMoney(val)}</Text>
+                      <Text style={[ClubInvestorsScreenS.lgCardVal, tone && LG_TONE[tone]]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtMoney(val)}</Text>
                       {!!hint && <Text style={ClubInvestorsScreenS.lgCardHint}>{hint}</Text>}
                     </View>
                   ))}
                 </View>
 
-                {(data.entries || []).filter((e) => e.type !== 'investment').map((e, i) => {
+                {rows.length === 0 && <Text style={ClubInvestorsScreenS.lgNote}>No payouts in this term.</Text>}
+                {rows.map((e, i) => {
                   // Unpaid: Pending once its date has come, Upcoming before that.
                   const due = e.due_date || e.date;
                   const st = e.status === 'pending' ? (due > todayIso ? 'upcoming' : 'pending')
                     : e.status === 'paid' && e.paid_date && e.paid_date < due ? 'paid early' : e.status;
+                  const head = termSel === 'all' && terms.length > 1 && (i === 0 || (rows[i - 1].term ?? 0) !== (e.term ?? 0))
+                    ? terms.find((t) => t.no === (e.term ?? 0)) : null;
                   return (
-                    <View key={i} style={[ClubInvestorsScreenS.lgRow, i > 0 && ClubInvestorsScreenS.lgRowSep]}>
+                    <View key={i}>
+                    {!!head && <Text style={ClubInvestorsScreenS.lgTermHead}>{head.label} · {formatDMY(head.start)} → {formatDMY(head.maturity)} · {fmtMoney(head.principal)}</Text>}
+                    <View style={[ClubInvestorsScreenS.lgRow, i > 0 && !head && ClubInvestorsScreenS.lgRowSep]}>
                       <View style={ClubInvestorsScreenS.lgTop}>
                         <View style={ClubInvestorsScreenS.flex1}>
                           <LedgerBadge label={e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
@@ -1044,6 +1067,7 @@ function LedgerModal({ investorId, onClose }) {
                         <LedgerBadge label={st} color={LEDGER_STATUS_COLOR[st] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
                       </View>
                       {!!e.notes && !e.is_balance && <Text style={ClubInvestorsScreenS.lgNote}>{e.notes}</Text>}
+                    </View>
                     </View>
                   );
                 })}
@@ -1467,12 +1491,20 @@ const ClubInvestorsScreenS = StyleSheet.create({
   schedDateFlat: { flex: 1, fontSize: 12, color: COLORS.textPrimary },
   schedAmt: { flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 10, fontSize: 12, color: COLORS.textPrimary },
   schedWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 2, textAlign: 'right' },
+  lgTermScroll: { flexGrow: 0, marginBottom: 8 },
+  lgTerms: { gap: 6, alignItems: 'center' },
+  lgTerm: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  lgTermOn: { backgroundColor: COLORS.link, borderColor: COLORS.link },
+  lgTermText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  lgTermTextOn: { color: '#fff' },
+  lgTermLine: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 8 },
+  lgTermHead: { marginTop: 10, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, backgroundColor: COLORS.surfaceAlt, fontSize: 11.5, fontWeight: '800', color: COLORS.textPrimary },
   lgCards: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  lgCard: { flexBasis: '31%', flexGrow: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10 },
+  lgCard: { flexBasis: '46%', flexGrow: 1, backgroundColor: COLORS.surfaceAlt, borderRadius: 14, padding: 10 },
   lgCardSum: { backgroundColor: COLORS.linkBg },
   lgCardLbl: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.4, color: COLORS.textSecondary },
   lgCardHint: { fontSize: 10, color: COLORS.textSecondary, marginTop: 1 },
-  lgCardVal: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
+  lgCardVal: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
   lgRow: { paddingVertical: 10 },
   lgRowSep: { borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
   lgTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },

@@ -321,6 +321,8 @@ function PaySheet({ row, today, onClose, onDone }) {
                 <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? COLORS.link : COLORS.textSecondary} />
                 <View style={s.flex}>
                   <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}{p.period ? ` · ${p.period.label}` : ''}</Text>
+                {!!p.term_label && <Text style={s.termTag}>{p.term_label}</Text>}
+                  {!!p.term_label && <Text style={s.termTag}>{p.term_label}</Text>}
                 {!!p.period && <Text style={s.payWhy}>{formatDMY(p.period.from)} – {formatDMY(p.period.to)} · {p.period.days} days × ₹{Number(p.period.per_day).toLocaleString('en-IN')}/day</Text>}
                   <Text style={[s.payWhen, late && s.payLate]}>Due {formatDMY(p.due_date)}{late ? ' · late' : ''}</Text>
                 </View>
@@ -473,6 +475,7 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
 }
 
 const s = StyleSheet.create({
+  termTag: { alignSelf: 'flex-start', marginTop: 2, fontSize: 10.5, fontWeight: '800', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, overflow: 'hidden', backgroundColor: COLORS.linkBg, color: COLORS.link },
   onlyChip: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: COLORS.warningBg },
   onlyChipText: { fontSize: 12, fontWeight: '700', color: COLORS.warning, maxWidth: 260 },
   kindRow: { flexDirection: 'row', alignSelf: 'flex-start', padding: 3, borderRadius: 10, backgroundColor: COLORS.surfaceAlt, borderWidth: 1, borderColor: COLORS.border, marginBottom: 10 },
