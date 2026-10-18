@@ -260,6 +260,28 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     </tr>
   `).join('');
 
+  // Investment History (renewal LOIs) — every earlier term and what became of it,
+  // the term ending now as the last row. Same as the website's renewal LOI.
+  const H = opts.history || [];
+  const historyHtml = H.length ? `
+    <div class="tc-header">Investment History · ${H.length} earlier term${H.length === 1 ? '' : 's'}:</div>
+    <table class="sched hist">
+      <thead><tr><th>Term</th><th>Period</th><th style="text-align:right">Principal</th><th style="text-align:right">Interest</th>
+        <th style="text-align:right">Interest went</th><th style="text-align:right">Principal went</th><th style="text-align:right">Renewed with</th></tr></thead>
+      <tbody>${H.map((t) => {
+        const intWent = [Number(t.interest_to_investor) > 0 ? `Paid ${money(t.interest_to_investor)}` : '',
+          Number(t.interest_added) > 0 ? `Added ${money(t.interest_added)}` : ''].filter(Boolean).join('<br>') || '—';
+        const prinWent = Number(t.principal_returned) > 0 ? `Back ${money(t.principal_returned)}`
+          : Number(t.fresh_money) > 0 ? `+${money(t.fresh_money)} new` : 'Rolled over';
+        return `<tr><td class="per">${esc(String(t.label || '').split(' · ')[0])}</td>
+          <td>${esc(fmtDate(t.start))}<br>to ${esc(fmtDate(t.maturity))}</td>
+          <td class="num">${esc(money(t.principal))}</td><td class="num">${esc(money(t.interest_earned))}</td>
+          <td class="num">${intWent}</td><td class="num">${esc(prinWent)}</td><td class="amt">${esc(money(t.renewed_with))}</td></tr>`;
+      }).join('')}
+      ${opts.nextTerm ? `<tr class="subtotal"><td colspan="6">This LOI: ${esc(opts.nextTerm.label)} · ${esc(fmtDate(opts.nextTerm.start))} – ${esc(fmtDate(opts.nextTerm.maturity))}</td><td class="amt">Rs. ${esc(money(opts.nextTerm.principal))}</td></tr>` : ''}
+      </tbody>
+    </table>` : '';
+
   const termsHtml = sectionsFor(scheme).map((sec) => `
     <div class="tc-box">
       <div class="tc-title">${esc(sec.title)}</div>
@@ -295,11 +317,14 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     .sign .t { font-weight: 700; font-size: 11px; }
     .dateplace { margin-top: 30px; }
     .dateplace div { margin: 4px 0; }
+    table.hist td.num { text-align: right; }
+    table.hist td, table.hist th { font-size: 9px; padding: 4px 5px; }
     .rev-badge { text-align: right; font-weight: 700; color: #FF6B2B; font-size: 11px; margin-bottom: 2px; }
   </style></head><body>
     ${opts.renewalNo ? `<div class="rev-badge">RENEWED LOI · R${esc(opts.renewalNo)}</div>` : opts.revisionNo ? `<div class="rev-badge">REVISED LOI · R${esc(opts.revisionNo)}</div>` : ''}
     <div class="title">INVESTMENT PROPOSAL FORM</div>
     <table class="hdr">${rowsHtml}</table>
+    ${historyHtml}
     <div class="tc-header">Payout Schedule:</div>
     <div class="basis"><b>${esc(basis.line)}</b><span>${esc(basis.total)}</span></div>
     <table class="sched">

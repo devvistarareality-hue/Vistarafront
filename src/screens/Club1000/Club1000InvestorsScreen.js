@@ -713,6 +713,29 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
 // investment_date/maturity_date and apply the renewal referral-reward rate.
 const AMBER = COLORS.warningAlt;
 
+// Every earlier term for the renewal LOI's history, from the Ledger's own term figures,
+// with the term ending now as the last row — what this renewal does with it.
+async function renewalHistory(investor, form) {
+  try {
+    const r = await apiFetch(CLUB1000_ENDPOINTS.investorLedger(investor.id));
+    const d = r.ok ? await r.json() : null;
+    const terms = d?.terms || [];
+    const rows = terms.filter((t) => !t.current);
+    const cur = terms.find((t) => t.current);
+    if (cur) {
+      const principal = Number(cur.principal) || 0;
+      const next = Number(form.amount_invested) || 0;
+      const earned = Number(cur.summary?.interest) || 0;
+      const unpaid = Math.max((Number(cur.summary?.pending) || 0) - principal, 0);
+      const reinvest = (form.interest_choice || (next > principal ? 'reinvest' : 'pay')) === 'reinvest';
+      const added = reinvest ? Math.min(unpaid, Math.max(next - principal, 0)) : 0;
+      rows.push({ ...cur, interest_earned: earned, interest_added: added, interest_to_investor: Math.max(earned - added, 0),
+        principal_returned: Math.max(principal - next, 0), fresh_money: Math.max(next - principal - added, 0), renewed_with: next });
+    }
+    return rows;
+  } catch { return []; }
+}
+
 function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
   const [form, setForm] = useState(null);
   const [schedule, setSchedule] = useState([]);
@@ -792,7 +815,11 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       // maturity_date is explicitly overridden (not just spread from `investor`)
       // because renewing changes investment_date — the OLD investor.maturity_date
       // would otherwise leak through and understate/misdate the schedule's totals.
-      const html = buildInvestorLOIHtml({ ...investor, ...form, investment_date: toISODate(form.investment_date), maturity_date: maturityDate ? toISODate(maturityDate) : null }, scheme, { renewalNo: nextRevisionNo, schedule });
+      const html = buildInvestorLOIHtml({ ...investor, ...form, investment_date: toISODate(form.investment_date), maturity_date: maturityDate ? toISODate(maturityDate) : null }, scheme, {
+        renewalNo: nextRevisionNo, schedule, history: await renewalHistory(investor, form),
+        nextTerm: { label: `Renewal ${(investor.renewal_count || 0) + 1}`, start: toISODate(form.investment_date),
+          maturity: maturityDate ? toISODate(maturityDate) : null, principal: form.amount_invested },
+      });
       const { uri } = await Print.printToFileAsync({ html });
       const name = `LOI_${investor.loi_no || investor.name}_R${nextRevisionNo}.pdf`.replace(/\s+/g, '_');
       if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
