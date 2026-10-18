@@ -334,26 +334,10 @@ export function RenewalSummary({ investorId, newAmount, onRenewal, payNow, onPay
         </View>
       )}
       {next > 0 && (toHim + back) > 0 && !!onPayNow && (
-        <View style={s.choice}>
-          <Text style={s.choiceHead}>DID HE RECEIVE THIS {rupee(toHim + back)} NOW?</Text>
-          <View style={[s.choiceRow, s.choiceCol, !!payNow && s.choiceRowOn]}>
-            <TouchableOpacity style={s.choiceTop} onPress={() => onPayNow({ paid_date: payNow?.paid_date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }), notes: payNow?.notes || '' })}>
-              <Ionicons name={payNow ? 'radio-button-on' : 'radio-button-off'} size={18} color={payNow ? COLORS.link : COLORS.textSecondary} />
-              <Text style={s.choiceText}>Yes, it was paid to him{'\n'}<Text style={s.choiceHint}>marked paid when the renewal is approved</Text></Text>
-            </TouchableOpacity>
-            {!!payNow && (
-              <>
-                <TextInput style={s.choiceInput} placeholder="Paid on (YYYY-MM-DD)" placeholderTextColor={COLORS.textTertiary}
-                  value={payNow.paid_date} onChangeText={(v) => onPayNow({ ...payNow, paid_date: v })} />
-                <TextInput style={s.choiceInput} placeholder="UTR / cheque no." placeholderTextColor={COLORS.textTertiary}
-                  value={payNow.notes} onChangeText={(v) => onPayNow({ ...payNow, notes: v })} />
-              </>
-            )}
-          </View>
-          <TouchableOpacity style={[s.choiceRow, !payNow && s.choiceRowOn]} onPress={() => onPayNow(null)}>
-            <Ionicons name={!payNow ? 'radio-button-on' : 'radio-button-off'} size={18} color={!payNow ? COLORS.link : COLORS.textSecondary} />
-            <Text style={s.choiceText}>No, pay him later <Text style={s.choiceHint}>— stays due on Payouts</Text></Text>
-          </TouchableOpacity>
+        <View style={s.settle}>
+          <Text style={s.settleText}>The {rupee(toHim + back)} he takes is paid to him at the renewal — this term is settled and nothing from it stays due.</Text>
+          <TextInput style={s.choiceInput} placeholder="UTR / cheque no. (optional)" placeholderTextColor={COLORS.textTertiary}
+            value={payNow?.notes || ''} onChangeText={(v) => onPayNow({ notes: v })} />
         </View>
       )}
     </View>
@@ -361,6 +345,8 @@ export function RenewalSummary({ investorId, newAmount, onRenewal, payNow, onPay
 }
 
 const s = StyleSheet.create({
+  settle: { marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: COLORS.successBg },
+  settleText: { fontSize: 12.5, color: COLORS.textPrimary },
   wait: { minHeight: 380, alignItems: 'center', justifyContent: 'center' },
   choice: { marginTop: 10, gap: 6 },
   choiceHead: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
