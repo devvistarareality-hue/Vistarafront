@@ -9,7 +9,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import { apiFetch } from '../../utils/apiFetch';
 import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
@@ -30,6 +29,7 @@ import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
 import PortfolioSheet from './PortfolioSheet';
 import { settledTo, settledRemark } from '../../lib/c1Settled';
+import { loiFileName, sharePdfNamed, shareInvestorStatement } from '../../lib/c1Files';
 import { useReasonPrompt } from '../../components/ReasonPrompt';
 import ImportInvestorsSheet from './ImportInvestorsSheet';
 import ScheduleList from './ScheduleList';
@@ -370,9 +370,7 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
       const html = buildInvestorLOIHtml({ ...(revise || {}), ...form, investment_date: toISODate(form.investment_date), loi_no }, scheme,
         revise ? { revisionNo: nextRevisionNo, schedule } : { schedule });
       const { uri } = await Print.printToFileAsync({ html });
-      const name = (revise ? `LOI_${loi_no || form.name}_R${nextRevisionNo}.pdf` : `LOI_${loi_no || form.name}.pdf`).replace(/\s+/g, '_');
-      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
-      else await Print.printAsync({ uri });
+      await sharePdfNamed(uri, loiFileName({ loi_no, name: form.name }, revise ? { revisionNo: nextRevisionNo } : {}));
       setLoiDone(true);
     } catch (e) {
       Alert.alert('Could not generate the LOI', e.message);
@@ -824,9 +822,8 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
           maturity: maturityDate ? toISODate(maturityDate) : null, principal: form.amount_invested },
       });
       const { uri } = await Print.printToFileAsync({ html });
-      const name = `LOI_${investor.loi_no || investor.name}_R${nextRevisionNo}.pdf`.replace(/\s+/g, '_');
-      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
-      else await Print.printAsync({ uri });
+      await sharePdfNamed(uri, loiFileName({ loi_no: investor.loi_no, name: form.name || investor.name },
+        { nextTerm: { label: `Renewal ${(investor.renewal_count || 0) + 1}` } }));
       setLoiDone(true);
     } catch (e) {
       Alert.alert('Could not generate the LOI', e.message);
@@ -1041,6 +1038,13 @@ function LedgerModal({ investorId, onClose }) {
     : inv?.investment_date ? `invested ${formatDMY(inv.investment_date)}` : '';
   const rows = (data?.entries || []).filter((e) => e.type !== 'investment' && (termSel === 'all' || (e.term ?? 0) === termSel));
   const todayIso = toISODate(new Date());
+  const [stmtBusy, setStmtBusy] = useState(false);
+  async function statement() {
+    setStmtBusy(true);
+    const e = await shareInvestorStatement(inv);
+    setStmtBusy(false);
+    if (e) Alert.alert('Statement', e);
+  }
 
   return (
     <Modal visible={!!investorId} transparent animationType="slide" onRequestClose={onClose}>
@@ -1060,6 +1064,10 @@ function LedgerModal({ investorId, onClose }) {
               <Text style={{ textAlign: 'center', color: COLORS.error, marginTop: 30 }}>{err}</Text>
             ) : (
               <>
+                <TouchableOpacity style={ClubInvestorsScreenS.lgStmt} onPress={statement} disabled={stmtBusy}>
+                  {stmtBusy ? <ActivityIndicator size="small" color={COLORS.link} /> : <Ionicons name="download-outline" size={16} color={COLORS.link} />}
+                  <Text style={ClubInvestorsScreenS.lgStmtText}>{stmtBusy ? 'Preparing statement…' : 'Statement PDF — to give the investor'}</Text>
+                </TouchableOpacity>
                 {terms.length > 1 && (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={ClubInvestorsScreenS.lgTermScroll} contentContainerStyle={ClubInvestorsScreenS.lgTerms}>
                     {[{ no: 'all', label: 'All terms' }, ...terms].map((t) => (
@@ -1618,6 +1626,9 @@ const ClubInvestorsScreenS = StyleSheet.create({
   schedDateFlat: { flex: 1, fontSize: 12, color: COLORS.textPrimary },
   schedAmt: { flex: 1, height: 36, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 10, fontSize: 12, color: COLORS.textPrimary },
   schedWhy: { fontSize: 10.5, color: COLORS.textSecondary, marginTop: 2, textAlign: 'right' },
+  lgStmt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 12,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.accentSoft, marginBottom: 12 },
+  lgStmtText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
   lgTermScroll: { flexGrow: 0, marginBottom: 8 },
   lgTerms: { gap: 6, alignItems: 'center' },
   lgTerm: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
