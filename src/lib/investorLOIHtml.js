@@ -263,22 +263,26 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
   // Investment History (renewal LOIs) — every earlier term and what became of it,
   // the term ending now as the last row. Same as the website's renewal LOI.
   const H = opts.history || [];
+  const R = (n) => Math.round(Number(n) || 0);
   const historyHtml = H.length ? `
     <div class="tc-header">Investment History · ${H.length} earlier term${H.length === 1 ? '' : 's'}:</div>
     <table class="sched hist">
-      <thead><tr><th>Term</th><th>Period</th><th style="text-align:right">Principal</th><th style="text-align:right">Interest</th>
-        <th style="text-align:right">Interest went</th><th style="text-align:right">Principal went</th><th style="text-align:right">Renewed with</th></tr></thead>
+      <thead><tr><th>Term</th><th style="text-align:right">Principal</th><th style="text-align:right">Interest earned</th>
+        <th>What happened</th><th style="text-align:right">Renewed with</th></tr></thead>
       <tbody>${H.map((t) => {
-        const intWent = [Number(t.interest_to_investor) > 0 ? `Paid ${money(t.interest_to_investor)}` : '',
-          Number(t.interest_added) > 0 ? `Added ${money(t.interest_added)}` : ''].filter(Boolean).join('<br>') || '—';
-        const prinWent = Number(t.principal_returned) > 0 ? `Back ${money(t.principal_returned)}`
-          : Number(t.fresh_money) > 0 ? `+${money(t.fresh_money)} new` : 'Rolled over';
-        return `<tr><td class="per">${esc(String(t.label || '').split(' · ')[0])}</td>
-          <td>${esc(fmtDate(t.start))}<br>to ${esc(fmtDate(t.maturity))}</td>
+        const toHim = R(t.interest_to_investor), added = R(t.interest_added), back = R(t.principal_returned), fresh = R(t.fresh_money);
+        const what = [];
+        if (toHim && added) what.push(`Interest: Rs. ${money(toHim)} paid, Rs. ${money(added)} added`);
+        else if (added) what.push(`Interest Rs. ${money(added)} added to the renewal`);
+        else if (toHim) what.push(`Interest Rs. ${money(toHim)} paid to him`);
+        if (back) what.push(`Rs. ${money(back)} principal taken back`);
+        else if (fresh) what.push(`Rs. ${money(fresh)} new money added`);
+        else what.push('Principal rolled over');
+        return `<tr><td><div class="per">${esc(String(t.label || '').split(' · ')[0])}</div><div class="why">${esc(fmtDate(t.start))} to ${esc(fmtDate(t.maturity))}</div></td>
           <td class="num">${esc(money(t.principal))}</td><td class="num">${esc(money(t.interest_earned))}</td>
-          <td class="num">${intWent}</td><td class="num">${esc(prinWent)}</td><td class="amt">${esc(money(t.renewed_with))}</td></tr>`;
+          <td>${what.map(esc).join('<br>')}</td><td class="amt">${esc(money(t.renewed_with))}</td></tr>`;
       }).join('')}
-      ${opts.nextTerm ? `<tr class="subtotal"><td colspan="6">This LOI: ${esc(opts.nextTerm.label)} · ${esc(fmtDate(opts.nextTerm.start))} – ${esc(fmtDate(opts.nextTerm.maturity))}</td><td class="amt">Rs. ${esc(money(opts.nextTerm.principal))}</td></tr>` : ''}
+      ${opts.nextTerm ? `<tr class="subtotal"><td colspan="4">This LOI: ${esc(opts.nextTerm.label)} · ${esc(fmtDate(opts.nextTerm.start))} – ${esc(fmtDate(opts.nextTerm.maturity))}</td><td class="amt">Rs. ${esc(money(opts.nextTerm.principal))}</td></tr>` : ''}
       </tbody>
     </table>` : '';
 
