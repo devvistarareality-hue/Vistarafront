@@ -405,7 +405,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   )}
                   {(inv.rejections || []).slice().reverse().map((rj, k) => (
                     <View key={k} style={st.reasonBox}>
-                      <Text style={st.reasonHead}>{rj.kind === 'delete' ? 'DELETE REQUEST' : rj.kind === 'undo-renewal' ? 'UNDO-RENEWAL REQUEST' : rj.kind === 'undone-renewal' ? `RENEWAL R${rj.no}` : `${rj.kind === 'renewal' ? 'RENEWAL' : 'REVISION'} R${rj.no}`} {rj.kind === 'undone-renewal' ? 'UNDONE' : 'REJECTED'}{rj.by ? ` BY ${String(rj.by).toUpperCase()}` : ''}{rj.at ? ` · ${formatDMY(String(rj.at).slice(0, 10))}` : ''}</Text>
+                      <Text style={st.reasonHead}>{rj.kind === 'delete' ? 'DELETE REQUEST' : rj.kind === 'undo-renewal' ? 'UNDO-RENEWAL REQUEST' : rj.kind === 'undone-renewal' ? `RENEWAL R${rj.no}` : `${rj.kind === 'renewal' ? 'RENEWAL' : 'REVISION'} R${rj.no}`} {rj.kind === 'undone-renewal' ? 'UNDONE' : 'REJECTED'}{rj.by ? ` BY ${String(rj.by).toUpperCase()}` : ''}{rj.at ? ` · ${formatDMY(String(rj.at).slice(0, 10))}` : ''}{Number(rj.amount) ? ` · PROPOSED ${fmtMoney(rj.amount)}` : ''}</Text>
                       <Text style={st.reasonBody}>{rj.reason}</Text>
                     </View>
                   ))}
