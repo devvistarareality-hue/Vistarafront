@@ -263,28 +263,26 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
   // Investment History (renewal LOIs) — every earlier term and what became of it,
   // the term ending now as the last row. Same as the website's renewal LOI.
   const H = opts.history || [];
+  // Each earlier term as a short statement that adds up — same as the website's LOI.
   const R = (n) => Math.round(Number(n) || 0);
   const historyHtml = H.length ? `
     <div class="tc-header">Investment History · ${H.length} earlier term${H.length === 1 ? '' : 's'}:</div>
-    <table class="sched hist">
-      <thead><tr><th>Term</th><th style="text-align:right">Principal</th><th style="text-align:right">Interest earned</th>
-        <th>What happened</th><th style="text-align:right">Renewed with</th></tr></thead>
-      <tbody>${H.map((t) => {
-        const toHim = R(t.interest_to_investor), added = R(t.interest_added), back = R(t.principal_returned), fresh = R(t.fresh_money);
-        const what = [];
-        if (toHim && added) what.push(`Interest: Rs. ${money(toHim)} paid, Rs. ${money(added)} added`);
-        else if (added) what.push(`Interest Rs. ${money(added)} added to the renewal`);
-        else if (toHim) what.push(`Interest Rs. ${money(toHim)} paid to him`);
-        if (back) what.push(`Rs. ${money(back)} principal taken back`);
-        else if (fresh) what.push(`Rs. ${money(fresh)} new money added`);
-        else what.push('Principal rolled over');
-        return `<tr><td><div class="per">${esc(String(t.label || '').split(' · ')[0])}</div><div class="why">${esc(fmtDate(t.start))} to ${esc(fmtDate(t.maturity))}</div></td>
-          <td class="num">${esc(money(t.principal))}</td><td class="num">${esc(money(t.interest_earned))}</td>
-          <td>${what.map(esc).join('<br>')}</td><td class="amt">${esc(money(t.renewed_with))}</td></tr>`;
-      }).join('')}
-      ${opts.nextTerm ? `<tr class="subtotal"><td colspan="4">This LOI: ${esc(opts.nextTerm.label)} · ${esc(fmtDate(opts.nextTerm.start))} – ${esc(fmtDate(opts.nextTerm.maturity))}</td><td class="amt">Rs. ${esc(money(opts.nextTerm.principal))}</td></tr>` : ''}
-      </tbody>
-    </table>` : '';
+    ${H.map((t) => {
+      const principal = R(t.principal), earned = R(t.interest_earned), toHim = Math.max(R(t.interest_to_investor), 0);
+      const back = R(t.principal_returned), fresh = R(t.fresh_money), renewed = R(t.renewed_with);
+      const lines = [['', 'Principal invested', principal]];
+      if (earned) lines.push(['+', 'Interest earned', earned]);
+      if (toHim) lines.push(['−', 'Interest paid / payable to him', toHim]);
+      if ((earned || toHim) && (fresh || back)) lines.push(['=', 'With us at the end of the term', principal + earned - toHim, 'sub']);
+      if (fresh) lines.push(['+', 'New money added', fresh]);
+      if (back) lines.push(['−', 'Principal taken back', back]);
+      lines.push(['=', 'Renewed with', renewed, 'total']);
+      return `<div class="hist-box">
+        <div class="hist-title">${esc(String(t.label || '').split(' · ')[0].toUpperCase())} · ${esc(fmtDate(t.start))} to ${esc(fmtDate(t.maturity))}</div>
+        <table class="hist-st">${lines.map(([sign, label, val, kind]) => `<tr class="${kind || ''}"><td class="sg ${sign === '+' ? 'plus' : sign === '−' ? 'minus' : ''}">${sign}</td><td>${esc(label)}</td><td class="v">Rs. ${esc(money(val))}</td></tr>`).join('')}</table>
+      </div>`;
+    }).join('')}
+    ${opts.nextTerm ? `<div class="hist-next"><b>This LOI: ${esc(opts.nextTerm.label)} · ${esc(fmtDate(opts.nextTerm.start))} – ${esc(fmtDate(opts.nextTerm.maturity))}</b><b>Rs. ${esc(money(opts.nextTerm.principal))}</b></div>` : ''}` : '';
 
   const termsHtml = sectionsFor(scheme).map((sec) => `
     <div class="tc-box">
@@ -321,8 +319,16 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     .sign .t { font-weight: 700; font-size: 11px; }
     .dateplace { margin-top: 30px; }
     .dateplace div { margin: 4px 0; }
-    table.hist td.num { text-align: right; }
-    table.hist td, table.hist th { font-size: 9px; padding: 4px 5px; }
+    .hist-box { border: 1px solid #cedaeb; border-left: 4px solid #FF6B2B; background: #edf2f9; border-radius: 4px; padding: 6px 10px; margin-top: 8px; }
+    .hist-title { font-weight: 700; color: #2e4a78; font-size: 11px; margin-bottom: 4px; }
+    table.hist-st { width: 100%; border-collapse: collapse; font-size: 10px; }
+    table.hist-st td { padding: 2px 4px; }
+    table.hist-st td.sg { width: 14px; font-weight: 700; color: #2e4a78; }
+    table.hist-st td.sg.plus { color: #1b7a45; } table.hist-st td.sg.minus { color: #be3c3c; }
+    table.hist-st td.v { text-align: right; }
+    table.hist-st tr.sub td { font-weight: 700; border-top: 1px solid #e2e8f0; }
+    table.hist-st tr.total td { font-weight: 700; color: #2e4a78; border-top: 1px solid #5c7cac; font-size: 11px; }
+    .hist-next { display: flex; justify-content: space-between; background: #edf2f9; color: #2e4a78; padding: 6px 10px; margin-top: 8px; border-radius: 4px; font-size: 11px; }
     .rev-badge { text-align: right; font-weight: 700; color: #FF6B2B; font-size: 11px; margin-bottom: 2px; }
   </style></head><body>
     ${opts.renewalNo ? `<div class="rev-badge">RENEWED LOI · R${esc(opts.renewalNo)}</div>` : opts.revisionNo ? `<div class="rev-badge">REVISED LOI · R${esc(opts.revisionNo)}</div>` : ''}
