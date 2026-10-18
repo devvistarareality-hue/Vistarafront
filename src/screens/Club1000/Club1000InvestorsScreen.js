@@ -1187,7 +1187,19 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       'Delete', true);
     if (!ok) return;
     setDeletingId(inv.id);
-    const r = await apiFetch(CLUB1000_ENDPOINTS.investor(inv.id), { method: 'DELETE' }).catch(() => null);
+    let r = await apiFetch(CLUB1000_ENDPOINTS.investor(inv.id), { method: 'DELETE' }).catch(() => null);
+    if (r && r.status === 409) {
+      // Payments already made on it: say exactly what goes with it, and ask again.
+      const d = await r.json().catch(() => ({}));
+      if (d.code !== 'has_paid') { setDeletingId(null); Alert.alert('Not deleted', errText(d, 'Please try again.')); return; }
+      const what = [d.paid_payouts ? `${d.paid_payouts} paid payout${d.paid_payouts === 1 ? '' : 's'} (${fmtMoney(d.paid_amount)})` : '',
+        d.paid_rewards ? `${d.paid_rewards} paid referral reward${d.paid_rewards === 1 ? '' : 's'} (${fmtMoney(d.paid_rewards_amount)})` : ''].filter(Boolean).join(' and ');
+      const again = await confirmAsk('Delete the payments too?',
+        `${inv.name} already has ${what} recorded. Deleting the investor deletes these payments too — the money stays paid in real life, but Nexora will no longer show it. The log keeps a note. This can't be undone.`,
+        'Delete with payments', true);
+      if (!again) { setDeletingId(null); return; }
+      r = await apiFetch(`${CLUB1000_ENDPOINTS.investor(inv.id)}?include_paid=1`, { method: 'DELETE' }).catch(() => null);
+    }
     setDeletingId(null);
     if (!r || !(r.ok || r.status === 204)) {
       Alert.alert('Not deleted', errText(r ? await r.json().catch(() => ({})) : {}, 'Please try again.'));
@@ -1209,7 +1221,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     if (!list.length) return;
     const sum = list.reduce((t, i) => t + (Number(i.amount_invested) || 0), 0);
     const ok = await confirmAsk(`Delete ${list.length} investor${list.length === 1 ? '' : 's'}?`,
-      `${fmtMoney(sum)} in all, permanently. Their payout schedules and referral rewards go with them, and their leads will read Investor Deleted. Any with a payment already made are kept. This can't be undone.`,
+      `${fmtMoney(sum)} in all, permanently. Their payout schedules and referral rewards go with them, and their leads will read Investor Deleted. Any with a payment already made are asked about next. This can't be undone.`,
       'Delete', true);
     if (!ok) return;
     setBulkBusy(true);
@@ -1217,11 +1229,22 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     const d = r ? await r.json().catch(() => ({})) : {};
     setBulkBusy(false);
     if (!r || !r.ok) { Alert.alert('Not deleted', errText(d, 'Please try again.')); return; }
-    const kept = d.refused || [];
-    if (kept.length) {
-      Alert.alert(`${d.deleted?.length || 0} deleted · ${kept.length} kept`,
-        `${kept.map((k) => k.name || `#${k.id}`).join(', ')} — a payment is already made. Undo it first, or close with Redeem / Payout.`);
+    let kept = d.refused || [];
+    const paidOnes = kept.filter((k) => k.paid_payouts || k.paid_rewards);
+    if (paidOnes.length) {
+      const sumPaid = paidOnes.reduce((t, k) => t + Number(k.paid_amount || 0) + Number(k.paid_rewards_amount || 0), 0);
+      const again = await confirmAsk('Delete the payments too?',
+        `${paidOnes.length} of them already ha${paidOnes.length === 1 ? 's' : 've'} payments recorded (${fmtMoney(sumPaid)} in all) — ${paidOnes.map((k) => k.name).join(', ')}. Delete ${paidOnes.length === 1 ? 'it' : 'them'} and those payments too? The log keeps a note; this can't be undone.`,
+        'Delete with payments', true);
+      if (again) {
+        setBulkBusy(true);
+        const r2 = await apiFetch(CLUB1000_ENDPOINTS.investorBulkDelete, { method: 'POST', body: JSON.stringify({ ids: paidOnes.map((k) => k.id), include_paid: true }) }).catch(() => null);
+        const d2 = r2 ? await r2.json().catch(() => ({})) : {};
+        setBulkBusy(false);
+        if (r2 && r2.ok) kept = kept.filter((k) => !(d2.deleted || []).includes(k.id));
+      }
     }
+    if (kept.length) Alert.alert(`${kept.length} kept`, kept.map((k) => k.name || `#${k.id}`).join(', '));
     setPicked(new Set(kept.map((k) => k.id)));
     if (!kept.length) setSelecting(false);
     load();
