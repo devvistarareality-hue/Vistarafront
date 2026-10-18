@@ -1,6 +1,6 @@
 // Import investors from Excel — same as the website's _ImportInvestors.js: get the
 // template, pick the filled file to have every row checked (problems by Excel row),
-// then import the rows that passed. They wait in Approvals like Add Investor.
+// then import the rows that passed. Each is saved as a DRAFT (Approvals → Drafts → Edit & Submit, with the signed LOI).
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,7 +48,7 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
     const d = r ? await r.json().catch(() => ({})) : {};
     if (!r || !r.ok) { Alert.alert('Not imported', errText(d, 'Could not read the file.')); return; }
     if (commit) {
-      Alert.alert('Imported', `${d.created} investor${d.created === 1 ? '' : 's'} imported — waiting in Approvals.`);
+      Alert.alert('Imported as drafts', `${d.created} investor${d.created === 1 ? '' : 's'} saved as drafts. Open Approvals → Drafts → Edit & Submit on each, attach the signed LOI and submit it for approval.`);
       reset(); onDone();
       return;
     }
@@ -61,7 +61,7 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
       <View style={s.head}>
         <View style={s.flex}>
           <Text style={s.title}>Import investors from Excel</Text>
-          <Text style={s.sub}>Each one waits in Approvals, like one added by hand</Text>
+          <Text style={s.sub}>Saved as drafts — attach each signed LOI and submit from Approvals → Drafts</Text>
         </View>
         <TouchableOpacity onPress={() => { reset(); onClose(); }} style={s.close}><Ionicons name="close" size={18} color={COLORS.textPrimary} /></TouchableOpacity>
       </View>
