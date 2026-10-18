@@ -67,7 +67,7 @@ export default function ImportInvestorsSheet({ visible, onClose, onDone }) {
       </View>
       <ScrollView contentContainerStyle={s.body}>
         <Text style={s.section}>1 · GET THE TEMPLATE</Text>
-        <Text style={s.help}>One row per investment — a renewed investment is one row with today’s principal; its finished terms go on the Past Terms sheet (type Mobile, Name and each term’s Principal — the rest fills itself). Red columns marked * must be filled; a row missing one is not imported.</Text>
+        <Text style={s.help}>One row per investment that is active today: today’s amount, and the date the investor first invested. Past Terms fills itself — every year since, from the scheme’s tenure — type only a Principal (if different) for a year when the amount was not today’s. Red columns marked * must be filled.</Text>
         <TouchableOpacity onPress={template} disabled={!!busy} style={s.ghostBtn}>
           {busy === 'template' ? <ActivityIndicator size="small" color={COLORS.link} /> : <Text style={s.ghostText}>⬇ Download template</Text>}
         </TouchableOpacity>
