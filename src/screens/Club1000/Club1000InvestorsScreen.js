@@ -1192,6 +1192,15 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [addMoreFor, setAddMoreFor] = useState(null);     // a new investment for the same person
   const [selecting, setSelecting] = useState(false);     // pick several to delete at once
   const [picked, setPicked] = useState(() => new Set());
+  // Only what is on screen stays picked — a search, filter or reload that hides an
+  // investor drops it, so the count, the amount and Delete never act on a hidden one.
+  useEffect(() => {
+    setPicked((prev) => {
+      const shown = new Set(investors.map((i) => i.id));
+      const next = new Set([...prev].filter((id) => shown.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [investors]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [working, setWorking] = useState('');            // full-screen 'Sending…' while a request goes
   const [askReason, reasonUI] = useReasonPrompt();
@@ -1435,6 +1444,21 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         </View>
       </View>
 
+      {/* Above the list, so what is picked and Delete stay in view while scrolling. */}
+      {selecting && (
+        <View style={ClubInvestorsScreenS.bulkBar}>
+          <Text style={ClubInvestorsScreenS.bulkText}>
+            <Text style={ClubInvestorsScreenS.bulkCount}>{picked.size}</Text> selected{picked.size ? ` · ${fmtMoney(investors.filter((i) => picked.has(i.id)).reduce((t, i) => t + (Number(i.amount_invested) || 0), 0))}` : ''}
+          </Text>
+          <TouchableOpacity onPress={() => togglePick(investors.map((i) => i.id), picked.size !== investors.length)} style={ClubInvestorsScreenS.bulkAll}>
+            <Text style={ClubInvestorsScreenS.bulkAllText}>{picked.size === investors.length ? 'Clear' : 'All'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={bulkDelete} disabled={!picked.size || bulkBusy} style={[ClubInvestorsScreenS.bulkDel, (!picked.size || bulkBusy) && ClubInvestorsScreenS.bulkDelOff]}>
+            {bulkBusy ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="trash-outline" size={15} color="#fff" />}
+            <Text style={ClubInvestorsScreenS.bulkDelText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[NAVY]} tintColor={NAVY} />}>
         {/* The book on screen: how many investors and how much. Same as the website. */}
@@ -1556,22 +1580,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
             </View>
           );
         })}
-        {selecting && <View style={ClubInvestorsScreenS.bulkSpacer} />}
       </ScrollView>
-      {selecting && (
-        <View style={ClubInvestorsScreenS.bulkBar}>
-          <Text style={ClubInvestorsScreenS.bulkText}>
-            <Text style={ClubInvestorsScreenS.bulkCount}>{picked.size}</Text> selected{picked.size ? ` · ${fmtMoney(investors.filter((i) => picked.has(i.id)).reduce((t, i) => t + (Number(i.amount_invested) || 0), 0))}` : ''}
-          </Text>
-          <TouchableOpacity onPress={() => togglePick(investors.map((i) => i.id), picked.size !== investors.length)} style={ClubInvestorsScreenS.bulkAll}>
-            <Text style={ClubInvestorsScreenS.bulkAllText}>{picked.size === investors.length ? 'Clear' : 'All'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={bulkDelete} disabled={!picked.size || bulkBusy} style={[ClubInvestorsScreenS.bulkDel, (!picked.size || bulkBusy) && ClubInvestorsScreenS.bulkDelOff]}>
-            {bulkBusy ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="trash-outline" size={15} color="#fff" />}
-            <Text style={ClubInvestorsScreenS.bulkDelText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      )}
       {reasonUI}
       {!!working && (
         <View style={ClubInvestorsScreenS.workOverlay}>
@@ -1674,14 +1683,13 @@ const ClubInvestorsScreenS = StyleSheet.create({
   invCardPicked: { borderColor: COLORS.error, borderWidth: 2 },
   invCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   pickBox: { marginRight: 10, marginTop: 1 },
-  bulkBar: { position: 'absolute', left: 16, right: 16, bottom: 20, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingLeft: 16, paddingRight: 10, borderRadius: 28, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, ...CARD_SHADOW },
+  bulkBar: { marginHorizontal: 16, marginTop: 4, marginBottom: 4, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingLeft: 16, paddingRight: 10, borderRadius: 28, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, ...CARD_SHADOW },
   bulkText: { flex: 1, fontSize: 13, color: COLORS.textSecondary },
   bulkCount: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
   bulkAll: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18, backgroundColor: COLORS.surfaceAlt },
   bulkAllText: { fontSize: 12.5, fontWeight: '700', color: COLORS.textPrimary },
   bulkDel: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: COLORS.error },
   bulkDelOff: { opacity: 0.45 },
-  bulkSpacer: { height: 70 },
   bulkDelText: { fontSize: 12.5, fontWeight: '800', color: '#fff' },
   renewSubmitText: { color: COLORS.white, fontSize: 15, fontWeight: '800' },
   workOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: COLORS.overlay, alignItems: 'center', justifyContent: 'center', gap: 12 },
