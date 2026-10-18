@@ -6,9 +6,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
-import { CLUB1000_ENDPOINTS, SALES_ENDPOINTS } from '../../constants/api';
+import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
-import { isManagerRole, can } from '../../lib/roles';
+import { can } from '../../lib/roles';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import PeriodFilter, { inRange } from '../../components/PeriodFilter';
 import { formatDMY } from '../../utils/dateFormat';
@@ -78,8 +78,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   useEffect(() => {
-    apiFetch(SALES_ENDPOINTS.usersSlim).then((r) => (r.ok ? r.json() : []))
-      .then((d) => setManagers(Array.isArray(d) ? d.filter((u) => isManagerRole(u) || u.role === 'Admin') : []))
+    // Only people with Club 1000 access — and manager-level access, which approving needs.
+    apiFetch(CLUB1000_ENDPOINTS.users).then((r) => (r.ok ? r.json() : []))
+      .then((d) => setManagers(Array.isArray(d) ? d.filter((u) => u.club_manager || u.role === 'Admin') : []))
       .catch(() => {});
     apiFetch(CLUB1000_ENDPOINTS.schemes).then((r) => (r.ok ? r.json() : []))
       .then((d) => setSchemes(Array.isArray(d) ? d : []))
