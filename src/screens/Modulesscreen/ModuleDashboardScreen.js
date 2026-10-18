@@ -13,6 +13,7 @@ import AppLoader from '../../components/AppLoader';
 import { apiFetch } from '../../utils/apiFetch';
 import { useSelector } from 'react-redux';
 import { dashboardFor } from '../../lib/roles';
+import NotificationBellButton from '../../components/NotificationBellButton';
 
 // Every module opens on its Dashboard — the same tab the website shows.
 // Accounts & Finance gets its real one (mirrors the web's _ModuleDashboard): what
@@ -44,6 +45,7 @@ export default function ModuleDashboardScreen({ navigation, route }) {
           <Text style={common.headerTitle}>{name}</Text>
           <Text style={s.sub}>Dashboard</Text>
         </View>
+        <NotificationBellButton onOpen={() => navigation.navigate('SalesNotifications')} />
       </View>
       {isAdmin ? (
         <DashboardRoleFilter options={options} value={preview || dashboardFor(user, module)}

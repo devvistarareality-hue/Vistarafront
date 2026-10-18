@@ -18,6 +18,7 @@ import { inrShort, AGE_LABELS, ISSUES, today, withCompany, DateField } from './a
 import { Segmented, Button } from '../../components/ui';
 import { hasBankMaster } from '../../lib/moduleGroups';
 import { errText } from '../../lib/apiError';
+import NotificationBellButton from '../../components/NotificationBellButton';
 
 const ISSUE_TEXT = {
   no_schedule: 'No installment schedule — Sales needs to add one',
@@ -84,6 +85,7 @@ export default function ARDashboardScreen({ navigation }) {
           <Text style={common.headerTitle}>Receivables</Text>
           <Text style={common.headerSub}>{data?.accounts != null ? `${data.accounts} active accounts` : 'Accounts receivable'}</Text>
         </View>
+        <NotificationBellButton onOpen={() => navigation.navigate('SalesNotifications')} />
         {isLogAdmin ? (
           <TouchableOpacity onPress={() => go('ActivityLog', { modules: ['AR'], title: 'Accounts Receivable Log' })} style={common.iconBtn} accessibilityLabel="Log">
             <Ionicons name="time-outline" size={19} color={COLORS.textPrimary} />

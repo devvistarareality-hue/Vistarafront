@@ -16,6 +16,7 @@ import { inrShort, pct } from '../../lib/inr';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import { canUseAI } from '../Sales/AskNexoraScreen';
 import PayoutsAheadCard from './PayoutsAheadCard';
+import NotificationBellButton from '../../components/NotificationBellButton';
 
 const NAVY  = COLORS.navy;
 const TEAL  = COLORS.success;
@@ -185,6 +186,7 @@ export default function Club1000HubScreen({ navigation, route }) {
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{adminView ? 'Admin' : 'Club 1000'}</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{adminView ? 'All sections' : 'Investment portfolio and returns tracking'}</Text>
         </View>
+        <NotificationBellButton onOpen={() => navigation.navigate('SalesNotifications')} />
         <TouchableOpacity onPress={openFilter} style={{ padding: 6, backgroundColor: filterActive ? NAVY : BG, borderWidth: 1, borderColor: filterActive ? NAVY : COLORS.border, borderRadius: 8 }}>
           <Ionicons name="filter-outline" size={20} color={filterActive ? COLORS.white : NAVY} />
         </TouchableOpacity>

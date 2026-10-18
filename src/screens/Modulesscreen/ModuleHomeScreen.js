@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, CARD_SHADOW } from '../../constants/theme';
 import { isManagerRole, canSee } from '../../lib/roles';
 import { hasBankMaster } from '../../lib/moduleGroups';
+import NotificationBellButton from '../../components/NotificationBellButton';
 
 // Display name → the prefix its screen keys use.
 const MODULE_SLUG = { 'Accounts & Finance': 'accounts', HR: 'hr', 'Task Allocation': 'execution',
@@ -63,6 +64,7 @@ export default function ModuleHomeScreen({ navigation, route }) {
           <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT }}>{name}</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>Module</Text>
         </View>
+        <NotificationBellButton onOpen={() => navigation.navigate('SalesNotifications')} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
