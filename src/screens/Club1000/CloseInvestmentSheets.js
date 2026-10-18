@@ -262,7 +262,8 @@ export function RenewalSummary({ investorId, newAmount, onRenewal }) {
   const [how, setHow] = useState('');
   const [take, setTake] = useState('');
   const [extra, setExtra] = useState('');
-  if (!st) return null;
+  // Hold its place while the figures load — appearing late it pushed the form down.
+  if (!st) return <View style={[s.summary, s.wait]}><ActivityIndicator color={COLORS.link} /></View>;
   const principal = Number(st.principal) || 0;
   const atMaturity = st.pending.filter((p) => p.payout_type === 'maturity').reduce((t, p) => t + (Number(p.amount_due) || 0), 0);
   const unpaid = Math.round((st.pending.filter((p) => p.payout_type === 'interest').reduce((t, p) => t + (Number(p.amount_due) || 0), 0)
@@ -337,6 +338,7 @@ export function RenewalSummary({ investorId, newAmount, onRenewal }) {
 }
 
 const s = StyleSheet.create({
+  wait: { minHeight: 380, alignItems: 'center', justifyContent: 'center' },
   choice: { marginTop: 10, gap: 6 },
   choiceHead: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
   choiceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
