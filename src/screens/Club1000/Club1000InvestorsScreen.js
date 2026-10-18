@@ -716,7 +716,9 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
   useEffect(() => {
     if (visible && investor) {
       setForm({
-        investment_date: new Date(),
+        // A renewal carries straight on from the term that ended: it starts on that
+        // term's maturity date (editable), not on the day the sheet is opened.
+        investment_date: investor?.maturity_date ? new Date(`${investor.maturity_date}T00:00:00`) : new Date(),
         amount_invested: String(investor.amount_invested || ''),
         interest_payout: investor.interest_payout || 'maturity',
         total_return_pct: String(investor.total_return_pct ?? ''),
