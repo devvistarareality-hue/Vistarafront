@@ -1366,7 +1366,10 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         onAddMore={can(user, 'club.investor.manage') && schemes.length ? (pf) => { setPortfolioFor(null); setAddMoreFor(pf); } : null} />
       <AddInvestorSheet visible={!!addMoreFor} prefillLead={morePrefill(addMoreFor)} schemes={schemes}
         onClose={() => setAddMoreFor(null)} onSaved={() => { setAddMoreFor(null); load(); }} />
-      <RedeemSheet investor={redeeming} onClose={() => setRedeeming(null)} onDone={() => { setRedeeming(null); load(); }} />
+      <RedeemSheet investor={redeeming}
+        scheme={schemes.find((sc) => String(sc.id) === String(redeeming?.scheme))}
+        onClose={() => setRedeeming(null)}
+        onDone={() => { setRedeeming(null); load(); }} />
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
         scheme={schemes.find((s) => String(s.id) === String(renewing?.scheme))}
         onClose={() => setRenewing(null)} onSaved={() => load()} />

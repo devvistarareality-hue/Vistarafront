@@ -12,6 +12,7 @@ import { can } from '../../lib/roles';
 import MultiFilterSelect from '../../components/MultiFilterSelect';
 import PeriodFilter, { inRange } from '../../components/PeriodFilter';
 import { formatDMY } from '../../utils/dateFormat';
+import { rupee } from '../../lib/inr';
 
 import AppIcon from '../../components/AppIcon';
 import AppLoader from '../../components/AppLoader';
@@ -223,6 +224,26 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   function revisionSummary(inv) {
     const pr = inv.pending_revision;
     if (!pr) return null;
+    // A redemption stores its whole working, so the generic field-by-field dump
+    // read as "payable: 1095671.23 · days_held: 291 · …" — every figure, in
+    // storage order, none of it a sentence. Said properly instead, matching the
+    // website's approvals card.
+    if (inv.pending_revision_type === 'redeem') {
+      const money = (v) => rupee(Number(v) || 0);
+      const full = Number(pr.remaining_principal) <= 0;
+      const bits = [
+        `Redeeming ${money(pr.redeem_amount)} of ${money(inv.amount_invested)}`,
+        `${pr.days_held} days at ${Number(pr.rate_per_month)}% a month = ${money(pr.premature_interest)} interest`,
+        `${money(pr.payable)} payable on ${formatDMY(pr.redemption_date)}`,
+        full ? 'Nothing stays invested — the investment closes'
+             : `${money(pr.remaining_principal)} stays invested at ${Number(inv.total_return_pct)}%`,
+      ];
+      if (Number(pr.interest_paid_share) > 0) {
+        bits.push(`${money(pr.interest_paid_share)} already paid on that share (not deducted)`);
+      }
+      if (pr.notes) bits.push(String(pr.notes));
+      return bits.join(' · ');
+    }
     const isRenew = inv.pending_revision_type === 'renew';
     return Object.entries(pr).filter(([k]) => k !== 'payout_schedule').map(([k, v]) => {
       if (k === 'document_name') return 'New KYC scan';
@@ -372,6 +393,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
           const ac = APPROVAL_BADGE_COLOR[inv.approval_status] || { bg: COLORS.surfaceAlt, fg: MUTED };
           const isRevision = !!inv.pending_revision;
           const isRenewal = isRevision && inv.pending_revision_type === 'renew';
+          const isRedemption = isRevision && inv.pending_revision_type === 'redeem';
           const accent = isRenewal ? AMBER : PURPLE;
           return (
             <View key={inv.id} style={[CARD, st.card]}>
@@ -381,7 +403,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                     <Text style={st.name}>{inv.name}</Text>
                     {inv.revision_no > 0 && (
                       <View style={[st.rev, isRenewal && st.revRenew]}>
-                        <Text style={[st.revText, isRenewal && st.revTextRenew]}>{isRenewal ? 'RENEW' : `R${inv.revision_no}`}</Text>
+                        <Text style={[st.revText, isRenewal && st.revTextRenew]}>{isRedemption ? `REDEMPTION ${(inv.redemption_count || 0) + 1}` : isRenewal ? 'RENEW' : `R${inv.revision_no}`}</Text>
                       </View>
                     )}
                   </View>
@@ -390,7 +412,9 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                   {inv.approval_status === 'approved' && (
                     <Text style={st.decided}>Approved by {inv.approved_by_name || '—'}{inv.approved_at ? ` · ${formatDMY(String(inv.approved_at).slice(0, 10))}` : ''}</Text>
                   )}
-                  {isRevision && <Text style={st.proposed}>Proposed: {revisionSummary(inv)}</Text>}
+                  {isRevision && (
+                    <Text style={st.proposed}>{isRedemption ? '' : 'Proposed: '}{revisionSummary(inv)}</Text>
+                  )}
                   {inv.approval_status === 'rejected' && !!inv.rejected_reason && (
                     <View style={st.reasonBox}><Text style={st.reasonHead}>REJECTED — REASON</Text><Text style={st.reasonBody}>{inv.rejected_reason}</Text></View>
                   )}
@@ -413,7 +437,12 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                 <View style={st.side}>
                   <Text style={st.amt}>{fmtMoney(inv.amount_invested)}</Text>
                   <View style={[st.badge, { backgroundColor: ac.bg }]}>{/* inline-ok: colour per status */}
-                    <Text style={[st.badgeText, { color: ac.fg }]}>{isRevision && inv.approval_status === 'pending' ? (isRenewal ? 'RENEWAL PENDING' : `R${inv.revision_no} PENDING`) : inv.approval_status}</Text>{/* inline-ok: colour per status */}
+                    <Text style={[st.badgeText, { color: ac.fg }]}>{/* inline-ok: colour per status */}
+                      {isRevision && inv.approval_status === 'pending'
+                        ? (isRedemption ? `REDEMPTION ${(inv.redemption_count || 0) + 1} PENDING`
+                          : isRenewal ? 'RENEWAL PENDING' : `R${inv.revision_no} PENDING`)
+                        : inv.approval_status}
+                    </Text>
                   </View>
                 </View>
               </View>

@@ -1,7 +1,10 @@
 // Closing an investment, step by step — the figures first, then what to save.
 // Same as the website's _CloseInvestment.js:
-//   RedeemSheet          before maturity: principal + redemption interest − interest
-//                        already paid = payable; date, amount, remarks, pay now or later.
+//   RedeemSheet          before maturity: how much is coming out decides the rest.
+//                        The withdrawn part earns the scheme's premature rate for the
+//                        months held; anything left keeps its normal return and maturity
+//                        date. Enter the full principal and the investment closes.
+//                        Either way it goes for approval with a signed LOI.
 //   MaturityPayoutSheet  at maturity: every pending payout with target / actual paid /
 //                        paid on / remarks; the ticked ones are paid and it is closed.
 //   RenewalSummary       the term that matured, at the top of the Renew sheet.
@@ -14,8 +17,14 @@ import { CLUB1000_ENDPOINTS } from '../../constants/api';
 import { COLORS } from '../../constants/theme';
 import { formatDMY } from '../../utils/dateFormat';
 import { errText } from '../../lib/apiError';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Print from 'expo-print';
 import FormSheet from '../../components/FormSheet';
 import AppLoader from '../../components/AppLoader';
+import { buildInvestorLOIHtml } from '../../lib/investorLOIHtml';
+import { loiFileName, sharePdfNamed } from '../../lib/c1Files';
+import { earlierTerms } from '../../lib/c1History';
 
 const TYPE_LABELS = { interest: 'Interest', maturity: 'Principal', premature_redemption: 'Redemption' };
 const iso = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
@@ -80,92 +89,167 @@ function Line({ label, sub, value, total }) {
   );
 }
 
-export function RedeemSheet({ investor, onClose, onDone }) {
+// The working for a proposed partial redemption, as of a date and an amount.
+function useRedeemQuote(investorId, amount, on) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    if (!investorId || !amount || Number(amount) <= 0) { setData(null); return undefined; }
+    let alive = true;
+    const t = setTimeout(() => {
+      apiFetch(CLUB1000_ENDPOINTS.investorRedeemQuote(investorId, amount, on))
+        .then(async (r) => {
+          const d = await r.json().catch(() => ({}));
+          if (!alive) return;
+          if (r.ok) { setData(d); setErr(''); } else setErr(errText(d, 'Could not work out the figures.'));
+        })
+        .catch(() => alive && setErr('Could not reach the server.'));
+    }, 300);                                  // typing an amount should not spam the API
+    return () => { alive = false; clearTimeout(t); };
+  }, [investorId, amount, on]);
+  return [data, err];
+}
+
+export function RedeemSheet({ investor, scheme, onClose, onDone }) {
   const today = iso(new Date());
   const [on, setOn] = useState(today);
-  const [st, loadErr] = useSettlement(investor?.id, on);
   const [amount, setAmount] = useState('');
-  const [touched, setTouched] = useState(false);
   const [notes, setNotes] = useState('');
-  const [payNow, setPayNow] = useState(false);
-  const [paidOn, setPaidOn] = useState(today);
-  const [payRemarks, setPayRemarks] = useState('');
+  const [loiDone, setLoiDone] = useState(false);
+  const [loiBusy, setLoiBusy] = useState(false);
+  const [loiFile, setLoiFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [seededFor, setSeededFor] = useState(null);
+  const [q, loadErr] = useRedeemQuote(investor?.id, amount, on);
   if (investor && seededFor !== investor.id) {
     setSeededFor(investor.id);
-    setOn(today); setTouched(false); setNotes(''); setPayNow(false); setPaidOn(today); setPayRemarks('');
+    setOn(today); setNotes(''); setLoiDone(false); setLoiFile(null);
+    setAmount(String(Number(investor.amount_invested) || ''));
   }
-  useEffect(() => { if (st && !touched) setAmount(String(Number(st.payable) || 0)); }, [st, touched]);
   if (!investor) return null;
 
+  async function getLoi() {
+    setLoiBusy(true);
+    try {
+      // Built against what STAYS invested: the schedule, maturity value and
+      // per-day basis all read amount_invested, so handing it the investor
+      // unchanged printed the pre-redemption principal and a schedule for
+      // money that is being taken out. Earlier terms come along too, the way
+      // the renewal LOI shows them.
+      const continuing = { ...investor, amount_invested: q.remaining_principal };
+      // Always fetched now: a first-term investment can still have earlier
+      // redemptions to list.
+      const past = await earlierTerms(investor.id);
+      const opts = {
+        redemption: q,
+        ...(past.history?.length ? { history: past.history } : {}),
+        ...(past.redemptions?.length ? { pastRedemptions: past.redemptions } : {}),
+      };
+      const html = buildInvestorLOIHtml(continuing, scheme, opts);
+      const { uri } = await Print.printToFileAsync({ html });
+      await sharePdfNamed(uri, loiFileName(investor, opts));
+      setLoiDone(true);
+    } catch (e) {
+      Alert.alert('Could not generate the LOI', e.message);
+    } finally {
+      setLoiBusy(false);
+    }
+  }
+
+  async function pickSignedLoi() {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
+      if (res.canceled || !res.assets?.[0]) return;
+      const a = res.assets[0];
+      const data = await FileSystem.readAsStringAsync(a.uri, { encoding: FileSystem.EncodingType.Base64 });
+      setLoiFile({ name: a.name || 'signed_loi', type: a.mimeType || 'application/pdf', data });
+    } catch (e) {
+      Alert.alert('Attach failed', e.message);
+    }
+  }
+
   async function submit() {
-    if (amount === '' || Number.isNaN(Number(amount)) || Number(amount) < 0) { Alert.alert('Amount', 'Enter the amount payable.'); return; }
+    if (!q || !q.can_redeem) return;
+    if (!loiFile) { Alert.alert('Signed LOI', 'Download the redemption LOI, get it signed, and attach it.'); return; }
     setBusy(true);
-    const body = { redemption_date: on, amount, notes };
-    if (payNow) body.pay_now = { paid_date: paidOn, amount, notes: payRemarks };
-    const res = await apiFetch(CLUB1000_ENDPOINTS.investorRedeem(investor.id), { method: 'POST', body: JSON.stringify(body) }).catch(() => null);
+    const res = await apiFetch(CLUB1000_ENDPOINTS.investorRedeemRequest(investor.id), {
+      method: 'POST',
+      body: JSON.stringify({ amount, redemption_date: on, notes, loi_file: loiFile }),
+    }).catch(() => null);
     setBusy(false);
     if (!res || !res.ok) {
       const d = res ? await res.json().catch(() => ({})) : {};
-      Alert.alert('Could not redeem', errText(d, 'Please try again.'));
+      Alert.alert('Could not submit', errText(d, 'Please try again.'));
       return;
     }
     setSeededFor(null);
-    Alert.alert('Redeemed', payNow ? `Redeemed and paid · ${rupee(amount)}` : `Redeemed · ${rupee(amount)} is now due on Payouts`);
+    Alert.alert('Sent for approval', `Redemption of ${rupee(amount)} is awaiting approval.`);
     onDone();
   }
 
-  const blocked = st && !st.can_redeem;
+  const blocked = q && !q.can_redeem;
   return (
     <FormSheet visible={!!investor} onClose={onClose}>
-      <Head title="Redeem before maturity" investor={investor} onClose={onClose} />
+      <Head title="Redeem part of this investment" investor={investor} onClose={onClose} />
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
-        {!st && !loadErr && <AppLoader />}
+        <Text style={s.section}>1 · HOW MUCH IS COMING OUT</Text>
+        <View style={s.card}>
+          <Line label="Currently invested" value={rupee(investor.amount_invested)} />
+        </View>
+        <Text style={s.lbl}>AMOUNT TO REDEEM (₹)</Text>
+        <TextInput style={s.input} value={amount} onChangeText={setAmount} keyboardType="decimal-pad"
+          placeholder="The principal being taken out" placeholderTextColor={COLORS.text3} />
+        <Text style={s.lbl}>REDEMPTION DATE</Text>
+        <DateField value={on} min={investor.investment_date} onChange={setOn} />
+
+        {!q && !loadErr && !!amount && <AppLoader />}
         {!!loadErr && <Text style={s.bad}>{loadErr}</Text>}
-        {st && <>
-          <Text style={s.section}>1 · THE INVESTMENT</Text>
+        {blocked && <Text style={s.bad}>{q.blocked_reason}</Text>}
+
+        {q && !blocked && <>
+          <Text style={s.section}>2 · THE WORKING</Text>
           <View style={s.card}>
-            <Line label="Principal" value={rupee(st.principal)} />
-            <Line label="Invested on" value={formatDMY(st.investment_date)} sub={`Matures ${formatDMY(st.maturity_date)}`} />
-            <Line label="Held for" value={`${st.months_elapsed} mo`} sub={`Lock-in ${st.lock_months} mo${st.lock_until ? ` · free from ${formatDMY(st.lock_until)}` : ''}`} />
-          </View>
-          <Text style={s.lbl}>REDEMPTION DATE</Text>
-          <DateField value={on} min={st.investment_date} onChange={(d) => { setOn(d); setTouched(false); }} />
-
-          {blocked ? <Text style={s.warn}>{st.redeem_blocked_reason}</Text> : <>
-            <Text style={s.section}>2 · THE WORKING</Text>
-            <View style={s.card}>
-              <Line label="Principal" value={rupee(st.principal)} />
-              <Line label="+ Redemption interest" sub={`${st.months_elapsed} mo × ${Number(st.rate_per_month)}% a month`} value={rupee(st.redemption_interest)} />
-              <Line label="− Interest already paid" value={rupee(st.interest_paid)} />
-              <Line label="Payable" value={rupee(st.payable)} total />
-            </View>
-            {st.pending.length > 0 && (
-              <Text style={s.help}>The {st.pending.length} payout{st.pending.length === 1 ? '' : 's'} still scheduled ({rupee(st.pending_total)}) are replaced by this one redemption, so nothing is paid twice.</Text>
+            <Line label="Principal redeemed" value={rupee(q.redeem_amount)} />
+            <Line label="+ Premature interest" value={rupee(q.premature_interest)}
+              sub={`${q.days_held} days × ${rupee(q.daily_interest)} a day — ${Number(q.rate_per_month)}% a month, by the day`} />
+            <Line label="Payable" value={rupee(q.payable)} />
+            {Number(q.interest_paid_share) > 0 && (
+              <Line label="Already paid on this share" value={rupee(q.interest_paid_share)}
+                sub="Shown for reference — not deducted from the payable" />
             )}
+          </View>
 
-            <Text style={s.section}>3 · SETTLE</Text>
-            <Text style={s.lbl}>AMOUNT PAYABLE (₹)</Text>
-            <TextInput value={amount} onChangeText={(t) => { setAmount(t); setTouched(true); }} keyboardType="decimal-pad" style={s.input} />
-            {touched && Number(amount) !== Number(st.payable) && <Text style={s.diff}>Working says {rupee(st.payable)}</Text>}
-            <Text style={s.lbl}>REASON / REMARKS</Text>
-            <TextInput value={notes} onChangeText={setNotes} placeholder="Why the investor is leaving early" placeholderTextColor={COLORS.text3} style={s.input} />
-            <TouchableOpacity onPress={() => setPayNow((v) => !v)} style={s.check}>
-              <Ionicons name={payNow ? 'checkbox' : 'square-outline'} size={20} color={payNow ? COLORS.link : COLORS.textSecondary} />
-              <Text style={s.checkText}>Paid now — otherwise it waits on Payouts</Text>
-            </TouchableOpacity>
-            {payNow && <>
-              <Text style={s.lbl}>PAID ON</Text>
-              <DateField value={paidOn} onChange={setPaidOn} />
-              <Text style={s.lbl}>PAYMENT REMARKS</Text>
-              <TextInput value={payRemarks} onChangeText={setPayRemarks} placeholder="UTR / cheque no." placeholderTextColor={COLORS.text3} style={s.input} />
+          <Text style={s.section}>{q.is_full ? '3 · NOTHING STAYS INVESTED' : '3 · WHAT STAYS INVESTED'}</Text>
+          <View style={s.card}>
+            {q.is_full ? (
+              <Line label="Remaining" value="Nil" sub="The investment closes once approved" />
+            ) : <>
+              <Line label="Remaining principal" value={rupee(q.remaining_principal)} />
+              <Line label="Carries on at" value={`${Number(q.normal_return_pct)}%`}
+                sub={`Matures ${formatDMY(q.maturity_date)} — unchanged, and not penalised`} />
             </>}
-            <TouchableOpacity onPress={submit} disabled={busy} style={[s.btn, s.btnWarn, busy && s.dim]}>
-              {busy ? <ActivityIndicator color={COLORS.warning} /> : <Text style={s.btnWarnText}>{payNow ? 'Redeem and pay' : 'Redeem'} · {rupee(amount)}</Text>}
-            </TouchableOpacity>
-          </>}
+          </View>
+
+          <Text style={s.section}>4 · SIGN OFF</Text>
+          <Text style={s.lbl}>REASON / REMARKS</Text>
+          <TextInput style={s.input} value={notes} onChangeText={setNotes}
+            placeholder="Why the investor is taking money out early" placeholderTextColor={COLORS.text3} />
+          <TouchableOpacity onPress={getLoi} disabled={loiBusy} style={s.loiBtn}>
+            <Text style={s.loiBtnText}>{loiBusy ? 'Generating…' : 'Download redemption LOI'}</Text>
+          </TouchableOpacity>
+          {loiDone && <Text style={s.ok}>LOI generated — get it signed, then attach it.</Text>}
+          <TouchableOpacity onPress={pickSignedLoi} style={s.loiBtn}>
+            <Text style={s.loiBtnText}>{loiFile ? `Attached: ${loiFile.name}` : 'Attach signed LOI'}</Text>
+          </TouchableOpacity>
+          <Text style={s.help}>
+            A redemption changes what is owed, so it goes to an approver. Nothing moves until it is approved.
+          </Text>
         </>}
+
+        <TouchableOpacity onPress={submit} disabled={busy || !q || blocked || !loiFile}
+          style={[s.submit, (busy || !q || blocked || !loiFile) && s.submitOff]}>
+          {busy ? <ActivityIndicator color={COLORS.white} /> : <Text style={s.submitText}>Submit for approval</Text>}
+        </TouchableOpacity>
       </ScrollView>
     </FormSheet>
   );
@@ -381,6 +465,16 @@ const s = StyleSheet.create({
   input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.surface, minHeight: 44, justifyContent: 'center' },
   inputText: { fontSize: 14, color: COLORS.textPrimary },
   help: { fontSize: 12, color: COLORS.textSecondary, marginTop: 8 },
+
+  // Partial redemption sheet: the LOI buttons and the submit bar.
+  ok: { fontSize: 12, fontWeight: '700', color: COLORS.success, marginTop: 6 },
+  loiBtn: { marginTop: 10, paddingVertical: 12, borderRadius: 14, alignItems: 'center',
+    backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: COLORS.link },
+  loiBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
+  submit: { marginTop: 18, height: 48, borderRadius: 16, alignItems: 'center',
+    justifyContent: 'center', backgroundColor: COLORS.warning },
+  submitOff: { opacity: 0.5 },
+  submitText: { fontSize: 14, fontWeight: '800', color: COLORS.white },
   warn: { fontSize: 12.5, color: COLORS.warning, backgroundColor: COLORS.warningBg, borderRadius: 10, padding: 10, marginTop: 10 },
   bad: { fontSize: 12.5, color: COLORS.error, marginTop: 8 },
   diff: { fontSize: 11, fontWeight: '700', color: COLORS.warning, marginTop: 4 },

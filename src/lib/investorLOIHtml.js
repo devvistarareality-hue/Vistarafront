@@ -252,6 +252,52 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
   const scheduleRows = buildScheduleRows(investor, scheme, opts.schedule);
   const totalValue = computeMaturityValue(investor, scheme);
   const basis = interestBasis(investor, scheme);
+  // Premature redemption — the working, in the same adding-up box the Investment
+  // History terms use (hist-box / hist-st), so the two read alike. The payable
+  // chain is kept on its own so the column genuinely totals; what stays
+  // invested follows in its own bar, because it is not part of that sum.
+  const Rr = (n) => Math.round(Number(n) || 0);
+  // Every redemption on this investment, oldest first, each shown the same way
+  // — a one-line "already paid out" gave a total and no working. The earlier
+  // ones come from what was kept on their payout; one approved before that was
+  // kept has no breakdown and says so rather than inventing figures.
+  const redemptionHtml = !opts.redemption ? '' : (() => {
+    const earlier = (opts.pastRedemptions || []).map((e) => ({
+      ...(e.redemption || {}),
+      payable: e.redemption?.payable ?? e.amount,
+      as_of: e.redemption?.redemption_date || e.due_date || e.date,
+      bare: !e.redemption,
+    }));
+    const all = [...earlier, { ...opts.redemption }];
+    const box = (rd, idx, last) => {
+      if (rd.bare) {
+        return `<div class="hist-next"><b>REDEMPTION ${idx + 1} · ${esc(fmtDate(rd.as_of))} — paid out</b><b>Rs. ${esc(money(rd.payable))}</b></div>`;
+      }
+      const perDay = Number(rd.daily_interest || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const lines = [
+        ['', 'Principal redeemed', Rr(rd.redeem_amount)],
+        ['+', `Premature interest (${rd.days_held} days &times; Rs. ${perDay})`, Rr(rd.premature_interest)],
+        ['=', last ? 'Total payable to the investor' : 'Paid out', Rr(rd.payable), 'total'],
+      ];
+      const full = Number(rd.remaining_principal) <= 0;
+      const stayed = full
+        ? `<b>${last ? 'Nothing stays invested — this redemption closes the investment' : 'Nothing stayed invested'}</b><b></b>`
+        : `<b>${last ? `Stays invested at ${esc(Number(rd.normal_return_pct || investor.total_return_pct))}% to ${esc(fmtDate(rd.maturity_date || investor.maturity_date))}` : 'Stayed invested'}</b><b>Rs. ${esc(money(rd.remaining_principal))}</b>`;
+      return `
+      <div class="hist-box">
+        <div class="hist-title">REDEMPTION ${idx + 1} · ${esc(fmtDate(rd.as_of))} · HELD ${esc(rd.days_held)} DAYS AT ${esc(Number(rd.rate_per_month))}% A MONTH, BY THE DAY</div>
+        <table class="hist-st">${lines.map(([sign, label, val, kind]) =>
+          `<tr class="${kind || ''}"><td class="sg ${sign === '+' ? 'plus' : ''}">${sign}</td><td>${label}</td><td class="v">Rs. ${esc(money(val))}</td></tr>`).join('')}</table>
+      </div>
+      <div class="hist-next">${stayed}</div>
+      ${last && Number(rd.interest_paid_share) > 0
+        ? `<div class="loi-note">Interest already paid on the redeemed share at the normal rate: Rs. ${esc(money(rd.interest_paid_share))} (not deducted above).</div>`
+        : ''}`;
+    };
+    return `<div class="tc-header">Premature Redemption:</div>
+      ${all.map((rd, i) => box(rd, i, i === all.length - 1)).join('')}`;
+  })();
+
   const scheduleRowsHtml = scheduleRows.map((r) => `
     <tr>
       <td class="sched-no">${esc(r.no)}</td>
@@ -331,12 +377,15 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
     table.hist-st tr.sub td { font-weight: 700; border-top: 1px solid #e2e8f0; }
     table.hist-st tr.total td { font-weight: 700; color: #2e4a78; border-top: 1px solid #5c7cac; font-size: 11px; }
     .hist-next { display: flex; justify-content: space-between; background: #edf2f9; color: #2e4a78; padding: 6px 10px; margin-top: 8px; border-radius: 4px; font-size: 11px; }
+    /* A note that sits outside a table, so it cannot use table.sched .why. */
+    .loi-note { font-size: 9px; color: #64708a; margin-top: 6px; }
     .rev-badge { text-align: right; font-weight: 700; color: #FF6B2B; font-size: 11px; margin-bottom: 2px; }
   </style></head><body>
     ${loiBadge(opts) ? `<div class="rev-badge">${esc(loiBadge(opts))}</div>` : ''}
     <div class="title">INVESTMENT PROPOSAL FORM</div>
     <table class="hdr">${rowsHtml}</table>
     ${historyHtml}
+    ${redemptionHtml}
     <div class="tc-header">Payout Schedule:</div>
     <div class="basis"><b>${esc(basis.line)}</b><span>${esc(basis.total)}</span></div>
     <table class="sched">
