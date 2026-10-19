@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, Linking, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, ActivityIndicator, Linking, RefreshControl, StyleSheet, Alert } from 'react-native';
 import { AddInvestorSheet } from './Club1000InvestorsScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -45,6 +45,7 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   const [busy, setBusy] = useState(null);
   const [askReason, reasonUI] = useReasonPrompt();   // reject always says why
   const [busyAct, setBusyAct] = useState('');   // which action the busy row is running
+  const [deleting, setDeleting] = useState('');   // "Deleting…" while drafts go
   // A draft is edited from here, because it deliberately does not appear in the
   // Investors list — there is nowhere else to open it from.
   const [editDraft, setEditDraft] = useState(null);
@@ -269,6 +270,27 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
   // Short lists open by default; a long one starts folded so the scheme totals read first.
   const isOpen = (g) => (openGroup[g] === undefined ? (narrowed || visible.length <= 12) : openGroup[g]);
 
+  // Delete drafts — one, or every draft shown. Asks first; a draft is unsent work, so
+  // nothing has been paid on it and it goes for good.
+  async function deleteDrafts(list) {
+    const drafts = list.filter((i) => i.approval_status === 'draft');
+    if (!drafts.length) return;
+    const total = drafts.reduce((t, i) => t + (Number(i.amount_invested) || 0), 0);
+    const what = drafts.length === 1 ? `the draft for ${drafts[0].name} (${fmtMoney(total)})` : `${drafts.length} drafts (${fmtMoney(total)})`;
+    if (!(await confirmAsk(drafts.length === 1 ? 'Delete draft?' : 'Delete drafts?', `Delete ${what}? This can't be undone.`, 'Delete', true))) return;
+    setDeleting(drafts.length === 1 ? 'Deleting draft…' : `Deleting ${drafts.length} drafts…`);
+    try {
+      const r = await apiFetch(CLUB1000_ENDPOINTS.investorBulkDelete, { method: 'POST', body: JSON.stringify({ ids: drafts.map((i) => i.id) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { Alert.alert('Could not delete', errText(d, 'Could not delete.')); return; }
+      const n = (d.deleted || []).length, kept = (d.refused || []).length;
+      Alert.alert('Deleted', `${n} draft${n === 1 ? '' : 's'} deleted${kept ? ` · ${kept} could not be deleted` : ''}`);
+      load();
+    } catch (e) {
+      Alert.alert('Could not delete', e.message || 'Could not delete.');
+    } finally { setDeleting(''); }
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <StatusBar barStyle={COLORS.statusBar} backgroundColor={COLORS.surface} />
@@ -375,6 +397,12 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
             <Text style={st.bannerAmt}>{fmtMoney(grandTotal)}</Text>
           </View>
         )}
+        {!loading && tab === 'draft' && visible.length > 0 && (
+          <TouchableOpacity style={st.delAll} onPress={() => deleteDrafts(visible)} disabled={!!deleting}>
+            {deleting ? <ActivityIndicator size="small" color={COLORS.error} /> : <Ionicons name="trash-outline" size={15} color={COLORS.error} />}
+            <Text style={st.delAllText}>{deleting || (visible.length === 1 ? 'Delete this draft' : `Delete all ${visible.length} drafts shown`)}</Text>
+          </TouchableOpacity>
+        )}
 
         {loading ? <AppLoader style={st.loader} /> : visible.length === 0 ? (
           <View style={[CARD, st.empty]}><Text style={st.emptyText}>{search ? 'No investors match your search.' : narrowed ? 'No investors match these filters.' : 'No investors here.'}</Text></View>
@@ -450,9 +478,14 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
                 {isRevision && !!inv.pending_loi_document_url && (<TouchableOpacity onPress={() => viewLoi(inv.id, true)} style={[btn, isRenewal ? st.loiRenew : st.loiRev]}><Text style={[st.loiText, { color: accent }]}><AppIcon name="file" size={13} /> {isRenewal ? 'Renewed' : 'Revised'} LOI</Text></TouchableOpacity>)}{/* inline-ok: accent per kind */}
                 {!isRevision && !!inv.loi_document_url && <TouchableOpacity onPress={() => viewLoi(inv.id)} style={[btn, st.loiSigned]}><Text style={st.loiSignedText}><AppIcon name="file" size={13} /> Signed LOI</Text></TouchableOpacity>}
                 {inv.approval_status === 'draft' && (
-                  <TouchableOpacity onPress={() => setEditDraft(inv)} style={[btn, btnDraft]}>
-                    <Text style={draftBtnText}><AppIcon name="pencil" size={13} /> Edit & Submit</Text>
-                  </TouchableOpacity>
+                  <>
+                    <TouchableOpacity onPress={() => setEditDraft(inv)} style={[btn, btnDraft]}>
+                      <Text style={draftBtnText}><AppIcon name="pencil" size={13} /> Edit & Submit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteDrafts([inv])} disabled={!!deleting} style={[btn, st.delDraft]}>
+                      <Text style={st.delDraftText}><AppIcon name="trash" size={13} /> Delete draft</Text>
+                    </TouchableOpacity>
+                  </>
                 )}
                 {inv.approval_status === 'approved' && can(user, 'club.investor.manage') && (
                   <TouchableOpacity onPress={() => setRevising(inv)} style={[btn, st.revise]}>
@@ -510,6 +543,11 @@ const btnTBad = { ...btnT, color: COLORS.btnTextDanger };
 
 // The approvals list, laid out like Sales' Booking Approvals.
 const st = StyleSheet.create({
+  delAll: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 11, borderRadius: 12,
+    borderWidth: 1, borderColor: COLORS.error, backgroundColor: COLORS.errorBg, marginBottom: 12 },
+  delAllText: { fontSize: 13, fontWeight: '700', color: COLORS.error },
+  delDraft: { backgroundColor: COLORS.errorBg, borderColor: COLORS.error },
+  delDraftText: { color: COLORS.error, fontWeight: '700', fontSize: 13 },
   l2Head: { marginTop: 12, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.textSecondary },
   l2Chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   l2Chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface },

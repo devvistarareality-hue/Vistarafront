@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
-import { can } from '../../lib/roles';
+import { can, isManagerRole } from '../../lib/roles';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -1161,6 +1161,8 @@ function LedgerModal({ investorId, onClose }) {
 export default function Club1000InvestorsScreen({ navigation, route }) {
   const user = useSelector((s) => s.auth.user);
   const manager = isClub1000Manager(user);
+  // Delete goes by role — Manager and above (or an admin); manager-level module access is not enough.
+  const canDelete = isManagerRole(user) || user?.role === 'Admin' || !!user?.is_staff;
 
   const [investors,  setInvestors]  = useState([]);
   const [schemes,    setSchemes]    = useState([]);
@@ -1388,7 +1390,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
             <Ionicons name="cloud-upload-outline" size={16} color={COLORS.link} />
           </TouchableOpacity>
         )}
-        {manager && investors.length > 0 && (
+        {canDelete && investors.length > 0 && (
           <TouchableOpacity onPress={() => (selecting ? stopSelecting() : setSelecting(true))} style={[ClubInvestorsScreenS.importBtn, selecting && ClubInvestorsScreenS.selectBtnOn]}>
             <Ionicons name={selecting ? 'close' : 'checkbox-outline'} size={16} color={selecting ? COLORS.error : COLORS.link} />
           </TouchableOpacity>
@@ -1573,7 +1575,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                     </TouchableOpacity>
                   )
                 )}
-                {manager && (
+                {canDelete && (
                   <TouchableOpacity onPress={() => deleteInvestor(inv)} disabled={deletingId === inv.id} style={ClubInvestorsScreenS.deleteChip}>
                     {deletingId === inv.id ? <ActivityIndicator size="small" color={COLORS.error} />
                       : <Text style={ClubInvestorsScreenS.deleteChipText}>Delete</Text>}
