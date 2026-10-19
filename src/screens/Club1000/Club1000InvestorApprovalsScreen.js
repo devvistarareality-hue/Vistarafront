@@ -79,8 +79,8 @@ export default function Club1000InvestorApprovalsScreen({ navigation }) {
 
   useEffect(() => {
     // Only people with Club 1000 access — and manager-level access, which approving needs.
-    apiFetch(CLUB1000_ENDPOINTS.users).then((r) => (r.ok ? r.json() : []))
-      .then((d) => setManagers(Array.isArray(d) ? d.filter((u) => u.club_manager || u.role === 'Admin') : []))
+    apiFetch(`${CLUB1000_ENDPOINTS.users}?approvers=1`).then((r) => (r.ok ? r.json() : []))
+      .then((d) => setManagers(Array.isArray(d) ? d.filter((u) => u.club_manager || u.director || u.role === 'Admin') : []))   // managers + every Director
       .catch(() => {});
     apiFetch(CLUB1000_ENDPOINTS.schemes).then((r) => (r.ok ? r.json() : []))
       .then((d) => setSchemes(Array.isArray(d) ? d : []))
