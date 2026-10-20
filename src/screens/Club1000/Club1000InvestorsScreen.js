@@ -1217,7 +1217,10 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [renewing,   setRenewing]   = useState(null);
   const [reviseRenewal, setReviseRenewal] = useState(null);   // correcting the latest renewal itself
   // The live LOI is a renewal's (renewed, nothing redeemed since): Revise LOI corrects that renewal.
-  const isRenewalLoi = (inv) => Number(inv.renewal_count || 0) > 0 && !Number(inv.redemption_count || 0);
+  const isRenewalLoi = (inv) => inv.live_loi_kind ? inv.live_loi_kind === 'renewal' : (Number(inv.renewal_count || 0) > 0 && !Number(inv.redemption_count || 0));
+  // The live LOI is a redemption's: Revise LOI corrects that redemption.
+  const isRedemptionLoi = (inv) => inv.live_loi_kind === 'redemption';
+  const [reviseRedemption, setReviseRedemption] = useState(null);
   const [redeeming, setRedeeming] = useState(null);   // Redeem sheet (before maturity)
   const [historyFor, setHistoryFor] = useState(null); // History sheet
   const [portfolioFor, setPortfolioFor] = useState(null); // the person's whole portfolio
@@ -1396,6 +1399,10 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         scheme={schemes.find((sc) => String(sc.id) === String(redeeming?.scheme))}
         onClose={() => setRedeeming(null)}
         onDone={() => { setRedeeming(null); load(); }} />
+      <RedeemSheet revise investor={reviseRedemption}
+        scheme={schemes.find((sc) => String(sc.id) === String(reviseRedemption?.scheme))}
+        onClose={() => setReviseRedemption(null)}
+        onDone={() => { setReviseRedemption(null); load(); }} />
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
         scheme={schemes.find((s) => String(s.id) === String(renewing?.scheme))}
         onClose={() => setRenewing(null)} onSaved={() => load()} />
@@ -1580,7 +1587,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                   </TouchableOpacity>
                 )}
                 {can(user, 'club.investor.manage') && (
-                  <TouchableOpacity onPress={() => (isRenewalLoi(inv) ? setReviseRenewal(inv) : setRevising(inv))} style={ClubInvestorsScreenS.rowBtnPurple}>
+                  <TouchableOpacity onPress={() => (isRedemptionLoi(inv) ? setReviseRedemption(inv) : isRenewalLoi(inv) ? setReviseRenewal(inv) : setRevising(inv))} style={ClubInvestorsScreenS.rowBtnPurple}>
                     <Text style={ClubInvestorsScreenS.rowBtnPurpleText}>↻ Revise LOI</Text>
                   </TouchableOpacity>
                 )}

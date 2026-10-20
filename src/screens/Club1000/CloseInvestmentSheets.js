@@ -96,14 +96,15 @@ function Line({ label, sub, value, total }) {
 }
 
 // The working for a proposed partial redemption, as of a date and an amount.
-function useRedeemQuote(investorId, amount, on) {
+function useRedeemQuote(investorId, amount, on, beforeRedemption = false) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   useEffect(() => {
     if (!investorId || !amount || Number(amount) <= 0) { setData(null); return undefined; }
     let alive = true;
     const t = setTimeout(() => {
-      apiFetch(CLUB1000_ENDPOINTS.investorRedeemQuote(investorId, amount, on))
+      // beforeRedemption: worked out as it stood before the latest redemption (Revise redemption).
+      apiFetch(`${CLUB1000_ENDPOINTS.investorRedeemQuote(investorId, amount, on)}${beforeRedemption ? '&before_redemption=1' : ''}`)
         .then(async (r) => {
           const d = await r.json().catch(() => ({}));
           if (!alive) return;
@@ -112,11 +113,11 @@ function useRedeemQuote(investorId, amount, on) {
         .catch(() => alive && setErr('Could not reach the server.'));
     }, 300);                                  // typing an amount should not spam the API
     return () => { alive = false; clearTimeout(t); };
-  }, [investorId, amount, on]);
+  }, [investorId, amount, on, beforeRedemption]);
   return [data, err];
 }
 
-export function RedeemSheet({ investor, scheme, onClose, onDone }) {
+export function RedeemSheet({ investor, scheme, onClose, onDone, revise = false }) {
   const today = iso(new Date());
   const [on, setOn] = useState(today);
   const [amount, setAmount] = useState('');
@@ -131,7 +132,34 @@ export function RedeemSheet({ investor, scheme, onClose, onDone }) {
   const [loiFile, setLoiFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [seededFor, setSeededFor] = useState(null);
-  const [q, loadErr] = useRedeemQuote(investor?.id, amount, on);
+  const [q, loadErr] = useRedeemQuote(investor?.id, amount, on, revise);
+  // revise: correcting the latest redemption itself — same as the website: opens on that
+  // redemption's figures, worked out as the investment stood before it.
+  const redN = Number(investor?.redemption_count) || 0;
+  const [last, setLast] = useState(null);
+  const [revNo, setRevNo] = useState(1);
+  useEffect(() => {
+    if (!revise || !investor) return undefined;
+    let alive = true;
+    setLast(null);
+    apiFetch(CLUB1000_ENDPOINTS.investorLedger(investor.id)).then(async (r) => {
+      const d = await r.json().catch(() => ({}));
+      if (!alive || !r.ok) return;
+      const reds = (d.entries || []).filter((e) => e.type === 'premature_redemption' && e.redemption)
+        .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+      const l = reds[reds.length - 1];
+      if (!l) return;
+      setLast(l);
+      setAmount(String(Number(l.redemption.redeem_amount) || ''));
+      if (l.redemption.redemption_date) setOn(l.redemption.redemption_date);
+      if (l.paid_date) setPaidOn(l.paid_date);
+    }).catch(() => {});
+    apiFetch(CLUB1000_ENDPOINTS.investorLois(investor.id)).then(async (r) => {
+      const d = await r.json().catch(() => ({}));
+      if (alive && r.ok) setRevNo(1 + (d.lois || []).filter((x) => String(x.label).startsWith(`Redemption ${investor.redemption_count || 0} · Revision`)).length);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [revise, investor]);
   if (investor && seededFor !== investor.id) {
     setSeededFor(investor.id);
     setOn(today); setNotes(''); setLoiDone(false); setLoiFile(null); setPaidOn(''); setPaidNotes('');
@@ -154,7 +182,10 @@ export function RedeemSheet({ investor, scheme, onClose, onDone }) {
       const opts = {
         redemption: q,
         ...(past.history?.length ? { history: past.history } : {}),
-        ...(past.redemptions?.length ? { pastRedemptions: past.redemptions } : {}),
+        // A revised redemption's own earlier version is not an earlier redemption.
+        ...((() => { const e = (past.redemptions || []).filter((r) => !(revise && last && r.payout_id === last.payout_id)); return e.length ? { pastRedemptions: e } : {}; })()),
+        // "REDEMPTION N · REVISION k"
+        ...(revise ? { revisionNo: (investor.revision_no || 0) + 1, termLabel: `Redemption ${redN}`, termRevision: revNo } : {}),
       };
       const html = buildInvestorLOIHtml(continuing, scheme, opts);
       const { uri } = await Print.printToFileAsync({ html });
@@ -185,7 +216,7 @@ export function RedeemSheet({ investor, scheme, onClose, onDone }) {
     setBusy(true);
     const res = await apiFetch(CLUB1000_ENDPOINTS.investorRedeemRequest(investor.id), {
       method: 'POST',
-      body: JSON.stringify({ amount, redemption_date: on, notes, loi_file: loiFile, paid_date: paidDate, paid_notes: paidNotes }),
+      body: JSON.stringify({ amount, redemption_date: on, notes, loi_file: loiFile, paid_date: paidDate, paid_notes: paidNotes, ...(revise ? { revise_redemption: true } : {}) }),
     }).catch(() => null);
     setBusy(false);
     if (!res || !res.ok) {
@@ -201,11 +232,13 @@ export function RedeemSheet({ investor, scheme, onClose, onDone }) {
   const blocked = q && !q.can_redeem;
   return (
     <FormSheet visible={!!investor} onClose={onClose}>
-      <Head title="Redeem part of this investment" investor={investor} onClose={onClose} />
+      <Head title={revise ? `Revise Redemption ${redN} · Revision ${revNo}` : 'Redeem part of this investment'} investor={investor} onClose={onClose} />
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
         <Text style={s.section}>1 · HOW MUCH IS COMING OUT</Text>
         <View style={s.card}>
-          <Line label="Currently invested" value={rupee(investor.amount_invested)} />
+          <Line label={revise ? 'Invested before this redemption' : 'Currently invested'}
+            value={rupee(revise && last ? Number(investor.amount_invested) + Number(last.redemption.redeem_amount || 0) : investor.amount_invested)}
+            sub={revise && last ? `Correcting Redemption ${redN} of ${rupee(last.redemption.redeem_amount)} on ${formatDMY(last.redemption.redemption_date)} — replaced by this one once approved` : undefined} />
         </View>
         <Text style={s.lbl}>AMOUNT TO REDEEM (₹)</Text>
         <TextInput style={s.input} value={amount} onChangeText={setAmount} keyboardType="decimal-pad"
