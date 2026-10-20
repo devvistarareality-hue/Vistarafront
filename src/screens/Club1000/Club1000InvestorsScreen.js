@@ -1148,8 +1148,13 @@ function LedgerModal({ investorId, onClose }) {
                 {rows.map((e, i) => {
                   // Unpaid: Pending once its date has come, Upcoming before that.
                   const due = e.due_date || e.date;
-                  const settled = e.status === 'paid' ? settledTo(e.notes) : '';
-                  const st = settled ? 'settled'
+                  const settledRaw = e.status === 'paid' ? settledTo(e.notes) : '';
+                  // Handed to him at the renewal (not carried into it) — "Paid at Renewal N".
+                  const atRenewal = !!settledRaw && !e.carried && !/added to the principal/i.test(e.notes || '');
+                  const settled = atRenewal ? settledRaw.replace('Settled to', 'Paid at') : settledRaw;
+                  const redNo = e.type === 'premature_redemption'
+                    ? (data?.entries || []).filter((x) => x.type === 'premature_redemption' && String(x.due_date) <= String(e.due_date)).length : 0;
+                  const st = atRenewal ? 'paid' : settled ? 'settled'
                     : e.status === 'pending' ? (due > todayIso ? 'upcoming' : 'pending')
                     : e.status === 'paid' && e.paid_date && e.paid_date < due ? 'paid early' : e.status;
                   const head = termSel === 'all' && terms.length > 1 && (i === 0 || (rows[i - 1].term ?? 0) !== (e.term ?? 0))
@@ -1157,10 +1162,21 @@ function LedgerModal({ investorId, onClose }) {
                   return (
                     <View key={i}>
                     {!!head && <Text style={ClubInvestorsScreenS.lgTermHead}>{head.label} · {formatDMY(head.start)} → {formatDMY(head.maturity)} · {fmtMoney(head.principal)}</Text>}
+                    {!!head?.made_of && (
+                      <Text style={ClubInvestorsScreenS.lgMadeOf}>= {[`${fmtMoney(head.made_of.principal)} principal renewed`,
+                        Number(head.made_of.interest) > 0 ? `${fmtMoney(head.made_of.interest)} interest added` : '',
+                        Number(head.made_of.fresh) > 0 ? `${fmtMoney(head.made_of.fresh)} new money` : ''].filter(Boolean).join(' + ')}
+                        {Number(head.made_of.returned) > 0 ? ` · ${fmtMoney(head.made_of.returned)} principal paid back to him` : ''}
+                        {Number(head.made_of.interest_paid) > 0 ? ` · ${fmtMoney(head.made_of.interest_paid)} interest paid to him` : ''}</Text>
+                    )}
+                    {e.type === 'premature_redemption' && !!e.redemption && (
+                      <Text style={ClubInvestorsScreenS.lgRedHead}>Redemption {redNo} · {formatDMY(e.redemption.redemption_date || e.due_date)} — {fmtMoney(e.redemption.redeem_amount)} taken out of {(terms.find((t) => t.no === (e.term ?? 0))?.label || '').split(' · ')[0]}{e.redemption.remaining_principal != null ? ` · ${fmtMoney(e.redemption.remaining_principal)} stays invested` : ''}</Text>
+                    )}
                     <View style={[ClubInvestorsScreenS.lgRow, i > 0 && !head && ClubInvestorsScreenS.lgRowSep]}>
                       <View style={ClubInvestorsScreenS.lgTop}>
                         <View style={ClubInvestorsScreenS.flex1}>
-                          <LedgerBadge label={e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
+                          <LedgerBadge label={atRenewal && e.type === 'maturity' ? 'Principal paid back' : e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
+                          {atRenewal && <Text style={ClubInvestorsScreenS.schedWhy}>Paid to him at the renewal</Text>}
                           {e.type === 'premature_redemption' && <Text style={ClubInvestorsScreenS.schedWhy}>Redeemed on {formatDMY(e.redemption?.redemption_date || e.due_date || e.date)}{e.redemption?.days_held != null ? ` · held ${e.redemption.days_held} days` : ''}</Text>}
                           {!!e.carried && <Text style={ClubInvestorsScreenS.schedWhy}>Not a payment — {e.type === 'interest' ? 'added into' : 'renewed into'} the next term</Text>}
                           {!!e.maturity_split && <Text style={ClubInvestorsScreenS.schedWhy}>{fmtMoney(e.maturity_split.principal)} principal + {fmtMoney(e.maturity_split.interest)} interest</Text>}
@@ -1692,6 +1708,7 @@ const ClubInvestorsScreenS = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.accentSoft, marginBottom: 12 },
   lgStmtText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
   lgMadeOf: { fontSize: 12, fontWeight: '700', color: COLORS.link, marginTop: -4, marginBottom: 10 },
+  lgRedHead: { fontSize: 12, fontWeight: '800', color: COLORS.warning, backgroundColor: COLORS.warningBg, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, marginTop: 8 },
   renewTitle: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
   renewErr: { fontSize: 12.5, color: COLORS.error, backgroundColor: COLORS.errorBg, padding: 10, borderRadius: 10, marginBottom: 12 },
   schemeTerms: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
