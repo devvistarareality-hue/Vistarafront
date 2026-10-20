@@ -267,17 +267,18 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
       payable: e.redemption?.payable ?? e.amount,
       as_of: e.redemption?.redemption_date || e.due_date || e.date,
       bare: !e.redemption,
+      paid: e.status === 'paid',   // an approved redemption is owed until it is marked paid
     }));
     const all = [...earlier, { ...opts.redemption }];
     const box = (rd, idx, last) => {
       if (rd.bare) {
-        return `<div class="hist-next"><b>REDEMPTION ${idx + 1} · ${esc(fmtDate(rd.as_of))} — paid out</b><b>Rs. ${esc(money(rd.payable))}</b></div>`;
+        return `<div class="hist-next"><b>REDEMPTION ${idx + 1} · ${esc(fmtDate(rd.as_of))} — ${rd.paid ? 'paid out' : 'payable, not paid yet'}</b><b>Rs. ${esc(money(rd.payable))}</b></div>`;
       }
       const perDay = Number(rd.daily_interest || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const lines = [
         ['', 'Principal redeemed', Rr(rd.redeem_amount)],
         ['+', `Premature interest (${rd.days_held} days &times; Rs. ${perDay})`, Rr(rd.premature_interest)],
-        ['=', last ? 'Total payable to the investor' : 'Paid out', Rr(rd.payable), 'total'],
+        ['=', last ? 'Total payable to the investor' : (rd.paid ? 'Paid out' : 'Payable to the investor (not paid yet)'), Rr(rd.payable), 'total'],
       ];
       const full = Number(rd.remaining_principal) <= 0;
       const stayed = full
