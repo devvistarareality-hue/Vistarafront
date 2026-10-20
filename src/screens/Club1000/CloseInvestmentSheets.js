@@ -115,6 +115,11 @@ export function RedeemSheet({ investor, scheme, onClose, onDone }) {
   const [on, setOn] = useState(today);
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  // Redeemed means handed over — when the money went to him (the redemption date
+  // unless changed) and the UTR / cheque, so it is recorded as paid on approval.
+  const [paidOn, setPaidOn] = useState('');
+  const [paidNotes, setPaidNotes] = useState('');
+  const paidDate = paidOn || on;
   const [loiDone, setLoiDone] = useState(false);
   const [loiBusy, setLoiBusy] = useState(false);
   const [loiFile, setLoiFile] = useState(null);
@@ -123,7 +128,7 @@ export function RedeemSheet({ investor, scheme, onClose, onDone }) {
   const [q, loadErr] = useRedeemQuote(investor?.id, amount, on);
   if (investor && seededFor !== investor.id) {
     setSeededFor(investor.id);
-    setOn(today); setNotes(''); setLoiDone(false); setLoiFile(null);
+    setOn(today); setNotes(''); setLoiDone(false); setLoiFile(null); setPaidOn(''); setPaidNotes('');
     setAmount(String(Number(investor.amount_invested) || ''));
   }
   if (!investor) return null;
@@ -174,7 +179,7 @@ export function RedeemSheet({ investor, scheme, onClose, onDone }) {
     setBusy(true);
     const res = await apiFetch(CLUB1000_ENDPOINTS.investorRedeemRequest(investor.id), {
       method: 'POST',
-      body: JSON.stringify({ amount, redemption_date: on, notes, loi_file: loiFile }),
+      body: JSON.stringify({ amount, redemption_date: on, notes, loi_file: loiFile, paid_date: paidDate, paid_notes: paidNotes }),
     }).catch(() => null);
     setBusy(false);
     if (!res || !res.ok) {
@@ -230,7 +235,15 @@ export function RedeemSheet({ investor, scheme, onClose, onDone }) {
             </>}
           </View>
 
-          <Text style={s.section}>4 · SIGN OFF</Text>
+          <Text style={s.section}>4 · PAID TO THE INVESTOR</Text>
+          <Text style={s.lbl}>PAID ON</Text>
+          <DateField value={paidDate} min={on} onChange={setPaidOn} />
+          <Text style={s.lbl}>UTR / CHEQUE NO. (OPTIONAL)</Text>
+          <TextInput style={s.input} value={paidNotes} onChangeText={setPaidNotes}
+            placeholder="e.g. UTR 4521…" placeholderTextColor={COLORS.text3} />
+          <Text style={s.help}>Once approved, {rupee(q.payable)} is recorded as paid to him on {formatDMY(paidDate)} — it does not show as owed in Payouts.</Text>
+
+          <Text style={s.section}>5 · SIGN OFF</Text>
           <Text style={s.lbl}>REASON / REMARKS</Text>
           <TextInput style={s.input} value={notes} onChangeText={setNotes}
             placeholder="Why the investor is taking money out early" placeholderTextColor={COLORS.text3} />
