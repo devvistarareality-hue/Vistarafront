@@ -19,6 +19,7 @@ const KIND = {
   revision: ['create-outline', 'Revision', 'warning', 'warningBg'],
   renewal: ['refresh', 'Renewal', 'success', 'successBg'],
   redemption: ['exit-outline', 'Redemption', 'error', 'errorBg'],
+  rejected: ['close-circle-outline', 'Rejected', 'textSecondary', 'surfaceAlt'],
   current: ['document-text-outline', 'LOI', 'link', 'accentSoft'],
 };
 
