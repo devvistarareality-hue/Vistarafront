@@ -181,6 +181,8 @@ export function RedeemSheet({ investor, scheme, onClose, onDone, revise = false 
       const past = await earlierTerms(investor.id);
       const opts = {
         redemption: q,
+        // the term the money comes out of (e.g. Renewal 3) — printed before the redemption
+        ...(past.current ? { currentTerm: past.current } : {}),
         ...(past.history?.length ? { history: past.history } : {}),
         // A revised redemption's own earlier version is not an earlier redemption.
         ...((() => { const e = (past.redemptions || []).filter((r) => !(revise && last && r.payout_id === last.payout_id)); return e.length ? { pastRedemptions: e } : {}; })()),

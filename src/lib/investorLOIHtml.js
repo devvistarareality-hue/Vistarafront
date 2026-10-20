@@ -264,7 +264,11 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
   // ones come from what was kept on their payout; one approved before that was
   // kept has no breakdown and says so rather than inventing figures.
   const redemptionHtml = !opts.redemption ? '' : (() => {
-    const earlier = (opts.pastRedemptions || []).map((e) => ({
+    // The term the money comes out of — a redemption is its own step, taken from the
+    // running term (e.g. Renewal 3), not part of how that term was renewed.
+    const cur = opts.currentTerm || null;
+    const curName = cur ? String(cur.label || '').split(' · ')[0] : '';
+    const earlier = (opts.pastRedemptions || []).filter((e) => !cur || String(e.redemption?.redemption_date || e.due_date || e.date) >= String(cur.start)).map((e) => ({
       ...(e.redemption || {}),
       payable: e.redemption?.payable ?? e.amount,
       as_of: e.redemption?.redemption_date || e.due_date || e.date,
@@ -297,7 +301,20 @@ export function buildInvestorLOIHtml(investor, scheme, opts = {}) {
         ? `<div class="loi-note">Interest already paid on the redeemed share at the normal rate: Rs. ${esc(money(rd.interest_paid_share))} (not deducted above).</div>`
         : ''}`;
     };
-    return `<div class="tc-header">Premature Redemption:</div>
+    const mo = cur?.made_of;
+    const curLines = !cur ? [] : mo ? [
+      ['', 'Principal renewed', Rr(mo.principal)],
+      ...(Number(mo.interest) > 0 ? [['+', 'Interest added from the previous term', Rr(mo.interest)]] : []),
+      ...(Number(mo.fresh) > 0 ? [['+', 'New money added', Rr(mo.fresh)]] : []),
+      ['=', `Invested in ${esc(curName)}`, Rr(mo.total), 'total'],
+    ] : [['=', `Invested in ${esc(curName)}`, Rr(cur.principal), 'total']];
+    const curHtml = !cur ? '' : `<div class="tc-header">Current term · ${esc(curName)}:</div>
+      <div class="hist-box">
+        <div class="hist-title">${esc(curName.toUpperCase())} · ${esc(fmtDate(cur.start))} to ${esc(fmtDate(cur.maturity))}</div>
+        <table class="hist-st">${curLines.map(([sign, label, val, kind]) =>
+          `<tr class="${kind || ''}"><td class="sg ${sign === '+' ? 'plus' : ''}">${sign}</td><td>${label}</td><td class="v">Rs. ${esc(money(val))}</td></tr>`).join('')}</table>
+      </div>`;
+    return `${curHtml}<div class="tc-header">${cur ? `Premature Redemption from ${esc(curName)}` : 'Premature Redemption'}:</div>
       ${all.map((rd, i) => box(rd, i, i === all.length - 1)).join('')}`;
   })();
 
