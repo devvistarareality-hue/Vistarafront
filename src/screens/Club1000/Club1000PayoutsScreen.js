@@ -271,7 +271,9 @@ function PaySheet({ row, today, onClose, onDone }) {
   if (row && seededFor !== row.id) {
     setSeededFor(row.id);
     setLines(Object.fromEntries(row.pending.map((p) => [p.id, {
-      on: p.due_date < today, amount: String(Number(p.amount_due) || 0), date: today, notes: '',
+      on: p.due_date < today, amount: String(Number(p.amount_due) || 0),
+      // A redemption is handed over on its redemption date, not the day it is recorded.
+      date: p.payout_type === 'premature_redemption' && p.due_date && p.due_date <= today ? p.due_date : today, notes: '',
     }])));
   }
   if (!row) return null;

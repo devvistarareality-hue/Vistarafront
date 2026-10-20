@@ -1122,6 +1122,7 @@ function LedgerModal({ investorId, onClose }) {
                       <View style={ClubInvestorsScreenS.lgTop}>
                         <View style={ClubInvestorsScreenS.flex1}>
                           <LedgerBadge label={e.label} color={LEDGER_TYPE_COLOR[e.type] || { bg: COLORS.surfaceAlt, fg: MUTED }} />
+                          {e.type === 'premature_redemption' && <Text style={ClubInvestorsScreenS.schedWhy}>Redeemed on {formatDMY(e.redemption?.redemption_date || e.due_date || e.date)}{e.redemption?.days_held != null ? ` · held ${e.redemption.days_held} days` : ''}</Text>}
                           {!!e.period && <Text style={ClubInvestorsScreenS.schedWhy}>{e.period.label} · {e.period.days} days × ₹{Number(e.period.per_day).toLocaleString('en-IN')}</Text>}
                         </View>
                         <View style={ClubInvestorsScreenS.lgRight}>
