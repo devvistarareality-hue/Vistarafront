@@ -11,6 +11,15 @@ import { errText } from '../../lib/apiError';
 import FormSheet from '../../components/FormSheet';
 import AppLoader from '../../components/AppLoader';
 
+// Icon, colour and kind wording per LOI.
+const KIND = {
+  new: ['document-text-outline', 'Original', 'link', 'accentSoft'],
+  revision: ['create-outline', 'Revision', 'warning', 'warningBg'],
+  renewal: ['refresh', 'Renewal', 'success', 'successBg'],
+  redemption: ['exit-outline', 'Redemption', 'error', 'errorBg'],
+  current: ['document-text-outline', 'LOI', 'link', 'accentSoft'],
+};
+
 export default function InvestorLoisSheet({ investor, onClose }) {
   const [lois, setLois] = useState(null);
   const [err, setErr] = useState('');
@@ -52,15 +61,24 @@ export default function InvestorLoisSheet({ investor, onClose }) {
         {lois && lois.length === 0 && <Text style={s.help}>No signed LOI is on record for this investment.</Text>}
         {lois && lois.length > 0 && (
           <View style={s.card}>
-            {lois.map((l, k) => (
-              <View key={l.i} style={[s.row, k > 0 && s.rowLine]}>
+            {lois.map((l, k) => {
+              const [icon, word, fg, bg] = KIND[l.kind] || KIND.current;
+              return (
+              <View key={l.i} style={[s.row, k > 0 && s.rowLine, l.current && s.rowCur]}>
+                <View style={[s.ico, { backgroundColor: COLORS[bg] }]}>{/* inline-ok: colour per LOI kind */}
+                  <Ionicons name={icon} size={17} color={COLORS[fg]} />
+                </View>
                 <View style={s.flex}>
-                  <Text style={s.label}>{l.label}{l.current ? '  · current' : ''}</Text>
-                  <Text style={s.meta}>{l.at ? formatDMY(String(l.at).slice(0, 10)) : '—'}{l.by ? ` · approved by ${l.by}` : ''}</Text>
+                  <View style={s.top}>
+                    <Text style={s.label}>{l.label}</Text>
+                    {l.current && <Text style={s.cur}>CURRENT</Text>}
+                  </View>
+                  <Text style={s.meta}>{word} · {l.at ? formatDMY(String(l.at).slice(0, 10)) : '—'}{l.by ? ` · approved by ${l.by}` : ''}</Text>
                 </View>
                 <TouchableOpacity onPress={() => open(l)} style={s.open}><Text style={s.openText}>Open</Text></TouchableOpacity>
               </View>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -80,6 +98,10 @@ const s = StyleSheet.create({
   card: { borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardBg, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11 },
   rowLine: { borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
+  rowCur: { backgroundColor: COLORS.successBg },
+  ico: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  cur: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.success, backgroundColor: COLORS.surface, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
   label: { fontSize: 13.5, fontWeight: '700', color: COLORS.textPrimary },
   meta: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
   open: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
