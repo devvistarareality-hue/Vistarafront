@@ -27,6 +27,7 @@ import FilterSelect from '../../components/FilterSelect';
 import { RedeemSheet, RenewalSummary } from './CloseInvestmentSheets';
 import { schedulePeriods, maturityWorking } from '../../lib/c1Periods';
 import InvestorHistorySheet from './InvestorHistorySheet';
+import InvestorLoisSheet from './InvestorLoisSheet';
 import PortfolioSheet from './PortfolioSheet';
 import { settledTo, settledRemark } from '../../lib/c1Settled';
 import { loiFileName, sharePdfNamed, shareInvestorStatement } from '../../lib/c1Files';
@@ -1077,29 +1078,6 @@ function LedgerModal({ investorId, onClose }) {
                   {stmtBusy ? <ActivityIndicator size="small" color={COLORS.link} /> : <Ionicons name="download-outline" size={16} color={COLORS.link} />}
                   <Text style={ClubInvestorsScreenS.lgStmtText}>{stmtBusy ? 'Preparing statement…' : 'Statement PDF — to give the investor'}</Text>
                 </TouchableOpacity>
-                {/* Every signed LOI of this investment, newest first — each one openable. */}
-                {(data?.lois || []).length > 0 && (
-                  <View style={[CARD, ClubInvestorsScreenS.lgLois]}>
-                    <Text style={ClubInvestorsScreenS.lgLoisHead}>LOIS · {data.lois.length}</Text>
-                    {data.lois.map((l) => (
-                      <View key={l.i} style={ClubInvestorsScreenS.lgLoi}>
-                        <View style={ClubInvestorsScreenS.lgLoiMain}>
-                          <Text style={ClubInvestorsScreenS.lgLoiLabel}>{l.label}{l.current ? '  · current' : ''}</Text>
-                          <Text style={ClubInvestorsScreenS.lgLoiSub}>{l.at ? formatDMY(String(l.at).slice(0, 10)) : '—'}{l.by ? ` · approved by ${l.by}` : ''}</Text>
-                        </View>
-                        <TouchableOpacity style={ClubInvestorsScreenS.lgLoiBtn} onPress={async () => {
-                          try {
-                            const r = await apiFetch(`${CLUB1000_ENDPOINTS.investorLoiUrl(investorId)}?loi=${l.i}`);
-                            const d = await r.json().catch(() => ({}));
-                            if (r.ok && d.url) Linking.openURL(d.url); else Alert.alert('LOI unavailable', errText(d, 'Could not open the LOI.'));
-                          } catch (e) { Alert.alert('LOI unavailable', e.message); }
-                        }}>
-                          <Text style={ClubInvestorsScreenS.lgLoiBtnText}>Open</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
                 {terms.length > 1 && (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={ClubInvestorsScreenS.lgTermScroll} contentContainerStyle={ClubInvestorsScreenS.lgTerms}>
                     {[{ no: 'all', label: 'All terms' }, ...terms].map((t) => (
@@ -1110,17 +1088,6 @@ function LedgerModal({ investorId, onClose }) {
                   </ScrollView>
                 )}
                 {!!term && <Text style={ClubInvestorsScreenS.lgTermLine}>{formatDMY(term.start)} → {formatDMY(term.maturity)} · principal {fmtMoney(term.principal)}</Text>}
-                {!!term && (term.has_loi ? (
-                  <TouchableOpacity style={ClubInvestorsScreenS.lgTermLoi} onPress={async () => {
-                    try {
-                      const r = await apiFetch(`${CLUB1000_ENDPOINTS.investorLoiUrl(investorId)}${term.current ? '' : `?term=${term.no}`}`);
-                      const d = await r.json().catch(() => ({}));
-                      if (r.ok && d.url) Linking.openURL(d.url); else Alert.alert('LOI unavailable', errText(d, 'Could not open the LOI.'));
-                    } catch (e) { Alert.alert('LOI unavailable', e.message); }
-                  }}>
-                    <Text style={ClubInvestorsScreenS.lgTermLoiText}>Open this term's signed LOI</Text>
-                  </TouchableOpacity>
-                ) : !term.current && <Text style={ClubInvestorsScreenS.lgTermLine}>Its signed LOI was not kept (renewed before LOIs were kept).</Text>)}
                 <View style={ClubInvestorsScreenS.lgCards}>
                   {[
                     ['Principal', s.principal ?? s.total_invested, null, principalHint],
@@ -1217,6 +1184,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [addMoreFor, setAddMoreFor] = useState(null);     // a new investment for the same person
   const [selecting, setSelecting] = useState(false);     // pick several to delete at once
   const [picked, setPicked] = useState(() => new Set());
+  const [loisFor, setLoisFor] = useState(null);     // the investor whose LOIs are open
   // Only what is on screen stays picked — a search, filter or reload that hides an
   // investor drops it, so the count, the amount and Delete never act on a hidden one.
   useEffect(() => {
@@ -1369,14 +1337,6 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
     } finally { setWorking(''); }
   }
 
-  async function viewLoi(id) {
-    try {
-      const res = await apiFetch(CLUB1000_ENDPOINTS.investorLoiUrl(id));
-      const d = await res.json();
-      if (res.ok && d.url) Linking.openURL(d.url);
-      else Alert.alert('LOI unavailable', errText(d, 'Could not open the LOI.'));
-    } catch (e) { Alert.alert('LOI unavailable', e.message); }
-  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
@@ -1387,6 +1347,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
         onClose={() => setRevising(null)} onSaved={() => load()} />
       <ImportInvestorsSheet visible={showImport} onClose={() => setShowImport(false)} onDone={() => { setShowImport(false); load(); }} />
       <InvestorHistorySheet investor={historyFor} onClose={() => setHistoryFor(null)} />
+      <InvestorLoisSheet investor={loisFor} onClose={() => setLoisFor(null)} />
       <PortfolioSheet investorId={portfolioFor} onClose={() => setPortfolioFor(null)}
         onAddMore={can(user, 'club.investor.manage') && schemes.length ? (pf) => { setPortfolioFor(null); setAddMoreFor(pf); } : null} />
       <AddInvestorSheet visible={!!addMoreFor} prefillLead={morePrefill(addMoreFor)} schemes={schemes}
@@ -1547,8 +1508,8 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
               )}
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                 {!!inv.loi_document_url && (
-                  <TouchableOpacity onPress={() => viewLoi(inv.id)} style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.link }}>View LOI</Text>
+                  <TouchableOpacity onPress={() => setLoisFor(inv)} style={ClubInvestorsScreenS.loisBtn}>
+                    <Text style={ClubInvestorsScreenS.loisBtnText}>LOIs</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={() => setLedgerFor(inv.id)} style={ClubInvestorsScreenS.ledgerChip}>
@@ -1675,22 +1636,14 @@ const ClubInvestorsScreenS = StyleSheet.create({
   lgStmt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 12,
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.accentSoft, marginBottom: 12 },
   lgStmtText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
-  lgLois: { padding: 0, marginBottom: 12, overflow: 'hidden' },
-  lgLoisHead: { paddingHorizontal: 14, paddingVertical: 9, fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: COLORS.textSecondary, backgroundColor: COLORS.surfaceAlt },
-  lgLoi: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
-  lgLoiMain: { flex: 1 },
-  lgLoiLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
-  lgLoiSub: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
-  lgLoiBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
-  lgLoiBtnText: { fontSize: 12.5, fontWeight: '700', color: COLORS.link },
+  loisBtn: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg },
+  loisBtnText: { fontSize: 11, fontWeight: '700', color: COLORS.link },
   lgTermScroll: { flexGrow: 0, marginBottom: 8 },
   lgTerms: { gap: 6, alignItems: 'center' },
   lgTerm: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
   lgTermOn: { backgroundColor: COLORS.link, borderColor: COLORS.link },
   lgTermText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   lgTermTextOn: { color: '#fff' },
-  lgTermLoi: { alignSelf: 'flex-start', marginBottom: 10, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, backgroundColor: COLORS.linkBg },
-  lgTermLoiText: { fontSize: 12, fontWeight: '800', color: COLORS.link },
   lgTermLine: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 8 },
   lgTermHead: { marginTop: 10, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, backgroundColor: COLORS.surfaceAlt, fontSize: 11.5, fontWeight: '800', color: COLORS.textPrimary },
   lgCards: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
