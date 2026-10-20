@@ -1077,6 +1077,29 @@ function LedgerModal({ investorId, onClose }) {
                   {stmtBusy ? <ActivityIndicator size="small" color={COLORS.link} /> : <Ionicons name="download-outline" size={16} color={COLORS.link} />}
                   <Text style={ClubInvestorsScreenS.lgStmtText}>{stmtBusy ? 'Preparing statement…' : 'Statement PDF — to give the investor'}</Text>
                 </TouchableOpacity>
+                {/* Every signed LOI of this investment, newest first — each one openable. */}
+                {(data?.lois || []).length > 0 && (
+                  <View style={[CARD, ClubInvestorsScreenS.lgLois]}>
+                    <Text style={ClubInvestorsScreenS.lgLoisHead}>LOIS · {data.lois.length}</Text>
+                    {data.lois.map((l) => (
+                      <View key={l.i} style={ClubInvestorsScreenS.lgLoi}>
+                        <View style={ClubInvestorsScreenS.lgLoiMain}>
+                          <Text style={ClubInvestorsScreenS.lgLoiLabel}>{l.label}{l.current ? '  · current' : ''}</Text>
+                          <Text style={ClubInvestorsScreenS.lgLoiSub}>{l.at ? formatDMY(String(l.at).slice(0, 10)) : '—'}{l.by ? ` · approved by ${l.by}` : ''}</Text>
+                        </View>
+                        <TouchableOpacity style={ClubInvestorsScreenS.lgLoiBtn} onPress={async () => {
+                          try {
+                            const r = await apiFetch(`${CLUB1000_ENDPOINTS.investorLoiUrl(investorId)}?loi=${l.i}`);
+                            const d = await r.json().catch(() => ({}));
+                            if (r.ok && d.url) Linking.openURL(d.url); else Alert.alert('LOI unavailable', errText(d, 'Could not open the LOI.'));
+                          } catch (e) { Alert.alert('LOI unavailable', e.message); }
+                        }}>
+                          <Text style={ClubInvestorsScreenS.lgLoiBtnText}>Open</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
                 {terms.length > 1 && (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={ClubInvestorsScreenS.lgTermScroll} contentContainerStyle={ClubInvestorsScreenS.lgTerms}>
                     {[{ no: 'all', label: 'All terms' }, ...terms].map((t) => (
@@ -1652,6 +1675,14 @@ const ClubInvestorsScreenS = StyleSheet.create({
   lgStmt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 12,
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.accentSoft, marginBottom: 12 },
   lgStmtText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
+  lgLois: { padding: 0, marginBottom: 12, overflow: 'hidden' },
+  lgLoisHead: { paddingHorizontal: 14, paddingVertical: 9, fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: COLORS.textSecondary, backgroundColor: COLORS.surfaceAlt },
+  lgLoi: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
+  lgLoiMain: { flex: 1 },
+  lgLoiLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
+  lgLoiSub: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
+  lgLoiBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
+  lgLoiBtnText: { fontSize: 12.5, fontWeight: '700', color: COLORS.link },
   lgTermScroll: { flexGrow: 0, marginBottom: 8 },
   lgTerms: { gap: 6, alignItems: 'center' },
   lgTerm: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface },
