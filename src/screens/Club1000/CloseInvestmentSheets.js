@@ -34,14 +34,16 @@ const typeLabel = (p) => (p.maturity_split
 const iso = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 const rupee = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
 
-function useSettlement(investorId, on) {
+function useSettlement(investorId, on, beforeRenewal = false) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   useEffect(() => {
     if (!investorId) { setData(null); return undefined; }
     let alive = true;
     setData(null);
-    apiFetch(CLUB1000_ENDPOINTS.investorSettlement(investorId, on))
+    // beforeRenewal: the figures as they stood before the latest renewal (Revise renewal).
+    const url = CLUB1000_ENDPOINTS.investorSettlement(investorId, on);
+    apiFetch(beforeRenewal ? `${url}${url.includes('?') ? '&' : '?'}before_renewal=1` : url)
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
         if (!alive) return;
@@ -49,7 +51,7 @@ function useSettlement(investorId, on) {
       })
       .catch(() => alive && setErr('Could not reach the server.'));
     return () => { alive = false; };
-  }, [investorId, on]);
+  }, [investorId, on, beforeRenewal]);
   return [data, err];
 }
 
@@ -360,8 +362,8 @@ export function MaturityPayoutSheet({ investor, onClose, onDone }) {
 
 // The term that ended, and how he is renewing it — same as the website: four plain
 // choices that fill in the new amount and say where every rupee goes.
-export function RenewalSummary({ investorId, newAmount, onRenewal, payNow, onPayNow }) {
-  const [st] = useSettlement(investorId);
+export function RenewalSummary({ investorId, newAmount, onRenewal, payNow, onPayNow, beforeRenewal = false }) {
+  const [st] = useSettlement(investorId, undefined, beforeRenewal);
   const [how, setHow] = useState('');
   const [take, setTake] = useState('');
   const [extra, setExtra] = useState('');

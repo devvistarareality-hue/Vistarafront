@@ -726,9 +726,10 @@ const AMBER = COLORS.warningAlt;
 
 // Every earlier term for the renewal LOI's history, from the Ledger's own term figures,
 // with the term ending now as the last row — what this renewal does with it.
-async function renewalHistory(investor, form) {
+async function renewalHistory(investor, form, beforeRenewal = false) {
   try {
-    const r = await apiFetch(CLUB1000_ENDPOINTS.investorLedger(investor.id));
+    // Revise renewal reads the terms as they stood before the latest renewal.
+    const r = await apiFetch(`${CLUB1000_ENDPOINTS.investorLedger(investor.id)}${beforeRenewal ? '?before_renewal=1' : ''}`);
     const d = r.ok ? await r.json() : null;
     const terms = d?.terms || [];
     const rows = terms.filter((t) => !t.current);
@@ -749,7 +750,27 @@ async function renewalHistory(investor, form) {
   } catch { return []; }
 }
 
-function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
+function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved, revise = false }) {
+  // revise: correcting the latest renewal itself (Revise LOI while the live LOI is a
+  // renewal's) — same as the website: opens on that renewal's own terms; on approval
+  // the term goes back to before it and these corrected terms replace it.
+  const renewalN = investor?.renewal_count || 0;
+  const [before, setBefore] = useState(null);
+  const [revNo, setRevNo] = useState(1);
+  const [beforeErr, setBeforeErr] = useState('');
+  useEffect(() => {
+    if (!visible || !revise || !investor) return undefined;
+    let alive = true;
+    setBefore(null); setBeforeErr('');
+    apiFetch(`${CLUB1000_ENDPOINTS.investorLedger(investor.id)}?before_renewal=1`)
+      .then(async (r) => { const d = await r.json().catch(() => ({})); if (!alive) return; if (r.ok) setBefore(d.investor); else setBeforeErr(errText(d, 'This renewal cannot be revised.')); })
+      .catch(() => alive && setBeforeErr('Could not reach the server.'));
+    apiFetch(CLUB1000_ENDPOINTS.investorLois(investor.id))
+      .then(async (r) => { const d = await r.json().catch(() => ({})); if (!alive || !r.ok) return;
+        setRevNo(1 + (d.lois || []).filter((l) => String(l.label).startsWith(`Renewal ${investor.renewal_count || 0} · Revision`)).length); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [visible, revise, investor]);
   const [form, setForm] = useState(null);
   const [schedule, setSchedule] = useState([]);
   const [scheduleDirty, setScheduleDirty] = useState(false);
@@ -764,7 +785,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       setForm({
         // A renewal carries straight on from the term that ended: it starts on that
         // term's maturity date (editable), not on the day the sheet is opened.
-        investment_date: investor?.maturity_date ? new Date(`${investor.maturity_date}T00:00:00`) : new Date(),
+        investment_date: (revise ? investor?.investment_date : investor?.maturity_date) ? new Date(`${revise ? investor.investment_date : investor.maturity_date}T00:00:00`) : new Date(),
         amount_invested: String(investor.amount_invested || ''),
         interest_payout: investor.interest_payout || 'maturity',
         total_return_pct: String(investor.total_return_pct ?? ''),
@@ -828,14 +849,18 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       // maturity_date is explicitly overridden (not just spread from `investor`)
       // because renewing changes investment_date — the OLD investor.maturity_date
       // would otherwise leak through and understate/misdate the schedule's totals.
-      const html = buildInvestorLOIHtml({ ...investor, ...form, investment_date: toISODate(form.investment_date), maturity_date: maturityDate ? toISODate(maturityDate) : null }, scheme, {
+      const term = { start: toISODate(form.investment_date), maturity: maturityDate ? toISODate(maturityDate) : null, principal: form.amount_invested };
+      const loiOpts = revise ? {
+        // "RENEWAL N · REVISION k" — the renewal it corrects, counted within that renewal.
+        revisionNo: nextRevisionNo, termLabel: `Renewal ${renewalN}`, termRevision: revNo, schedule,
+        history: await renewalHistory(investor, form, true), nextTerm: { label: `Renewal ${renewalN} · Revision ${revNo}`, ...term },
+      } : {
         renewalNo: nextRevisionNo, schedule, history: await renewalHistory(investor, form),
-        nextTerm: { label: `Renewal ${(investor.renewal_count || 0) + 1}`, start: toISODate(form.investment_date),
-          maturity: maturityDate ? toISODate(maturityDate) : null, principal: form.amount_invested },
-      });
+        nextTerm: { label: `Renewal ${(investor.renewal_count || 0) + 1}`, ...term },
+      };
+      const html = buildInvestorLOIHtml({ ...investor, ...form, investment_date: toISODate(form.investment_date), maturity_date: maturityDate ? toISODate(maturityDate) : null }, scheme, loiOpts);
       const { uri } = await Print.printToFileAsync({ html });
-      await sharePdfNamed(uri, loiFileName({ loi_no: investor.loi_no, name: form.name || investor.name },
-        { renewalNo: nextRevisionNo, nextTerm: { label: `Renewal ${(investor.renewal_count || 0) + 1}` } }));
+      await sharePdfNamed(uri, loiFileName({ loi_no: investor.loi_no, name: form.name || investor.name }, loiOpts));
       setLoiDone(true);
     } catch (e) {
       Alert.alert('Could not generate the LOI', e.message);
@@ -865,9 +890,10 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
       Alert.alert('Signed LOI required', 'Download the renewed LOI, get it signed, and attach it before submitting.');
       return;
     }
+    if (revise && beforeErr) { Alert.alert('Cannot revise this renewal', beforeErr); return; }
     setSaving(true);
     try {
-      const payload = { ...form, investment_date: toISODate(form.investment_date), loi_file: loiFile };
+      const payload = { ...form, investment_date: toISODate(form.investment_date), loi_file: loiFile, ...(revise ? { revise_renewal: true } : {}) };
       if (!payload.interest_choice) delete payload.interest_choice;
       if (payload.interest_added === '' || payload.interest_added == null) delete payload.interest_added;
       if (!payload.pay_now?.notes) delete payload.pay_now;
@@ -889,7 +915,7 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
     <FormSheet visible={visible} onClose={onClose}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceAlt }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: TEXT }}>Renew Investment · R{nextRevisionNo}</Text>
+          <Text style={ClubInvestorsScreenS.renewTitle}>{revise ? `Revise Renewal ${renewalN} · Revision ${revNo}` : `Renew Investment · R${nextRevisionNo}`}</Text>
           <Text style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{investor.name} · {investor.phone} · {scheme?.name}</Text>
         </View>
         <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, borderRadius: 20, backgroundColor: COLORS.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
@@ -897,10 +923,16 @@ function RenewInvestorSheet({ visible, investor, scheme, onClose, onSaved }) {
         </TouchableOpacity>
       </View>
       <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <Text style={ClubInvestorsScreenS.renewNote}>
-          This investment matured on {formatDMY(investor.maturity_date)}. Set the renewal terms below — amount can go up or down.
-        </Text>
-        <RenewalSummary investorId={investor.id} newAmount={form.amount_invested}
+        {revise ? (
+          <Text style={beforeErr ? ClubInvestorsScreenS.renewErr : ClubInvestorsScreenS.renewNote}>
+            {beforeErr || `Correcting Renewal ${renewalN} (from ${formatDMY(investor.investment_date)})${before ? ` — the term before it ended on ${formatDMY(before.maturity_date)}` : ''}. Change what was entered wrong. Once approved, Renewal ${renewalN} is replaced by these terms and the ended term is settled again from them.`}
+          </Text>
+        ) : (
+          <Text style={ClubInvestorsScreenS.renewNote}>
+            This investment matured on {formatDMY(investor.maturity_date)}. Set the renewal terms below — amount can go up or down.
+          </Text>
+        )}
+        <RenewalSummary investorId={investor.id} newAmount={form.amount_invested} beforeRenewal={revise}
           onRenewal={(r) => setForm((f) => ({ ...f, amount_invested: String(r.amount), interest_choice: r.interest_choice, interest_added: String(r.interest_added) }))}
           payNow={form.pay_now} onPayNow={(v) => setForm((f) => ({ ...f, pay_now: v }))} />
 
@@ -1182,6 +1214,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
   const [showAdd,    setShowAdd]    = useState(false);
   const [revising,   setRevising]   = useState(null);
   const [renewing,   setRenewing]   = useState(null);
+  const [reviseRenewal, setReviseRenewal] = useState(null);   // correcting the latest renewal itself
+  // The live LOI is a renewal's (renewed, nothing redeemed since): Revise LOI corrects that renewal.
+  const isRenewalLoi = (inv) => Number(inv.renewal_count || 0) > 0 && !Number(inv.redemption_count || 0);
   const [redeeming, setRedeeming] = useState(null);   // Redeem sheet (before maturity)
   const [historyFor, setHistoryFor] = useState(null); // History sheet
   const [portfolioFor, setPortfolioFor] = useState(null); // the person's whole portfolio
@@ -1363,6 +1398,9 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
       <RenewInvestorSheet visible={!!renewing} investor={renewing}
         scheme={schemes.find((s) => String(s.id) === String(renewing?.scheme))}
         onClose={() => setRenewing(null)} onSaved={() => load()} />
+      <RenewInvestorSheet revise visible={!!reviseRenewal} investor={reviseRenewal}
+        scheme={schemes.find((s) => String(s.id) === String(reviseRenewal?.scheme))}
+        onClose={() => setReviseRenewal(null)} onSaved={() => load()} />
       <LedgerModal investorId={ledgerFor} onClose={() => setLedgerFor(null)} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'transparent', borderBottomWidth: 0, borderBottomColor: COLORS.surfaceAlt }}>
@@ -1541,7 +1579,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                   </TouchableOpacity>
                 )}
                 {can(user, 'club.investor.manage') && (
-                  <TouchableOpacity onPress={() => setRevising(inv)} style={ClubInvestorsScreenS.rowBtnPurple}>
+                  <TouchableOpacity onPress={() => (isRenewalLoi(inv) ? setReviseRenewal(inv) : setRevising(inv))} style={ClubInvestorsScreenS.rowBtnPurple}>
                     <Text style={ClubInvestorsScreenS.rowBtnPurpleText}>↻ Revise LOI</Text>
                   </TouchableOpacity>
                 )}
@@ -1640,6 +1678,8 @@ const ClubInvestorsScreenS = StyleSheet.create({
   lgStmt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 12,
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.accentSoft, marginBottom: 12 },
   lgStmtText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
+  renewTitle: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
+  renewErr: { fontSize: 12.5, color: COLORS.error, backgroundColor: COLORS.errorBg, padding: 10, borderRadius: 10, marginBottom: 12 },
   schemeTerms: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
   loisBtn: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg },
   loisBtnText: { fontSize: 11, fontWeight: '700', color: COLORS.link },
