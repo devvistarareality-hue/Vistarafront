@@ -1122,6 +1122,11 @@ function LedgerModal({ investorId, onClose }) {
                   </ScrollView>
                 )}
                 {!!term && <Text style={ClubInvestorsScreenS.lgTermLine}>{formatDMY(term.start)} → {formatDMY(term.maturity)} · principal {fmtMoney(term.principal)}</Text>}
+                {!!term?.made_of && (
+                  <Text style={ClubInvestorsScreenS.lgMadeOf}>= {[`${fmtMoney(term.made_of.principal)} principal renewed`,
+                    Number(term.made_of.interest) > 0 ? `${fmtMoney(term.made_of.interest)} interest added` : '',
+                    Number(term.made_of.fresh) > 0 ? `${fmtMoney(term.made_of.fresh)} new money` : ''].filter(Boolean).join(' + ')}</Text>
+                )}
                 <View style={ClubInvestorsScreenS.lgCards}>
                   {[
                     ['Principal', s.principal ?? s.total_invested, null, principalHint],
@@ -1686,6 +1691,7 @@ const ClubInvestorsScreenS = StyleSheet.create({
   lgStmt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 12,
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.accentSoft, marginBottom: 12 },
   lgStmtText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
+  lgMadeOf: { fontSize: 12, fontWeight: '700', color: COLORS.link, marginTop: -4, marginBottom: 10 },
   renewTitle: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
   renewErr: { fontSize: 12.5, color: COLORS.error, backgroundColor: COLORS.errorBg, padding: 10, borderRadius: 10, marginBottom: 12 },
   schemeTerms: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
