@@ -1,7 +1,9 @@
 // Every signed LOI of one investment, newest first — the original, each revision,
 // renewal and redemption — same as the website's _LoisModal.js (the card's LOIs button).
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Linking, Alert, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Linking, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
 import { apiFetch } from '../../utils/apiFetch';
 import { CLUB1000_ENDPOINTS } from '../../constants/api';
@@ -23,6 +25,8 @@ const KIND = {
 export default function InvestorLoisSheet({ investor, onClose }) {
   const [lois, setLois] = useState(null);
   const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(null);     // the LOI whose copy is uploading
+  const [reload, setReload] = useState(0);
   useEffect(() => {
     if (!investor) { setLois(null); return undefined; }
     let alive = true;
@@ -35,8 +39,25 @@ export default function InvestorLoisSheet({ investor, onClose }) {
       })
       .catch(() => alive && setErr('Could not reach the server.'));
     return () => { alive = false; };
-  }, [investor]);
+  }, [investor, reload]);
   if (!investor) return null;
+
+  // Put back a copy of an LOI whose file was deleted (before LOIs were kept).
+  async function upload(l) {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
+      if (res.canceled || !res.assets?.[0]) return;
+      const a = res.assets[0];
+      const data = await FileSystem.readAsStringAsync(a.uri, { encoding: FileSystem.EncodingType.Base64 });
+      setBusy(l.i);
+      const r = await apiFetch(CLUB1000_ENDPOINTS.investorLois(investor.id), {
+        method: 'POST', body: JSON.stringify({ i: l.i, file: { name: a.name || 'loi.pdf', type: a.mimeType || 'application/pdf', data } }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) { Alert.alert('Uploaded', `${l.label} is back on file.`); setReload((n) => n + 1); }
+      else Alert.alert('Could not upload', errText(d, 'Please try again.'));
+    } catch (e) { Alert.alert('Could not upload', e.message); } finally { setBusy(null); }
+  }
 
   async function open(l) {
     try {
@@ -59,6 +80,9 @@ export default function InvestorLoisSheet({ investor, onClose }) {
         {!lois && !err && <AppLoader />}
         {!!err && <Text style={s.bad}>{err}</Text>}
         {lois && lois.length === 0 && <Text style={s.help}>No signed LOI is on record for this investment.</Text>}
+        {lois && lois.some((l) => l.missing) && (
+          <Text style={s.note}>An LOI marked FILE MISSING was deleted by an approval made before Nexora kept every LOI. If you have the signed copy, upload it to put it back.</Text>
+        )}
         {lois && lois.length > 0 && (
           <View style={s.card}>
             {lois.map((l, k) => {
@@ -72,10 +96,17 @@ export default function InvestorLoisSheet({ investor, onClose }) {
                   <View style={s.top}>
                     <Text style={s.label}>{l.label}</Text>
                     {l.current && <Text style={s.cur}>CURRENT</Text>}
+                    {l.missing && <Text style={s.miss}>FILE MISSING</Text>}
                   </View>
                   <Text style={s.meta}>{word} · {l.at ? formatDMY(String(l.at).slice(0, 10)) : '—'}{l.by ? ` · approved by ${l.by}` : ''}</Text>
                 </View>
-                <TouchableOpacity onPress={() => open(l)} style={s.open}><Text style={s.openText}>Open</Text></TouchableOpacity>
+                {l.missing ? (
+                  <TouchableOpacity onPress={() => upload(l)} disabled={busy !== null} style={s.open}>
+                    {busy === l.i ? <ActivityIndicator size="small" color={COLORS.link} /> : <Text style={s.openText}>Upload copy</Text>}
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity onPress={() => open(l)} style={s.open}><Text style={s.openText}>Open</Text></TouchableOpacity>
+                )}
               </View>
               );
             })}
@@ -99,6 +130,8 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11 },
   rowLine: { borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt },
   rowCur: { backgroundColor: COLORS.successBg },
+  miss: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.error, backgroundColor: COLORS.errorBg, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
+  note: { fontSize: 12, color: COLORS.warning, backgroundColor: COLORS.warningBg, padding: 10, borderRadius: 10, marginBottom: 10 },
   ico: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   top: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   cur: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5, color: COLORS.success, backgroundColor: COLORS.surface, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
