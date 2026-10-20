@@ -26,6 +26,10 @@ import { confirmAsk } from '../../lib/confirmAsk';
 import PeriodFilter from '../../components/PeriodFilter';
 
 const TYPE_LABELS = { interest: 'Interest', maturity: 'Principal', premature_redemption: 'Premature redemption' };
+// An at-maturity payout is principal AND the term's interest in one payment.
+const typeLabel = (p) => (p.maturity_split
+  ? `Principal + interest · ${rupee(p.maturity_split.principal)} + ${rupee(p.maturity_split.interest)}`
+  : (TYPE_LABELS[p.payout_type] || p.payout_type));
 const DUE_SOON_DAYS = 30;
 const rupee = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const iso = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
@@ -204,7 +208,7 @@ export default function Club1000PayoutsScreen({ navigation, route }) {
                 <Fig label="OVERDUE" value={r.overdueAmt ? rupee(r.overdueAmt) : '—'} bad={!!r.overdueAmt}
                   sub={r.overdue.length ? `${r.overdue.length} since ${formatDMY(r.overdue[0].due_date)}` : 'Nothing late'} />
                 <Fig label="NEXT PAYOUT" value={r.next ? rupee(r.next.amount_due) : '—'}
-                  sub={r.next ? `${formatDMY(r.next.due_date)} · ${TYPE_LABELS[r.next.payout_type] || r.next.payout_type}` : 'None scheduled'} />
+                  sub={r.next ? `${formatDMY(r.next.due_date)} · ${typeLabel(r.next)}` : 'None scheduled'} />
                 <Fig label="PAID SO FAR" value={r.paidAmt ? rupee(r.paidAmt) : '—'}
                   sub={r.paid.length ? `Last ${formatDMY(r.paid[0].paid_date)}` : 'Nothing yet'} />
               </View>
@@ -331,7 +335,7 @@ function PaySheet({ row, today, onClose, onDone }) {
               <TouchableOpacity onPress={() => setLine(p.id, { on: !on })} style={s.payTop}>
                 <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? COLORS.link : COLORS.textSecondary} />
                 <View style={s.flex}>
-                  <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}{p.period ? ` · ${p.period.label}` : ''}</Text>
+                  <Text style={s.payWhat}>{typeLabel(p)}{p.period ? ` · ${p.period.label}` : ''}</Text>
                 {!!p.period && <Text style={s.payWhy}>{formatDMY(p.period.from)} – {formatDMY(p.period.to)} · {p.period.days} days × ₹{Number(p.period.per_day).toLocaleString('en-IN')}/day</Text>}
                   <Text style={[s.payWhen, late && s.payLate]}>Due {formatDMY(p.due_date)}{late ? ' · late' : ''}</Text>
                 </View>
@@ -404,7 +408,7 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
 
   async function remove(p) {
     const ok = await confirmAsk('Delete payment?',
-      `Delete the ${rupee(p.paid_amount ?? p.amount_due)} payment of ${formatDMY(p.paid_date)}? ${TYPE_LABELS[p.payout_type] || p.payout_type}${p.period ? ` · ${p.period.label}` : ''} goes back to pending.`,
+      `Delete the ${rupee(p.paid_amount ?? p.amount_due)} payment of ${formatDMY(p.paid_date)}? ${typeLabel(p)}${p.period ? ` · ${p.period.label}` : ''} goes back to pending.`,
       'Delete', true);
     if (!ok) return;
     setBusyId(p.id);
@@ -442,7 +446,7 @@ function PaidSheet({ row, canUndo, onClose, onChanged }) {
             <View style={s.payCard}>
             <View style={s.payTop}>
               <View style={s.flex}>
-                <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}{p.period ? ` · ${p.period.label}` : ''}</Text>
+                <Text style={s.payWhat}>{typeLabel(p)}{p.period ? ` · ${p.period.label}` : ''}</Text>
                 {!!p.period && <Text style={s.payWhy}>{formatDMY(p.period.from)} – {formatDMY(p.period.to)} · {p.period.days} days × ₹{Number(p.period.per_day).toLocaleString('en-IN')}/day</Text>}
                 <Text style={s.payWhen}>Due {formatDMY(p.due_date)} · target {rupee(p.amount_due)}</Text>
               </View>

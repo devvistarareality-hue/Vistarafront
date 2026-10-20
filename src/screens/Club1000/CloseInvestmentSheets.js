@@ -27,6 +27,10 @@ import { loiFileName, sharePdfNamed } from '../../lib/c1Files';
 import { earlierTerms } from '../../lib/c1History';
 
 const TYPE_LABELS = { interest: 'Interest', maturity: 'Principal', premature_redemption: 'Redemption' };
+// An at-maturity payout is principal AND the term's interest in one payment.
+const typeLabel = (p) => (p.maturity_split
+  ? `Principal + interest · ${rupee(p.maturity_split.principal)} + ${rupee(p.maturity_split.interest)}`
+  : (TYPE_LABELS[p.payout_type] || p.payout_type));
 const iso = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 const rupee = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
 
@@ -325,7 +329,7 @@ export function MaturityPayoutSheet({ investor, onClose, onDone }) {
                 <TouchableOpacity onPress={() => setLine(p.id, { on: !l.on })} style={s.payTop}>
                   <Ionicons name={l.on ? 'checkbox' : 'square-outline'} size={20} color={l.on ? COLORS.link : COLORS.textSecondary} />
                   <View style={s.flex}>
-                    <Text style={s.payWhat}>{TYPE_LABELS[p.payout_type] || p.payout_type}{p.period ? ` · ${p.period.label}` : ''}</Text>
+                    <Text style={s.payWhat}>{typeLabel(p)}{p.period ? ` · ${p.period.label}` : ''}</Text>
                 {!!p.period && <Text style={s.payWhy}>{formatDMY(p.period.from)} – {formatDMY(p.period.to)} · {p.period.days} days × ₹{Number(p.period.per_day).toLocaleString('en-IN')}/day</Text>}
                     <Text style={[s.lineSub, late && s.late]}>Due {formatDMY(p.due_date)}{late ? ' · late' : ''}</Text>
                   </View>
