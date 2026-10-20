@@ -17,6 +17,7 @@ import AppLoader from '../../components/AppLoader';
 import { onlyPresent } from '../../lib/presentOptions';
 import { errText } from '../../lib/apiError';
 import { confirmAsk } from '../../lib/confirmAsk';
+import { schemePerAnnum, schemeLockIn } from '../../lib/c1Scheme';
 
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary;
@@ -270,6 +271,7 @@ function AddLeadSheet({ visible, onClose, onSaved, schemes, assignees, manager }
                 <TouchableOpacity key={s.id} onPress={() => { set('scheme_interest', s.id); setSchemeOpen(false); }}
                   style={{ padding: 12, borderTopWidth: 1, borderTopColor: COLORS.surfaceAlt }}>
                   <Text style={{ fontSize: 14, color: TEXT }}>{s.name}</Text>
+                  <Text style={leadSchemeTerms}>{[schemePerAnnum(s), schemeLockIn(s)].filter(Boolean).join(' · ')}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -772,3 +774,6 @@ const ClubLeadsScreenS = StyleSheet.create({
   btn5: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.btnTintSuccess, borderWidth: 1, borderColor: COLORS.btnBorderSuccess, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 },
   box4: { color: COLORS.btnTextSuccess, fontSize: 13, fontWeight: '700' },
 });
+
+// A scheme's return per annum and lock-in, under its name in the picker.
+const leadSchemeTerms = StyleSheet.create({ t: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 } }).t;

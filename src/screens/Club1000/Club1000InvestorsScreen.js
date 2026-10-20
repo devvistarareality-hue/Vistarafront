@@ -36,6 +36,7 @@ import { useReasonPrompt } from '../../components/ReasonPrompt';
 import ImportInvestorsSheet from './ImportInvestorsSheet';
 import ScheduleList from './ScheduleList';
 import { confirmAsk } from '../../lib/confirmAsk';
+import { schemePerAnnum, schemeLockIn } from '../../lib/c1Scheme';
 // The ledger sheet is also opened from Payouts (declared further down; function declarations hoist).
 export { LedgerModal };
 const NAVY = COLORS.navy; const TEAL = COLORS.success; const BG = COLORS.screenBg;
@@ -576,6 +577,7 @@ export function AddInvestorSheet({ visible, onClose, onSaved, schemes: schemeLis
                 <TouchableOpacity key={s.id} onPress={() => selectScheme(s)}
                   style={{ padding: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: COLORS.surfaceAlt, backgroundColor: String(form.scheme) === String(s.id) ? COLORS.linkBg : COLORS.surface }}>
                   <Text style={{ fontSize: 14, color: TEXT, fontWeight: String(form.scheme) === String(s.id) ? '700' : '400' }}>{s.name}</Text>
+                  <Text style={ClubInvestorsScreenS.schemeTerms}>{[schemePerAnnum(s), schemeLockIn(s)].filter(Boolean).join(' · ')}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -1638,6 +1640,7 @@ const ClubInvestorsScreenS = StyleSheet.create({
   lgStmt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 12,
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.accentSoft, marginBottom: 12 },
   lgStmtText: { fontSize: 13, fontWeight: '700', color: COLORS.link },
+  schemeTerms: { fontSize: 11.5, color: COLORS.textSecondary, marginTop: 2 },
   loisBtn: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: COLORS.linkBg },
   loisBtnText: { fontSize: 11, fontWeight: '700', color: COLORS.link },
   lgTermScroll: { flexGrow: 0, marginBottom: 8 },
