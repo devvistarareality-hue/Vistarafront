@@ -17,17 +17,23 @@ import { onlyPresent } from '../../lib/presentOptions';
 const TEXT = COLORS.textPrimary; const MUTED = COLORS.textSecondary; const BLUE = COLORS.link;
 const CARD = { backgroundColor: COLORS.cardBg, borderRadius: 22, padding: 14, ...CARD_SHADOW , borderWidth: 1, borderColor: COLORS.cardBorder };
 
-// Same three lists the web directory uses — kept identical so a partner added on
+// The same lists the web directory uses — kept identical so a partner added on
 // either side reads the same on the other.
+//
+// The tiers a partner is graded into — Platinum / Gold / Diamond, which replaced
+// Premium / Normal / Referral. Blank is a real state: a partner nobody has graded.
 const CATEGORY_OPTIONS = [
-  { value: 'premium',  label: 'Premium' },
-  { value: 'normal',   label: 'Normal' },
-  { value: 'referral', label: 'Referral' },
+  { value: '',         label: '— Select —' },
+  { value: 'platinum', label: 'Platinum' },
+  { value: 'gold',     label: 'Gold' },
+  { value: 'diamond',  label: 'Diamond' },
 ];
+// Points at the StyleSheet at the bottom rather than holding raw colours, so the
+// chip carries no inline style.
 const CATEGORY_COLOR = {
-  premium:  { bg: COLORS.warningBg, color: COLORS.warning },
-  normal:   { bg: COLORS.accentSoft, color: BLUE },
-  referral: { bg: COLORS.successBg, color: COLORS.success },
+  platinum: { chip: 'catPlatinum', text: 'catPlatinumText' },
+  gold:     { chip: 'catGold',     text: 'catGoldText' },
+  diamond:  { chip: 'catDiamond',  text: 'catDiamondText' },
 };
 const SEGMENT_OPTIONS = [
   { value: '',            label: '— Select —' },
@@ -35,6 +41,33 @@ const SEGMENT_OPTIONS = [
   { value: 'industrial',  label: 'Industrial' },
   { value: 'both',        label: 'Both' },
 ];
+// The band a partner is dealt with on — a third axis, not a rename of the two
+// above: Category is how much they are worth to us, Segment is what they sell,
+// Type is the footing the relationship sits on. Mirrors CP_TYPE in sales/models.py.
+const CP_TYPE_OPTIONS = [
+  { value: '',  label: '— Select —' },
+  { value: 'A', label: 'A (Wholesale)' },
+  { value: 'B', label: 'B (Retail)' },
+  { value: 'C', label: 'C (Non CP)' },
+];
+// How warm the CP desk reads this partner. About the PARTNER, not about any lead
+// they brought — a lead's hot/warm/cold is its telecaller / STM status.
+// New is where a partner added from here on starts, without anyone choosing it.
+// The blank entry is only for the partners that predate the field.
+const STAGE_OPTIONS = [
+  { value: '',     label: '— Not set —' },
+  { value: 'new',  label: 'New' },
+  { value: 'hot',  label: 'Hot' },
+  { value: 'warm', label: 'Warm' },
+  { value: 'cold', label: 'Cold' },
+];
+// Points at the StyleSheet at the bottom, so the chip carries no inline style.
+const STAGE_COLOR = {
+  new:  { chip: 'stageNew',  text: 'stageNewText' },
+  hot:  { chip: 'stageHot',  text: 'stageHotText' },
+  warm: { chip: 'stageWarm', text: 'stageWarmText' },
+  cold: { chip: 'stageCold', text: 'stageColdText' },
+};
 // City is a broad dropdown (state-wide); Area stays free text for the locality within
 // it — every CP is Gujarat-based for now, so this is a flat list, not a cascade.
 const GUJARAT_CITIES = [
@@ -47,8 +80,8 @@ const GUJARAT_CITIES = [
   'Valsad', 'Vapi', 'Veraval', 'Vijapur', 'Viramgam', 'Visnagar', 'Vyara', 'Wankaner',
 ];
 
-const EMPTY = { name: '', contact_no: '', firm_name: '', category: 'normal',
-                segment: '', city: '', area: '', is_active: true };
+const EMPTY = { name: '', contact_no: '', firm_name: '', category: '',
+                segment: '', cp_type: '', stage: 'new', city: '', area: '', is_active: true };
 
 // Date only: the time a partner was keyed in is noise, the day is the fact.
 function fmtAdded(value) {
@@ -58,12 +91,27 @@ function fmtAdded(value) {
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function Badge({ category }) {
-  const c = CATEGORY_COLOR[category] || { bg: COLORS.surfaceAlt, color: MUTED };
-  const label = CATEGORY_OPTIONS.find((o) => o.value === category)?.label || category || '—';
+// Not read yet means no chip, like an ungraded Category.
+function StageChip({ stage }) {
+  if (!stage) return null;
+  const tone = STAGE_COLOR[stage] || STAGE_COLOR.warm;
+  const label = STAGE_OPTIONS.find((o) => o.value === stage)?.label || stage;
   return (
-    <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, backgroundColor: c.bg }}>
-      <Text style={{ fontSize: 11, fontWeight: '700', color: c.color }}>{label}</Text>
+    <View style={[st.catChip, st[tone.chip]]}>
+      <Text style={[st.catChipText, st[tone.text]]}>{label}</Text>
+    </View>
+  );
+}
+
+// An ungraded partner gets no pill at all — most of the directory is ungraded
+// since the tiers changed, and a row of grey "— Select —" chips says nothing.
+function Badge({ category }) {
+  if (!category) return null;
+  const tone = CATEGORY_COLOR[category] || CATEGORY_COLOR.platinum;
+  const label = CATEGORY_OPTIONS.find((o) => o.value === category)?.label || category;
+  return (
+    <View style={[st.catChip, st[tone.chip]]}>
+      <Text style={[st.catChipText, st[tone.text]]}>{label}</Text>
     </View>
   );
 }
@@ -130,8 +178,9 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved, onRemove }
     setErr(''); setDupe(null); setChecking(false);
     setForm(initial ? {
       name: initial.name || '', contact_no: initial.contact_no || '',
-      firm_name: initial.firm_name || '', category: initial.category || 'normal',
-      segment: initial.segment || '', city: initial.city || '', area: initial.area || '',
+      firm_name: initial.firm_name || '', category: initial.category || '',
+      segment: initial.segment || '', cp_type: initial.cp_type || '',
+      stage: initial.stage || '', city: initial.city || '', area: initial.area || '',
       is_active: initial.is_active !== false,
     } : EMPTY);
   }, [visible, initial]);
@@ -229,6 +278,10 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved, onRemove }
             )}
             <Fld label="FIRM NAME" value={form.firm_name} onChange={(v) => set('firm_name', v)} placeholder="e.g. Shah Realty" />
 
+            <Text style={st.fldLabel}>TYPE</Text>
+            <FilterSelect label="Type" value={form.cp_type} onChange={(v) => set('cp_type', v)}
+              options={CP_TYPE_OPTIONS} style={st.fldSelect} />
+
             <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, marginBottom: 5 }}>CATEGORY</Text>
             <FilterSelect label="Category" value={form.category} onChange={(v) => set('category', v)}
               options={CATEGORY_OPTIONS} style={{ marginBottom: 14, alignSelf: 'flex-start' }} />
@@ -236,6 +289,10 @@ function PartnerForm({ visible, initial, companyId, onClose, onSaved, onRemove }
             <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, marginBottom: 5 }}>SEGMENT</Text>
             <FilterSelect label="Segment" value={form.segment} onChange={(v) => set('segment', v)}
               options={SEGMENT_OPTIONS} style={{ marginBottom: 14, alignSelf: 'flex-start' }} />
+
+            <Text style={st.fldLabel}>STAGE</Text>
+            <FilterSelect label="Stage" value={form.stage} onChange={(v) => set('stage', v)}
+              options={STAGE_OPTIONS} style={st.fldSelect} />
 
             <Text style={{ fontSize: 11, fontWeight: '700', color: MUTED, marginBottom: 5 }}>CITY</Text>
             <FilterSelect label="City" value={form.city} onChange={(v) => set('city', v)}
@@ -292,6 +349,8 @@ export function ChannelPartnerDirectory({ companyId }) {
   // one question no column answers — which of these has produced anything.
   const [statusF, setStatusF] = useState('');
   const [segmentF, setSegmentF] = useState('');
+  const [typeF, setTypeF] = useState('');
+  const [stageF, setStageF] = useState('');
   const [locationF, setLocationF] = useState('');
   const [bucket, setBucket] = useState('');
   const [facets, setFacets] = useState(null);
@@ -316,6 +375,8 @@ export function ChannelPartnerDirectory({ companyId }) {
       if (category) params.set('category', category);
       if (statusF) params.set('status', statusF);
       if (segmentF) params.set('segment', segmentF);
+      if (typeF) params.set('cp_type', typeF);
+      if (stageF) params.set('stage', stageF);
       if (locationF) params.set('location', locationF);
       if (bucket) params.set('bucket', bucket);
       const query = params.toString();
@@ -327,10 +388,10 @@ export function ChannelPartnerDirectory({ companyId }) {
       }
     } catch (_) {}
     if (ticket === reqRef.current) { setLoading(false); setRefreshing(false); }
-  }, [companyId, category, statusF, segmentF, locationF, bucket]);
+  }, [companyId, category, statusF, segmentF, typeF, stageF, locationF, bucket]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const narrowed = !!(category || statusF || segmentF || locationF || bucket || q.trim());
+  const narrowed = !!(category || statusF || segmentF || typeF || stageF || locationF || bucket || q.trim());
 
   function clearFilters() {
     setCategory(''); setStatusF(''); setSegmentF(''); setLocationF(''); setBucket(''); setQ('');
@@ -359,6 +420,12 @@ export function ChannelPartnerDirectory({ companyId }) {
     <TouchableOpacity activeOpacity={0.8} onPress={() => { setEditing(cp); setFormOpen(true); }} style={[CARD, st.card]}>
       <View style={st.row}>
         <Text style={st.name}>{cp.name}</Text>
+        {/* Just the letter — the card is scanned, and the full wording is in
+            the partner's own details. */}
+        {!!cp.cp_type && (
+          <View style={st.typeChip}><Text style={st.typeChipText}>{cp.cp_type}</Text></View>
+        )}
+        <StageChip stage={cp.stage} />
         <Badge category={cp.category} />
         {cp.is_active === false && (
           <View style={st.inactive}><Text style={st.inactiveText}>Inactive</Text></View>
@@ -407,10 +474,16 @@ export function ChannelPartnerDirectory({ companyId }) {
                     { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
         <FilterSelect label="All categories" value={category} onChange={setCategory}
           options={[{ value: '', label: 'All categories' },
-                    ...onlyPresent(CATEGORY_OPTIONS, facets?.categories ?? null, category)]} />
+                    ...onlyPresent(CATEGORY_OPTIONS.filter((o) => o.value), facets?.categories ?? null, category)]} />
+        <FilterSelect label="All types" value={typeF} onChange={setTypeF}
+          options={[{ value: '', label: 'All types' },
+                    ...onlyPresent(CP_TYPE_OPTIONS.filter((o) => o.value), facets?.cp_types ?? null, typeF)]} />
         <FilterSelect label="All segments" value={segmentF} onChange={setSegmentF}
           options={[{ value: '', label: 'All segments' },
                     ...onlyPresent(SEGMENT_OPTIONS.filter((o) => o.value), facets?.segments ?? null, segmentF)]} />
+        <FilterSelect label="All stages" value={stageF} onChange={setStageF}
+          options={[{ value: '', label: 'All stages' },
+                    ...onlyPresent(STAGE_OPTIONS.filter((o) => o.value), facets?.stages ?? null, stageF)]} />
         <FilterSelect label="All locations" value={locationF} onChange={setLocationF}
           options={[{ value: '', label: 'All locations' },
                     ...(facets?.locations || []).map((l) => ({ value: l, label: l }))]} />
@@ -559,4 +632,29 @@ const st = StyleSheet.create({
   headTitle: { fontSize: 16, fontWeight: '800', color: TEXT },
   headSub: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
   removeText: { fontSize: 13, fontWeight: '700', color: COLORS.error },
+  // Field label + picker spacing in the add/edit form. The older fields around
+  // them still carry the same values inline; these are the moved-out versions.
+  fldLabel: { fontSize: 11, fontWeight: '700', color: MUTED, marginBottom: 5 },
+  fldSelect: { marginBottom: 14, alignSelf: 'flex-start' },
+  // The Type band on a partner's card, next to the Category badge.
+  typeChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: COLORS.accentSoft },
+  typeChipText: { fontSize: 11, fontWeight: '800', color: BLUE },
+  // The Category tier chip — shell plus one pair per tier (see CATEGORY_COLOR).
+  catChip: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  catChipText: { fontSize: 11, fontWeight: '700' },
+  catPlatinum: { backgroundColor: COLORS.surfaceAlt },
+  catPlatinumText: { color: MUTED },
+  catGold: { backgroundColor: COLORS.warningBg },
+  catGoldText: { color: COLORS.warning },
+  catDiamond: { backgroundColor: COLORS.accentSoft },
+  catDiamondText: { color: BLUE },
+  // Stage chip tones — shares the catChip shell above.
+  stageHot: { backgroundColor: COLORS.errorBg },
+  stageHotText: { color: COLORS.error },
+  stageWarm: { backgroundColor: COLORS.warningBg },
+  stageWarmText: { color: COLORS.warning },
+  stageCold: { backgroundColor: COLORS.accentSoft },
+  stageColdText: { color: BLUE },
+  stageNew: { backgroundColor: COLORS.surfaceAlt },
+  stageNewText: { color: MUTED },
 });
