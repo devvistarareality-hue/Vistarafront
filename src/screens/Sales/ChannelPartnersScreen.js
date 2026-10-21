@@ -351,6 +351,7 @@ export function ChannelPartnerDirectory({ companyId }) {
   const [segmentF, setSegmentF] = useState('');
   const [typeF, setTypeF] = useState('');
   const [stageF, setStageF] = useState('');
+  const [firmF, setFirmF] = useState('');
   const [locationF, setLocationF] = useState('');
   const [bucket, setBucket] = useState('');
   const [facets, setFacets] = useState(null);
@@ -377,6 +378,7 @@ export function ChannelPartnerDirectory({ companyId }) {
       if (segmentF) params.set('segment', segmentF);
       if (typeF) params.set('cp_type', typeF);
       if (stageF) params.set('stage', stageF);
+      if (firmF) params.set('firm', firmF);
       if (locationF) params.set('location', locationF);
       if (bucket) params.set('bucket', bucket);
       const query = params.toString();
@@ -388,10 +390,10 @@ export function ChannelPartnerDirectory({ companyId }) {
       }
     } catch (_) {}
     if (ticket === reqRef.current) { setLoading(false); setRefreshing(false); }
-  }, [companyId, category, statusF, segmentF, typeF, stageF, locationF, bucket]);
+  }, [companyId, category, statusF, segmentF, typeF, stageF, firmF, locationF, bucket]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const narrowed = !!(category || statusF || segmentF || typeF || stageF || locationF || bucket || q.trim());
+  const narrowed = !!(category || statusF || segmentF || typeF || stageF || firmF || locationF || bucket || q.trim());
 
   function clearFilters() {
     setCategory(''); setStatusF(''); setSegmentF(''); setLocationF(''); setBucket(''); setQ('');
@@ -484,6 +486,11 @@ export function ChannelPartnerDirectory({ companyId }) {
         <FilterSelect label="All stages" value={stageF} onChange={setStageF}
           options={[{ value: '', label: 'All stages' },
                     ...onlyPresent(STAGE_OPTIONS.filter((o) => o.value), facets?.stages ?? null, stageF)]} />
+        {/* Built from the firms actually on the directory, so a firm typed in
+            today is in this list as soon as the screen reloads. */}
+        <FilterSelect label="All firms" value={firmF} onChange={setFirmF}
+          options={[{ value: '', label: 'All firms' },
+                    ...(facets?.firms || []).map((f) => ({ value: f, label: f }))]} />
         <FilterSelect label="All locations" value={locationF} onChange={setLocationF}
           options={[{ value: '', label: 'All locations' },
                     ...(facets?.locations || []).map((l) => ({ value: l, label: l }))]} />
