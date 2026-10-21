@@ -1613,7 +1613,7 @@ export default function Club1000InvestorsScreen({ navigation, route }) {
                 {!!inv.pending_action && (
                   <View style={ClubInvestorsScreenS.deleteChip}><Text style={ClubInvestorsScreenS.deleteChipText}>Undo requested</Text></View>
                 )}
-                {manager && inv.renewal_count > 0 && !inv.pending_action && (
+                {manager && inv.can_undo_renewal && !inv.pending_action && (
                   <TouchableOpacity onPress={() => undoRenewal(inv)} style={ClubInvestorsScreenS.deleteChip}>
                     <Text style={ClubInvestorsScreenS.deleteChipText}>↶ Undo renewal</Text>
                   </TouchableOpacity>
